@@ -272,16 +272,6 @@ export class AuthenticationService extends Disposable implements IAuthentication
 				this.removeAccessRequest(id, extensionId);
 			});
 		}
-
-		if (!this._authenticationProviders.size) {
-			this._placeholderMenuItem = MenuRegistry.appendMenuItem(MenuId.AccountsContext, {
-				command: {
-					id: 'noAuthenticationProviders',
-					title: nls.localize('loading', "Loading..."),
-					precondition: ContextKeyExpr.false()
-				},
-			});
-		}
 	}
 
 	async sessionsUpdate(id: string, event: AuthenticationSessionsChangeEvent): Promise<void> {

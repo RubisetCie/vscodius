@@ -137,7 +137,7 @@ defineWin32SetupTasks('arm64', 'user');
  */
 function archiveWin32Setup(arch) {
 	return cb => {
-		const args = ['a', '-tzip', zipPath(arch), '-x!CodeSignSummary*.md', '.', '-r'];
+		const args = ['a', '-tzip', zipPath(arch), '-x!CodeSignSummary*.md', '-x!tools', '.', '-r'];
 
 		cp.spawn(_7z, args, { stdio: 'inherit', cwd: buildPath(arch) })
 			.on('error', cb)

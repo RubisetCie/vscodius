@@ -14,7 +14,7 @@ import { ExtensionType, IExtensionDescription } from 'vs/platform/extensions/com
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { URI } from 'vs/base/common/uri';
 
-const builtinExtensionIssueUrl = 'https://github.com/microsoft/vscode';
+const builtinExtensionIssueUrl = 'https://github.com/RubisetCie/vscodium-wrungout';
 
 export class ReportExtensionIssueAction extends Action {
 
@@ -76,7 +76,7 @@ export class ReportExtensionIssueAction extends Action {
 - Extension Name: \`${extension.description.name}\`
 - Extension Version: \`${extension.description.version}\`
 - OS Version: \`${osVersion}\`
-- VS Code version: \`${this.productService.version}\`\n\n${message}`
+- VSCodium version: \`${this.productService.version}\`\n\n${message}`
 		);
 
 		return `${baseUrl}${queryStringPrefix}body=${body}&title=${encodeURIComponent(title)}`;

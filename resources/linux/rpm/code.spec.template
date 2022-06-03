@@ -74,3 +74,5 @@ update-mime-database /usr/share/mime &> /dev/null || :
 /usr/share/pixmaps/@@ICON@@.png
 /usr/share/bash-completion/completions/@@NAME@@
 /usr/share/zsh/site-functions/_@@NAME@@
+
+%config(noreplace) /usr/share/@@NAME@@/resources/app/product.json

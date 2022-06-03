@@ -272,7 +272,7 @@ export class AccountsActivityActionViewItem extends MenuActivityActionViewItem {
 			}
 		});
 
-		if (providers.length && !menus.length) {
+		if (!menus.length) {
 			const noAccountsAvailableAction = disposables.add(new Action('noAccountsAvailable', localize('noAccounts', "You are not signed in to any accounts"), undefined, false));
 			menus.push(noAccountsAvailableAction);
 		}
