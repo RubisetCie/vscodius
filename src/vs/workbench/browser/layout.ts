@@ -48,7 +48,6 @@ import { IBannerService } from 'vs/workbench/services/banner/browser/bannerServi
 import { IPaneCompositePartService } from 'vs/workbench/services/panecomposite/browser/panecomposite';
 import { ActivitybarPart } from 'vs/workbench/browser/parts/activitybar/activitybarPart';
 import { AuxiliaryBarPart } from 'vs/workbench/browser/parts/auxiliarybar/auxiliaryBarPart';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { LayoutStateKeys, LayoutStateModel, WorkbenchLayoutSettings } from 'vs/workbench/browser/layoutState';
 
 interface IWorkbenchLayoutWindowRuntimeState {
@@ -185,7 +184,6 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 	private themeService!: IThemeService;
 	private statusBarService!: IStatusbarService;
 	private logService!: ILogService;
-	private telemetryService!: ITelemetryService;
 
 	private windowState!: IWorkbenchLayoutWindowState;
 	private stateModel!: LayoutStateModel;
@@ -210,7 +208,6 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 		this.themeService = accessor.get(IThemeService);
 		this.extensionService = accessor.get(IExtensionService);
 		this.logService = accessor.get(ILogService);
-		this.telemetryService = accessor.get(ITelemetryService);
 
 		// Parts
 		this.editorService = accessor.get(IEditorService);
@@ -2104,40 +2101,6 @@ export abstract class Layout extends Disposable implements IWorkbenchLayoutServi
 			width,
 			height
 		};
-
-		type StartupLayoutEvent = {
-			activityBarVisible: boolean;
-			sideBarVisible: boolean;
-			auxiliaryBarVisible: boolean;
-			panelVisible: boolean;
-			statusbarVisible: boolean;
-			sideBarPosition: string;
-			panelPosition: string;
-		};
-
-		type StartupLayoutEventClassification = {
-			owner: 'sbatten';
-			comment: 'Information about the layout of the workbench during statup';
-			activityBarVisible: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Whether or the not the activity bar is visible' };
-			sideBarVisible: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Whether or the not the primary side bar is visible' };
-			auxiliaryBarVisible: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Whether or the not the secondary side bar is visible' };
-			panelVisible: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Whether or the not the panel is visible' };
-			statusbarVisible: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Whether or the not the status bar is visible' };
-			sideBarPosition: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Whether the primary side bar is on the left or right' };
-			panelPosition: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Whether the panel is on the bottom, left, or right' };
-		};
-
-		const layoutDescriptor: StartupLayoutEvent = {
-			activityBarVisible: !this.stateModel.getRuntimeValue(LayoutStateKeys.ACTIVITYBAR_HIDDEN),
-			sideBarVisible: !this.stateModel.getRuntimeValue(LayoutStateKeys.SIDEBAR_HIDDEN),
-			auxiliaryBarVisible: !this.stateModel.getRuntimeValue(LayoutStateKeys.AUXILIARYBAR_HIDDEN),
-			panelVisible: !this.stateModel.getRuntimeValue(LayoutStateKeys.PANEL_HIDDEN),
-			statusbarVisible: !this.stateModel.getRuntimeValue(LayoutStateKeys.STATUSBAR_HIDDEN),
-			sideBarPosition: positionToString(this.stateModel.getRuntimeValue(LayoutStateKeys.SIDEBAR_POSITON)),
-			panelPosition: positionToString(this.stateModel.getRuntimeValue(LayoutStateKeys.PANEL_POSITION)),
-		};
-
-		this.telemetryService.publicLog2<StartupLayoutEvent, StartupLayoutEventClassification>('startupLayout', layoutDescriptor);
 
 		return result;
 	}

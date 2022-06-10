@@ -7,20 +7,12 @@ import { IExtensionTipsService } from 'vs/platform/extensionManagement/common/ex
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
 import { IWorkspaceContextService, WorkbenchState, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
 import { IFileService } from 'vs/platform/files/common/files';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { isNonEmptyArray } from 'vs/base/common/arrays';
 import { IWorkspaceTagsService } from 'vs/workbench/contrib/tags/common/workspaceTags';
 import { isNumber } from 'vs/base/common/types';
 import { ExtensionRecommendations, ExtensionRecommendation } from 'vs/workbench/contrib/extensions/browser/extensionRecommendations';
 import { ExtensionRecommendationReason } from 'vs/workbench/services/extensionRecommendations/common/extensionRecommendations';
 import { localize } from 'vs/nls';
-
-type DynamicWorkspaceRecommendationsClassification = {
-	owner: 'sandy081';
-	comment: 'Information about recommendations by scanning the workspace';
-	count: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Total number of extensions those are recommended' };
-	cache: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Flag if extensions are recommended from cache or not' };
-};
 
 type IStoredDynamicWorkspaceRecommendations = { recommendations: string[]; timestamp: number };
 const dynamicWorkspaceRecommendationsStorageKey = 'extensionsAssistant/dynamicWorkspaceRecommendations';
@@ -36,8 +28,7 @@ export class DynamicWorkspaceRecommendations extends ExtensionRecommendations {
 		@IWorkspaceTagsService private readonly workspaceTagsService: IWorkspaceTagsService,
 		@IWorkspaceContextService private readonly contextService: IWorkspaceContextService,
 		@IFileService private readonly fileService: IFileService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
-		@IStorageService private readonly storageService: IStorageService,
+		@IStorageService private readonly storageService: IStorageService
 	) {
 		super();
 	}
@@ -64,7 +55,6 @@ export class DynamicWorkspaceRecommendations extends ExtensionRecommendations {
 		const cachedDynamicWorkspaceRecommendations = this.getCachedDynamicWorkspaceRecommendations();
 		if (cachedDynamicWorkspaceRecommendations) {
 			this._recommendations = cachedDynamicWorkspaceRecommendations.map(id => this.toExtensionRecommendation(id, folder));
-			this.telemetryService.publicLog2<{ count: number; cache: number }, DynamicWorkspaceRecommendationsClassification>('dynamicWorkspaceRecommendations', { count: this._recommendations.length, cache: 1 });
 			return;
 		}
 
@@ -84,7 +74,6 @@ export class DynamicWorkspaceRecommendations extends ExtensionRecommendations {
 			if (workspaceTip) {
 				this._recommendations = workspaceTip.recommendations.map(id => this.toExtensionRecommendation(id, folder));
 				this.storageService.store(dynamicWorkspaceRecommendationsStorageKey, JSON.stringify(<IStoredDynamicWorkspaceRecommendations>{ recommendations: workspaceTip.recommendations, timestamp: Date.now() }), StorageScope.WORKSPACE, StorageTarget.MACHINE);
-				this.telemetryService.publicLog2<{ count: number; cache: number }, DynamicWorkspaceRecommendationsClassification>('dynamicWorkspaceRecommendations', { count: this._recommendations.length, cache: 0 });
 				return;
 			}
 		}

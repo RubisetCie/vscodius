@@ -28,7 +28,6 @@ import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IProgressService } from 'vs/platform/progress/common/progress';
 import { IQuickInputService } from 'vs/platform/quickinput/common/quickInput';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IViewsService, IViewDescriptorService } from 'vs/workbench/common/views';
 import { IOutputService } from 'vs/workbench/services/output/common/output';
 import { ITerminalGroupService, ITerminalService } from 'vs/workbench/contrib/terminal/browser/terminal';
@@ -60,7 +59,6 @@ export class TaskService extends AbstractTaskService {
 		@IEditorService editorService: IEditorService,
 		@IFileService fileService: IFileService,
 		@IWorkspaceContextService contextService: IWorkspaceContextService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@ITextFileService textFileService: ITextFileService,
 		@ILifecycleService lifecycleService: ILifecycleService,
 		@IModelService modelService: IModelService,
@@ -93,7 +91,6 @@ export class TaskService extends AbstractTaskService {
 			editorService,
 			fileService,
 			contextService,
-			telemetryService,
 			textFileService,
 			modelService,
 			extensionService,

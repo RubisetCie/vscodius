@@ -10,7 +10,6 @@ import { IChannel } from 'vs/base/parts/ipc/common/ipc';
 import { IExtensionDescription, ExtensionIdentifier } from 'vs/platform/extensions/common/extensions';
 import { IRemoteAgentEnvironment } from 'vs/platform/remote/common/remoteAgentEnvironment';
 import { IDiagnosticInfoOptions, IDiagnosticInfo } from 'vs/platform/diagnostics/common/diagnostics';
-import { ITelemetryData, TelemetryLevel } from 'vs/platform/telemetry/common/telemetry';
 import { IExtensionHostExitInfo } from 'vs/workbench/services/remote/common/remoteAgentService';
 
 export interface IGetEnvironmentDataArguments {
@@ -125,18 +124,6 @@ export class RemoteExtensionEnvironmentChannelClient {
 
 	static getDiagnosticInfo(channel: IChannel, options: IDiagnosticInfoOptions): Promise<IDiagnosticInfo> {
 		return channel.call<IDiagnosticInfo>('getDiagnosticInfo', options);
-	}
-
-	static updateTelemetryLevel(channel: IChannel, telemetryLevel: TelemetryLevel): Promise<void> {
-		return channel.call<void>('updateTelemetryLevel', { telemetryLevel });
-	}
-
-	static logTelemetry(channel: IChannel, eventName: string, data: ITelemetryData): Promise<void> {
-		return channel.call<void>('logTelemetry', { eventName, data });
-	}
-
-	static flushTelemetry(channel: IChannel): Promise<void> {
-		return channel.call<void>('flushTelemetry');
 	}
 
 	static async ping(channel: IChannel): Promise<void> {

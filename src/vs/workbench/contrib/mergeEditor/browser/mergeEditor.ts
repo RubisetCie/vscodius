@@ -36,7 +36,6 @@ import { IEditorOptions } from 'vs/platform/editor/common/editor';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ILabelService } from 'vs/platform/label/common/label';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { FloatingClickWidget } from 'vs/workbench/browser/codeeditor';
 import { DEFAULT_EDITOR_MAX_DIMENSIONS, DEFAULT_EDITOR_MIN_DIMENSIONS } from 'vs/workbench/browser/parts/editor/editor';
@@ -81,13 +80,12 @@ export class MergeEditor extends EditorPane {
 		@ILabelService private readonly _labelService: ILabelService,
 		@IMenuService private readonly _menuService: IMenuService,
 		@IContextKeyService private readonly _contextKeyService: IContextKeyService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IStorageService storageService: IStorageService,
 		@IThemeService themeService: IThemeService,
 		@ITextResourceConfigurationService private readonly textResourceConfigurationService: ITextResourceConfigurationService,
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
 	) {
-		super(MergeEditor.ID, telemetryService, themeService, storageService);
+		super(MergeEditor.ID, themeService, storageService);
 
 		this._ctxIsMergeEditor = ctxIsMergeEditor.bindTo(_contextKeyService);
 		this._ctxUsesColumnLayout = ctxUsesColumnLayout.bindTo(_contextKeyService);

@@ -9,7 +9,6 @@ import { Action, IAction } from 'vs/base/common/actions';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IContextMenuService, IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService, IColorTheme, registerThemingParticipant, ICssStyleCollector, ThemeIcon, Themable } from 'vs/platform/theme/common/themeService';
 import { switchTerminalActionViewItemSeparator, switchTerminalShowTabsTitle } from 'vs/workbench/contrib/terminal/browser/terminalActions';
 import { TERMINAL_BACKGROUND_COLOR, TERMINAL_BORDER_COLOR, TERMINAL_DRAG_AND_DROP_BACKGROUND, TERMINAL_TAB_ACTIVE_BORDER } from 'vs/workbench/contrib/terminal/common/terminalColorRegistry';
@@ -70,7 +69,6 @@ export class TerminalViewPane extends ViewPane {
 		@ITerminalService private readonly _terminalService: ITerminalService,
 		@ITerminalGroupService private readonly _terminalGroupService: ITerminalGroupService,
 		@IThemeService themeService: IThemeService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@INotificationService private readonly _notificationService: INotificationService,
 		@IKeybindingService private readonly _keybindingService: IKeybindingService,
 		@IOpenerService openerService: IOpenerService,
@@ -80,7 +78,7 @@ export class TerminalViewPane extends ViewPane {
 		@ITerminalProfileResolverService private readonly _terminalProfileResolverService: ITerminalProfileResolverService,
 		@IThemeService private readonly _themeService: IThemeService
 	) {
-		super(options, keybindingService, _contextMenuService, configurationService, _contextKeyService, viewDescriptorService, _instantiationService, openerService, themeService, telemetryService);
+		super(options, keybindingService, _contextMenuService, configurationService, _contextKeyService, viewDescriptorService, _instantiationService, openerService, themeService);
 		this._register(this._terminalService.onDidRegisterProcessSupport(() => {
 			if (this._actions) {
 				for (const action of this._actions) {

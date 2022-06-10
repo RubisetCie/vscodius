@@ -40,7 +40,6 @@ import { IFileService } from 'vs/platform/files/common/files';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IProductService } from 'vs/platform/product/common/productService';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 
 interface InstallableExtension {
@@ -57,7 +56,6 @@ export class ExtensionManagementService extends AbstractExtensionManagementServi
 
 	constructor(
 		@IExtensionGalleryService galleryService: IExtensionGalleryService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@ILogService logService: ILogService,
 		@INativeEnvironmentService private readonly environmentService: INativeEnvironmentService,
 		@IDownloadService private downloadService: IDownloadService,
@@ -66,7 +64,7 @@ export class ExtensionManagementService extends AbstractExtensionManagementServi
 		@IProductService productService: IProductService,
 		@IUriIdentityService uriIdentityService: IUriIdentityService
 	) {
-		super(galleryService, telemetryService, logService, productService);
+		super(galleryService, logService, productService);
 		const extensionLifecycle = this._register(instantiationService.createInstance(ExtensionsLifecycle));
 		this.extensionsScanner = this._register(instantiationService.createInstance(ExtensionsScanner, extension => extensionLifecycle.postUninstall(extension)));
 		this.manifestCache = this._register(new ExtensionsManifestCache(environmentService, this));

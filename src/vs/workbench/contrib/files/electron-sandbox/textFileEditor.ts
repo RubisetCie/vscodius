@@ -9,7 +9,6 @@ import { FileEditorInput } from 'vs/workbench/contrib/files/browser/editors/file
 import { FileOperationError, FileOperationResult, IFileService, MIN_MAX_MEMORY_SIZE_MB, FALLBACK_MAX_MEMORY_SIZE_MB } from 'vs/platform/files/common/files';
 import { createErrorWithActions } from 'vs/base/common/errorMessage';
 import { toAction } from 'vs/base/common/actions';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { IStorageService } from 'vs/platform/storage/common/storage';
@@ -34,7 +33,6 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 export class NativeTextFileEditor extends TextFileEditor {
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IFileService fileService: IFileService,
 		@IPaneCompositePartService paneCompositeService: IPaneCompositePartService,
 		@IInstantiationService instantiationService: IInstantiationService,
@@ -51,9 +49,9 @@ export class NativeTextFileEditor extends TextFileEditor {
 		@IUriIdentityService uriIdentityService: IUriIdentityService,
 		@IProductService private readonly productService: IProductService,
 		@IPathService pathService: IPathService,
-		@IConfigurationService configurationService: IConfigurationService,
+		@IConfigurationService configurationService: IConfigurationService
 	) {
-		super(telemetryService, fileService, paneCompositeService, instantiationService, contextService, storageService, textResourceConfigurationService, editorService, themeService, editorGroupService, textFileService, explorerService, uriIdentityService, pathService, configurationService);
+		super(fileService, paneCompositeService, instantiationService, contextService, storageService, textResourceConfigurationService, editorService, themeService, editorGroupService, textFileService, explorerService, uriIdentityService, pathService, configurationService);
 	}
 
 	protected override handleSetInputError(error: Error, input: FileEditorInput, options: ITextEditorOptions | undefined): Promise<void> {

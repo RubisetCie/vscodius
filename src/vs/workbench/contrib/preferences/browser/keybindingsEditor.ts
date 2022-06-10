@@ -16,7 +16,6 @@ import { IAction, Action, Separator } from 'vs/base/common/actions';
 import { ActionBar } from 'vs/base/browser/ui/actionbar/actionbar';
 import { EditorPane } from 'vs/workbench/browser/parts/editor/editorPane';
 import { IEditorOpenContext } from 'vs/workbench/common/editor';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IClipboardService } from 'vs/platform/clipboard/common/clipboardService';
 import { KeybindingsEditorModel, KEYBINDING_ENTRY_TEMPLATE_ID } from 'vs/workbench/services/preferences/browser/keybindingsEditorModel';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -102,7 +101,6 @@ export class KeybindingsEditor extends EditorPane implements IKeybindingsEditorP
 	private ariaLabelElement!: HTMLElement;
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
 		@IKeybindingService private readonly keybindingsService: IKeybindingService,
 		@IContextMenuService private readonly contextMenuService: IContextMenuService,
@@ -114,7 +112,7 @@ export class KeybindingsEditor extends EditorPane implements IKeybindingsEditorP
 		@IEditorService private readonly editorService: IEditorService,
 		@IStorageService storageService: IStorageService
 	) {
-		super(KeybindingsEditor.ID, telemetryService, themeService, storageService);
+		super(KeybindingsEditor.ID, themeService, storageService);
 		this.delayedFiltering = new Delayer<void>(300);
 		this._register(keybindingsService.onDidUpdateKeybindings(() => this.render(!!this.keybindingFocusContextKey.get())));
 

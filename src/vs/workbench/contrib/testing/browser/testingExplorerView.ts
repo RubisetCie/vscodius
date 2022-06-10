@@ -39,7 +39,6 @@ import { WorkbenchObjectTree } from 'vs/platform/list/browser/listService';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { UnmanagedProgress } from 'vs/platform/progress/common/progress';
 import { IStorageService, StorageScope, StorageTarget, WillSaveStateReason } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { foreground } from 'vs/platform/theme/common/colorRegistry';
 import { attachButtonStyler } from 'vs/platform/theme/common/styler';
 import { IThemeService, registerThemingParticipant, ThemeIcon } from 'vs/platform/theme/common/themeService';
@@ -89,12 +88,11 @@ export class TestingExplorerView extends ViewPane {
 		@IOpenerService openerService: IOpenerService,
 		@IThemeService themeService: IThemeService,
 		@ITestService private readonly testService: ITestService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@ITestingProgressUiService private readonly testProgressService: ITestingProgressUiService,
 		@ITestProfileService private readonly testProfileService: ITestProfileService,
-		@ICommandService private readonly commandService: ICommandService,
+		@ICommandService private readonly commandService: ICommandService
 	) {
-		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
+		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
 
 		const relayout = this._register(new RunOnceScheduler(() => this.layoutBody(), 1));
 		this._register(this.onDidChangeViewWelcomeState(() => {

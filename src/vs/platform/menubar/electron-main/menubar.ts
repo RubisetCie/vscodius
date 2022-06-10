@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { app, BrowserWindow, KeyboardEvent, Menu, MenuItem, MenuItemConstructorOptions, MessageBoxOptions, WebContents } from 'electron';
-import { WorkbenchActionExecutedClassification, WorkbenchActionExecutedEvent } from 'vs/base/common/actions';
 import { RunOnceScheduler } from 'vs/base/common/async';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { mnemonicButtonLabel, mnemonicMenuLabel } from 'vs/base/common/labels';
@@ -19,13 +18,10 @@ import { IMenubarData, IMenubarKeybinding, IMenubarMenu, IMenubarMenuRecentItemA
 import { INativeHostMainService } from 'vs/platform/native/electron-main/nativeHostMainService';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { IStateMainService } from 'vs/platform/state/electron-main/state';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IUpdateService, StateType } from 'vs/platform/update/common/update';
 import { getTitleBarStyle, INativeRunActionInWindowRequest, INativeRunKeybindingInWindowRequest, IWindowOpenable } from 'vs/platform/window/common/window';
 import { IWindowsCountChangedEvent, IWindowsMainService, OpenContext } from 'vs/platform/windows/electron-main/windows';
 import { IWorkspacesHistoryMainService } from 'vs/platform/workspaces/electron-main/workspacesHistoryMainService';
-
-const telemetryFrom = 'menu';
 
 interface IMenuItemClickHandler {
 	inDevTools: (contents: WebContents) => void;
@@ -68,7 +64,6 @@ export class Menubar {
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IWindowsMainService private readonly windowsMainService: IWindowsMainService,
 		@IEnvironmentMainService private readonly environmentMainService: IEnvironmentMainService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IWorkspacesHistoryMainService private readonly workspacesHistoryMainService: IWorkspacesHistoryMainService,
 		@IStateMainService private readonly stateMainService: IStateMainService,
 		@ILifecycleMainService private readonly lifecycleMainService: ILifecycleMainService,
@@ -117,9 +112,9 @@ export class Menubar {
 		// File Menu Items
 		this.fallbackMenuHandlers['workbench.action.files.newUntitledFile'] = (menuItem, win, event) => this.windowsMainService.openEmptyWindow({ context: OpenContext.MENU, contextWindowId: win?.id });
 		this.fallbackMenuHandlers['workbench.action.newWindow'] = (menuItem, win, event) => this.windowsMainService.openEmptyWindow({ context: OpenContext.MENU, contextWindowId: win?.id });
-		this.fallbackMenuHandlers['workbench.action.files.openFileFolder'] = (menuItem, win, event) => this.nativeHostMainService.pickFileFolderAndOpen(undefined, { forceNewWindow: this.isOptionClick(event), telemetryExtraData: { from: telemetryFrom } });
-		this.fallbackMenuHandlers['workbench.action.files.openFolder'] = (menuItem, win, event) => this.nativeHostMainService.pickFolderAndOpen(undefined, { forceNewWindow: this.isOptionClick(event), telemetryExtraData: { from: telemetryFrom } });
-		this.fallbackMenuHandlers['workbench.action.openWorkspace'] = (menuItem, win, event) => this.nativeHostMainService.pickWorkspaceAndOpen(undefined, { forceNewWindow: this.isOptionClick(event), telemetryExtraData: { from: telemetryFrom } });
+		this.fallbackMenuHandlers['workbench.action.files.openFileFolder'] = (menuItem, win, event) => this.nativeHostMainService.pickFileFolderAndOpen(undefined, { forceNewWindow: this.isOptionClick(event) });
+		this.fallbackMenuHandlers['workbench.action.files.openFolder'] = (menuItem, win, event) => this.nativeHostMainService.pickFolderAndOpen(undefined, { forceNewWindow: this.isOptionClick(event) });
+		this.fallbackMenuHandlers['workbench.action.openWorkspace'] = (menuItem, win, event) => this.nativeHostMainService.pickWorkspaceAndOpen(undefined, { forceNewWindow: this.isOptionClick(event) });
 
 		// Recent Menu Items
 		this.fallbackMenuHandlers['workbench.action.clearRecentFiles'] = () => this.workspacesHistoryMainService.clearRecentlyOpened();
@@ -607,7 +602,6 @@ export class Menubar {
 			case StateType.Idle:
 				return [new MenuItem({
 					label: this.mnemonicLabel(nls.localize('miCheckForUpdates', "Check for &&Updates...")), click: () => setTimeout(() => {
-						this.reportMenuActionTelemetry('CheckForUpdate');
 						this.updateService.checkForUpdates(true);
 					}, 0)
 				})];
@@ -628,7 +622,6 @@ export class Menubar {
 			case StateType.Downloaded:
 				return [new MenuItem({
 					label: this.mnemonicLabel(nls.localize('miInstallUpdate', "Install &&Update...")), click: () => {
-						this.reportMenuActionTelemetry('InstallUpdate');
 						this.updateService.applyUpdate();
 					}
 				})];
@@ -639,7 +632,6 @@ export class Menubar {
 			case StateType.Ready:
 				return [new MenuItem({
 					label: this.mnemonicLabel(nls.localize('miRestartToUpdate', "Restart to &&Update")), click: () => {
-						this.reportMenuActionTelemetry('RestartToUpdate');
 						this.updateService.quitAndInstall();
 					}
 				})];
@@ -815,7 +807,6 @@ export class Menubar {
 
 		const originalClick = options.click;
 		options.click = (item, window, event) => {
-			this.reportMenuActionTelemetry(commandId);
 			originalClick?.(item, window, event);
 		};
 
@@ -824,11 +815,6 @@ export class Menubar {
 
 	private openUrl(url: string, id: string): void {
 		this.nativeHostMainService.openExternal(undefined, url);
-		this.reportMenuActionTelemetry(id);
-	}
-
-	private reportMenuActionTelemetry(id: string): void {
-		this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id, from: telemetryFrom });
 	}
 
 	private mnemonicLabel(label: string): string {

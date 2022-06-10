@@ -26,8 +26,6 @@ import { MockKeybindingService } from 'vs/platform/keybinding/test/common/mockKe
 import { ILabelService } from 'vs/platform/label/common/label';
 import { ILogService, NullLogService } from 'vs/platform/log/common/log';
 import { InMemoryStorageService, IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { LanguageFeaturesService } from 'vs/editor/common/services/languageFeaturesService';
 import { ILanguageFeaturesService } from 'vs/editor/common/services/languageFeatures';
@@ -50,7 +48,6 @@ suite('SuggestController', function () {
 
 		const serviceCollection = new ServiceCollection(
 			[ILanguageFeaturesService, languageFeaturesService],
-			[ITelemetryService, NullTelemetryService],
 			[ILogService, new NullLogService()],
 			[IStorageService, new InMemoryStorageService()],
 			[IKeybindingService, new MockKeybindingService()],

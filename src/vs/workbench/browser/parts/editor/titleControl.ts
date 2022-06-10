@@ -10,7 +10,7 @@ import { addDisposableListener, Dimension, EventType } from 'vs/base/browser/dom
 import { StandardMouseEvent } from 'vs/base/browser/mouseEvent';
 import { ActionsOrientation, IActionViewItem, prepareActions } from 'vs/base/browser/ui/actionbar/actionbar';
 import { ToolBar } from 'vs/base/browser/ui/toolbar/toolbar';
-import { IAction, WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification, SubmenuAction, ActionRunner } from 'vs/base/common/actions';
+import { IAction, SubmenuAction, ActionRunner } from 'vs/base/common/actions';
 import { ResolvedKeybinding } from 'vs/base/common/keybindings';
 import { dispose, DisposableStore } from 'vs/base/common/lifecycle';
 import { createActionViewItem, createAndFillInActionBarActions, createAndFillInContextMenuActions } from 'vs/platform/actions/browser/menuEntryActionViewItem';
@@ -22,7 +22,6 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { IQuickInputService } from 'vs/platform/quickinput/common/quickInput';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { listActiveSelectionBackground, listActiveSelectionForeground } from 'vs/platform/theme/common/colorRegistry';
 import { IThemeService, registerThemingParticipant, Themable } from 'vs/platform/theme/common/themeService';
 import { DraggedEditorGroupIdentifier, DraggedEditorIdentifier, DraggedTreeItemsIdentifier, fillEditorsDragData, LocalSelectionTransfer } from 'vs/workbench/browser/dnd';
@@ -120,7 +119,6 @@ export abstract class TitleControl extends Themable {
 		@IInstantiationService protected instantiationService: IInstantiationService,
 		@IContextKeyService private readonly contextKeyService: IContextKeyService,
 		@IKeybindingService private readonly keybindingService: IKeybindingService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@INotificationService private readonly notificationService: INotificationService,
 		@IMenuService private readonly menuService: IMenuService,
 		@IQuickInputService protected quickInputService: IQuickInputService,
@@ -202,9 +200,6 @@ export abstract class TitleControl extends Themable {
 			if (e.error && !isCancellationError(e.error)) {
 				this.notificationService.error(e.error);
 			}
-
-			// Log in telemetry
-			this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: e.action.id, from: 'editorPart' });
 		}));
 	}
 

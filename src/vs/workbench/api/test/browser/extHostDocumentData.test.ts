@@ -321,10 +321,10 @@ suite('ExtHostDocumentData', () => {
 		// for the sake of speedy tests we lower the timeBudget here
 		const config = setDefaultGetWordAtTextConfig({ maxLen: 1000, windowSize: 15, timeBudget: 30 });
 		try {
-			let range = data.document.getWordRangeAtPosition(new Position(0, 1_177_170), regex)!;
+			let range = data.document.getWordRangeAtPosition(new Position(0, 1_171_041), regex)!;
 			assert.strictEqual(range, undefined);
 
-			const pos = new Position(0, 1177170);
+			const pos = new Position(0, 1171041);
 			range = data.document.getWordRangeAtPosition(pos)!;
 			assert.ok(range);
 			assert.ok(range.contains(pos));

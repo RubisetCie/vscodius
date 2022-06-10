@@ -11,7 +11,6 @@ import { IEnvironmentService } from 'vs/platform/environment/common/environment'
 import { IFileService } from 'vs/platform/files/common/files';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { AbstractFileSynchroniser, AbstractInitializer, IAcceptResult, IFileResourcePreview, IMergeResult } from 'vs/platform/userDataSync/common/abstractSynchronizer';
 import { Change, IRemoteUserData, ISyncResourceHandle, IUserDataSyncBackupStoreService, IUserDataSyncConfiguration, IUserDataSynchroniser, IUserDataSyncLogService, IUserDataSyncEnablementService, IUserDataSyncStoreService, SyncResource, USER_DATA_SYNC_SCHEME } from 'vs/platform/userDataSync/common/userDataSync';
@@ -51,10 +50,9 @@ export class TasksSynchroniser extends AbstractFileSynchroniser implements IUser
 		@IFileService fileService: IFileService,
 		@IEnvironmentService environmentService: IEnvironmentService,
 		@IStorageService storageService: IStorageService,
-		@ITelemetryService telemetryService: ITelemetryService,
-		@IUriIdentityService uriIdentityService: IUriIdentityService,
+		@IUriIdentityService uriIdentityService: IUriIdentityService
 	) {
-		super(uriIdentityService.extUri.joinPath(uriIdentityService.extUri.dirname(environmentService.settingsResource), 'tasks.json'), SyncResource.Tasks, fileService, environmentService, storageService, userDataSyncStoreService, userDataSyncBackupStoreService, userDataSyncEnablementService, telemetryService, logService, configurationService, uriIdentityService);
+		super(uriIdentityService.extUri.joinPath(uriIdentityService.extUri.dirname(environmentService.settingsResource), 'tasks.json'), SyncResource.Tasks, fileService, environmentService, storageService, userDataSyncStoreService, userDataSyncBackupStoreService, userDataSyncEnablementService, logService, configurationService, uriIdentityService);
 	}
 
 	protected async generateSyncPreview(remoteUserData: IRemoteUserData, lastSyncUserData: IRemoteUserData | null, isRemoteDataFromCurrentMachine: boolean, userDataSyncConfiguration: IUserDataSyncConfiguration): Promise<ITasksResourcePreview[]> {

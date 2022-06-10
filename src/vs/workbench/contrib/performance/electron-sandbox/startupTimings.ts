@@ -10,7 +10,6 @@ import { isCodeEditor } from 'vs/editor/browser/editorBrowser';
 import { INativeWorkbenchEnvironmentService } from 'vs/workbench/services/environment/electron-sandbox/environmentService';
 import { ILifecycleService, StartupKind, StartupKindToString } from 'vs/workbench/services/lifecycle/common/lifecycle';
 import { IProductService } from 'vs/platform/product/common/productService';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IUpdateService } from 'vs/platform/update/common/update';
 import { INativeHostService } from 'vs/platform/native/electron-sandbox/native';
 import * as files from 'vs/workbench/contrib/files/common/files';
@@ -33,7 +32,6 @@ export class StartupTimings implements IWorkbenchContribution {
 		@INativeHostService private readonly _nativeHostService: INativeHostService,
 		@IEditorService private readonly _editorService: IEditorService,
 		@IPaneCompositePartService private readonly _paneCompositeService: IPaneCompositePartService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@ILifecycleService private readonly _lifecycleService: ILifecycleService,
 		@IUpdateService private readonly _updateService: IUpdateService,
 		@INativeWorkbenchEnvironmentService private readonly _environmentService: INativeWorkbenchEnvironmentService,
@@ -56,8 +54,6 @@ export class StartupTimings implements IWorkbenchContribution {
 			return;
 		}
 
-		const { sessionId } = await this._telemetryService.getTelemetryInfo();
-
 		Promise.all([
 			this._timerService.whenReady(),
 			timeout(15000), // wait: cached data creation, telemetry sending
@@ -67,7 +63,7 @@ export class StartupTimings implements IWorkbenchContribution {
 			if (await this._fileService.exists(uri)) {
 				chunks.push((await this._fileService.readFile(uri)).value);
 			}
-			chunks.push(VSBuffer.fromString(`${this._timerService.startupMetrics.ellapsed}\t${this._productService.nameShort}\t${(this._productService.commit || '').slice(0, 10) || '0000000000'}\t${sessionId}\t${standardStartupError === undefined ? 'standard_start' : 'NO_standard_start : ' + standardStartupError}\n`));
+			chunks.push(VSBuffer.fromString(`${this._timerService.startupMetrics.ellapsed}\t${this._productService.nameShort}\t${(this._productService.commit || '').slice(0, 10) || '0000000000'}\t${standardStartupError === undefined ? 'standard_start' : 'NO_standard_start : ' + standardStartupError}\n`));
 			await this._fileService.writeFile(uri, VSBuffer.concat(chunks));
 		}).then(() => {
 			this._nativeHostService.exit(0);

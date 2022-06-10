@@ -3,13 +3,11 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { sha1Hex } from 'vs/base/browser/hash';
 import { IFileService, IFileStatResult, IFileStat } from 'vs/platform/files/common/files';
-import { IWorkspaceContextService, WorkbenchState, IWorkspace } from 'vs/platform/workspace/common/workspace';
+import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
 import { ITextFileService, ITextFileContent } from 'vs/workbench/services/textfile/common/textfiles';
 import { URI } from 'vs/base/common/uri';
-import { Schemas } from 'vs/base/common/network';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IWorkspaceTagsService, Tags } from 'vs/workbench/contrib/tags/common/workspaceTags';
 import { getHashedRemotesFromConfig } from 'vs/workbench/contrib/tags/electron-sandbox/workspaceTags';
@@ -263,28 +261,6 @@ export class WorkspaceTagsService implements IWorkspaceTagsService {
 		}
 
 		return this._tags;
-	}
-
-	async getTelemetryWorkspaceId(workspace: IWorkspace, state: WorkbenchState): Promise<string | undefined> {
-		function createHash(uri: URI): Promise<string> {
-			return sha1Hex(uri.scheme === Schemas.file ? uri.fsPath : uri.toString());
-		}
-
-		let workspaceId: string | undefined;
-		switch (state) {
-			case WorkbenchState.EMPTY:
-				workspaceId = undefined;
-				break;
-			case WorkbenchState.FOLDER:
-				workspaceId = await createHash(workspace.folders[0].uri);
-				break;
-			case WorkbenchState.WORKSPACE:
-				if (workspace.configuration) {
-					workspaceId = await createHash(workspace.configuration);
-				}
-		}
-
-		return workspaceId;
 	}
 
 	getHashedRemotesFromUri(workspaceUri: URI, stripEndingDotGit: boolean = false): Promise<string[]> {
@@ -569,8 +545,6 @@ export class WorkspaceTagsService implements IWorkspaceTagsService {
 
 		const state = this.contextService.getWorkbenchState();
 		const workspace = this.contextService.getWorkspace();
-
-		tags['workspace.id'] = await this.getTelemetryWorkspaceId(workspace, state);
 
 		const { filesToOpenOrCreate, filesToDiff } = this.environmentService;
 		tags['workbench.filesToOpenOrCreate'] = filesToOpenOrCreate && filesToOpenOrCreate.length || 0;

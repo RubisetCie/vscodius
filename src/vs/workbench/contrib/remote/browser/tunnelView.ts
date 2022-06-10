@@ -39,7 +39,6 @@ import { isAllInterfaces, isLocalhost, isPortPrivileged, ITunnelService, RemoteT
 import { TunnelPrivacy } from 'vs/platform/remote/common/remoteAuthorityResolver';
 import { SyncDescriptor } from 'vs/platform/instantiation/common/descriptors';
 import { KeybindingsRegistry, KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { ActionViewItem } from 'vs/base/browser/ui/actionbar/actionViewItems';
 import { copyAddressIcon, forwardedPortWithoutProcessIcon, forwardedPortWithProcessIcon, forwardPortIcon, labelPortIcon, openBrowserIcon, openPreviewIcon, portsViewIcon, privatePortIcon, stopForwardIcon } from 'vs/workbench/contrib/remote/browser/remoteIcons';
 import { IExternalUriOpenerService } from 'vs/workbench/contrib/externalUriOpener/common/externalUriOpenerService';
@@ -777,12 +776,11 @@ export class TunnelPanel extends ViewPane {
 		@IMenuService private readonly menuService: IMenuService,
 		@IThemeService themeService: IThemeService,
 		@IRemoteExplorerService private readonly remoteExplorerService: IRemoteExplorerService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@ITunnelService private readonly tunnelService: ITunnelService,
 		@IContextViewService private readonly contextViewService: IContextViewService,
 		@IHoverService private readonly hoverService: IHoverService
 	) {
-		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
+		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
 		this.tunnelTypeContext = TunnelTypeContextKey.bindTo(contextKeyService);
 		this.tunnelCloseableContext = TunnelCloseableContextKey.bindTo(contextKeyService);
 		this.tunnelPrivacyContext = TunnelPrivacyContextKey.bindTo(contextKeyService);

@@ -18,7 +18,6 @@ import { IProductService } from 'vs/platform/product/common/productService';
 import { IS_NEW_KEY } from 'vs/platform/storage/common/storage';
 import { IStorageChangeEvent, IStorageMain, IStorageMainOptions } from 'vs/platform/storage/electron-main/storageMain';
 import { StorageMainService } from 'vs/platform/storage/electron-main/storageMainService';
-import { currentSessionDateStorageKey, firstSessionDateStorageKey } from 'vs/platform/telemetry/common/telemetry';
 import { ICodeWindow, UnloadReason } from 'vs/platform/window/electron-main/window';
 
 suite('StorageMainService', function () {
@@ -75,15 +74,11 @@ suite('StorageMainService', function () {
 
 	async function testStorage(storage: IStorageMain, isGlobal: boolean): Promise<void> {
 
-		// Telemetry: added after init
 		if (isGlobal) {
 			strictEqual(storage.items.size, 0);
-			await storage.init();
-			strictEqual(typeof storage.get(firstSessionDateStorageKey), 'string');
-			strictEqual(typeof storage.get(currentSessionDateStorageKey), 'string');
-		} else {
-			await storage.init();
 		}
+
+		await storage.init();
 
 		let storageChangeEvent: IStorageChangeEvent | undefined = undefined;
 		const storageChangeListener = storage.onDidChangeStorage(e => {

@@ -36,7 +36,6 @@ import type { IAsyncDataTreeViewState } from 'vs/base/browser/ui/tree/asyncDataT
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
 import { IViewDescriptorService } from 'vs/workbench/common/views';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { ResourceEdit } from 'vs/editor/browser/services/bulkEditService';
 import { ButtonBar } from 'vs/base/browser/ui/button/button';
 
@@ -87,12 +86,11 @@ export class BulkEditPane extends ViewPane {
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@IOpenerService openerService: IOpenerService,
-		@IThemeService themeService: IThemeService,
-		@ITelemetryService telemetryService: ITelemetryService,
+		@IThemeService themeService: IThemeService
 	) {
 		super(
 			{ ...options, titleMenuId: MenuId.BulkEditTitle },
-			keybindingService, contextMenuService, configurationService, _contextKeyService, viewDescriptorService, _instaService, openerService, themeService, telemetryService
+			keybindingService, contextMenuService, configurationService, _contextKeyService, viewDescriptorService, _instaService, openerService, themeService
 		);
 
 		this.element.classList.add('bulk-edit-panel', 'show-file-icons');

@@ -16,14 +16,6 @@
 		"applyEndpoints": true
 	},
 	{
-		"eventPrefix": "extension-telemetry/",
-		"sourceDirs": [
-			"vscode-extension-telemetry"
-		],
-		"excludedDirs": [],
-		"applyEndpoints": true
-	},
-	{
 		"eventPrefix": "vscode-markdown/",
 		"sourceDirs": [
 			"../../s/extensions/markdown-language-features"

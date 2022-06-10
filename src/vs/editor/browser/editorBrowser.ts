@@ -916,11 +916,6 @@ export interface ICodeEditor extends editorCommon.IEditor {
 	setAriaOptions(options: IEditorAriaOptions): void;
 
 	/**
-	 * @internal
-	 */
-	getTelemetryData(): { [key: string]: any } | undefined;
-
-	/**
 	 * Returns the editor's container dom node
 	 */
 	getContainerDomNode(): HTMLElement;

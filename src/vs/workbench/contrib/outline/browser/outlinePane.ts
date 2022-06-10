@@ -26,7 +26,6 @@ import { FuzzyScore } from 'vs/base/common/filters';
 import { basename } from 'vs/base/common/resources';
 import { IViewDescriptorService } from 'vs/workbench/common/views';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { Codicon } from 'vs/base/common/codicons';
 import { MenuId, registerAction2 } from 'vs/platform/actions/common/actions';
 import { OutlineSortOrder, OutlineViewState } from './outlineViewState';
@@ -96,10 +95,9 @@ export class OutlinePane extends ViewPane {
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@IOpenerService openerService: IOpenerService,
-		@IThemeService themeService: IThemeService,
-		@ITelemetryService telemetryService: ITelemetryService,
+		@IThemeService themeService: IThemeService
 	) {
-		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, _instantiationService, openerService, themeService, telemetryService);
+		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, _instantiationService, openerService, themeService);
 		this._outlineViewState.restore(this._storageService);
 		this._disposables.add(this._outlineViewState);
 

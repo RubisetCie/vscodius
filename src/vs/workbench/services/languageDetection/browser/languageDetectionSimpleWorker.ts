@@ -57,7 +57,6 @@ export class LanguageDetectionSimpleWorker extends EditorSimpleWorker {
 			stopWatch.stop();
 
 			if (languages.length) {
-				this._host.fhr('sendTelemetryEvent', [languages, confidences, stopWatch.elapsed()]);
 				return languages[0];
 			}
 			return undefined;

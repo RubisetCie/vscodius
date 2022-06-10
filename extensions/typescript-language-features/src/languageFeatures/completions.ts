@@ -18,7 +18,6 @@ import { LanguageDescription } from '../utils/languageDescription';
 import { parseKindModifier } from '../utils/modifiers';
 import * as Previewer from '../utils/previewer';
 import { snippetForFunctionCall } from '../utils/snippetForFunctionCall';
-import { TelemetryReporter } from '../utils/telemetry';
 import * as typeConverters from '../utils/typeConverters';
 import TypingsStatus from '../utils/typingsStatus';
 import FileConfigurationManager from './fileConfigurationManager';
@@ -545,28 +544,11 @@ class CompletionAcceptedCommand implements Command {
 	public readonly id = CompletionAcceptedCommand.ID;
 
 	public constructor(
-		private readonly onCompletionAccepted: (item: vscode.CompletionItem) => void,
-		private readonly telemetryReporter: TelemetryReporter,
+		private readonly onCompletionAccepted: (item: vscode.CompletionItem) => void
 	) { }
 
 	public execute(item: vscode.CompletionItem) {
 		this.onCompletionAccepted(item);
-		if (item instanceof MyCompletionItem) {
-			/* __GDPR__
-				"completions.accept" : {
-					"owner": "mjbvz",
-					"isPackageJsonImport" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-					"isImportStatementCompletion" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-					"${include}": [
-						"${TypeScriptCommonProperties}"
-					]
-				}
-			*/
-			this.telemetryReporter.logTelemetry('completions.accept', {
-				isPackageJsonImport: item.tsEntry.isPackageJsonImport ? 'true' : undefined,
-				isImportStatementCompletion: item.tsEntry.isImportStatementCompletion ? 'true' : undefined,
-			});
-		}
 	}
 }
 
@@ -676,11 +658,10 @@ class TypeScriptCompletionItemProvider implements vscode.CompletionItemProvider<
 		private readonly typingsStatus: TypingsStatus,
 		private readonly fileConfigurationManager: FileConfigurationManager,
 		commandManager: CommandManager,
-		private readonly telemetryReporter: TelemetryReporter,
 		onCompletionAccepted: (item: vscode.CompletionItem) => void
 	) {
 		commandManager.register(new ApplyCompletionCodeActionCommand(this.client));
-		commandManager.register(new CompletionAcceptedCommand(onCompletionAccepted, this.telemetryReporter));
+		commandManager.register(new CompletionAcceptedCommand(onCompletionAccepted));
 		commandManager.register(new ApplyCompletionCommand(this.client));
 	}
 
@@ -743,17 +724,12 @@ class TypeScriptCompletionItemProvider implements vscode.CompletionItemProvider<
 		let entries: ReadonlyArray<Proto.CompletionEntry>;
 		let metadata: any | undefined;
 		let response: ServerResponse.Response<Proto.CompletionInfoResponse> | undefined;
-		let duration: number | undefined;
 		if (this.client.apiVersion.gte(API.v300)) {
-			const startTime = Date.now();
 			try {
 				response = await this.client.interruptGetErr(() => this.client.execute('completionInfo', args, token));
-			} finally {
-				duration = Date.now() - startTime;
-			}
+			} finally {}
 
 			if (response.type !== 'response' || !response.body) {
-				this.logCompletionsTelemetry(duration, response);
 				return undefined;
 			}
 			isNewIdentifierLocation = response.body.isNewIdentifierLocation;
@@ -807,48 +783,7 @@ class TypeScriptCompletionItemProvider implements vscode.CompletionItemProvider<
 				includesImportStatementCompletion = includesImportStatementCompletion || !!entry.isImportStatementCompletion;
 			}
 		}
-		if (duration !== undefined) {
-			this.logCompletionsTelemetry(duration, response, includesPackageJsonImport, includesImportStatementCompletion);
-		}
 		return new vscode.CompletionList(items, isIncomplete);
-	}
-
-	private logCompletionsTelemetry(
-		duration: number,
-		response: ServerResponse.Response<Proto.CompletionInfoResponse> | undefined,
-		includesPackageJsonImport?: boolean,
-		includesImportStatementCompletion?: boolean,
-	) {
-		/* __GDPR__
-			"completions.execute" : {
-				"owner": "mjbvz",
-				"duration" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-				"type" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-				"count" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-				"flags": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-				"updateGraphDurationMs" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-				"createAutoImportProviderProgramDurationMs" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-				"includesPackageJsonImport" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-				"includesImportStatementCompletion" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-				"${include}": [
-					"${TypeScriptCommonProperties}"
-				]
-			}
-		*/
-		this.telemetryReporter.logTelemetry('completions.execute', {
-			duration: String(duration),
-			type: response?.type ?? 'unknown',
-			flags: response?.type === 'response' && typeof response.body?.flags === 'number' ? String(response.body.flags) : undefined,
-			count: String(response?.type === 'response' && response.body ? response.body.entries.length : 0),
-			updateGraphDurationMs: response?.type === 'response' && typeof response.performanceData?.updateGraphDurationMs === 'number'
-				? String(response.performanceData.updateGraphDurationMs)
-				: undefined,
-			createAutoImportProviderProgramDurationMs: response?.type === 'response' && typeof response.performanceData?.createAutoImportProviderProgramDurationMs === 'number'
-				? String(response.performanceData.createAutoImportProviderProgramDurationMs)
-				: undefined,
-			includesPackageJsonImport: includesPackageJsonImport ? 'true' : undefined,
-			includesImportStatementCompletion: includesImportStatementCompletion ? 'true' : undefined,
-		});
 	}
 
 	private getTsTriggerCharacter(context: vscode.CompletionContext): Proto.CompletionsTriggerCharacter | undefined {
@@ -967,14 +902,13 @@ export function register(
 	typingsStatus: TypingsStatus,
 	fileConfigurationManager: FileConfigurationManager,
 	commandManager: CommandManager,
-	telemetryReporter: TelemetryReporter,
 	onCompletionAccepted: (item: vscode.CompletionItem) => void
 ) {
 	return conditionalRegistration([
 		requireSomeCapability(client, ClientCapability.EnhancedSyntax, ClientCapability.Semantic),
 	], () => {
 		return vscode.languages.registerCompletionItemProvider(selector.syntax,
-			new TypeScriptCompletionItemProvider(client, language, typingsStatus, fileConfigurationManager, commandManager, telemetryReporter, onCompletionAccepted),
+			new TypeScriptCompletionItemProvider(client, language, typingsStatus, fileConfigurationManager, commandManager, onCompletionAccepted),
 			...TypeScriptCompletionItemProvider.triggerCharacters);
 	});
 }

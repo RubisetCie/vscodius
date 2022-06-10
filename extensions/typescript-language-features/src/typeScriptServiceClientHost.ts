@@ -102,7 +102,7 @@ export default class TypeScriptServiceClientHost extends Disposable {
 		this.fileConfigurationManager = this._register(new FileConfigurationManager(this.client, onCaseInsensitiveFileSystem));
 
 		for (const description of descriptions) {
-			const manager = new LanguageProvider(this.client, description, this.commandManager, this.client.telemetryReporter, this.typingsStatus, this.fileConfigurationManager, onCompletionAccepted);
+			const manager = new LanguageProvider(this.client, description, this.commandManager, this.typingsStatus, this.fileConfigurationManager, onCompletionAccepted);
 			this.languages.push(manager);
 			this._register(manager);
 			this.languagePerId.set(description.id, manager);
@@ -158,7 +158,7 @@ export default class TypeScriptServiceClientHost extends Disposable {
 	}
 
 	private registerExtensionLanguageProvider(description: LanguageDescription, onCompletionAccepted: (item: vscode.CompletionItem) => void) {
-		const manager = new LanguageProvider(this.client, description, this.commandManager, this.client.telemetryReporter, this.typingsStatus, this.fileConfigurationManager, onCompletionAccepted);
+		const manager = new LanguageProvider(this.client, description, this.commandManager, this.typingsStatus, this.fileConfigurationManager, onCompletionAccepted);
 		this.languages.push(manager);
 		this._register(manager);
 		this.languagePerId.set(description.id, manager);

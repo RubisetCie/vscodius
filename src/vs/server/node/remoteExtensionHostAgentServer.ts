@@ -31,7 +31,6 @@ import { IProductService } from 'vs/platform/product/common/productService';
 import { ConnectionType, ConnectionTypeRequest, ErrorMessage, HandshakeMessage, IRemoteExtensionHostStartParams, ITunnelConnectionStartParams, SignRequest } from 'vs/platform/remote/common/remoteAgentConnection';
 import { RemoteAgentConnectionContext } from 'vs/platform/remote/common/remoteAgentEnvironment';
 import { getRemoteServerRootPath } from 'vs/platform/remote/common/remoteHosts';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { ExtensionHostConnection } from 'vs/server/node/extensionHostConnection';
 import { ManagementConnection } from 'vs/server/node/remoteExtensionManagement';
 import { determineServerConnectionToken, requestHasValidConnectionToken as httpRequestHasValidConnectionToken, ServerConnectionToken, ServerConnectionTokenParseError, ServerConnectionTokenType } from 'vs/server/node/serverConnectionToken';
@@ -750,31 +749,6 @@ export async function createServer(address: string | net.AddressInfo | null, arg
 	const vscodeServerStartTime: number = (<any>global).vscodeServerStartTime;
 	const vscodeServerListenTime: number = (<any>global).vscodeServerListenTime;
 	const vscodeServerCodeLoadedTime: number = (<any>global).vscodeServerCodeLoadedTime;
-
-	instantiationService.invokeFunction((accessor) => {
-		const telemetryService = accessor.get(ITelemetryService);
-
-		type ServerStartClassification = {
-			owner: 'alexdima';
-			comment: 'The server has started up';
-			startTime: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The time the server started at.' };
-			startedTime: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The time the server began listening for connections.' };
-			codeLoadedTime: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The time which the code loaded on the server' };
-			readyTime: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The time when the server was completely ready' };
-		};
-		type ServerStartEvent = {
-			startTime: number;
-			startedTime: number;
-			codeLoadedTime: number;
-			readyTime: number;
-		};
-		telemetryService.publicLog2<ServerStartEvent, ServerStartClassification>('serverStart', {
-			startTime: vscodeServerStartTime,
-			startedTime: vscodeServerListenTime,
-			codeLoadedTime: vscodeServerCodeLoadedTime,
-			readyTime: currentTime
-		});
-	});
 
 	if (args['print-startup-performance']) {
 		const stats = LoaderStats.get();

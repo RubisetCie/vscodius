@@ -26,7 +26,6 @@ export async function resolveElectronConfiguration(options: LaunchOptions): Prom
 		workspacePath,
 		'--skip-release-notes',
 		'--skip-welcome',
-		'--disable-telemetry',
 		'--no-cached-data',
 		'--disable-updates',
 		'--disable-keytar',

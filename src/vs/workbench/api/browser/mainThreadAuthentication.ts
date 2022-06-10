@@ -16,7 +16,6 @@ import { IQuickInputService } from 'vs/platform/quickinput/common/quickInput';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { fromNow } from 'vs/base/common/date';
 import { ActivationKind, IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import type { AuthenticationGetSessionOptions } from 'vscode';
 
 interface TrustedExtensionsQuickPickItem {
@@ -145,8 +144,7 @@ export class MainThreadAuthentication extends Disposable implements MainThreadAu
 		@IStorageService private readonly storageService: IStorageService,
 		@INotificationService private readonly notificationService: INotificationService,
 		@IQuickInputService private readonly quickInputService: IQuickInputService,
-		@IExtensionService private readonly extensionService: IExtensionService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService
+		@IExtensionService private readonly extensionService: IExtensionService
 	) {
 		super();
 		this._proxy = extHostContext.getProxy(ExtHostContext.ExtHostAuthentication);
@@ -273,14 +271,6 @@ export class MainThreadAuthentication extends Disposable implements MainThreadAu
 		const session = await this.doGetSession(providerId, scopes, extensionId, extensionName, options);
 
 		if (session) {
-			type AuthProviderUsageClassification = {
-				owner: 'TylerLeonhardt';
-				comment: 'Used to see which extensions are using which providers';
-				extensionId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The extension id.' };
-				providerId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The provider id.' };
-			};
-			this.telemetryService.publicLog2<{ extensionId: string; providerId: string }, AuthProviderUsageClassification>('authentication.providerUsage', { providerId, extensionId });
-
 			addAccountUsage(this.storageService, providerId, session.account.label, extensionId, extensionName);
 		}
 

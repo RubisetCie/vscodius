@@ -88,7 +88,7 @@ else
 	kill_app() { killall $INTEGRATION_TEST_APP_NAME || true; }
 fi
 
-API_TESTS_EXTRA_ARGS="--disable-telemetry --skip-welcome --skip-release-notes --crash-reporter-directory=$VSCODECRASHDIR --logsPath=$VSCODELOGSDIR --no-cached-data --disable-updates --disable-keytar --disable-workspace-trust --user-data-dir=$VSCODEUSERDATADIR"
+API_TESTS_EXTRA_ARGS="--skip-welcome --skip-release-notes --crash-reporter-directory=$VSCODECRASHDIR --logsPath=$VSCODELOGSDIR --no-cached-data --disable-updates --disable-keytar --disable-workspace-trust --user-data-dir=$VSCODEUSERDATADIR"
 
 echo
 echo "### API tests (folder)"

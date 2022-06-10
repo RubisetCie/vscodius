@@ -5,7 +5,6 @@
 
 import { IAction, IActionRunner, ActionRunner } from 'vs/base/common/actions';
 import { Component } from 'vs/workbench/common/component';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IComposite, ICompositeControl } from 'vs/workbench/common/composite';
 import { Event, Emitter } from 'vs/base/common/event';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
@@ -83,21 +82,16 @@ export abstract class Composite extends Component implements IComposite {
 
 	protected actionRunner: IActionRunner | undefined;
 
-	private _telemetryService: ITelemetryService;
-	protected get telemetryService(): ITelemetryService { return this._telemetryService; }
-
 	private visible: boolean;
 	private parent: HTMLElement | undefined;
 
 	constructor(
 		id: string,
-		telemetryService: ITelemetryService,
 		themeService: IThemeService,
 		storageService: IStorageService
 	) {
 		super(id, themeService, storageService);
 
-		this._telemetryService = telemetryService;
 		this.visible = false;
 	}
 

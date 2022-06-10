@@ -51,9 +51,8 @@ import { IStatusbarEntryAccessor, IStatusbarService, StatusbarAlignment, IStatus
 import { IMarker, IMarkerService, MarkerSeverity, IMarkerData } from 'vs/platform/markers/common/markers';
 import { STATUS_BAR_PROMINENT_ITEM_BACKGROUND, STATUS_BAR_PROMINENT_ITEM_FOREGROUND } from 'vs/workbench/common/theme';
 import { themeColorFromId } from 'vs/platform/theme/common/themeService';
-import { ITelemetryData, ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { SideBySideEditorInput } from 'vs/workbench/common/editor/sideBySideEditorInput';
-import { AutomaticLanguageDetectionLikelyWrongClassification, AutomaticLanguageDetectionLikelyWrongId, IAutomaticLanguageDetectionLikelyWrongData, ILanguageDetectionService } from 'vs/workbench/services/languageDetection/common/languageDetectionWorkerService';
+import { ILanguageDetectionService } from 'vs/workbench/services/languageDetection/common/languageDetectionWorkerService';
 
 class SideBySideEditorEncodingSupport implements IEncodingSupport {
 	constructor(private primary: IEncodingSupport, private secondary: IEncodingSupport) { }
@@ -1088,13 +1087,12 @@ export class ChangeLanguageAction extends Action {
 		@IPreferencesService private readonly preferencesService: IPreferencesService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@ITextFileService private readonly textFileService: ITextFileService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@ILanguageDetectionService private readonly languageDetectionService: ILanguageDetectionService,
 	) {
 		super(actionId, actionLabel);
 	}
 
-	override async run(event: unknown, data?: ITelemetryData): Promise<void> {
+	override async run(event: unknown): Promise<void> {
 		const activeTextEditorControl = getCodeEditor(this.editorService.activeTextEditorControl);
 		if (!activeTextEditorControl) {
 			await this.quickInputService.pick([{ label: localize('noEditor', "No text editor active at this time") }]);
@@ -1214,60 +1212,11 @@ export class ChangeLanguageAction extends Action {
 				} else {
 					const languageId = this.languageService.getLanguageIdByLanguageName(pick.label);
 					languageSelection = this.languageService.createById(languageId);
-
-					if (resource) {
-						// fire and forget to not slow things down
-						this.languageDetectionService.detectLanguage(resource).then(detectedLanguageId => {
-							const chosenLanguageId = this.languageService.getLanguageIdByLanguageName(pick.label) || 'unknown';
-							if (detectedLanguageId === currentLanguageId && currentLanguageId !== chosenLanguageId) {
-								// If they didn't choose the detected language (which should also be the active language if automatic detection is enabled)
-								// then the automatic language detection was likely wrong and the user is correcting it. In this case, we want telemetry.
-								// Keep track of what model was preferred and length of input to help track down potential differences between the result quality across models and content size.
-								const modelPreference = this.configurationService.getValue<boolean>('workbench.editor.preferHistoryBasedLanguageDetection') ? 'history' : 'classic';
-								this.telemetryService.publicLog2<IAutomaticLanguageDetectionLikelyWrongData, AutomaticLanguageDetectionLikelyWrongClassification>(AutomaticLanguageDetectionLikelyWrongId, {
-									currentLanguageId: currentLanguageName ?? 'unknown',
-									nextLanguageId: pick.label,
-									lineCount: textModel?.getLineCount() ?? -1,
-									modelPreference,
-								});
-							}
-						});
-					}
 				}
 
 				// Change language
 				if (typeof languageSelection !== 'undefined') {
 					languageSupport.setLanguageId(languageSelection.languageId);
-
-					if (resource?.scheme === Schemas.untitled) {
-						type SetUntitledDocumentLanguageEvent = { to: string; from: string; modelPreference: string };
-						type SetUntitledDocumentLanguageClassification = {
-							to: {
-								classification: 'SystemMetaData';
-								purpose: 'FeatureInsight';
-								owner: 'JacksonKearl';
-								comment: 'Help understand effectiveness of automatic language detection';
-							};
-							from: {
-								classification: 'SystemMetaData';
-								purpose: 'FeatureInsight';
-								owner: 'JacksonKearl';
-								comment: 'Help understand effectiveness of automatic language detection';
-							};
-							modelPreference: {
-								classification: 'SystemMetaData';
-								purpose: 'FeatureInsight';
-								owner: 'JacksonKearl';
-								comment: 'Help understand effectiveness of automatic language detection';
-							};
-						};
-						const modelPreference = this.configurationService.getValue<boolean>('workbench.editor.preferHistoryBasedLanguageDetection') ? 'history' : 'classic';
-						this.telemetryService.publicLog2<SetUntitledDocumentLanguageEvent, SetUntitledDocumentLanguageClassification>('setUntitledDocumentLanguage', {
-							to: languageSelection.languageId,
-							from: currentLanguageId ?? 'none',
-							modelPreference,
-						});
-					}
 				}
 			}
 

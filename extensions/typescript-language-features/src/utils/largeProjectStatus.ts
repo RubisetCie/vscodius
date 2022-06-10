@@ -6,7 +6,6 @@
 import * as vscode from 'vscode';
 import { loadMessageBundle } from 'vscode-nls';
 import { ITypeScriptServiceClient } from '../typescriptService';
-import { TelemetryReporter } from './telemetry';
 import { isImplicitProjectConfigFile, openOrCreateConfig, ProjectType } from './tsconfig';
 
 const localize = loadMessageBundle();
@@ -20,9 +19,7 @@ class ExcludeHintItem {
 	private _item: vscode.StatusBarItem;
 	private _currentHint?: Hint;
 
-	constructor(
-		private readonly telemetryReporter: TelemetryReporter
-	) {
+	constructor() {
 		this._item = vscode.window.createStatusBarItem('status.typescript.exclude', vscode.StatusBarAlignment.Right, 98 /* to the right of typescript version status (99) */);
 		this._item.name = localize('statusExclude', "TypeScript: Configure Excludes");
 		this._item.command = 'js.projectStatus.command';
@@ -55,7 +52,6 @@ class ExcludeHintItem {
 				]
 			}
 		*/
-		this.telemetryReporter.logTelemetry('js.hintProjectExcludes');
 	}
 }
 
@@ -111,7 +107,7 @@ export function create(
 ): vscode.Disposable {
 	const toDispose: vscode.Disposable[] = [];
 
-	const item = new ExcludeHintItem(client.telemetryReporter);
+	const item = new ExcludeHintItem();
 	toDispose.push(vscode.commands.registerCommand('js.projectStatus.command', () => {
 		if (item.configFileName) {
 			onConfigureExcludesSelected(client, item.configFileName);

@@ -6,7 +6,6 @@
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 import { IViewDescriptor, IViewDescriptorService, IAddedViewDescriptorRef } from 'vs/workbench/common/views';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IStorageService } from 'vs/platform/storage/common/storage';
@@ -32,7 +31,6 @@ export abstract class FilterViewPaneContainer extends ViewPaneContainer {
 		onDidChangeFilterValue: Event<string[]>,
 		@IConfigurationService configurationService: IConfigurationService,
 		@IWorkbenchLayoutService layoutService: IWorkbenchLayoutService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IStorageService storageService: IStorageService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IThemeService themeService: IThemeService,
@@ -42,7 +40,7 @@ export abstract class FilterViewPaneContainer extends ViewPaneContainer {
 		@IViewDescriptorService viewDescriptorService: IViewDescriptorService
 	) {
 
-		super(viewletId, { mergeViewWithContainerWhenSingleView: false }, instantiationService, configurationService, layoutService, contextMenuService, telemetryService, extensionService, themeService, storageService, contextService, viewDescriptorService);
+		super(viewletId, { mergeViewWithContainerWhenSingleView: false }, instantiationService, configurationService, layoutService, contextMenuService, extensionService, themeService, storageService, contextService, viewDescriptorService);
 		this._register(onDidChangeFilterValue(newFilterValue => {
 			this.filterValue = newFilterValue;
 			this.onFilterChanged(newFilterValue);

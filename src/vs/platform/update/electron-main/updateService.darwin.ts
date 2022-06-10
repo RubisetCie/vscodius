@@ -13,9 +13,8 @@ import { ILifecycleMainService } from 'vs/platform/lifecycle/electron-main/lifec
 import { ILogService } from 'vs/platform/log/common/log';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { IRequestService } from 'vs/platform/request/common/request';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IUpdate, State, StateType, UpdateType } from 'vs/platform/update/common/update';
-import { AbstractUpdateService, createUpdateURL, UpdateNotAvailableClassification } from 'vs/platform/update/electron-main/abstractUpdateService';
+import { AbstractUpdateService, createUpdateURL } from 'vs/platform/update/electron-main/abstractUpdateService';
 
 export class DarwinUpdateService extends AbstractUpdateService {
 
@@ -29,7 +28,6 @@ export class DarwinUpdateService extends AbstractUpdateService {
 	constructor(
 		@ILifecycleMainService lifecycleMainService: ILifecycleMainService,
 		@IConfigurationService configurationService: IConfigurationService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IEnvironmentMainService environmentMainService: IEnvironmentMainService,
 		@IRequestService requestService: IRequestService,
 		@ILogService logService: ILogService,
@@ -91,12 +89,6 @@ export class DarwinUpdateService extends AbstractUpdateService {
 			return;
 		}
 
-		type UpdateDownloadedClassification = {
-			owner: 'joaomoreno';
-			version: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-		};
-		this.telemetryService.publicLog2<{ version: String }, UpdateDownloadedClassification>('update:downloaded', { version: update.version });
-
 		this.setState(State.Ready(update));
 	}
 
@@ -104,8 +96,6 @@ export class DarwinUpdateService extends AbstractUpdateService {
 		if (this.state.type !== StateType.CheckingForUpdates) {
 			return;
 		}
-		this.telemetryService.publicLog2<{ explicit: boolean }, UpdateNotAvailableClassification>('update:notAvailable', { explicit: this.state.explicit });
-
 		this.setState(State.Idle(UpdateType.Archive));
 	}
 

@@ -25,8 +25,6 @@ import { IConfigurationRegistry, Extensions as ConfigurationExtensions } from 'v
 import { IRemoteAuthorityResolverService } from 'vs/platform/remote/common/remoteAuthorityResolver';
 import { OpenLocalFileFolderCommand, OpenLocalFileCommand, OpenLocalFolderCommand, SaveLocalFileCommand, RemoteFileDialogContext } from 'vs/workbench/services/dialogs/browser/simpleFileDialog';
 import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
-import { TELEMETRY_SETTING_ID } from 'vs/platform/telemetry/common/telemetry';
-import { getTelemetryLevel } from 'vs/platform/telemetry/common/telemetryUtils';
 
 class RemoteAgentDiagnosticListener implements IWorkbenchContribution {
 	constructor(
@@ -76,28 +74,6 @@ class RemoteExtensionHostEnvironmentUpdater implements IWorkbenchContribution {
 	}
 }
 
-class RemoteTelemetryEnablementUpdater extends Disposable implements IWorkbenchContribution {
-	constructor(
-		@IRemoteAgentService private readonly remoteAgentService: IRemoteAgentService,
-		@IConfigurationService private readonly configurationService: IConfigurationService
-	) {
-		super();
-
-		this.updateRemoteTelemetryEnablement();
-
-		this._register(configurationService.onDidChangeConfiguration(e => {
-			if (e.affectsConfiguration(TELEMETRY_SETTING_ID)) {
-				this.updateRemoteTelemetryEnablement();
-			}
-		}));
-	}
-
-	private updateRemoteTelemetryEnablement(): Promise<void> {
-		return this.remoteAgentService.updateTelemetryLevel(getTelemetryLevel(this.configurationService));
-	}
-}
-
-
 class RemoteEmptyWorkbenchPresentation extends Disposable implements IWorkbenchContribution {
 	constructor(
 		@INativeWorkbenchEnvironmentService environmentService: INativeWorkbenchEnvironmentService,
@@ -134,7 +110,6 @@ class RemoteEmptyWorkbenchPresentation extends Disposable implements IWorkbenchC
 const workbenchContributionsRegistry = Registry.as<IWorkbenchContributionsRegistry>(WorkbenchContributionsExtensions.Workbench);
 workbenchContributionsRegistry.registerWorkbenchContribution(RemoteAgentDiagnosticListener, LifecyclePhase.Eventually);
 workbenchContributionsRegistry.registerWorkbenchContribution(RemoteExtensionHostEnvironmentUpdater, LifecyclePhase.Eventually);
-workbenchContributionsRegistry.registerWorkbenchContribution(RemoteTelemetryEnablementUpdater, LifecyclePhase.Ready);
 workbenchContributionsRegistry.registerWorkbenchContribution(RemoteEmptyWorkbenchPresentation, LifecyclePhase.Starting);
 
 Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration)

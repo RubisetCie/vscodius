@@ -8,7 +8,6 @@ import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/
 import { IWorkbenchExtensionEnablementService, IWebExtensionsScannerService } from 'vs/workbench/services/extensionManagement/common/extensionManagement';
 import { IRemoteAgentService } from 'vs/workbench/services/remote/common/remoteAgentService';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IExtensionService, IExtensionHost, toExtensionDescription, ExtensionRunningLocation, ExtensionHostKind, extensionHostKindToString } from 'vs/workbench/services/extensions/common/extensions';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IFileService } from 'vs/platform/files/common/files';
@@ -41,7 +40,6 @@ export class ExtensionService extends AbstractExtensionService implements IExten
 		@IInstantiationService instantiationService: IInstantiationService,
 		@INotificationService notificationService: INotificationService,
 		@IWorkbenchEnvironmentService environmentService: IWorkbenchEnvironmentService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IWorkbenchExtensionEnablementService extensionEnablementService: IWorkbenchExtensionEnablementService,
 		@IFileService fileService: IFileService,
 		@IProductService productService: IProductService,
@@ -54,13 +52,12 @@ export class ExtensionService extends AbstractExtensionService implements IExten
 		@IRemoteAgentService remoteAgentService: IRemoteAgentService,
 		@IRemoteAuthorityResolverService private readonly _remoteAuthorityResolverService: IRemoteAuthorityResolverService,
 		@ILifecycleService private readonly _lifecycleService: ILifecycleService,
-		@IUserDataInitializationService private readonly _userDataInitializationService: IUserDataInitializationService,
+		@IUserDataInitializationService private readonly _userDataInitializationService: IUserDataInitializationService
 	) {
 		super(
 			instantiationService,
 			notificationService,
 			environmentService,
-			telemetryService,
 			extensionEnablementService,
 			fileService,
 			productService,

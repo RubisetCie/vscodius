@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Disposable } from 'vs/base/common/lifecycle';
-import { ILanguageDetectionService, ILanguageDetectionStats, LanguageDetectionStatsClassification, LanguageDetectionStatsId } from 'vs/workbench/services/languageDetection/common/languageDetectionWorkerService';
+import { ILanguageDetectionService } from 'vs/workbench/services/languageDetection/common/languageDetectionWorkerService';
 import { FileAccess, Schemas } from 'vs/base/common/network';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
@@ -15,7 +15,6 @@ import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { LanguageDetectionSimpleWorker } from 'vs/workbench/services/languageDetection/browser/languageDetectionSimpleWorker';
 import { IModelService } from 'vs/editor/common/services/model';
 import { SimpleWorkerClient } from 'vs/base/common/worker/simpleWorker';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { EditorWorkerClient, EditorWorkerHost } from 'vs/editor/browser/services/editorWorkerService';
 import { ILanguageConfigurationService } from 'vs/editor/common/languages/languageConfigurationRegistry';
 import { IDiagnosticsService } from 'vs/platform/diagnostics/common/diagnostics';
@@ -59,7 +58,6 @@ export class LanguageDetectionService extends Disposable implements ILanguageDet
 		@IWorkspaceContextService private readonly _workspaceContextService: IWorkspaceContextService,
 		@IModelService modelService: IModelService,
 		@IEditorService private readonly _editorService: IEditorService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IStorageService storageService: IStorageService,
 		@ILogService private readonly _logService: ILogService,
 		@ILanguageConfigurationService languageConfigurationService: ILanguageConfigurationService
@@ -69,7 +67,6 @@ export class LanguageDetectionService extends Disposable implements ILanguageDet
 		this._languageDetectionWorkerClient = new LanguageDetectionWorkerClient(
 			modelService,
 			languageService,
-			telemetryService,
 			// TODO: See if it's possible to bundle vscode-languagedetection
 			this._environmentService.isBuilt && !isWeb
 				? FileAccess.asBrowserUri(`${moduleLocationAsar}/dist/lib/index.js`, require).toString(true)
@@ -183,8 +180,7 @@ export class LanguageDetectionWorkerHost {
 	constructor(
 		private _indexJsUri: string,
 		private _modelJsonUri: string,
-		private _weightsUri: string,
-		private _telemetryService: ITelemetryService,
+		private _weightsUri: string
 	) {
 	}
 
@@ -199,22 +195,6 @@ export class LanguageDetectionWorkerHost {
 	async getWeightsUri() {
 		return this._weightsUri;
 	}
-
-	async sendTelemetryEvent(languages: string[], confidences: number[], timeSpent: number): Promise<void> {
-		type LanguageDetectionStats = { languages: string; confidences: string; timeSpent: number };
-		type LanguageDetectionStatsClassification = {
-			owner: 'TylerLeonhardt';
-			languages: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-			confidences: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-			timeSpent: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-		};
-
-		this._telemetryService.publicLog2<LanguageDetectionStats, LanguageDetectionStatsClassification>('automaticlanguagedetection.stats', {
-			languages: languages.join(','),
-			confidences: confidences.join(','),
-			timeSpent
-		});
-	}
 }
 
 export class LanguageDetectionWorkerClient extends EditorWorkerClient {
@@ -223,7 +203,6 @@ export class LanguageDetectionWorkerClient extends EditorWorkerClient {
 	constructor(
 		modelService: IModelService,
 		private readonly _languageService: ILanguageService,
-		private readonly _telemetryService: ITelemetryService,
 		private readonly _indexJsUri: string,
 		private readonly _modelJsonUri: string,
 		private readonly _weightsUri: string,
@@ -274,8 +253,6 @@ export class LanguageDetectionWorkerClient extends EditorWorkerClient {
 				return this.getRegexpModelUri();
 			case 'getLanguageId':
 				return this.getLanguageId(args[0]);
-			case 'sendTelemetryEvent':
-				return this.sendTelemetryEvent(args[0], args[1], args[2]);
 			default:
 				return super.fhr(method, args);
 		}
@@ -311,16 +288,7 @@ export class LanguageDetectionWorkerClient extends EditorWorkerClient {
 		return this._regexpModelUri;
 	}
 
-	async sendTelemetryEvent(languages: string[], confidences: number[], timeSpent: number): Promise<void> {
-		this._telemetryService.publicLog2<ILanguageDetectionStats, LanguageDetectionStatsClassification>(LanguageDetectionStatsId, {
-			languages: languages.join(','),
-			confidences: confidences.join(','),
-			timeSpent
-		});
-	}
-
 	public async detectLanguage(resource: URI, langBiases: Record<string, number> | undefined, preferHistory: boolean, supportedLangs?: string[]): Promise<string | undefined> {
-		const startTime = Date.now();
 		const quickGuess = this._guessLanguageIdByUri(resource);
 		if (quickGuess) {
 			return quickGuess;
@@ -328,27 +296,7 @@ export class LanguageDetectionWorkerClient extends EditorWorkerClient {
 
 		await this._withSyncedResources([resource]);
 		const modelId = await (await this._getProxy()).detectLanguage(resource.toString(), langBiases, preferHistory, supportedLangs);
-		const langaugeId = this.getLanguageId(modelId);
-
-		const LanguageDetectionStatsId = 'automaticlanguagedetection.perf';
-
-		interface ILanguageDetectionPerf {
-			timeSpent: number;
-			detection: string;
-		}
-
-		type LanguageDetectionPerfClassification = {
-			owner: 'TylerLeonhardt';
-			timeSpent: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true };
-			detection: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-		};
-
-		this._telemetryService.publicLog2<ILanguageDetectionPerf, LanguageDetectionPerfClassification>(LanguageDetectionStatsId, {
-			timeSpent: Date.now() - startTime,
-			detection: langaugeId || 'unknown',
-		});
-
-		return langaugeId;
+		return this.getLanguageId(modelId);
 	}
 }
 

@@ -17,7 +17,6 @@ import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiati
 import { IProgressService } from 'vs/platform/progress/common/progress';
 import { IQuickInputService } from 'vs/platform/quickinput/common/quickInput';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { ViewPane } from 'vs/workbench/browser/parts/views/viewPane';
@@ -44,7 +43,6 @@ export class DebugViewPaneContainer extends ViewPaneContainer {
 
 	constructor(
 		@IWorkbenchLayoutService layoutService: IWorkbenchLayoutService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IProgressService private readonly progressService: IProgressService,
 		@IDebugService private readonly debugService: IDebugService,
 		@IInstantiationService instantiationService: IInstantiationService,
@@ -56,9 +54,9 @@ export class DebugViewPaneContainer extends ViewPaneContainer {
 		@IConfigurationService configurationService: IConfigurationService,
 		@IContextViewService private readonly contextViewService: IContextViewService,
 		@IContextKeyService private readonly contextKeyService: IContextKeyService,
-		@IViewDescriptorService viewDescriptorService: IViewDescriptorService,
+		@IViewDescriptorService viewDescriptorService: IViewDescriptorService
 	) {
-		super(VIEWLET_ID, { mergeViewWithContainerWhenSingleView: true }, instantiationService, configurationService, layoutService, contextMenuService, telemetryService, extensionService, themeService, storageService, contextService, viewDescriptorService);
+		super(VIEWLET_ID, { mergeViewWithContainerWhenSingleView: true }, instantiationService, configurationService, layoutService, contextMenuService, extensionService, themeService, storageService, contextService, viewDescriptorService);
 
 		// When there are potential updates to the docked debug toolbar we need to update it
 		this._register(this.debugService.onDidChangeState(state => this.onDebugServiceStateChange(state)));

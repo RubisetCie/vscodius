@@ -42,11 +42,9 @@ import { USLayoutResolvedKeybinding } from 'vs/platform/keybinding/common/usLayo
 import { ILabelService, ResourceLabelFormatter, IFormatterChangeEvent } from 'vs/platform/label/common/label';
 import { INotification, INotificationHandle, INotificationService, IPromptChoice, IPromptOptions, NoOpNotification, IStatusMessageOptions, NotificationsFilter } from 'vs/platform/notification/common/notification';
 import { IProgressRunner, IEditorProgressService } from 'vs/platform/progress/common/progress';
-import { ITelemetryInfo, ITelemetryService, TelemetryLevel } from 'vs/platform/telemetry/common/telemetry';
 import { ISingleFolderWorkspaceIdentifier, IWorkspaceIdentifier, IWorkspace, IWorkspaceContextService, IWorkspaceFolder, IWorkspaceFoldersChangeEvent, IWorkspaceFoldersWillChangeEvent, WorkbenchState, WorkspaceFolder } from 'vs/platform/workspace/common/workspace';
 import { ILayoutService } from 'vs/platform/layout/browser/layoutService';
 import { StandaloneServicesNLS } from 'vs/editor/common/standaloneStrings';
-import { ClassifiedEvent, StrictPropertyCheck, GDPRClassification } from 'vs/platform/telemetry/common/gdprTypings';
 import { basename } from 'vs/base/common/resources';
 import { ICodeEditorService } from 'vs/editor/browser/services/codeEditorService';
 import { ConsoleLogger, ILogService, LogService } from 'vs/platform/log/common/log';
@@ -85,7 +83,6 @@ import { MarkerService } from 'vs/platform/markers/common/markerService';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IQuickInputService } from 'vs/platform/quickinput/common/quickInput';
 import { IStorageService, InMemoryStorageService } from 'vs/platform/storage/common/storage';
-import { staticObservableValue } from 'vs/base/common/observableValue';
 
 import 'vs/editor/common/services/languageFeaturesService';
 import { DefaultConfigurationModel } from 'vs/platform/configuration/common/configurations';
@@ -317,12 +314,11 @@ export class StandaloneKeybindingService extends AbstractKeybindingService {
 	constructor(
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@ICommandService commandService: ICommandService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@INotificationService notificationService: INotificationService,
 		@ILogService logService: ILogService,
 		@ICodeEditorService codeEditorService: ICodeEditorService
 	) {
-		super(contextKeyService, commandService, telemetryService, notificationService, logService);
+		super(contextKeyService, commandService, notificationService, logService);
 
 		this._cachedResolver = null;
 		this._dynamicKeybindings = [];
@@ -640,39 +636,6 @@ class StandaloneResourcePropertiesService implements ITextResourcePropertiesServ
 	}
 }
 
-class StandaloneTelemetryService implements ITelemetryService {
-	declare readonly _serviceBrand: undefined;
-
-	public telemetryLevel = staticObservableValue(TelemetryLevel.NONE);
-	public sendErrorTelemetry = false;
-
-	public setEnabled(value: boolean): void {
-	}
-
-	public setExperimentProperty(name: string, value: string): void {
-	}
-
-	public publicLog(eventName: string, data?: any): Promise<void> {
-		return Promise.resolve(undefined);
-	}
-
-	publicLog2<E extends ClassifiedEvent<T> = never, T extends GDPRClassification<T> = never>(eventName: string, data?: StrictPropertyCheck<T, E>) {
-		return this.publicLog(eventName, data as any);
-	}
-
-	public publicLogError(eventName: string, data?: any): Promise<void> {
-		return Promise.resolve(undefined);
-	}
-
-	publicLogError2<E extends ClassifiedEvent<T> = never, T extends GDPRClassification<T> = never>(eventName: string, data?: StrictPropertyCheck<T, E>) {
-		return this.publicLogError(eventName, data as any);
-	}
-
-	public getTelemetryInfo(): Promise<ITelemetryInfo> {
-		throw new Error(`Not available`);
-	}
-}
-
 class StandaloneWorkspaceContextService implements IWorkspaceContextService {
 
 	public _serviceBrand: undefined;
@@ -929,13 +892,12 @@ class StandaloneLogService extends LogService {
 
 class StandaloneContextMenuService extends ContextMenuService {
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@INotificationService notificationService: INotificationService,
 		@IContextViewService contextViewService: IContextViewService,
 		@IKeybindingService keybindingService: IKeybindingService,
 		@IThemeService themeService: IThemeService
 	) {
-		super(telemetryService, notificationService, contextViewService, keybindingService, themeService);
+		super(notificationService, contextViewService, keybindingService, themeService);
 		this.configure({ blockMouse: false }); // we do not want that in the standalone editor
 	}
 }
@@ -949,7 +911,6 @@ registerSingleton(ITextResourceConfigurationService, StandaloneResourceConfigura
 registerSingleton(ITextResourcePropertiesService, StandaloneResourcePropertiesService);
 registerSingleton(IWorkspaceContextService, StandaloneWorkspaceContextService);
 registerSingleton(ILabelService, StandaloneUriLabelService);
-registerSingleton(ITelemetryService, StandaloneTelemetryService);
 registerSingleton(IDialogService, StandaloneDialogService);
 registerSingleton(INotificationService, StandaloneNotificationService);
 registerSingleton(IMarkerService, MarkerService);

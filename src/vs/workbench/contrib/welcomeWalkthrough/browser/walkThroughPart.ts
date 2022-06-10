@@ -12,7 +12,6 @@ import { URI } from 'vs/base/common/uri';
 import { IDisposable, dispose, toDisposable, DisposableStore } from 'vs/base/common/lifecycle';
 import { IEditorMemento, IEditorOpenContext } from 'vs/workbench/common/editor';
 import { EditorPane } from 'vs/workbench/browser/parts/editor/editorPane';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { WalkThroughInput } from 'vs/workbench/contrib/welcomeWalkthrough/browser/walkThroughInput';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { ITextResourceConfigurationService } from 'vs/editor/common/services/textResourceConfiguration';
@@ -67,7 +66,6 @@ export class WalkThroughPart extends EditorPane {
 	private editorMemento: IEditorMemento<IWalkThroughEditorViewState>;
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
 		@ITextResourceConfigurationService textResourceConfigurationService: ITextResourceConfigurationService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
@@ -78,9 +76,9 @@ export class WalkThroughPart extends EditorPane {
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@INotificationService private readonly notificationService: INotificationService,
 		@IExtensionService private readonly extensionService: IExtensionService,
-		@IEditorGroupsService editorGroupService: IEditorGroupsService,
+		@IEditorGroupsService editorGroupService: IEditorGroupsService
 	) {
-		super(WalkThroughPart.ID, telemetryService, themeService, storageService);
+		super(WalkThroughPart.ID, themeService, storageService);
 		this.editorFocus = WALK_THROUGH_FOCUS.bindTo(this.contextKeyService);
 		this.editorMemento = this.getEditorMemento<IWalkThroughEditorViewState>(editorGroupService, textResourceConfigurationService, WALK_THROUGH_EDITOR_VIEW_STATE_PREFERENCE_KEY);
 	}
@@ -197,7 +195,6 @@ export class WalkThroughPart extends EditorPane {
 			return uri;
 		}
 		const query = uri.query ? JSON.parse(uri.query) : {};
-		query.from = this.input.getTelemetryFrom();
 		return uri.with({ query: JSON.stringify(query) });
 	}
 
@@ -313,13 +310,7 @@ export class WalkThroughPart extends EditorPane {
 					const div = innerContent.querySelector(`#${id.replace(/[\\.]/g, '\\$&')}`) as HTMLElement;
 
 					const options = this.getEditorOptions(model.getLanguageId());
-					const telemetryData = {
-						target: this.input instanceof WalkThroughInput ? this.input.getTelemetryFrom() : undefined,
-						snippet: i
-					};
-					const editor = this.instantiationService.createInstance(CodeEditorWidget, div, options, {
-						telemetryData: telemetryData
-					});
+					const editor = this.instantiationService.createInstance(CodeEditorWidget, div, options, {});
 					editor.setModel(model);
 					this.contentDisposables.push(editor);
 

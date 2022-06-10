@@ -8,7 +8,6 @@ import { IModelService } from 'vs/editor/common/services/model';
 import { IFileService } from 'vs/platform/files/common/files';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ILogService } from 'vs/platform/log/common/log';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
 import { IFileMatch, IFileQuery, ISearchComplete, ISearchProgressItem, ISearchResultProvider, ISearchService, ITextQuery, SearchProviderType, TextSearchCompleteMessageType } from 'vs/workbench/services/search/common/search';
@@ -31,14 +30,13 @@ export class RemoteSearchService extends SearchService {
 	constructor(
 		@IModelService modelService: IModelService,
 		@IEditorService editorService: IEditorService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@ILogService logService: ILogService,
 		@IExtensionService extensionService: IExtensionService,
 		@IFileService fileService: IFileService,
 		@IInstantiationService readonly instantiationService: IInstantiationService,
 		@IUriIdentityService uriIdentityService: IUriIdentityService,
 	) {
-		super(modelService, editorService, telemetryService, logService, extensionService, fileService, uriIdentityService);
+		super(modelService, editorService, logService, extensionService, fileService, uriIdentityService);
 		const searchProvider = this.instantiationService.createInstance(LocalFileSearchWorkerClient);
 		this.registerSearchResultProvider(Schemas.file, SearchProviderType.file, searchProvider);
 		this.registerSearchResultProvider(Schemas.file, SearchProviderType.text, searchProvider);

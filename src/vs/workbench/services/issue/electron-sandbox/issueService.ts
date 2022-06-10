@@ -16,7 +16,6 @@ import { INativeWorkbenchEnvironmentService } from 'vs/workbench/services/enviro
 import { ExtensionType } from 'vs/platform/extensions/common/extensions';
 import { platform } from 'vs/base/common/process';
 import { IProductService } from 'vs/platform/product/common/productService';
-import { IWorkbenchAssignmentService } from 'vs/workbench/services/assignment/common/assignmentService';
 import { IAuthenticationService } from 'vs/workbench/services/authentication/common/authentication';
 import { registerMainProcessRemoteService } from 'vs/platform/ipc/electron-sandbox/services';
 import { IWorkspaceTrustManagementService } from 'vs/platform/workspace/common/workspaceTrust';
@@ -32,7 +31,6 @@ export class WorkbenchIssueService implements IWorkbenchIssueService {
 		@INativeWorkbenchEnvironmentService private readonly environmentService: INativeWorkbenchEnvironmentService,
 		@IWorkspaceTrustManagementService private readonly workspaceTrustManagementService: IWorkspaceTrustManagementService,
 		@IProductService private readonly productService: IProductService,
-		@IWorkbenchAssignmentService private readonly experimentService: IWorkbenchAssignmentService,
 		@IAuthenticationService private readonly authenticationService: IAuthenticationService
 	) { }
 
@@ -71,7 +69,6 @@ export class WorkbenchIssueService implements IWorkbenchIssueService {
 				isBuiltin: true
 			});
 		}
-		const experiments = await this.experimentService.getCurrentExperiments();
 
 		let githubAccessToken = '';
 		try {
@@ -87,7 +84,6 @@ export class WorkbenchIssueService implements IWorkbenchIssueService {
 			styles: getIssueReporterStyles(theme),
 			zoomLevel: getZoomLevel(),
 			enabledExtensions: extensionData,
-			experiments: experiments?.join('\n'),
 			restrictedMode: !this.workspaceTrustManagementService.isWorkspaceTrusted(),
 			githubAccessToken,
 		}, dataOverrides);

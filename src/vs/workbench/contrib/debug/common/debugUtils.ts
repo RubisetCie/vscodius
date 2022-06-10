@@ -26,22 +26,6 @@ export function formatPII(value: string, excludePII: boolean, args: { [key: stri
 	});
 }
 
-/**
- * Filters exceptions (keys marked with "!") from the given object. Used to
- * ensure exception data is not sent on web remotes, see #97628.
- */
-export function filterExceptionsFromTelemetry<T extends { [key: string]: unknown }>(data: T): Partial<T> {
-	const output: Partial<T> = {};
-	for (const key of Object.keys(data) as (keyof T & string)[]) {
-		if (!key.startsWith('!')) {
-			output[key] = data[key];
-		}
-	}
-
-	return output;
-}
-
-
 export function isSessionAttach(session: IDebugSession): boolean {
 	return session.configuration.request === 'attach' && !getExtensionHostDebugSession(session) && (!session.parentSession || isSessionAttach(session.parentSession));
 }

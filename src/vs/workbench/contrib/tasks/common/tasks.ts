@@ -635,10 +635,6 @@ export abstract class CommonTask {
 		return undefined;
 	}
 
-	public getTelemetryKind(): string {
-		return 'unknown';
-	}
-
 	public matches(key: string | KeyedTaskIdentifier | undefined, compareId: boolean = false): boolean {
 		if (key === undefined) {
 			return false;
@@ -799,14 +795,6 @@ export class CustomTask extends CommonTask {
 		return (this._source.config.workspace && this._source.config.workspace.configuration) ? resources.basename(this._source.config.workspace.configuration) : undefined;
 	}
 
-	public override getTelemetryKind(): string {
-		if (this._source.customizes) {
-			return 'workspace>extension';
-		} else {
-			return 'workspace';
-		}
-	}
-
 	protected fromObject(object: CustomTask): CustomTask {
 		return new CustomTask(object._id, object._source, object._label, object.type, object.command, object.hasDefinedMatchers, object.runOptions, object.configurationProperties);
 	}
@@ -942,10 +930,6 @@ export class ContributedTask extends CommonTask {
 		return this._source.workspaceFolder;
 	}
 
-	public override getTelemetryKind(): string {
-		return 'extension';
-	}
-
 	protected fromObject(object: ContributedTask): ContributedTask {
 		return new ContributedTask(object._id, object._source, object._label, object.type, object.defines, object.command, object.hasDefinedMatchers, object.runOptions, object.configurationProperties);
 	}
@@ -973,10 +957,6 @@ export class InMemoryTask extends CommonTask {
 
 	public static is(value: any): value is InMemoryTask {
 		return value instanceof InMemoryTask;
-	}
-
-	public override getTelemetryKind(): string {
-		return 'composite';
 	}
 
 	public override getMapKey(): string {

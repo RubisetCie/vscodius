@@ -9,7 +9,6 @@ import { IEditorMemento, IEditorCloseEvent, IEditorOpenContext, EditorResourceAc
 import { EditorPane } from 'vs/workbench/browser/parts/editor/editorPane';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { ITextResourceConfigurationService } from 'vs/editor/common/services/textResourceConfiguration';
 import { IEditorGroupsService, IEditorGroup } from 'vs/workbench/services/editor/common/editorGroupsService';
@@ -32,7 +31,6 @@ export abstract class AbstractEditorWithViewState<T extends object> extends Edit
 	constructor(
 		id: string,
 		viewStateStorageKey: string,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IInstantiationService protected readonly instantiationService: IInstantiationService,
 		@IStorageService storageService: IStorageService,
 		@ITextResourceConfigurationService protected readonly textResourceConfigurationService: ITextResourceConfigurationService,
@@ -40,7 +38,7 @@ export abstract class AbstractEditorWithViewState<T extends object> extends Edit
 		@IEditorService protected readonly editorService: IEditorService,
 		@IEditorGroupsService protected readonly editorGroupService: IEditorGroupsService
 	) {
-		super(id, telemetryService, themeService, storageService);
+		super(id, themeService, storageService);
 
 		this.viewState = this.getEditorMemento<T>(editorGroupService, textResourceConfigurationService, viewStateStorageKey, 100);
 	}

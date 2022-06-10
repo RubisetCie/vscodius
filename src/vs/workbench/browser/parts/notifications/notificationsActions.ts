@@ -4,10 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import 'vs/css!./media/notificationsActions';
-import { INotificationViewItem, isNotificationViewItem } from 'vs/workbench/common/notifications';
+import { INotificationViewItem } from 'vs/workbench/common/notifications';
 import { localize } from 'vs/nls';
-import { Action, IAction, ActionRunner, WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification } from 'vs/base/common/actions';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
+import { Action, IAction, ActionRunner } from 'vs/base/common/actions';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { CLEAR_NOTIFICATION, EXPAND_NOTIFICATION, COLLAPSE_NOTIFICATION, CLEAR_ALL_NOTIFICATIONS, HIDE_NOTIFICATIONS_CENTER } from 'vs/workbench/browser/parts/notifications/notificationsCommands';
 import { ICommandService } from 'vs/platform/commands/common/commands';
@@ -15,7 +14,6 @@ import { IClipboardService } from 'vs/platform/clipboard/common/clipboardService
 import { Codicon } from 'vs/base/common/codicons';
 import { registerIcon } from 'vs/platform/theme/common/iconRegistry';
 import { ThemeIcon } from 'vs/platform/theme/common/themeService';
-import { hash } from 'vs/base/common/hash';
 
 const clearIcon = registerIcon('notifications-clear', Codicon.close, localize('clearIcon', 'Icon for the clear action in notifications.'));
 const clearAllIcon = registerIcon('notifications-clear-all', Codicon.clearAll, localize('clearAllIcon', 'Icon for the clear all action in notifications.'));
@@ -146,45 +144,15 @@ export class CopyNotificationMessageAction extends Action {
 	}
 }
 
-interface NotificationActionMetrics {
-	id: string;
-	actionLabel: string;
-	source: string;
-	silent: boolean;
-}
-
-type NotificationActionMetricsClassification = {
-	id: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The identifier of the action that was run from a notification.' };
-	actionLabel: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The label of the action that was run from a notification.' };
-	source: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The source of the notification where an action was run.' };
-	silent: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Whether the notification where an action was run is silent or not.' };
-	owner: 'bpasero';
-	comment: 'Tracks when actions are fired from notifcations and how they were fired.';
-};
-
 export class NotificationActionRunner extends ActionRunner {
 
 	constructor(
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@INotificationService private readonly notificationService: INotificationService
 	) {
 		super();
 	}
 
 	protected override async runAction(action: IAction, context: unknown): Promise<void> {
-		this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: action.id, from: 'message' });
-
-		if (isNotificationViewItem(context)) {
-			// Log some additional telemetry specifically for actions
-			// that are triggered from within notifications.
-			this.telemetryService.publicLog2<NotificationActionMetrics, NotificationActionMetricsClassification>('notification:actionExecuted', {
-				id: hash(context.message.original.toString()).toString(),
-				actionLabel: action.label,
-				source: context.sourceId || 'core',
-				silent: context.silent
-			});
-		}
-
 		// Run and make sure to notify on any error again
 		try {
 			await super.runAction(action, context);

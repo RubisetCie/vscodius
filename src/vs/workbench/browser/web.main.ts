@@ -42,7 +42,7 @@ import { getSingleFolderWorkspaceIdentifier, getWorkspaceIdentifier } from 'vs/w
 import { coalesce } from 'vs/base/common/arrays';
 import { InMemoryFileSystemProvider } from 'vs/platform/files/common/inMemoryFilesystemProvider';
 import { ICommandService } from 'vs/platform/commands/common/commands';
-import { IndexedDBFileSystemProviderErrorDataClassification, IndexedDBFileSystemProvider, IndexedDBFileSystemProviderErrorData } from 'vs/platform/files/browser/indexedDBFileSystemProvider';
+import { IndexedDBFileSystemProvider } from 'vs/platform/files/browser/indexedDBFileSystemProvider';
 import { BrowserRequestService } from 'vs/workbench/services/request/browser/requestService';
 import { IRequestService } from 'vs/platform/request/common/request';
 import { IUserDataInitializationService, UserDataInitializationService } from 'vs/workbench/services/userData/browser/userDataInit';
@@ -69,7 +69,6 @@ import { IndexedDB } from 'vs/base/browser/indexedDB';
 import { BrowserCredentialsService } from 'vs/workbench/services/credentials/browser/credentialsService';
 import { IWorkspace } from 'vs/workbench/services/host/browser/browserHostService';
 import { WebFileSystemAccess } from 'vs/platform/files/browser/webFileSystemAccess';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IProgressService } from 'vs/platform/progress/common/progress';
 import { DelayedLogChannel } from 'vs/workbench/services/output/common/delayedLogChannel';
 import { dirname, joinPath } from 'vs/base/common/resources';
@@ -115,13 +114,6 @@ export class BrowserMain extends Disposable {
 		// Logging
 		services.logService.trace('workbench#open with configuration', safeStringify(this.configuration));
 
-		instantiationService.invokeFunction(accessor => {
-			const telemetryService = accessor.get(ITelemetryService);
-			for (const indexedDbFileSystemProvider of this.indexedDBFileSystemProviders) {
-				this._register(indexedDbFileSystemProvider.onReportError(e => telemetryService.publicLog2<IndexedDBFileSystemProviderErrorData, IndexedDBFileSystemProviderErrorDataClassification>('indexedDBFileSystemProviderError', e)));
-			}
-		});
-
 		// Return API Facade
 		return instantiationService.invokeFunction(accessor => {
 			const commandService = accessor.get(ICommandService);
@@ -129,7 +121,6 @@ export class BrowserMain extends Disposable {
 			const timerService = accessor.get(ITimerService);
 			const openerService = accessor.get(IOpenerService);
 			const productService = accessor.get(IProductService);
-			const telemetryService = accessor.get(ITelemetryService);
 			const progessService = accessor.get(IProgressService);
 			const environmentService = accessor.get(IBrowserWorkbenchEnvironmentService);
 			const instantiationService = accessor.get(IInstantiationService);
@@ -141,7 +132,6 @@ export class BrowserMain extends Disposable {
 					executeCommand: (command, ...args) => commandService.executeCommand(command, ...args)
 				},
 				env: {
-					telemetryLevel: telemetryService.telemetryLevel,
 					async getUriScheme(): Promise<string> {
 						return productService.urlProtocol;
 					},

@@ -11,16 +11,14 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { INativeHostMainService } from 'vs/platform/native/electron-main/nativeHostMainService';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { asJson, IRequestService } from 'vs/platform/request/common/request';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { AvailableForDownload, IUpdate, State, UpdateType } from 'vs/platform/update/common/update';
-import { AbstractUpdateService, createUpdateURL, UpdateNotAvailableClassification } from 'vs/platform/update/electron-main/abstractUpdateService';
+import { AbstractUpdateService, createUpdateURL } from 'vs/platform/update/electron-main/abstractUpdateService';
 
 export class LinuxUpdateService extends AbstractUpdateService {
 
 	constructor(
 		@ILifecycleMainService lifecycleMainService: ILifecycleMainService,
 		@IConfigurationService configurationService: IConfigurationService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IEnvironmentMainService environmentMainService: IEnvironmentMainService,
 		@IRequestService requestService: IRequestService,
 		@ILogService logService: ILogService,
@@ -44,8 +42,6 @@ export class LinuxUpdateService extends AbstractUpdateService {
 			.then<IUpdate | null>(asJson)
 			.then(update => {
 				if (!update || !update.url || !update.version || !update.productVersion) {
-					this.telemetryService.publicLog2<{ explicit: boolean }, UpdateNotAvailableClassification>('update:notAvailable', { explicit: !!context });
-
 					this.setState(State.Idle(UpdateType.Archive));
 				} else {
 					this.setState(State.AvailableForDownload(update));
@@ -53,7 +49,6 @@ export class LinuxUpdateService extends AbstractUpdateService {
 			})
 			.then(undefined, err => {
 				this.logService.error(err);
-				this.telemetryService.publicLog2<{ explicit: boolean }, UpdateNotAvailableClassification>('update:notAvailable', { explicit: !!context });
 				// only show message when explicitly checking for updates
 				const message: string | undefined = !!context ? (err.message || err) : undefined;
 				this.setState(State.Idle(UpdateType.Archive, message));

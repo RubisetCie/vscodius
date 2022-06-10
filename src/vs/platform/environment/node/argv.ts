@@ -80,7 +80,6 @@ export const OPTIONS: OptionDescriptions<Required<NativeParsedArgs>> = {
 	'disable-gpu': { type: 'boolean', cat: 't', description: localize('disableGPU', "Disable GPU hardware acceleration.") },
 	'ms-enable-electron-run-as-node': { type: 'boolean' },
 	'max-memory': { type: 'string', cat: 't', description: localize('maxMemory', "Max memory size for a window (in Mbytes)."), args: 'memory' },
-	'telemetry': { type: 'boolean', cat: 't', description: localize('telemetry', "Shows all telemetry events which VS code collects.") },
 
 	'remote': { type: 'string', allowEmptyValue: true },
 	'folder-uri': { type: 'string[]', cat: 'o', args: 'uri' },
@@ -103,7 +102,6 @@ export const OPTIONS: OptionDescriptions<Required<NativeParsedArgs>> = {
 	'logExtensionHostCommunication': { type: 'boolean' },
 	'skip-release-notes': { type: 'boolean' },
 	'skip-welcome': { type: 'boolean' },
-	'disable-telemetry': { type: 'boolean' },
 	'disable-updates': { type: 'boolean' },
 	'disable-keytar': { type: 'boolean' },
 	'disable-workspace-trust': { type: 'boolean' },

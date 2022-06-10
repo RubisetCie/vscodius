@@ -16,7 +16,6 @@ import { DocumentSelector } from '../utils/documentSelector';
 import * as fixNames from '../utils/fixNames';
 import { memoize } from '../utils/memoize';
 import { equals } from '../utils/objects';
-import { TelemetryReporter } from '../utils/telemetry';
 import * as typeConverters from '../utils/typeConverters';
 import { DiagnosticsManager } from './diagnostics';
 import FileConfigurationManager from './fileConfigurationManager';
@@ -28,8 +27,7 @@ class ApplyCodeActionCommand implements Command {
 	public readonly id = ApplyCodeActionCommand.ID;
 
 	constructor(
-		private readonly client: ITypeScriptServiceClient,
-		private readonly telemetryReporter: TelemetryReporter,
+		private readonly client: ITypeScriptServiceClient
 	) { }
 
 	public async execute(
@@ -44,10 +42,6 @@ class ApplyCodeActionCommand implements Command {
 				]
 			}
 		*/
-		this.telemetryReporter.logTelemetry('quickFix.execute', {
-			fixName: action.fixName
-		});
-
 		return applyCodeActionCommands(this.client, action.commands, nulToken);
 	}
 }
@@ -61,8 +55,7 @@ class ApplyFixAllCodeAction implements Command {
 	public readonly id = ApplyFixAllCodeAction.ID;
 
 	constructor(
-		private readonly client: ITypeScriptServiceClient,
-		private readonly telemetryReporter: TelemetryReporter,
+		private readonly client: ITypeScriptServiceClient
 	) { }
 
 	public async execute(args: ApplyFixAllCodeAction_args): Promise<void> {
@@ -75,10 +68,6 @@ class ApplyFixAllCodeAction implements Command {
 				]
 			}
 		*/
-		this.telemetryReporter.logTelemetry('quickFixAll.execute', {
-			fixName: args.action.tsAction.fixName
-		});
-
 		if (args.action.combinedResponse) {
 			await applyCodeActionCommands(this.client, args.action.combinedResponse.body.commands, nulToken);
 		}
@@ -211,11 +200,10 @@ class TypeScriptQuickFixProvider implements vscode.CodeActionProvider<VsCodeCode
 		private readonly client: ITypeScriptServiceClient,
 		private readonly formattingConfigurationManager: FileConfigurationManager,
 		commandManager: CommandManager,
-		private readonly diagnosticsManager: DiagnosticsManager,
-		telemetryReporter: TelemetryReporter
+		private readonly diagnosticsManager: DiagnosticsManager
 	) {
-		commandManager.register(new ApplyCodeActionCommand(client, telemetryReporter));
-		commandManager.register(new ApplyFixAllCodeAction(client, telemetryReporter));
+		commandManager.register(new ApplyCodeActionCommand(client));
+		commandManager.register(new ApplyFixAllCodeAction(client));
 
 		this.supportedCodeActionProvider = new SupportedCodeActionProvider(client);
 	}
@@ -430,14 +418,13 @@ export function register(
 	client: ITypeScriptServiceClient,
 	fileConfigurationManager: FileConfigurationManager,
 	commandManager: CommandManager,
-	diagnosticsManager: DiagnosticsManager,
-	telemetryReporter: TelemetryReporter
+	diagnosticsManager: DiagnosticsManager
 ) {
 	return conditionalRegistration([
 		requireSomeCapability(client, ClientCapability.Semantic),
 	], () => {
 		return vscode.languages.registerCodeActionsProvider(selector.semantic,
-			new TypeScriptQuickFixProvider(client, fileConfigurationManager, commandManager, diagnosticsManager, telemetryReporter),
+			new TypeScriptQuickFixProvider(client, fileConfigurationManager, commandManager, diagnosticsManager),
 			TypeScriptQuickFixProvider.metadata);
 	});
 }

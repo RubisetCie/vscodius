@@ -25,7 +25,6 @@ import { IContextMenuService } from 'vs/platform/contextview/browser/contextView
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { activeContrastBorder, ColorIdentifier } from 'vs/platform/theme/common/colorRegistry';
 import { attachStyler, IColorMapping } from 'vs/platform/theme/common/styler';
 import { IThemeService, Themable } from 'vs/platform/theme/common/themeService';
@@ -383,12 +382,11 @@ export class ViewPaneContainer extends Component implements IViewPaneContainer {
 		@IConfigurationService protected configurationService: IConfigurationService,
 		@IWorkbenchLayoutService protected layoutService: IWorkbenchLayoutService,
 		@IContextMenuService protected contextMenuService: IContextMenuService,
-		@ITelemetryService protected telemetryService: ITelemetryService,
 		@IExtensionService protected extensionService: IExtensionService,
 		@IThemeService themeService: IThemeService,
 		@IStorageService protected storageService: IStorageService,
 		@IWorkspaceContextService protected contextService: IWorkspaceContextService,
-		@IViewDescriptorService protected viewDescriptorService: IViewDescriptorService,
+		@IViewDescriptorService protected viewDescriptorService: IViewDescriptorService
 	) {
 
 		super(id, themeService, storageService);

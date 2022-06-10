@@ -4,10 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Disposable } from 'vs/base/common/lifecycle';
-import { IExtensionManagementService, IExtensionGalleryService, InstallOperation, InstallExtensionResult } from 'vs/platform/extensionManagement/common/extensionManagement';
+import { IExtensionGalleryService } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { IExtensionRecommendationsService, ExtensionRecommendationReason, IExtensionIgnoredRecommendationsService } from 'vs/workbench/services/extensionRecommendations/common/extensionRecommendations';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { distinct, shuffle } from 'vs/base/common/arrays';
 import { Emitter, Event } from 'vs/base/common/event';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
@@ -23,17 +22,9 @@ import { ExtensionRecommendation } from 'vs/workbench/contrib/extensions/browser
 import { ConfigBasedRecommendations } from 'vs/workbench/contrib/extensions/browser/configBasedRecommendations';
 import { IExtensionRecommendationNotificationService } from 'vs/platform/extensionRecommendations/common/extensionRecommendations';
 import { timeout } from 'vs/base/common/async';
-import { URI } from 'vs/base/common/uri';
 import { WebRecommendations } from 'vs/workbench/contrib/extensions/browser/webRecommendations';
 import { IExtensionsWorkbenchService } from 'vs/workbench/contrib/extensions/common/extensions';
 import { areSameExtensions } from 'vs/platform/extensionManagement/common/extensionManagementUtil';
-
-type IgnoreRecommendationClassification = {
-	owner: 'sandy081';
-	comment: 'Report when a recommendation is ignored';
-	recommendationReason: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Reason why extension is recommended' };
-	extensionId: { classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight'; comment: 'Id of the extension recommendation that is being ignored' };
-};
 
 export class ExtensionRecommendationsService extends Disposable implements IExtensionRecommendationsService {
 
@@ -60,12 +51,10 @@ export class ExtensionRecommendationsService extends Disposable implements IExte
 		@IInstantiationService instantiationService: IInstantiationService,
 		@ILifecycleService private readonly lifecycleService: ILifecycleService,
 		@IExtensionGalleryService private readonly galleryService: IExtensionGalleryService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IEnvironmentService private readonly environmentService: IEnvironmentService,
-		@IExtensionManagementService private readonly extensionManagementService: IExtensionManagementService,
 		@IExtensionIgnoredRecommendationsService private readonly extensionRecommendationsManagementService: IExtensionIgnoredRecommendationsService,
 		@IExtensionRecommendationNotificationService private readonly extensionRecommendationNotificationService: IExtensionRecommendationNotificationService,
-		@IExtensionsWorkbenchService private readonly extensionsWorkbenchService: IExtensionsWorkbenchService,
+		@IExtensionsWorkbenchService private readonly extensionsWorkbenchService: IExtensionsWorkbenchService
 	) {
 		super();
 
@@ -89,8 +78,6 @@ export class ExtensionRecommendationsService extends Disposable implements IExte
 
 		// Activation
 		this.activationPromise = this.activate();
-
-		this._register(this.extensionManagementService.onDidInstallExtensions(e => this.onDidInstallExtensions(e)));
 	}
 
 	private async activate(): Promise<void> {
@@ -108,15 +95,6 @@ export class ExtensionRecommendationsService extends Disposable implements IExte
 		]);
 
 		this._register(Event.any(this.workspaceRecommendations.onDidChangeRecommendations, this.configBasedRecommendations.onDidChangeRecommendations, this.extensionRecommendationsManagementService.onDidChangeIgnoredRecommendations)(() => this._onDidChangeRecommendations.fire()));
-		this._register(this.extensionRecommendationsManagementService.onDidChangeGlobalIgnoredRecommendation(({ extensionId, isRecommended }) => {
-			if (!isRecommended) {
-				const reason = this.getAllRecommendationsWithReason()[extensionId];
-				if (reason && reason.reasonId) {
-					this.telemetryService.publicLog2<{ extensionId: string; recommendationReason: ExtensionRecommendationReason }, IgnoreRecommendationClassification>('extensionsRecommendations:ignoreRecommendation', { extensionId, recommendationReason: reason.reasonId });
-				}
-			}
-		}));
-
 		this.promptWorkspaceRecommendations();
 	}
 
@@ -225,27 +203,6 @@ export class ExtensionRecommendationsService extends Disposable implements IExte
 
 	getFileBasedRecommendations(): string[] {
 		return this.toExtensionRecommendations(this.fileBasedRecommendations.recommendations);
-	}
-
-	private onDidInstallExtensions(results: readonly InstallExtensionResult[]): void {
-		for (const e of results) {
-			if (e.source && !URI.isUri(e.source) && e.operation === InstallOperation.Install) {
-				const extRecommendations = this.getAllRecommendationsWithReason() || {};
-				const recommendationReason = extRecommendations[e.source.identifier.id.toLowerCase()];
-				if (recommendationReason) {
-					/* __GDPR__
-						"extensionGallery:install:recommendations" : {
-							"owner": "sandy081",
-							"recommendationReason": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true },
-							"${include}": [
-								"${GalleryExtensionTelemetryData}"
-							]
-						}
-					*/
-					this.telemetryService.publicLog('extensionGallery:install:recommendations', { ...e.source.telemetryData, recommendationReason: recommendationReason.reasonId });
-				}
-			}
-		}
 	}
 
 	private toExtensionRecommendations(recommendations: ReadonlyArray<ExtensionRecommendation>): string[] {

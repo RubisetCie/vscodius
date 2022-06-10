@@ -17,16 +17,15 @@ import { IRequestContext, IRequestOptions } from 'vs/base/parts/request/common/r
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { getFallbackTargetPlarforms, getTargetPlatform, IExtensionGalleryService, IExtensionIdentifier, IExtensionInfo, IGalleryExtension, IGalleryExtensionAsset, IGalleryExtensionAssets, IGalleryExtensionVersion, InstallOperation, IQueryOptions, IExtensionsControlManifest, isNotWebExtensionInWebTargetPlatform, isTargetPlatformCompatible, ITranslation, SortBy, SortOrder, StatisticType, toTargetPlatform, WEB_EXTENSION_TAG, IExtensionQueryOptions, IDeprecationInfo } from 'vs/platform/extensionManagement/common/extensionManagement';
-import { adoptToGalleryExtensionId, areSameExtensions, getGalleryExtensionId, getGalleryExtensionTelemetryData } from 'vs/platform/extensionManagement/common/extensionManagementUtil';
+import { adoptToGalleryExtensionId, areSameExtensions, getGalleryExtensionId } from 'vs/platform/extensionManagement/common/extensionManagementUtil';
 import { IExtensionManifest, TargetPlatform } from 'vs/platform/extensions/common/extensions';
 import { isEngineValid } from 'vs/platform/extensions/common/extensionValidator';
 import { IFileService } from 'vs/platform/files/common/files';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IProductService } from 'vs/platform/product/common/productService';
-import { asJson, asTextOrError, IRequestService, isSuccess } from 'vs/platform/request/common/request';
+import { asJson, asTextOrError, IRequestService } from 'vs/platform/request/common/request';
 import { resolveMarketplaceHeaders } from 'vs/platform/externalServices/common/marketplace';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 
 const CURRENT_TARGET_PLATFORM = isWeb ? TargetPlatform.WEB : getTargetPlatform(platform, arch);
 
@@ -235,57 +234,6 @@ const DefaultQueryState: IQueryState = {
 	assetTypes: []
 };
 
-type GalleryServiceQueryClassification = {
-	owner: 'sandy081';
-	comment: 'Information about Marketplace query and its response';
-	readonly filterTypes: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Filter types used in the query.' };
-	readonly flags: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Flags passed in the query.' };
-	readonly sortBy: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'sorted by option passed in the query' };
-	readonly sortOrder: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'sort order option passed in the query' };
-	readonly pageNumber: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'requested page number in the query' };
-	readonly duration: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; 'isMeasurement': true; comment: 'amount of time taken by the query request' };
-	readonly success: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'whether the query reques is success or not' };
-	readonly requestBodySize: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'size of the request body' };
-	readonly responseBodySize?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'size of the response body' };
-	readonly statusCode?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'status code of the response' };
-	readonly errorCode?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'error code of the response' };
-	readonly count?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'total number of extensions matching the query' };
-	readonly source?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'source that requested this query, eg., recommendations, viewlet' };
-	readonly searchTextLength?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'length of the search text in the query' };
-};
-
-type QueryTelemetryData = {
-	readonly flags: number;
-	readonly filterTypes: string[];
-	readonly sortBy: string;
-	readonly sortOrder: string;
-	readonly pageNumber: string;
-	readonly source?: string;
-	readonly searchTextLength?: number;
-};
-
-type GalleryServiceQueryEvent = QueryTelemetryData & {
-	readonly duration: number;
-	readonly success: boolean;
-	readonly requestBodySize: string;
-	readonly responseBodySize?: string;
-	readonly statusCode?: string;
-	readonly errorCode?: string;
-	readonly count?: string;
-};
-
-type GalleryServiceAdditionalQueryClassification = {
-	owner: 'sandy081';
-	comment: 'Response information about the additional query to the Marketplace for fetching all versions to get release version';
-	readonly duration: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; 'isMeasurement': true; comment: 'Amount of time taken by the additional query' };
-	readonly count: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Total number of extensions returned by this additional query' };
-};
-
-type GalleryServiceAdditionalQueryEvent = {
-	readonly duration: number;
-	readonly count: number;
-};
-
 interface IExtensionCriteria {
 	readonly targetPlatform: TargetPlatform;
 	readonly compatible: boolean;
@@ -345,18 +293,6 @@ class Query {
 	get searchText(): string {
 		const criterium = this.state.criteria.filter(criterium => criterium.filterType === FilterType.SearchText)[0];
 		return criterium && criterium.value ? criterium.value : '';
-	}
-
-	get telemetryData(): QueryTelemetryData {
-		return {
-			filterTypes: this.state.criteria.map(criterium => String(criterium.filterType)),
-			flags: this.state.flags,
-			sortBy: String(this.sortBy),
-			sortOrder: String(this.sortOrder),
-			pageNumber: String(this.pageNumber),
-			source: this.state.source,
-			searchTextLength: this.searchText.length
-		};
 	}
 }
 
@@ -485,16 +421,6 @@ export function sortExtensionVersions(versions: IRawGalleryExtensionVersion[], p
 	return versions;
 }
 
-function setTelemetry(extension: IGalleryExtension, index: number, querySource?: string): void {
-	/* __GDPR__FRAGMENT__
-	"GalleryExtensionTelemetryData2" : {
-		"index" : { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true },
-		"querySource": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-	}
-	*/
-	extension.telemetryData = { index, querySource };
-}
-
 function toExtension(galleryExtension: IRawGalleryExtension, version: IRawGalleryExtensionVersion, allTargetPlatforms: TargetPlatform[]): IGalleryExtension {
 	const latestVersion = galleryExtension.versions[0];
 	const assets = <IGalleryExtensionAssets>{
@@ -577,7 +503,6 @@ abstract class AbstractExtensionGalleryService implements IExtensionGalleryServi
 		@IRequestService private readonly requestService: IRequestService,
 		@ILogService private readonly logService: ILogService,
 		@IEnvironmentService private readonly environmentService: IEnvironmentService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IFileService private readonly fileService: IFileService,
 		@IProductService private readonly productService: IProductService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
@@ -637,9 +562,6 @@ abstract class AbstractExtensionGalleryService implements IExtensionGalleryServi
 		}
 
 		const { extensions } = await this.queryGalleryExtensions(query, { targetPlatform: options.targetPlatform ?? CURRENT_TARGET_PLATFORM, includePreRelease: includePreReleases, versions, compatible: !!options.compatible }, token);
-		if (options.source) {
-			extensions.forEach((e, index) => setTelemetry(e, index, options.source));
-		}
 		return extensions;
 	}
 
@@ -763,7 +685,6 @@ abstract class AbstractExtensionGalleryService implements IExtensionGalleryServi
 
 		const runQuery = async (query: Query, token: CancellationToken) => {
 			const { extensions, total } = await this.queryGalleryExtensions(query, { targetPlatform: CURRENT_TARGET_PLATFORM, compatible: false, includePreRelease: !!options.includePreRelease }, token);
-			extensions.forEach((e, index) => setTelemetry(e, ((query.pageNumber - 1) * query.pageSize) + index, options.source));
 			return { extensions, total };
 		};
 		const { extensions, total } = await runQuery(query, token);
@@ -854,16 +775,11 @@ abstract class AbstractExtensionGalleryService implements IExtensionGalleryServi
 		}
 
 		if (needAllVersions.size) {
-			const startTime = new Date().getTime();
 			const query = new Query()
 				.withFlags(flags & ~Flags.IncludeLatestVersionOnly, Flags.IncludeVersions)
 				.withPage(1, needAllVersions.size)
 				.withFilter(FilterType.ExtensionId, ...needAllVersions.keys());
 			const { extensions } = await this.queryGalleryExtensions(query, criteria, token);
-			this.telemetryService.publicLog2<GalleryServiceAdditionalQueryEvent, GalleryServiceAdditionalQueryClassification>('galleryService:additionalQuery', {
-				duration: new Date().getTime() - startTime,
-				count: needAllVersions.size
-			});
 			for (const extension of extensions) {
 				const index = needAllVersions.get(extension.identifier.uuid)!;
 				result.push([index, extension]);
@@ -932,8 +848,7 @@ abstract class AbstractExtensionGalleryService implements IExtensionGalleryServi
 			'Content-Length': String(data.length)
 		};
 
-		const startTime = new Date().getTime();
-		let context: IRequestContext | undefined, error: any, total: number = 0;
+		let context: IRequestContext | undefined, total: number = 0;
 
 		try {
 			context = await this.requestService.request({
@@ -959,21 +874,7 @@ abstract class AbstractExtensionGalleryService implements IExtensionGalleryServi
 			return { galleryExtensions: [], total };
 
 		} catch (e) {
-			error = e;
 			throw e;
-		} finally {
-			this.telemetryService.publicLog2<GalleryServiceQueryEvent, GalleryServiceQueryClassification>('galleryService:query', {
-				...query.telemetryData,
-				requestBodySize: String(data.length),
-				duration: new Date().getTime() - startTime,
-				success: !!context && isSuccess(context),
-				responseBodySize: context?.res.headers['Content-Length'],
-				statusCode: context ? String(context.res.statusCode) : undefined,
-				errorCode: error
-					? isCancellationError(error) ? 'canceled' : getErrorMessage(error).startsWith('XHR timeout') ? 'timeout' : 'failed'
-					: undefined,
-				count: String(total)
-			});
 		}
 	}
 
@@ -998,8 +899,6 @@ abstract class AbstractExtensionGalleryService implements IExtensionGalleryServi
 
 	async download(extension: IGalleryExtension, location: URI, operation: InstallOperation): Promise<void> {
 		this.logService.trace('ExtensionGalleryService#download', extension.identifier.id);
-		const data = getGalleryExtensionTelemetryData(extension);
-		const startTime = new Date().getTime();
 		/* __GDPR__
 			"galleryService:downloadVSIX" : {
 				"owner": "sandy081",
@@ -1009,8 +908,6 @@ abstract class AbstractExtensionGalleryService implements IExtensionGalleryServi
 				]
 			}
 		*/
-		const log = (duration: number) => this.telemetryService.publicLog('galleryService:downloadVSIX', { ...data, duration });
-
 		const operationParam = operation === InstallOperation.Install ? 'install' : operation === InstallOperation.Update ? 'update' : '';
 		const downloadAsset = operationParam ? {
 			uri: `${extension.assets.download.uri}${URI.parse(extension.assets.download.uri).query ? '&' : '?'}${operationParam}=true`,
@@ -1019,7 +916,6 @@ abstract class AbstractExtensionGalleryService implements IExtensionGalleryServi
 
 		const context = await this.getAsset(downloadAsset);
 		await this.fileService.writeFile(location, context.stream);
-		log(new Date().getTime() - startTime);
 	}
 
 	async getReadme(extension: IGalleryExtension, token: CancellationToken): Promise<string> {
@@ -1133,19 +1029,6 @@ abstract class AbstractExtensionGalleryService implements IExtensionGalleryServi
 				throw err;
 			}
 
-			const message = getErrorMessage(err);
-			type GalleryServiceCDNFallbackClassification = {
-				owner: 'sandy081';
-				comment: 'Fallback request information when the primary asset request to CDN fails';
-				url: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'asset url that failed' };
-				message: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'error message' };
-			};
-			type GalleryServiceCDNFallbackEvent = {
-				url: string;
-				message: string;
-			};
-			this.telemetryService.publicLog2<GalleryServiceCDNFallbackEvent, GalleryServiceCDNFallbackClassification>('galleryService:cdnFallback', { url, message });
-
 			const fallbackOptions = { ...options, url: fallbackUrl };
 			return this.requestService.request(fallbackOptions, token);
 		}
@@ -1219,12 +1102,11 @@ export class ExtensionGalleryService extends AbstractExtensionGalleryService {
 		@IRequestService requestService: IRequestService,
 		@ILogService logService: ILogService,
 		@IEnvironmentService environmentService: IEnvironmentService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IFileService fileService: IFileService,
 		@IProductService productService: IProductService,
 		@IConfigurationService configurationService: IConfigurationService,
 	) {
-		super(storageService, requestService, logService, environmentService, telemetryService, fileService, productService, configurationService);
+		super(storageService, requestService, logService, environmentService, fileService, productService, configurationService);
 	}
 }
 
@@ -1234,11 +1116,10 @@ export class ExtensionGalleryServiceWithNoStorageService extends AbstractExtensi
 		@IRequestService requestService: IRequestService,
 		@ILogService logService: ILogService,
 		@IEnvironmentService environmentService: IEnvironmentService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IFileService fileService: IFileService,
 		@IProductService productService: IProductService,
 		@IConfigurationService configurationService: IConfigurationService,
 	) {
-		super(undefined, requestService, logService, environmentService, telemetryService, fileService, productService, configurationService);
+		super(undefined, requestService, logService, environmentService, fileService, productService, configurationService);
 	}
 }

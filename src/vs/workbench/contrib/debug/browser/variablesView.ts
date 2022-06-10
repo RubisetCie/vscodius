@@ -31,7 +31,6 @@ import { WorkbenchAsyncDataTree } from 'vs/platform/list/browser/listService';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IProgressService, ProgressLocation } from 'vs/platform/progress/common/progress';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { ViewAction, ViewPane } from 'vs/workbench/browser/parts/views/viewPane';
 import { IViewletViewOptions } from 'vs/workbench/browser/parts/views/viewsViewlet';
@@ -74,10 +73,9 @@ export class VariablesView extends ViewPane {
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IOpenerService openerService: IOpenerService,
 		@IThemeService themeService: IThemeService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IMenuService private readonly menuService: IMenuService
 	) {
-		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
+		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
 
 		// Use scheduler to prevent unnecessary flashing
 		this.updateTreeScheduler = new RunOnceScheduler(async () => {
@@ -534,8 +532,6 @@ CommandsRegistry.registerCommand({
 		const notifications = accessor.get(INotificationService);
 		const progressService = accessor.get(IProgressService);
 		const extensionService = accessor.get(IExtensionService);
-		const telemetryService = accessor.get(ITelemetryService);
-		const debugService = accessor.get(IDebugService);
 
 		const ext = await extensionService.getExtension(HEX_EDITOR_EXTENSION_ID);
 		if (ext || await tryInstallHexEditor(notifications, progressService, extensionService, commandService)) {
@@ -545,10 +541,6 @@ CommandsRegistry.registerCommand({
 					"debugType" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
 				}
 			*/
-			telemetryService.publicLog('debug/didViewMemory', {
-				debugType: debugService.getModel().getSession(arg.sessionId)?.configuration.type,
-			});
-
 			await editorService.openEditor({
 				resource: getUriForDebugMemory(arg.sessionId, arg.variable.memoryReference),
 				options: {

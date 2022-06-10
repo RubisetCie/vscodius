@@ -108,8 +108,7 @@ export function transformErrorForSerialization(error: any): any {
 			$isError: true,
 			name,
 			message,
-			stack,
-			noTelemetry: error instanceof ErrorNoTelemetry
+			stack
 		};
 	}
 
@@ -229,30 +228,6 @@ export class NotSupportedError extends Error {
 
 export class ExpectedError extends Error {
 	readonly isExpected = true;
-}
-
-/**
- * Error that when thrown won't be logged in telemetry as an unhandled error.
- */
-export class ErrorNoTelemetry extends Error {
-
-	public static fromError(err: any): ErrorNoTelemetry {
-		if (err && err instanceof ErrorNoTelemetry) {
-			return err;
-		}
-
-		if (err && err instanceof Error) {
-			const result = new ErrorNoTelemetry();
-			result.name = err.name;
-			result.message = err.message;
-			result.stack = err.stack;
-			return result;
-		}
-
-		return new ErrorNoTelemetry(err);
-	}
-
-	readonly logTelemetry = false;
 }
 
 /**

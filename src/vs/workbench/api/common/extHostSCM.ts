@@ -9,7 +9,7 @@ import { debounce } from 'vs/base/common/decorators';
 import { DisposableStore, IDisposable, MutableDisposable } from 'vs/base/common/lifecycle';
 import { asPromise } from 'vs/base/common/async';
 import { ExtHostCommands } from 'vs/workbench/api/common/extHostCommands';
-import { MainContext, MainThreadSCMShape, SCMRawResource, SCMRawResourceSplice, SCMRawResourceSplices, IMainContext, ExtHostSCMShape, ICommandDto, MainThreadTelemetryShape, SCMGroupFeatures } from './extHost.protocol';
+import { MainContext, MainThreadSCMShape, SCMRawResource, SCMRawResourceSplice, SCMRawResourceSplices, IMainContext, ExtHostSCMShape, ICommandDto, SCMGroupFeatures } from './extHost.protocol';
 import { sortedDiff, equals } from 'vs/base/common/arrays';
 import { comparePaths } from 'vs/base/common/comparers';
 import type * as vscode from 'vscode';
@@ -681,7 +681,6 @@ export class ExtHostSCM implements ExtHostSCMShape {
 	private static _handlePool: number = 0;
 
 	private _proxy: MainThreadSCMShape;
-	private readonly _telemetry: MainThreadTelemetryShape;
 	private _sourceControls: Map<ProviderHandle, ExtHostSourceControl> = new Map<ProviderHandle, ExtHostSourceControl>();
 	private _sourceControlsByExtension: Map<string, ExtHostSourceControl[]> = new Map<string, ExtHostSourceControl[]>();
 
@@ -696,7 +695,6 @@ export class ExtHostSCM implements ExtHostSCMShape {
 		@ILogService private readonly logService: ILogService
 	) {
 		this._proxy = mainContext.getProxy(MainContext.MainThreadSCM);
-		this._telemetry = mainContext.getProxy(MainContext.MainThreadTelemetry);
 
 		_commands.registerArgumentProcessor({
 			processArgument: arg => {
@@ -739,15 +737,6 @@ export class ExtHostSCM implements ExtHostSCMShape {
 
 	createSourceControl(extension: IExtensionDescription, id: string, label: string, rootUri: vscode.Uri | undefined): vscode.SourceControl {
 		this.logService.trace('ExtHostSCM#createSourceControl', extension.identifier.value, id, label, rootUri);
-
-		type TEvent = { extensionId: string };
-		type TMeta = {
-			owner: 'joaomoreno';
-			extensionId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-		};
-		this._telemetry.$publicLog2<TEvent, TMeta>('api/scm/createSourceControl', {
-			extensionId: extension.identifier.value,
-		});
 
 		const handle = ExtHostSCM._handlePool++;
 		const sourceControl = new ExtHostSourceControl(extension, this._proxy, this._commands, id, label, rootUri);

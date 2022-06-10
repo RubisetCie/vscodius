@@ -14,7 +14,6 @@ import { IEnvironmentService } from 'vs/platform/environment/common/environment'
 import { IExtensionManagementService } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { FileOperationError, FileOperationResult, IFileService } from 'vs/platform/files/common/files';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { AbstractInitializer, AbstractJsonFileSynchroniser, IAcceptResult, IFileResourcePreview, IMergeResult } from 'vs/platform/userDataSync/common/abstractSynchronizer';
 import { edit } from 'vs/platform/userDataSync/common/content';
@@ -59,11 +58,10 @@ export class SettingsSynchroniser extends AbstractJsonFileSynchroniser implement
 		@IUserDataSyncUtilService userDataSyncUtilService: IUserDataSyncUtilService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@IUserDataSyncEnablementService userDataSyncEnablementService: IUserDataSyncEnablementService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IExtensionManagementService private readonly extensionManagementService: IExtensionManagementService,
 		@IUriIdentityService uriIdentityService: IUriIdentityService,
 	) {
-		super(environmentService.settingsResource, SyncResource.Settings, fileService, environmentService, storageService, userDataSyncStoreService, userDataSyncBackupStoreService, userDataSyncEnablementService, telemetryService, logService, userDataSyncUtilService, configurationService, uriIdentityService);
+		super(environmentService.settingsResource, SyncResource.Settings, fileService, environmentService, storageService, userDataSyncStoreService, userDataSyncBackupStoreService, userDataSyncEnablementService, logService, userDataSyncUtilService, configurationService, uriIdentityService);
 	}
 
 	async getRemoteUserDataSyncConfiguration(manifest: IUserDataManifest | null): Promise<IUserDataSyncConfiguration> {

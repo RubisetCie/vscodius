@@ -13,7 +13,6 @@ import { ViewPaneContainer, ViewPaneContainerAction, ViewsSubMenu } from 'vs/wor
 import { SyncDescriptor } from 'vs/platform/instantiation/common/descriptors';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { Event, Emitter } from 'vs/base/common/event';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { generateUuid } from 'vs/base/common/uuid';
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { getViewsStateStorageId, ViewContainerModel } from 'vs/workbench/services/views/common/viewContainerModel';
@@ -97,8 +96,7 @@ export class ViewDescriptorService extends Disposable implements IViewDescriptor
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IContextKeyService private readonly contextKeyService: IContextKeyService,
 		@IStorageService private readonly storageService: IStorageService,
-		@IExtensionService private readonly extensionService: IExtensionService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
+		@IExtensionService private readonly extensionService: IExtensionService
 	) {
 		super();
 
@@ -410,45 +408,6 @@ export class ViewDescriptorService extends Disposable implements IViewDescriptor
 		this._onDidChangeContainer.fire({ views, from, to });
 
 		this.saveViewPositionsToCache();
-
-		const containerToString = (container: ViewContainer): string => {
-			if (container.id.startsWith(ViewDescriptorService.COMMON_CONTAINER_ID_PREFIX)) {
-				return 'custom';
-			}
-
-			if (!container.extensionId) {
-				return container.id;
-			}
-
-			return 'extension';
-		};
-
-		// Log on cache update to avoid duplicate events in other windows
-		const viewCount = views.length;
-		const fromContainer = containerToString(from);
-		const toContainer = containerToString(to);
-		const fromLocation = oldLocation === ViewContainerLocation.Panel ? 'panel' : 'sidebar';
-		const toLocation = newLocation === ViewContainerLocation.Panel ? 'panel' : 'sidebar';
-
-		interface ViewDescriptorServiceMoveViewsEvent {
-			viewCount: number;
-			fromContainer: string;
-			toContainer: string;
-			fromLocation: string;
-			toLocation: string;
-		}
-
-		type ViewDescriptorServiceMoveViewsClassification = {
-			owner: 'sbatten';
-			comment: 'Logged when views are moved from one view container to another';
-			viewCount: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The number of views moved' };
-			fromContainer: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The starting view container of the moved views' };
-			toContainer: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The destination view container of the moved views' };
-			fromLocation: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The location of the starting view container. e.g. Primary Side Bar' };
-			toLocation: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The location of the destination view container. e.g. Panel' };
-		};
-
-		this.telemetryService.publicLog2<ViewDescriptorServiceMoveViewsEvent, ViewDescriptorServiceMoveViewsClassification>('viewDescriptorService.moveViews', { viewCount, fromContainer, toContainer, fromLocation, toLocation });
 	}
 
 	private cleanUpViewContainer(viewContainerId: string): void {

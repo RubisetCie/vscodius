@@ -7,15 +7,9 @@ import { isWeb } from 'vs/base/common/platform';
 import { format2 } from 'vs/base/common/strings';
 import { URI } from 'vs/base/common/uri';
 import { IHeaders } from 'vs/base/parts/request/common/request';
-import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { IFileService } from 'vs/platform/files/common/files';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { IProductService } from 'vs/platform/product/common/productService';
-import { getServiceMachineId } from 'vs/platform/externalServices/common/serviceMachineId';
-import { IStorageService } from 'vs/platform/storage/common/storage';
-import { TelemetryLevel } from 'vs/platform/telemetry/common/telemetry';
-import { getTelemetryLevel, supportsTelemetry } from 'vs/platform/telemetry/common/telemetryUtils';
 import { RemoteAuthorities } from 'vs/base/common/network';
 import { getRemoteServerRootPath } from 'vs/platform/remote/common/remoteHosts';
 
@@ -56,10 +50,7 @@ export abstract class AbstractExtensionResourceLoaderService implements IExtensi
 
 	constructor(
 		protected readonly _fileService: IFileService,
-		private readonly _storageService: IStorageService,
-		private readonly _productService: IProductService,
-		private readonly _environmentService: IEnvironmentService,
-		private readonly _configurationService: IConfigurationService,
+		private readonly _productService: IProductService
 	) {
 		this._webExtensionResourceEndPoint = `${getRemoteServerRootPath(_productService)}/${WEB_EXTENSION_RESOURCE_END_POINT}/`;
 		if (_productService.extensionsGallery) {
@@ -92,21 +83,10 @@ export abstract class AbstractExtensionResourceLoaderService implements IExtensi
 			'X-Client-Name': `${this._productService.applicationName}${isWeb ? '-web' : ''}`,
 			'X-Client-Version': this._productService.version
 		};
-		if (supportsTelemetry(this._productService, this._environmentService) && getTelemetryLevel(this._configurationService) === TelemetryLevel.USAGE) {
-			headers['X-Machine-Id'] = await this._getServiceMachineId();
-		}
 		if (this._productService.commit) {
 			headers['X-Client-Commit'] = this._productService.commit;
 		}
 		return headers;
-	}
-
-	private _serviceMachineIdPromise: Promise<string> | undefined;
-	private _getServiceMachineId(): Promise<string> {
-		if (!this._serviceMachineIdPromise) {
-			this._serviceMachineIdPromise = getServiceMachineId(this._environmentService, this._fileService, this._storageService);
-		}
-		return this._serviceMachineIdPromise;
 	}
 
 	private _getExtensionGalleryAuthority(uri: URI): string | undefined {

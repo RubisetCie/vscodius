@@ -16,11 +16,10 @@ import {
 	DidUninstallExtensionEvent, ExtensionManagementError, IExtensionGalleryService, IExtensionIdentifier, IExtensionManagementParticipant, IExtensionManagementService, IGalleryExtension, IGalleryMetadata, ILocalExtension, InstallExtensionEvent, InstallExtensionResult, InstallOperation, InstallOptions,
 	InstallVSIXOptions, IExtensionsControlManifest, StatisticType, UninstallOptions, isTargetPlatformCompatible, TargetPlatformToString, ExtensionManagementErrorCode
 } from 'vs/platform/extensionManagement/common/extensionManagement';
-import { areSameExtensions, ExtensionKey, getGalleryExtensionTelemetryData, getLocalExtensionTelemetryData, getMaliciousExtensionsSet } from 'vs/platform/extensionManagement/common/extensionManagementUtil';
+import { areSameExtensions, ExtensionKey, getMaliciousExtensionsSet } from 'vs/platform/extensionManagement/common/extensionManagementUtil';
 import { ExtensionType, IExtensionManifest, TargetPlatform } from 'vs/platform/extensions/common/extensions';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IProductService } from 'vs/platform/product/common/productService';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 
 export interface IInstallExtensionTask {
 	readonly identifier: IExtensionIdentifier;
@@ -65,7 +64,6 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 
 	constructor(
 		@IExtensionGalleryService protected readonly galleryService: IExtensionGalleryService,
-		@ITelemetryService protected readonly telemetryService: ITelemetryService,
 		@ILogService protected readonly logService: ILogService,
 		@IProductService protected readonly productService: IProductService
 	) {
@@ -91,7 +89,6 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 			const compatible = await this.checkAndGetCompatibleVersion(extension, !!options.installGivenVersion, !!options.installPreReleaseVersion);
 			return await this.installExtension(compatible.manifest, compatible.extension, options);
 		} catch (error) {
-			reportTelemetry(this.telemetryService, 'extensionGallery:install', { extensionData: getGalleryExtensionTelemetryData(extension), error });
 			this.logService.error(`Failed to install extension.`, extension.identifier.id);
 			this.logService.error(error);
 			throw toExtensionManagementError(error);
@@ -211,17 +208,10 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 
 				// Install extensions in parallel and wait until all extensions are installed / failed
 				await this.joinAllSettled(extensionsToInstall.map(async ({ task }) => {
-					const startTime = new Date().getTime();
 					try {
 						const local = await task.run();
 						await this.joinAllSettled(this.participants.map(participant => participant.postInstall(local, task.source, options, CancellationToken.None)));
 						if (!URI.isUri(task.source)) {
-							const isUpdate = task.operation === InstallOperation.Update;
-							reportTelemetry(this.telemetryService, isUpdate ? 'extensionGallery:update' : 'extensionGallery:install', {
-								extensionData: getGalleryExtensionTelemetryData(task.source),
-								duration: new Date().getTime() - startTime,
-								durationSinceUpdate: isUpdate ? undefined : new Date().getTime() - task.source.lastUpdated
-							});
 							// In web, report extension install statistics explicitly. In Desktop, statistics are automatically updated while downloading the VSIX.
 							if (isWeb && task.operation !== InstallOperation.Update) {
 								try {
@@ -231,9 +221,6 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 						}
 						installResults.push({ local, identifier: task.identifier, operation: task.operation, source: task.source });
 					} catch (error) {
-						if (!URI.isUri(task.source)) {
-							reportTelemetry(this.telemetryService, task.operation === InstallOperation.Update ? 'extensionGallery:update' : 'extensionGallery:install', { extensionData: getGalleryExtensionTelemetryData(task.source), duration: new Date().getTime() - startTime, error });
-						}
 						this.logService.error('Error while installing the extension:', task.identifier.id);
 						throw error;
 					} finally { extensionsToInstallMap.delete(task.identifier.id.toLowerCase()); }
@@ -438,7 +425,6 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 			} else {
 				this.logService.info('Successfully uninstalled extension:', extension.identifier.id);
 			}
-			reportTelemetry(this.telemetryService, 'extensionGallery:uninstall', { extensionData: getLocalExtensionTelemetryData(extension), error });
 			this._onDidUninstallExtension.fire({ identifier: extension.identifier, error: error?.code });
 		};
 
@@ -614,46 +600,6 @@ function toExtensionManagementError(error: Error): ExtensionManagementError {
 	const e = new ExtensionManagementError(error.message, ExtensionManagementErrorCode.Internal);
 	e.stack = error.stack;
 	return e;
-}
-
-export function reportTelemetry(telemetryService: ITelemetryService, eventName: string, { extensionData, duration, error, durationSinceUpdate }: { extensionData: any; duration?: number; durationSinceUpdate?: number; error?: Error }): void {
-	const errorcode = error ? error instanceof ExtensionManagementError ? error.code : ExtensionManagementErrorCode.Internal : undefined;
-	/* __GDPR__
-		"extensionGallery:install" : {
-			"owner": "sandy081",
-			"success": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true },
-			"duration" : { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true },
-			"durationSinceUpdate" : { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true },
-			"errorcode": { "classification": "CallstackOrException", "purpose": "PerformanceAndHealth" },
-			"recommendationReason": { "retiredFromVersion": "1.23.0", "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true },
-			"${include}": [
-				"${GalleryExtensionTelemetryData}"
-			]
-		}
-	*/
-	/* __GDPR__
-		"extensionGallery:uninstall" : {
-			"owner": "sandy081",
-			"success": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true },
-			"duration" : { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true },
-			"errorcode": { "classification": "CallstackOrException", "purpose": "PerformanceAndHealth" },
-			"${include}": [
-				"${GalleryExtensionTelemetryData}"
-			]
-		}
-	*/
-	/* __GDPR__
-		"extensionGallery:update" : {
-			"owner": "sandy081",
-			"success": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true },
-			"duration" : { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true },
-			"errorcode": { "classification": "CallstackOrException", "purpose": "PerformanceAndHealth" },
-			"${include}": [
-				"${GalleryExtensionTelemetryData}"
-			]
-		}
-	*/
-	telemetryService.publicLog(eventName, { ...extensionData, success: !error, duration, errorcode, durationSinceUpdate });
 }
 
 export abstract class AbstractExtensionTask<T> {

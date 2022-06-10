@@ -147,12 +147,6 @@ export class SideBySideEditorInput extends EditorInput implements ISideBySideEdi
 		return super.getAriaLabel();
 	}
 
-	override getTelemetryDescriptor(): { [key: string]: unknown } {
-		const descriptor = this.primary.getTelemetryDescriptor();
-
-		return { ...descriptor, ...super.getTelemetryDescriptor() };
-	}
-
 	override isDirty(): boolean {
 		return this.primary.isDirty();
 	}

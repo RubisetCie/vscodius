@@ -25,7 +25,6 @@ import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { IQuickInputService, IQuickPickItem, IQuickPickSeparator } from 'vs/platform/quickinput/common/quickInput';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import {
 	IUserDataAutoSyncService, IUserDataSyncService, registerConfiguration,
 	SyncResource, SyncStatus, UserDataSyncError, UserDataSyncErrorCode, USER_DATA_SYNC_SCHEME, IUserDataSyncEnablementService,
@@ -64,13 +63,6 @@ import { IHostService } from 'vs/workbench/services/host/browser/host';
 const CONTEXT_CONFLICTS_SOURCES = new RawContextKey<string>('conflictsSources', '');
 
 type ConfigureSyncQuickPickItem = { id: SyncResource; label: string; description?: string };
-
-type SyncConflictsClassification = {
-	owner: 'sandy081';
-	comment: 'Response information when conflict happens during settings sync';
-	source: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'settings sync resource. eg., settings, keybindings...' };
-	action?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'action taken while resolving conflicts. Eg: acceptLocal, acceptRemote' };
-};
 
 const turnOnSyncCommand = { id: 'workbench.userDataSync.actions.turnOn', title: localize('turn on sync with category', "{0}: Turn On...", SYNC_TITLE) };
 const turnOffSyncCommand = { id: 'workbench.userDataSync.actions.turnOff', title: localize('stop sync', "{0}: Turn Off", SYNC_TITLE) };
@@ -124,7 +116,6 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 		@IUserDataAutoSyncService userDataAutoSyncService: IUserDataAutoSyncService,
 		@ITextModelService textModelResolverService: ITextModelService,
 		@IPreferencesService private readonly preferencesService: IPreferencesService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IProductService private readonly productService: IProductService,
 		@IStorageService private readonly storageService: IStorageService,
 		@IOpenerService private readonly openerService: IOpenerService,
@@ -132,7 +123,7 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 		@IUserDataSyncStoreManagementService private readonly userDataSyncStoreManagementService: IUserDataSyncStoreManagementService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IUserDataInitializationService private readonly userDataInitializationService: IUserDataInitializationService,
-		@IHostService private readonly hostService: IHostService,
+		@IHostService private readonly hostService: IHostService
 	) {
 		super();
 
@@ -243,21 +234,18 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 							{
 								label: localize('replace remote', "Replace Remote"),
 								run: () => {
-									this.telemetryService.publicLog2<{ source: string; action: string }, SyncConflictsClassification>('sync/handleConflicts', { source: syncResource, action: 'acceptLocal' });
 									this.acceptLocal(syncResource, conflicts);
 								}
 							},
 							{
 								label: localize('replace local', "Replace Local"),
 								run: () => {
-									this.telemetryService.publicLog2<{ source: string; action: string }, SyncConflictsClassification>('sync/handleConflicts', { source: syncResource, action: 'acceptRemote' });
 									this.acceptRemote(syncResource, conflicts);
 								}
 							},
 							{
 								label: localize('show conflicts', "Show Conflicts"),
 								run: () => {
-									this.telemetryService.publicLog2<{ source: string; action?: string }, SyncConflictsClassification>('sync/showConflicts', { source: syncResource });
 									this.handleConflicts([syncResource, conflicts]);
 								}
 							}
@@ -1362,8 +1350,7 @@ class AcceptChangesContribution extends Disposable implements IEditorContributio
 		@INotificationService private readonly notificationService: INotificationService,
 		@IDialogService private readonly dialogService: IDialogService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
-		@IUserDataSyncEnablementService private readonly userDataSyncEnablementService: IUserDataSyncEnablementService,
+		@IUserDataSyncEnablementService private readonly userDataSyncEnablementService: IUserDataSyncEnablementService
 	) {
 		super();
 
@@ -1425,7 +1412,6 @@ class AcceptChangesContribution extends Disposable implements IEditorContributio
 			this._register(this.acceptChangesButton.onClick(async () => {
 				const model = this.editor.getModel();
 				if (model) {
-					this.telemetryService.publicLog2<{ source: string; action: string }, SyncConflictsClassification>('sync/handleConflicts', { source: syncResource, action: isRemote ? 'acceptRemote' : 'acceptLocal' });
 					const syncAreaLabel = getSyncAreaLabel(syncResource);
 					const result = await this.dialogService.confirm({
 						type: 'info',

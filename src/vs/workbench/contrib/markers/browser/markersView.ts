@@ -8,7 +8,6 @@ import 'vs/css!./media/markers';
 import { URI } from 'vs/base/common/uri';
 import * as dom from 'vs/base/browser/dom';
 import { IAction, Action, Separator } from 'vs/base/common/actions';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IEditorService, SIDE_GROUP, ACTIVE_GROUP } from 'vs/workbench/services/editor/common/editorService';
 import { Marker, ResourceMarkers, RelatedInformation, MarkerChangesEvent, MarkersModel, compareMarkersByUri, MarkerElement, MarkerTableItem } from 'vs/workbench/contrib/markers/browser/markersModel';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -144,7 +143,6 @@ export class MarkersView extends ViewPane implements IMarkersView {
 		@IViewDescriptorService viewDescriptorService: IViewDescriptorService,
 		@IEditorService private readonly editorService: IEditorService,
 		@IConfigurationService configurationService: IConfigurationService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IMarkerService private readonly markerService: IMarkerService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
@@ -154,9 +152,9 @@ export class MarkersView extends ViewPane implements IMarkersView {
 		@IKeybindingService keybindingService: IKeybindingService,
 		@IStorageService storageService: IStorageService,
 		@IOpenerService openerService: IOpenerService,
-		@IThemeService themeService: IThemeService,
+		@IThemeService themeService: IThemeService
 	) {
-		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
+		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
 		this.smallLayoutContextKey = MarkersContextKeys.MarkersViewSmallLayoutContextKey.bindTo(this.contextKeyService);
 		this.panelState = new Memento(Markers.MARKERS_VIEW_STORAGE_ID, storageService).getMemento(StorageScope.WORKSPACE, StorageTarget.USER);
 

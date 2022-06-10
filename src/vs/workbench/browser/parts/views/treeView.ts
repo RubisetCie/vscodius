@@ -50,7 +50,6 @@ import { INotificationService } from 'vs/platform/notification/common/notificati
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IProgressService } from 'vs/platform/progress/common/progress';
 import { Registry } from 'vs/platform/registry/common/platform';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { focusBorder, listFilterMatchHighlight, listFilterMatchHighlightBorder, textCodeBlockBackground, textLinkForeground } from 'vs/platform/theme/common/colorRegistry';
 import { ColorScheme } from 'vs/platform/theme/common/theme';
 import { FileThemeIcon, FolderThemeIcon, IThemeService, registerThemingParticipant, ThemeIcon } from 'vs/platform/theme/common/themeService';
@@ -82,10 +81,9 @@ export class TreeViewPane extends ViewPane {
 		@IViewDescriptorService viewDescriptorService: IViewDescriptorService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IOpenerService openerService: IOpenerService,
-		@IThemeService themeService: IThemeService,
-		@ITelemetryService telemetryService: ITelemetryService,
+		@IThemeService themeService: IThemeService
 	) {
-		super({ ...(options as IViewPaneOptions), titleMenuId: MenuId.ViewTitle, donotForwardArgs: true }, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
+		super({ ...(options as IViewPaneOptions), titleMenuId: MenuId.ViewTitle, donotForwardArgs: true }, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
 		const { treeView } = (<ITreeViewDescriptor>Registry.as<IViewsRegistry>(Extensions.ViewsRegistry).getView(options.id));
 		this.treeView = treeView;
 		this._register(this.treeView.onDidChangeActions(() => this.updateActions(), this));
@@ -1273,7 +1271,6 @@ export class CustomTreeView extends AbstractTreeView {
 	constructor(
 		id: string,
 		title: string,
-		private readonly extensionId: string,
 		@IThemeService themeService: IThemeService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@ICommandService commandService: ICommandService,
@@ -1286,28 +1283,13 @@ export class CustomTreeView extends AbstractTreeView {
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IHoverService hoverService: IHoverService,
 		@IExtensionService private readonly extensionService: IExtensionService,
-		@IActivityService activityService: IActivityService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService
+		@IActivityService activityService: IActivityService
 	) {
 		super(id, title, themeService, instantiationService, commandService, configurationService, progressService, contextMenuService, keybindingService, notificationService, viewDescriptorService, hoverService, contextKeyService, activityService);
 	}
 
 	protected activate() {
 		if (!this.activated) {
-			type ExtensionViewTelemetry = {
-				extensionId: string;
-				id: string;
-			};
-			type ExtensionViewTelemetryMeta = {
-				extensionId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Id of the extension' };
-				id: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Id of the view' };
-				owner: 'digitarald';
-				comment: 'Helps to gain insights on what extension contributed views are most popular';
-			};
-			this.telemetryService.publicLog2<ExtensionViewTelemetry, ExtensionViewTelemetryMeta>('Extension:ViewActivate', {
-				extensionId: this.extensionId,
-				id: this.id,
-			});
 			this.createTree();
 			this.progressService.withProgress({ location: this.id }, () => this.extensionService.activateByEvent(`onView:${this.id}`))
 				.then(() => timeout(2000))

@@ -69,7 +69,6 @@ import { IPreferencesService } from 'vs/workbench/services/preferences/common/pr
 import { renderIcon } from 'vs/base/browser/ui/iconLabel/iconLabels';
 import { Codicon } from 'vs/base/common/codicons';
 import { assertType } from 'vs/base/common/types';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 
 export class PromptExtensionInstallFailureAction extends Action {
 
@@ -887,8 +886,7 @@ export class SponsorExtensionAction extends ExtensionAction {
 	private static readonly DisabledClass = `${SponsorExtensionAction.EnabledClass} disabled`;
 
 	constructor(
-		@IOpenerService private openerService: IOpenerService,
-		@ITelemetryService private telemetryService: ITelemetryService,
+		@IOpenerService private openerService: IOpenerService
 	) {
 		super('extensionsAction.sponsorExtension', localize('sponsor', "Sponsor"), SponsorExtensionAction.DisabledClass, false);
 		this.update();
@@ -907,15 +905,6 @@ export class SponsorExtensionAction extends ExtensionAction {
 
 	override async run(): Promise<any> {
 		if (this.extension?.publisherSponsorLink) {
-			type SponsorExtensionClassification = {
-				owner: 'sandy081';
-				comment: 'Reporting when sponosor extension action is executed';
-				'extensionId': { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Id of the extension to be sponsored' };
-			};
-			type SponsorExtensionEvent = {
-				'extensionId': string;
-			};
-			this.telemetryService.publicLog2<SponsorExtensionEvent, SponsorExtensionClassification>('extensionsAction.sponsorExtension', { extensionId: this.extension.identifier.id });
 			return this.openerService.open(this.extension.publisherSponsorLink);
 		}
 	}

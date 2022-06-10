@@ -29,7 +29,6 @@ import { IContextMenuService } from 'vs/platform/contextview/browser/contextView
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { attachButtonStyler } from 'vs/platform/theme/common/styler';
 import { DiffEditorInput } from 'vs/workbench/common/editor/diffEditorInput';
 import { IEditorContribution } from 'vs/editor/common/editorCommon';
@@ -64,10 +63,9 @@ export class UserDataSyncMergesViewPane extends TreeViewPane {
 		@IViewDescriptorService viewDescriptorService: IViewDescriptorService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IOpenerService openerService: IOpenerService,
-		@IThemeService themeService: IThemeService,
-		@ITelemetryService telemetryService: ITelemetryService,
+		@IThemeService themeService: IThemeService
 	) {
-		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
+		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
 		this.userDataSyncPreview = userDataSyncWorkbenchService.userDataSyncPreview;
 
 		this._register(this.userDataSyncPreview.onDidChangeResources(() => this.updateSyncButtonEnablement()));

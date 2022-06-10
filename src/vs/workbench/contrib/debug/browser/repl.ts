@@ -51,7 +51,6 @@ import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegis
 import { WorkbenchAsyncDataTree } from 'vs/platform/list/browser/listService';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { editorForeground, resolveColorValue } from 'vs/platform/theme/common/colorRegistry';
 import { IThemeService, ThemeIcon } from 'vs/platform/theme/common/themeService';
 import { IViewPaneOptions, ViewAction, ViewPane } from 'vs/workbench/browser/parts/views/viewPane';
@@ -128,11 +127,10 @@ export class Repl extends ViewPane implements IHistoryNavigationWidget {
 		@IEditorService private readonly editorService: IEditorService,
 		@IKeybindingService keybindingService: IKeybindingService,
 		@IOpenerService openerService: IOpenerService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IMenuService menuService: IMenuService,
-		@ILanguageFeaturesService private readonly languageFeaturesService: ILanguageFeaturesService,
+		@ILanguageFeaturesService private readonly languageFeaturesService: ILanguageFeaturesService
 	) {
-		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
+		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
 
 		this.menu = menuService.createMenu(MenuId.DebugConsoleContext, contextKeyService);
 		this._register(this.menu);

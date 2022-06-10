@@ -14,7 +14,7 @@ export class TypeScriptServerError extends Error {
 		response: Proto.Response
 	): TypeScriptServerError {
 		const parsedResult = TypeScriptServerError.parseErrorText(response);
-		return new TypeScriptServerError(serverId, version, response, parsedResult?.message, parsedResult?.stack, parsedResult?.sanitizedStack);
+		return new TypeScriptServerError(serverId, version, response, parsedResult?.message, parsedResult?.stack);
 	}
 
 	private constructor(
@@ -22,8 +22,7 @@ export class TypeScriptServerError extends Error {
 		public readonly version: TypeScriptVersion,
 		private readonly response: Proto.Response,
 		public readonly serverMessage: string | undefined,
-		public readonly serverStack: string | undefined,
-		private readonly sanitizedStack: string | undefined
+		public readonly serverStack: string | undefined
 	) {
 		super(`<${serverId}> TypeScript Server Error (${version.displayName})\n${serverMessage}\n${serverStack}`);
 	}
@@ -31,25 +30,6 @@ export class TypeScriptServerError extends Error {
 	public get serverErrorText() { return this.response.message; }
 
 	public get serverCommand() { return this.response.command; }
-
-	public get telemetry() {
-		// The "sanitizedstack" has been purged of error messages, paths, and file names (other than tsserver)
-		// and, thus, can be classified as SystemMetaData, rather than CallstackOrException.
-		/* __GDPR__FRAGMENT__
-			"TypeScriptRequestErrorProperties" : {
-				"command" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-				"serverid" : { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth" },
-				"sanitizedstack" : { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth" },
-				"badclient" : { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth" }
-			}
-		*/
-		return {
-			command: this.serverCommand,
-			serverid: this.serverId,
-			sanitizedstack: this.sanitizedStack || '',
-			badclient: /\bBADCLIENT\b/.test(this.stack || ''),
-		} as const;
-	}
 
 	/**
 	 * Given a `errorText` from a tsserver request indicating failure in handling a request,

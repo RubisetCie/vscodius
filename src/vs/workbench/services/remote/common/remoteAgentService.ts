@@ -9,7 +9,6 @@ import { IChannel, IServerChannel } from 'vs/base/parts/ipc/common/ipc';
 import { IDiagnosticInfoOptions, IDiagnosticInfo } from 'vs/platform/diagnostics/common/diagnostics';
 import { Event } from 'vs/base/common/event';
 import { PersistentConnectionEvent, ISocketFactory } from 'vs/platform/remote/common/remoteAgentConnection';
-import { ITelemetryData, TelemetryLevel } from 'vs/platform/telemetry/common/telemetry';
 import { ExtensionIdentifier, IExtensionDescription } from 'vs/platform/extensions/common/extensions';
 import { URI } from 'vs/base/common/uri';
 
@@ -36,12 +35,6 @@ export interface IRemoteAgentService {
 	 */
 	getExtensionHostExitInfo(reconnectionToken: string): Promise<IExtensionHostExitInfo | null>;
 
-	/**
-	 * Gets the round trip time from the remote extension host. Note that this
-	 * may be delayed if the extension host is busy.
-	 */
-	getRoundTripTime(): Promise<number | undefined>;
-
 	whenExtensionsReady(): Promise<void>;
 	/**
 	 * Scan remote extensions.
@@ -52,9 +45,6 @@ export interface IRemoteAgentService {
 	 */
 	scanSingleExtension(extensionLocation: URI, isBuiltin: boolean): Promise<IExtensionDescription | null>;
 	getDiagnosticInfo(options: IDiagnosticInfoOptions): Promise<IDiagnosticInfo | undefined>;
-	updateTelemetryLevel(telemetryLevel: TelemetryLevel): Promise<void>;
-	logTelemetry(eventName: string, data?: ITelemetryData): Promise<void>;
-	flushTelemetry(): Promise<void>;
 }
 
 export interface IExtensionHostExitInfo {

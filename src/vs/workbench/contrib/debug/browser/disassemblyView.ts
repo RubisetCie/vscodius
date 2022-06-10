@@ -12,7 +12,6 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { WorkbenchTable } from 'vs/platform/list/browser/listService';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { editorBackground } from 'vs/platform/theme/common/colorRegistry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { EditorPane } from 'vs/workbench/browser/parts/editor/editorPane';
@@ -76,14 +75,13 @@ export class DisassemblyView extends EditorPane {
 	private _loadingLock: boolean = false;
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
 		@IStorageService storageService: IStorageService,
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 		@IDebugService private readonly _debugService: IDebugService,
 	) {
-		super(DISASSEMBLY_VIEW_ID, telemetryService, themeService, storageService);
+		super(DISASSEMBLY_VIEW_ID, themeService, storageService);
 
 		this._disassembledInstructions = undefined;
 		this._onDidChangeStackFrame = new Emitter<void>();

@@ -179,7 +179,6 @@ export class QueryBuilder {
 			.filter(query => !!query) as IFolderQuery[];
 
 		const queryProps: ICommonQueryProps<uri> = {
-			_reason: options._reason,
 			folderQueries,
 			usingSearchPaths: !!(includeSearchPathsInfo.searchPaths && includeSearchPathsInfo.searchPaths.length),
 			extraFileResources: options.extraFileResources,

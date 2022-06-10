@@ -9,22 +9,16 @@ import { IFileService } from 'vs/platform/files/common/files';
 import { AbstractExtensionResourceLoaderService, IExtensionResourceLoaderService } from 'vs/workbench/services/extensionResourceLoader/common/extensionResourceLoader';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { asTextOrError, IRequestService } from 'vs/platform/request/common/request';
-import { IStorageService } from 'vs/platform/storage/common/storage';
-import { IEnvironmentService } from 'vs/platform/environment/common/environment';
-import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { CancellationToken } from 'vs/base/common/cancellation';
 
 export class ExtensionResourceLoaderService extends AbstractExtensionResourceLoaderService {
 
 	constructor(
 		@IFileService fileService: IFileService,
-		@IStorageService storageService: IStorageService,
 		@IProductService productService: IProductService,
-		@IEnvironmentService environmentService: IEnvironmentService,
-		@IConfigurationService configurationService: IConfigurationService,
 		@IRequestService private readonly _requestService: IRequestService,
 	) {
-		super(fileService, storageService, productService, environmentService, configurationService);
+		super(fileService, productService);
 	}
 
 	async readExtensionResource(uri: URI): Promise<string> {

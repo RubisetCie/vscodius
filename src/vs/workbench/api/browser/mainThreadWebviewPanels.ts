@@ -7,7 +7,6 @@ import { onUnexpectedError } from 'vs/base/common/errors';
 import { Disposable, dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { URI } from 'vs/base/common/uri';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { MainThreadWebviews, reviveWebviewContentOptions, reviveWebviewExtension } from 'vs/workbench/api/browser/mainThreadWebviews';
 import * as extHostProtocol from 'vs/workbench/api/common/extHost.protocol';
 import { DiffEditorInput } from 'vs/workbench/common/editor/diffEditorInput';
@@ -94,8 +93,7 @@ export class MainThreadWebviewPanels extends Disposable implements extHostProtoc
 		@IEditorGroupsService private readonly _editorGroupService: IEditorGroupsService,
 		@IEditorService private readonly _editorService: IEditorService,
 		@IExtensionService extensionService: IExtensionService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
-		@IWebviewWorkbenchService private readonly _webviewWorkbenchService: IWebviewWorkbenchService,
+		@IWebviewWorkbenchService private readonly _webviewWorkbenchService: IWebviewWorkbenchService
 	) {
 		super();
 
@@ -173,20 +171,6 @@ export class MainThreadWebviewPanels extends Disposable implements extHostProtoc
 		}, this.webviewPanelViewType.fromExternal(viewType), initData.title, mainThreadShowOptions);
 
 		this.addWebviewInput(handle, webview, { serializeBuffersForPostMessage: initData.serializeBuffersForPostMessage });
-
-		const payload = {
-			extensionId: extension.id.value,
-			viewType
-		} as const;
-
-		type Classification = {
-			extensionId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Id of the extension that created the webview panel' };
-			viewType: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Id of the webview' };
-			owner: 'mjbvz';
-			comment: 'Triggered when a webview is created. Records the type of webview and the extension which created it';
-		};
-
-		this._telemetryService.publicLog2<typeof payload, Classification>('webviews:createWebviewPanel', payload);
 	}
 
 	public $disposeWebview(handle: extHostProtocol.WebviewHandle): void {

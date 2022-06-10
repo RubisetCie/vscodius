@@ -3,9 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { hostname, release } from 'os';
 import { Emitter, Event } from 'vs/base/common/event';
-import { DisposableStore, toDisposable } from 'vs/base/common/lifecycle';
+import { DisposableStore } from 'vs/base/common/lifecycle';
 import { Schemas } from 'vs/base/common/network';
 import * as path from 'vs/base/common/path';
 import { IURITransformer } from 'vs/base/common/uriIpc';
@@ -46,20 +45,12 @@ import { RemoteAgentConnectionContext } from 'vs/platform/remote/common/remoteAg
 import { IRequestService } from 'vs/platform/request/common/request';
 import { RequestChannel } from 'vs/platform/request/common/requestIpc';
 import { RequestService } from 'vs/platform/request/node/requestService';
-import { resolveCommonProperties } from 'vs/platform/telemetry/common/commonProperties';
-import { ITelemetryService, TelemetryLevel } from 'vs/platform/telemetry/common/telemetry';
-import { ITelemetryServiceConfig } from 'vs/platform/telemetry/common/telemetryService';
-import { getPiiPathsFromEnvironment, ITelemetryAppender, NullAppender, supportsTelemetry } from 'vs/platform/telemetry/common/telemetryUtils';
-import { AppInsightsAppender } from 'vs/platform/telemetry/node/appInsightsAppender';
-import ErrorTelemetry from 'vs/platform/telemetry/node/errorTelemetry';
 import { IPtyService, TerminalSettingId } from 'vs/platform/terminal/common/terminal';
 import { PtyHostService } from 'vs/platform/terminal/node/ptyHostService';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { UriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentityService';
 import { RemoteAgentEnvironmentChannel } from 'vs/server/node/remoteAgentEnvironmentImpl';
 import { RemoteAgentFileSystemProviderChannel } from 'vs/server/node/remoteFileSystemProviderServer';
-import { ServerTelemetryChannel } from 'vs/platform/telemetry/common/remoteTelemetryChannel';
-import { IServerTelemetryService, ServerNullTelemetryService, ServerTelemetryService } from 'vs/platform/telemetry/common/serverTelemetryService';
 import { RemoteTerminalChannel } from 'vs/server/node/remoteTerminalChannel';
 import { createURITransformer } from 'vs/workbench/api/node/uriTransformer';
 import { ServerConnectionToken } from 'vs/server/node/serverConnectionToken';
@@ -71,8 +62,6 @@ import { ExtensionHostStatusService, IExtensionHostStatusService } from 'vs/serv
 import { IExtensionsScannerService } from 'vs/platform/extensionManagement/common/extensionsScannerService';
 import { ExtensionsScannerService } from 'vs/server/node/extensionsScannerService';
 import { NullPolicyService } from 'vs/platform/policy/common/policy';
-
-const eventPrefix = 'monacoworkbench';
 
 export async function setupServerServices(connectionToken: ServerConnectionToken, args: ServerParsedArgs, REMOTE_DATA_FOLDER: string, disposables: DisposableStore) {
 	const services = new ServiceCollection();
@@ -119,36 +108,7 @@ export async function setupServerServices(connectionToken: ServerConnectionToken
 
 	// Request
 	services.set(IRequestService, new SyncDescriptor(RequestService));
-
-	let appInsightsAppender: ITelemetryAppender = NullAppender;
 	const machineId = await getMachineId();
-	if (supportsTelemetry(productService, environmentService)) {
-		if (productService.aiConfig && productService.aiConfig.asimovKey) {
-			appInsightsAppender = new AppInsightsAppender(eventPrefix, null, productService.aiConfig.asimovKey);
-			disposables.add(toDisposable(() => appInsightsAppender!.flush())); // Ensure the AI appender is disposed so that it flushes remaining data
-		}
-
-		const config: ITelemetryServiceConfig = {
-			appenders: [appInsightsAppender],
-			commonProperties: resolveCommonProperties(fileService, release(), hostname(), process.arch, productService.commit, productService.version + '-remote', machineId, productService.msftInternalDomains, environmentService.installSourcePath, 'remoteAgent'),
-			piiPaths: getPiiPathsFromEnvironment(environmentService)
-		};
-		const initialTelemetryLevelArg = environmentService.args['telemetry-level'];
-		let injectedTelemetryLevel: TelemetryLevel = TelemetryLevel.USAGE;
-		// Convert the passed in CLI argument into a telemetry level for the telemetry service
-		if (initialTelemetryLevelArg === 'all') {
-			injectedTelemetryLevel = TelemetryLevel.USAGE;
-		} else if (initialTelemetryLevelArg === 'error') {
-			injectedTelemetryLevel = TelemetryLevel.ERROR;
-		} else if (initialTelemetryLevelArg === 'crash') {
-			injectedTelemetryLevel = TelemetryLevel.CRASH;
-		} else if (initialTelemetryLevelArg !== undefined) {
-			injectedTelemetryLevel = TelemetryLevel.NONE;
-		}
-		services.set(IServerTelemetryService, new SyncDescriptor(ServerTelemetryService, [config, injectedTelemetryLevel]));
-	} else {
-		services.set(IServerTelemetryService, ServerNullTelemetryService);
-	}
 
 	services.set(IExtensionGalleryService, new SyncDescriptor(ExtensionGalleryServiceWithNoStorageService));
 
@@ -183,10 +143,6 @@ export async function setupServerServices(connectionToken: ServerConnectionToken
 		const extensionsScannerService = accessor.get(IExtensionsScannerService);
 		const remoteExtensionEnvironmentChannel = new RemoteAgentEnvironmentChannel(connectionToken, environmentService, extensionManagementCLIService, logService, extensionHostStatusService, extensionsScannerService);
 		socketServer.registerChannel('remoteextensionsenvironment', remoteExtensionEnvironmentChannel);
-
-		const telemetryChannel = new ServerTelemetryChannel(accessor.get(IServerTelemetryService), appInsightsAppender);
-		socketServer.registerChannel('telemetry', telemetryChannel);
-
 		socketServer.registerChannel(REMOTE_TERMINAL_CHANNEL_NAME, new RemoteTerminalChannel(environmentService, logService, ptyService, productService, extensionManagementService));
 
 		const remoteFileSystemChannel = new RemoteAgentFileSystemProviderChannel(logService, environmentService);
@@ -205,12 +161,6 @@ export async function setupServerServices(connectionToken: ServerConnectionToken
 
 		// clean up deprecated extensions
 		(extensionManagementService as ExtensionManagementService).removeDeprecatedExtensions();
-
-		disposables.add(new ErrorTelemetry(accessor.get(ITelemetryService)));
-
-		return {
-			telemetryService: accessor.get(ITelemetryService)
-		};
 	});
 
 	return { socketServer, instantiationService };

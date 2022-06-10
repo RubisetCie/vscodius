@@ -16,7 +16,6 @@ import { INotificationService, IPromptChoice, Severity } from 'vs/platform/notif
 import { Registry } from 'vs/platform/registry/common/platform';
 import { IWorkbenchContribution, IWorkbenchContributionsRegistry, Extensions } from 'vs/workbench/common/contributions';
 import { LifecyclePhase } from 'vs/workbench/services/lifecycle/common/lifecycle';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { INativeHostService } from 'vs/platform/native/electron-sandbox/native';
 import { URI } from 'vs/base/common/uri';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
@@ -39,10 +38,9 @@ class RemoteConnectionFailureNotificationContribution implements IWorkbenchContr
 		@IRemoteAgentService private readonly _remoteAgentService: IRemoteAgentService,
 		@INotificationService notificationService: INotificationService,
 		@IWorkbenchEnvironmentService environmentService: IWorkbenchEnvironmentService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@INativeHostService nativeHostService: INativeHostService,
 		@IRemoteAuthorityResolverService private readonly _remoteAuthorityResolverService: IRemoteAuthorityResolverService,
-		@IOpenerService openerService: IOpenerService,
+		@IOpenerService openerService: IOpenerService
 	) {
 		// Let's cover the case where connecting to fetch the remote extension info fails
 		this._remoteAgentService.getRawEnvironment()

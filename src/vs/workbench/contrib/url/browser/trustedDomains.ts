@@ -10,7 +10,6 @@ import { IProductService } from 'vs/platform/product/common/productService';
 import { IQuickInputService, IQuickPickItem } from 'vs/platform/quickinput/common/quickInput';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IAuthenticationService } from 'vs/workbench/services/authentication/common/authentication';
 import { IFileService } from 'vs/platform/files/common/files';
 import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
@@ -43,8 +42,7 @@ export async function configureOpenerTrustedDomainsHandler(
 	resource: URI,
 	quickInputService: IQuickInputService,
 	storageService: IStorageService,
-	editorService: IEditorService,
-	telemetryService: ITelemetryService,
+	editorService: IEditorService
 ) {
 	const parsedDomainToConfigure = URI.parse(domainToConfigure);
 	const toplevelDomainSegements = parsedDomainToConfigure.authority.split('.');

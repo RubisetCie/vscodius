@@ -14,7 +14,6 @@ import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/
 import { IWebExtensionsScannerService, IWorkbenchExtensionEnablementService } from 'vs/workbench/services/extensionManagement/common/extensionManagement';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { ActivationTimes, ExtensionPointContribution, IExtensionService, IExtensionsStatus, IMessage, IWillActivateEvent, IResponsiveStateChangeEvent, toExtension, IExtensionHost, ActivationKind, ExtensionHostKind, toExtensionDescription, ExtensionRunningLocation, extensionHostKindToString, ExtensionActivationReason, IInternalExtensionService, RemoteRunningLocation, LocalProcessRunningLocation, LocalWebWorkerRunningLocation } from 'vs/workbench/services/extensions/common/extensions';
 import { ExtensionMessageCollector, ExtensionPoint, ExtensionsRegistry, IExtensionPoint, IExtensionPointUser } from 'vs/workbench/services/extensions/common/extensionsRegistry';
 import { ExtensionDescriptionRegistry } from 'vs/workbench/services/extensions/common/extensionDescriptionRegistry';
@@ -151,7 +150,6 @@ export abstract class AbstractExtensionService extends Disposable implements IEx
 	private readonly _registryLock: Lock;
 
 	private readonly _installedExtensionsReady: Barrier;
-	private readonly _isDev: boolean;
 	private readonly _extensionsMessages: Map<string, IMessage[]>;
 	private readonly _allRequestedActivateEvents = new Set<string>();
 	private readonly _proposedApiController: ProposedApiController;
@@ -177,7 +175,6 @@ export abstract class AbstractExtensionService extends Disposable implements IEx
 		@IInstantiationService protected readonly _instantiationService: IInstantiationService,
 		@INotificationService protected readonly _notificationService: INotificationService,
 		@IWorkbenchEnvironmentService protected readonly _environmentService: IWorkbenchEnvironmentService,
-		@ITelemetryService protected readonly _telemetryService: ITelemetryService,
 		@IWorkbenchExtensionEnablementService protected readonly _extensionEnablementService: IWorkbenchExtensionEnablementService,
 		@IFileService protected readonly _fileService: IFileService,
 		@IProductService protected readonly _productService: IProductService,
@@ -187,7 +184,7 @@ export abstract class AbstractExtensionService extends Disposable implements IEx
 		@IExtensionManifestPropertiesService protected readonly _extensionManifestPropertiesService: IExtensionManifestPropertiesService,
 		@IWebExtensionsScannerService protected readonly _webExtensionsScannerService: IWebExtensionsScannerService,
 		@ILogService protected readonly _logService: ILogService,
-		@IRemoteAgentService protected readonly _remoteAgentService: IRemoteAgentService,
+		@IRemoteAgentService protected readonly _remoteAgentService: IRemoteAgentService
 	) {
 		super();
 
@@ -202,7 +199,6 @@ export abstract class AbstractExtensionService extends Disposable implements IEx
 		this._registryLock = new Lock();
 
 		this._installedExtensionsReady = new Barrier();
-		this._isDev = !this._environmentService.isBuilt || this._environmentService.isExtensionDevelopment;
 		this._extensionsMessages = new Map<string, IMessage[]>();
 		this._proposedApiController = _instantiationService.createInstance(ProposedApiController);
 
@@ -1205,27 +1201,6 @@ export abstract class AbstractExtensionService extends Disposable implements IEx
 		} else {
 			this._logService.info(strMsg);
 		}
-
-		if (!this._isDev && msg.extensionId) {
-			const { type, extensionId, extensionPointId, message } = msg;
-			type ExtensionsMessageClassification = {
-				owner: 'alexdima';
-				comment: 'A validation message for an extension';
-				type: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true };
-				extensionId: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-				extensionPointId: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-				message: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-			};
-			type ExtensionsMessageEvent = {
-				type: Severity;
-				extensionId: string;
-				extensionPointId: string;
-				message: string;
-			};
-			this._telemetryService.publicLog2<ExtensionsMessageEvent, ExtensionsMessageClassification>('extensionsMessage', {
-				type, extensionId: extensionId.value, extensionPointId, message
-			});
-		}
 	}
 
 	private static _handleExtensionPoint<T extends IExtensionContributions[keyof IExtensionContributions]>(extensionPoint: ExtensionPoint<T>, availableExtensions: IExtensionDescription[], messageHandler: (msg: IMessage) => void): void {
@@ -1255,9 +1230,7 @@ export abstract class AbstractExtensionService extends Disposable implements IEx
 			_onDidActivateExtension: (extensionId: ExtensionIdentifier, codeLoadingTime: number, activateCallTime: number, activateResolvedTime: number, activationReason: ExtensionActivationReason): void => {
 				return this._onDidActivateExtension(extensionId, codeLoadingTime, activateCallTime, activateResolvedTime, activationReason);
 			},
-			_onDidActivateExtensionError: (extensionId: ExtensionIdentifier, error: Error): void => {
-				return this._onDidActivateExtensionError(extensionId, error);
-			},
+			_onDidActivateExtensionError: (extensionId: ExtensionIdentifier, error: Error): void => {},
 			_onExtensionRuntimeError: (extensionId: ExtensionIdentifier, err: Error): void => {
 				return this._onExtensionRuntimeError(extensionId, err);
 			}
@@ -1281,23 +1254,6 @@ export abstract class AbstractExtensionService extends Disposable implements IEx
 	private _onDidActivateExtension(extensionId: ExtensionIdentifier, codeLoadingTime: number, activateCallTime: number, activateResolvedTime: number, activationReason: ExtensionActivationReason): void {
 		this._extensionHostActivationTimes.set(ExtensionIdentifier.toKey(extensionId), new ActivationTimes(codeLoadingTime, activateCallTime, activateResolvedTime, activationReason));
 		this._onDidChangeExtensionsStatus.fire([extensionId]);
-	}
-
-	private _onDidActivateExtensionError(extensionId: ExtensionIdentifier, error: Error): void {
-		type ExtensionActivationErrorClassification = {
-			owner: 'alexdima';
-			comment: 'An extension failed to activate';
-			extensionId: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-			error: { classification: 'CallstackOrException'; purpose: 'PerformanceAndHealth' };
-		};
-		type ExtensionActivationErrorEvent = {
-			extensionId: string;
-			error: string;
-		};
-		this._telemetryService.publicLog2<ExtensionActivationErrorEvent, ExtensionActivationErrorClassification>('extensionActivationError', {
-			extensionId: extensionId.value,
-			error: error.message
-		});
 	}
 
 	private _onExtensionRuntimeError(extensionId: ExtensionIdentifier, err: Error): void {

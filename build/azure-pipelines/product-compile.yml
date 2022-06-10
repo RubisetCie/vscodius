@@ -145,12 +145,6 @@ steps:
           node build/azure-pipelines/upload-sourcemaps
       displayName: Upload sourcemaps
 
-  - ${{ if ne(parameters.VSCODE_QUALITY, 'oss') }}:
-    - script: |
-        set -
-        ./build/azure-pipelines/common/extract-telemetry.sh
-      displayName: Extract Telemetry
-
   - script: |
       set -e
       tar -cz --ignore-failed-read -f $(Build.ArtifactStagingDirectory)/compilation.tar.gz .build out-* test/integration/browser/out test/smoke/out test/automation/out

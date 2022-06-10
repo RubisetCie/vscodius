@@ -8,7 +8,6 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { ViewPaneContainer } from 'vs/workbench/browser/parts/views/viewPaneContainer';
@@ -21,7 +20,6 @@ export class TestingViewPaneContainer extends ViewPaneContainer {
 
 	constructor(
 		@IWorkbenchLayoutService layoutService: IWorkbenchLayoutService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@IThemeService themeService: IThemeService,
@@ -29,9 +27,9 @@ export class TestingViewPaneContainer extends ViewPaneContainer {
 		@IConfigurationService configurationService: IConfigurationService,
 		@IExtensionService extensionService: IExtensionService,
 		@IWorkspaceContextService contextService: IWorkspaceContextService,
-		@IViewDescriptorService viewDescriptorService: IViewDescriptorService,
+		@IViewDescriptorService viewDescriptorService: IViewDescriptorService
 	) {
-		super(Testing.ViewletId, { mergeViewWithContainerWhenSingleView: true }, instantiationService, configurationService, layoutService, contextMenuService, telemetryService, extensionService, themeService, storageService, contextService, viewDescriptorService);
+		super(Testing.ViewletId, { mergeViewWithContainerWhenSingleView: true }, instantiationService, configurationService, layoutService, contextMenuService, extensionService, themeService, storageService, contextService, viewDescriptorService);
 	}
 
 	override create(parent: HTMLElement): void {

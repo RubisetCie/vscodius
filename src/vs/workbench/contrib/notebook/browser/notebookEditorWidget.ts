@@ -23,7 +23,7 @@ import { Emitter, Event } from 'vs/base/common/event';
 import { combinedDisposable, Disposable, DisposableStore, dispose, IDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { deepClone } from 'vs/base/common/objects';
 import { setTimeout0 } from 'vs/base/common/platform';
-import { extname, isEqual } from 'vs/base/common/resources';
+import { isEqual } from 'vs/base/common/resources';
 import { URI } from 'vs/base/common/uri';
 import { generateUuid } from 'vs/base/common/uuid';
 import { FontMeasurements } from 'vs/editor/browser/config/fontMeasurements';
@@ -44,7 +44,6 @@ import { ServiceCollection } from 'vs/platform/instantiation/common/serviceColle
 import { ILayoutService } from 'vs/platform/layout/browser/layoutService';
 import { registerZIndex, ZIndex } from 'vs/platform/layout/browser/zIndexRegistry';
 import { IEditorProgressService, IProgressRunner } from 'vs/platform/progress/common/progress';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { contrastBorder, diffInserted, diffRemoved, editorBackground, errorForeground, focusBorder, foreground, iconForeground, listInactiveSelectionBackground, registerColor, scrollbarSliderActiveBackground, scrollbarSliderBackground, scrollbarSliderHoverBackground, textBlockQuoteBackground, textBlockQuoteBorder, textLinkActiveForeground, textLinkForeground, textPreformatForeground, toolbarHoverBackground, transparent } from 'vs/platform/theme/common/colorRegistry';
 import { IThemeService, registerThemingParticipant } from 'vs/platform/theme/common/themeService';
 import { PANEL_BORDER, SIDE_BAR_BACKGROUND } from 'vs/workbench/common/theme';
@@ -356,10 +355,9 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditorD
 		@IContextMenuService private readonly contextMenuService: IContextMenuService,
 		@IMenuService private readonly menuService: IMenuService,
 		@IThemeService private readonly themeService: IThemeService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@INotebookExecutionService private readonly notebookExecutionService: INotebookExecutionService,
 		@INotebookExecutionStateService notebookExecutionStateService: INotebookExecutionStateService,
-		@IEditorProgressService private readonly editorProgressService: IEditorProgressService,
+		@IEditorProgressService private readonly editorProgressService: IEditorProgressService
 	) {
 		super();
 		this.isEmbedded = creationOptions.isEmbedded ?? false;
@@ -1129,24 +1127,6 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditorD
 					fontFamily: this._generateFontFamily()
 				});
 			}
-			type WorkbenchNotebookOpenClassification = {
-				owner: 'rebornix';
-				scheme: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-				ext: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-				viewType: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-			};
-
-			type WorkbenchNotebookOpenEvent = {
-				scheme: string;
-				ext: string;
-				viewType: string;
-			};
-
-			this.telemetryService.publicLog2<WorkbenchNotebookOpenEvent, WorkbenchNotebookOpenClassification>('notebook/editorOpened', {
-				scheme: textModel.uri.scheme,
-				ext: extname(textModel.uri),
-				viewType: textModel.viewType
-			});
 		} else {
 			this.restoreListViewState(viewState);
 		}

@@ -18,8 +18,6 @@ import { ExtensionType } from 'vs/platform/extensions/common/extensions';
 import { TestInstantiationService } from 'vs/platform/instantiation/test/common/instantiationServiceMock';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
-import { ITelemetryService, lastSessionDateStorageKey } from 'vs/platform/telemetry/common/telemetry';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { UriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentityService';
 import { IURLService } from 'vs/platform/url/common/url';
@@ -44,6 +42,7 @@ let experimentData: { [i: string]: any } = {
 	experiments: []
 };
 
+const lastSessionDateStorageKey = 'telemetry.lastSessionDate';
 const local = aLocalExtension('installedExtension1', { version: '1.0.0' });
 
 function aLocalExtension(name: string = 'someext', manifest: any = {}, properties: any = {}): ILocalExtension {
@@ -90,7 +89,6 @@ suite('Experiment Service', () => {
 		instantiationService.stub(IExtensionManagementService, 'onUninstallExtension', uninstallEvent.event);
 		instantiationService.stub(IExtensionManagementService, 'onDidUninstallExtension', didUninstallEvent.event);
 		instantiationService.stub(IWorkbenchExtensionEnablementService, new TestExtensionEnablementService(instantiationService));
-		instantiationService.stub(ITelemetryService, NullTelemetryService);
 		instantiationService.stub(IURLService, NativeURLService);
 		instantiationService.stubPromise(IExtensionManagementService, 'getInstalled', [local]);
 		testConfigurationService = new TestConfigurationService();
@@ -217,52 +215,6 @@ suite('Experiment Service', () => {
 		};
 
 		instantiationService.stub(IProductService, { quality: 'stable' });
-		testObject = instantiationService.createInstance(TestExperimentService);
-		return testObject.getExperimentById('experiment1').then(result => {
-			assert.strictEqual(result.enabled, true);
-			assert.strictEqual(result.state, ExperimentState.NoRun);
-		});
-	});
-
-	test('NewUsers experiment shouldnt be enabled for old users', () => {
-		experimentData = {
-			experiments: [
-				{
-					id: 'experiment1',
-					enabled: true,
-					condition: {
-						newUser: true
-					}
-				}
-			]
-		};
-
-		instantiationService.stub(IStorageService, <Partial<IStorageService>>{
-			get: (a: string, b: StorageScope, c?: string) => {
-				return a === lastSessionDateStorageKey ? 'some-date' : undefined;
-			},
-			getBoolean: (a: string, b: StorageScope, c?: boolean) => c, store: () => { }, remove: () => { }
-		});
-		testObject = instantiationService.createInstance(TestExperimentService);
-		return testObject.getExperimentById('experiment1').then(result => {
-			assert.strictEqual(result.enabled, true);
-			assert.strictEqual(result.state, ExperimentState.NoRun);
-		});
-	});
-
-	test('OldUsers experiment shouldnt be enabled for new users', () => {
-		experimentData = {
-			experiments: [
-				{
-					id: 'experiment1',
-					enabled: true,
-					condition: {
-						newUser: false
-					}
-				}
-			]
-		};
-
 		testObject = instantiationService.createInstance(TestExperimentService);
 		return testObject.getExperimentById('experiment1').then(result => {
 			assert.strictEqual(result.enabled, true);

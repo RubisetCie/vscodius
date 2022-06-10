@@ -32,7 +32,7 @@ if "%VSCODE_REMOTE_SERVER_PATH%"=="" (
 	echo Using '%VSCODE_REMOTE_SERVER_PATH%' as server path
 )
 
-set API_TESTS_EXTRA_ARGS=--disable-telemetry --skip-welcome --skip-release-notes --crash-reporter-directory=%VSCODECRASHDIR% --logsPath=%VSCODELOGSDIR% --no-cached-data --disable-updates --disable-keytar --disable-inspect --disable-workspace-trust --user-data-dir=%VSCODEUSERDATADIR%
+set API_TESTS_EXTRA_ARGS=--skip-welcome --skip-release-notes --crash-reporter-directory=%VSCODECRASHDIR% --logsPath=%VSCODELOGSDIR% --no-cached-data --disable-updates --disable-keytar --disable-inspect --disable-workspace-trust --user-data-dir=%VSCODEUSERDATADIR%
 
 :: Figure out which Electron to use for running tests
 if "%INTEGRATION_TEST_ELECTRON_PATH%"=="" (

@@ -26,14 +26,10 @@ import { MarkdownContentProvider } from './preview/previewContentProvider';
 import { MarkdownPreviewManager } from './preview/previewManager';
 import { ContentSecurityPolicyArbiter, ExtensionContentSecurityPolicyArbiter, PreviewSecuritySelector } from './preview/security';
 import { githubSlugifier } from './slugify';
-import { loadDefaultTelemetryReporter, TelemetryReporter } from './telemetryReporter';
 import { VsCodeMdWorkspaceContents } from './workspaceContents';
 
 
 export function activate(context: vscode.ExtensionContext) {
-	const telemetryReporter = loadDefaultTelemetryReporter();
-	context.subscriptions.push(telemetryReporter);
-
 	const contributions = getMarkdownExtensionContributions(context);
 	context.subscriptions.push(contributions);
 
@@ -48,7 +44,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(previewManager);
 
 	context.subscriptions.push(registerMarkdownLanguageFeatures(commandManager, symbolProvider, engine));
-	context.subscriptions.push(registerMarkdownCommands(commandManager, previewManager, telemetryReporter, cspArbiter, engine));
+	context.subscriptions.push(registerMarkdownCommands(commandManager, previewManager, cspArbiter, engine));
 
 	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(() => {
 		logger.updateConfiguration();
@@ -87,15 +83,14 @@ function registerMarkdownLanguageFeatures(
 function registerMarkdownCommands(
 	commandManager: CommandManager,
 	previewManager: MarkdownPreviewManager,
-	telemetryReporter: TelemetryReporter,
 	cspArbiter: ContentSecurityPolicyArbiter,
 	engine: MarkdownEngine
 ): vscode.Disposable {
 	const previewSecuritySelector = new PreviewSecuritySelector(cspArbiter, previewManager);
 
-	commandManager.register(new commands.ShowPreviewCommand(previewManager, telemetryReporter));
-	commandManager.register(new commands.ShowPreviewToSideCommand(previewManager, telemetryReporter));
-	commandManager.register(new commands.ShowLockedPreviewToSideCommand(previewManager, telemetryReporter));
+	commandManager.register(new commands.ShowPreviewCommand(previewManager));
+	commandManager.register(new commands.ShowPreviewToSideCommand(previewManager));
+	commandManager.register(new commands.ShowLockedPreviewToSideCommand(previewManager));
 	commandManager.register(new commands.ShowSourceCommand(previewManager));
 	commandManager.register(new commands.RefreshPreviewCommand(previewManager, engine));
 	commandManager.register(new commands.MoveCursorToPositionCommand());

@@ -7,7 +7,6 @@ import * as os from 'os';
 import * as path from 'path';
 import * as picomatch from 'picomatch';
 import { Command, commands, Disposable, LineChange, MessageOptions, Position, ProgressLocation, QuickPickItem, Range, SourceControlResourceState, TextDocumentShowOptions, TextEditor, Uri, ViewColumn, window, workspace, WorkspaceEdit, WorkspaceFolder, TimelineItem, env, Selection, TextDocumentContentProvider, InputBoxValidationSeverity, TabInputText } from 'vscode';
-import TelemetryReporter from '@vscode/extension-telemetry';
 import * as nls from 'vscode-nls';
 import { uniqueNamesGenerator, adjectives, animals, colors, NumberDictionary } from '@joaomoreno/unique-names-generator';
 import { Branch, ForcePushMode, GitErrorCodes, Ref, RefType, Status, CommitOptions, RemoteSourcePublisher } from './api/git';
@@ -312,11 +311,10 @@ export class CommandCenter {
 	constructor(
 		private git: Git,
 		private model: Model,
-		private outputChannelLogger: OutputChannelLogger,
-		private telemetryReporter: TelemetryReporter
+		private outputChannelLogger: OutputChannelLogger
 	) {
 		this.disposables = Commands.map(({ commandId, key, method, options }) => {
-			const command = this.createCommand(commandId, key, method, options);
+			const command = this.createCommand(key, method, options);
 
 			if (options.diff) {
 				return commands.registerDiffInformationCommand(commandId, command);
@@ -465,7 +463,6 @@ export class CommandCenter {
 					"outcome" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
 				}
 			*/
-			this.telemetryReporter.sendTelemetryEvent('clone', { outcome: 'no_URL' });
 			return;
 		}
 
@@ -491,7 +488,6 @@ export class CommandCenter {
 						"outcome" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
 					}
 				*/
-				this.telemetryReporter.sendTelemetryEvent('clone', { outcome: 'no_directory' });
 				return;
 			}
 
@@ -551,8 +547,6 @@ export class CommandCenter {
 					"openFolder": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true }
 				}
 			*/
-			this.telemetryReporter.sendTelemetryEvent('clone', { outcome: 'success' }, { openFolder: action === PostCloneAction.Open || action === PostCloneAction.OpenNewWindow ? 1 : 0 });
-
 			const uri = Uri.file(repositoryPath);
 
 			if (action === PostCloneAction.Open) {
@@ -563,26 +557,6 @@ export class CommandCenter {
 				commands.executeCommand('vscode.openFolder', uri, { forceNewWindow: true });
 			}
 		} catch (err) {
-			if (/already exists and is not an empty directory/.test(err && err.stderr || '')) {
-				/* __GDPR__
-					"clone" : {
-						"owner": "lszomoru",
-						"outcome" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-					}
-				*/
-				this.telemetryReporter.sendTelemetryEvent('clone', { outcome: 'directory_not_empty' });
-			} else if (/Cancelled/i.test(err && (err.message || err.stderr || ''))) {
-				return;
-			} else {
-				/* __GDPR__
-					"clone" : {
-						"owner": "lszomoru",
-						"outcome" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-					}
-				*/
-				this.telemetryReporter.sendTelemetryEvent('clone', { outcome: 'error' });
-			}
-
 			throw err;
 		}
 	}
@@ -2979,7 +2953,7 @@ export class CommandCenter {
 		repository.closeDiffEditors(resources, resources, true);
 	}
 
-	private createCommand(id: string, key: string, method: Function, options: ScmCommandOptions): (...args: any[]) => any {
+	private createCommand(key: string, method: Function, options: ScmCommandOptions): (...args: any[]) => any {
 		const result = (...args: any[]) => {
 			let result: Promise<any>;
 
@@ -3013,8 +2987,6 @@ export class CommandCenter {
 					"command" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
 				}
 			*/
-			this.telemetryReporter.sendTelemetryEvent('git.command', { command: id });
-
 			return result.catch(async err => {
 				const options: MessageOptions = {
 					modal: true

@@ -15,7 +15,6 @@ import { Disposable } from './utils/dispose';
 import { DocumentSelector } from './utils/documentSelector';
 import * as fileSchemes from './utils/fileSchemes';
 import { LanguageDescription } from './utils/languageDescription';
-import { TelemetryReporter } from './utils/telemetry';
 import TypingsStatus from './utils/typingsStatus';
 
 
@@ -28,7 +27,6 @@ export default class LanguageProvider extends Disposable {
 		private readonly client: TypeScriptServiceClient,
 		private readonly description: LanguageDescription,
 		private readonly commandManager: CommandManager,
-		private readonly telemetryReporter: TelemetryReporter,
 		private readonly typingsStatus: TypingsStatus,
 		private readonly fileConfigurationManager: FileConfigurationManager,
 		private readonly onCompletionAccepted: (item: vscode.CompletionItem) => void,
@@ -62,7 +60,7 @@ export default class LanguageProvider extends Disposable {
 			import('./languageFeatures/callHierarchy').then(provider => this._register(provider.register(selector, this.client))),
 			import('./languageFeatures/codeLens/implementationsCodeLens').then(provider => this._register(provider.register(selector, this.description, this.client, cachedResponse))),
 			import('./languageFeatures/codeLens/referencesCodeLens').then(provider => this._register(provider.register(selector, this.description, this.client, cachedResponse))),
-			import('./languageFeatures/completions').then(provider => this._register(provider.register(selector, this.description, this.client, this.typingsStatus, this.fileConfigurationManager, this.commandManager, this.telemetryReporter, this.onCompletionAccepted))),
+			import('./languageFeatures/completions').then(provider => this._register(provider.register(selector, this.description, this.client, this.typingsStatus, this.fileConfigurationManager, this.commandManager, this.onCompletionAccepted))),
 			import('./languageFeatures/definitions').then(provider => this._register(provider.register(selector, this.client))),
 			import('./languageFeatures/directiveCommentCompletions').then(provider => this._register(provider.register(selector, this.client))),
 			import('./languageFeatures/documentHighlight').then(provider => this._register(provider.register(selector, this.client))),
@@ -75,9 +73,9 @@ export default class LanguageProvider extends Disposable {
 			import('./languageFeatures/implementations').then(provider => this._register(provider.register(selector, this.client))),
 			import('./languageFeatures/inlayHints').then(provider => this._register(provider.register(selector, this.description, this.client, this.fileConfigurationManager))),
 			import('./languageFeatures/jsDocCompletions').then(provider => this._register(provider.register(selector, this.description, this.client, this.fileConfigurationManager))),
-			import('./languageFeatures/organizeImports').then(provider => this._register(provider.register(selector, this.client, this.commandManager, this.fileConfigurationManager, this.telemetryReporter))),
-			import('./languageFeatures/quickFix').then(provider => this._register(provider.register(selector, this.client, this.fileConfigurationManager, this.commandManager, this.client.diagnosticsManager, this.telemetryReporter))),
-			import('./languageFeatures/refactor').then(provider => this._register(provider.register(selector, this.client, this.fileConfigurationManager, this.commandManager, this.telemetryReporter))),
+			import('./languageFeatures/organizeImports').then(provider => this._register(provider.register(selector, this.client, this.commandManager, this.fileConfigurationManager))),
+			import('./languageFeatures/quickFix').then(provider => this._register(provider.register(selector, this.client, this.fileConfigurationManager, this.commandManager, this.client.diagnosticsManager))),
+			import('./languageFeatures/refactor').then(provider => this._register(provider.register(selector, this.client, this.fileConfigurationManager, this.commandManager))),
 			import('./languageFeatures/references').then(provider => this._register(provider.register(selector, this.client))),
 			import('./languageFeatures/rename').then(provider => this._register(provider.register(selector, this.client, this.fileConfigurationManager))),
 			import('./languageFeatures/semanticTokens').then(provider => this._register(provider.register(selector, this.client))),

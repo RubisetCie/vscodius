@@ -11,7 +11,6 @@ import { IScannedExtension, IWebExtensionsScannerService } from 'vs/workbench/se
 import { ILogService } from 'vs/platform/log/common/log';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { AbstractExtensionManagementService, AbstractExtensionTask, IInstallExtensionTask, IUninstallExtensionTask, UninstallExtensionTaskOptions } from 'vs/platform/extensionManagement/common/abstractExtensionManagementService';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IExtensionManifestPropertiesService } from 'vs/workbench/services/extensions/common/extensionManifestPropertiesService';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { isBoolean, isUndefined } from 'vs/base/common/types';
@@ -22,13 +21,12 @@ export class WebExtensionManagementService extends AbstractExtensionManagementSe
 
 	constructor(
 		@IExtensionGalleryService extensionGalleryService: IExtensionGalleryService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@ILogService logService: ILogService,
 		@IWebExtensionsScannerService private readonly webExtensionsScannerService: IWebExtensionsScannerService,
 		@IExtensionManifestPropertiesService private readonly extensionManifestPropertiesService: IExtensionManifestPropertiesService,
 		@IProductService productService: IProductService
 	) {
-		super(extensionGalleryService, telemetryService, logService, productService);
+		super(extensionGalleryService, logService, productService);
 	}
 
 	async getTargetPlatform(): Promise<TargetPlatform> {

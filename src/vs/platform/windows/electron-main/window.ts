@@ -30,7 +30,6 @@ import { IProductService } from 'vs/platform/product/common/productService';
 import { IProtocolMainService } from 'vs/platform/protocol/electron-main/protocol';
 import { resolveMarketplaceHeaders } from 'vs/platform/externalServices/common/marketplace';
 import { IGlobalStorageMainService, IStorageMainService } from 'vs/platform/storage/electron-main/storageMainService';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { ThemeIcon } from 'vs/platform/theme/common/themeService';
 import { IThemeMainService } from 'vs/platform/theme/electron-main/themeMainService';
 import { getMenuBarVisibility, getTitleBarStyle, IFolderToOpen, INativeWindowConfiguration, IWindowSettings, IWorkspaceToOpen, MenuBarVisibility, useWindowControlsOverlay, WindowMinimumSize, zoomLevelToZoomFactor } from 'vs/platform/window/common/window';
@@ -158,7 +157,6 @@ export class CodeWindow extends Disposable implements ICodeWindow {
 		@IThemeMainService private readonly themeMainService: IThemeMainService,
 		@IWorkspacesManagementMainService private readonly workspacesManagementMainService: IWorkspacesManagementMainService,
 		@IBackupMainService private readonly backupMainService: IBackupMainService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IDialogMainService private readonly dialogMainService: IDialogMainService,
 		@ILifecycleMainService private readonly lifecycleMainService: ILifecycleMainService,
 		@IProductService private readonly productService: IProductService,
@@ -538,21 +536,6 @@ export class CodeWindow extends Disposable implements ICodeWindow {
 				this.logService.error(`CodeWindow: failed to load (reason: ${details?.reason || '<unknown>'}, code: ${details?.exitCode || '<unknown>'})`);
 				break;
 		}
-
-		// Telemetry
-		type WindowErrorClassification = {
-			type: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true; comment: 'The type of window crash to understand the nature of the crash better.' };
-			reason: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true; comment: 'The reason of the window crash to understand the nature of the crash better.' };
-			code: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true; omment: 'The exit code of the window process to understand the nature of the crash better' };
-			owner: 'bpasero';
-			comment: 'Provides insight into reasons the vscode window crashes.';
-		};
-		type WindowErrorEvent = {
-			type: WindowError;
-			reason: string | undefined;
-			code: number | undefined;
-		};
-		this.telemetryService.publicLog2<WindowErrorEvent, WindowErrorClassification>('windowerror', { type, reason: details?.reason, code: details?.exitCode });
 
 		// Inform User if non-recoverable
 		switch (type) {

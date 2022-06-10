@@ -5,7 +5,6 @@
 
 import * as nls from 'vs/nls';
 import { Action } from 'vs/base/common/actions';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IInstantiationService, createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { IExtensionsWorkbenchService } from 'vs/workbench/contrib/extensions/common/extensions';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
@@ -62,7 +61,6 @@ export class RuntimeExtensionsEditor extends AbstractRuntimeExtensionsEditor {
 	private _profileSessionState: IContextKey<string>;
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IExtensionsWorkbenchService extensionsWorkbenchService: IExtensionsWorkbenchService,
@@ -74,9 +72,9 @@ export class RuntimeExtensionsEditor extends AbstractRuntimeExtensionsEditor {
 		@ILabelService labelService: ILabelService,
 		@IWorkbenchEnvironmentService environmentService: IWorkbenchEnvironmentService,
 		@IClipboardService clipboardService: IClipboardService,
-		@IExtensionHostProfileService private readonly _extensionHostProfileService: IExtensionHostProfileService,
+		@IExtensionHostProfileService private readonly _extensionHostProfileService: IExtensionHostProfileService
 	) {
-		super(telemetryService, themeService, contextKeyService, extensionsWorkbenchService, extensionService, notificationService, contextMenuService, instantiationService, storageService, labelService, environmentService, clipboardService);
+		super(themeService, contextKeyService, extensionsWorkbenchService, extensionService, notificationService, contextMenuService, instantiationService, storageService, labelService, environmentService, clipboardService);
 		this._profileInfo = this._extensionHostProfileService.lastProfile;
 		this._extensionsHostRecorded = CONTEXT_EXTENSION_HOST_PROFILE_RECORDED.bindTo(contextKeyService);
 		this._profileSessionState = CONTEXT_PROFILE_SESSION_STATE.bindTo(contextKeyService);

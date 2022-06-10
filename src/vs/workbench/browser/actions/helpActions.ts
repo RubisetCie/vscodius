@@ -6,7 +6,6 @@
 import { localize } from 'vs/nls';
 import product from 'vs/platform/product/common/product';
 import { isMacintosh, isLinux, language } from 'vs/base/common/platform';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { URI } from 'vs/base/common/uri';
 import { MenuId, Action2, registerAction2 } from 'vs/platform/actions/common/actions';
@@ -171,11 +170,8 @@ class OpenNewsletterSignupUrlAction extends Action2 {
 	async run(accessor: ServicesAccessor): Promise<void> {
 		const productService = accessor.get(IProductService);
 		const openerService = accessor.get(IOpenerService);
-		const telemetryService = accessor.get(ITelemetryService);
 
-		const info = await telemetryService.getTelemetryInfo();
-
-		openerService.open(URI.parse(`${productService.newsletterSignupUrl}?machineId=${encodeURIComponent(info.machineId)}`));
+		openerService.open(URI.parse(`${productService.newsletterSignupUrl}`));
 	}
 }
 

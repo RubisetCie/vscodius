@@ -11,7 +11,6 @@ import { IEditorControl, IEditorPane, IEditorOpenContext, EditorExtensions, SIDE
 import { SideBySideEditorInput } from 'vs/workbench/common/editor/sideBySideEditorInput';
 import { EditorInput } from 'vs/workbench/common/editor/editorInput';
 import { EditorPane } from 'vs/workbench/browser/parts/editor/editorPane';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IEditorPaneRegistry } from 'vs/workbench/browser/editor';
@@ -119,7 +118,6 @@ export class SideBySideEditor extends AbstractEditorWithViewState<ISideBySideEdi
 	private lastFocusedSide: Side.PRIMARY | Side.SECONDARY | undefined = undefined;
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IThemeService themeService: IThemeService,
 		@IStorageService storageService: IStorageService,
@@ -128,7 +126,7 @@ export class SideBySideEditor extends AbstractEditorWithViewState<ISideBySideEdi
 		@IEditorService editorService: IEditorService,
 		@IEditorGroupsService editorGroupService: IEditorGroupsService
 	) {
-		super(SideBySideEditor.ID, SideBySideEditor.VIEW_STATE_PREFERENCE_KEY, telemetryService, instantiationService, storageService, textResourceConfigurationService, themeService, editorService, editorGroupService);
+		super(SideBySideEditor.ID, SideBySideEditor.VIEW_STATE_PREFERENCE_KEY, instantiationService, storageService, textResourceConfigurationService, themeService, editorService, editorGroupService);
 
 		this.registerListeners();
 	}

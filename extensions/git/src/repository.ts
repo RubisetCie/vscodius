@@ -6,7 +6,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { CancellationToken, Command, Disposable, Event, EventEmitter, Memento, ProgressLocation, ProgressOptions, scm, SourceControl, SourceControlInputBox, SourceControlInputBoxValidation, SourceControlInputBoxValidationType, SourceControlResourceDecorations, SourceControlResourceGroup, SourceControlResourceState, ThemeColor, Uri, window, workspace, WorkspaceEdit, FileDecoration, commands, Tab, TabInputTextDiff, TabInputNotebookDiff, RelativePattern } from 'vscode';
-import TelemetryReporter from '@vscode/extension-telemetry';
 import * as nls from 'vscode-nls';
 import { Branch, Change, ForcePushMode, GitErrorCodes, LogOptions, Ref, RefType, Remote, Status, CommitOptions, BranchQuery, FetchOptions } from './api/git';
 import { AutoFetcher } from './autofetch';
@@ -875,8 +874,7 @@ export class Repository implements Disposable {
 		private pushErrorHandlerRegistry: IPushErrorHandlerRegistry,
 		remoteSourcePublisherRegistry: IRemoteSourcePublisherRegistry,
 		globalState: Memento,
-		outputChannelLogger: OutputChannelLogger,
-		private telemetryReporter: TelemetryReporter
+		outputChannelLogger: OutputChannelLogger
 	) {
 		const repositoryWatcher = workspace.createFileSystemWatcher(new RelativePattern(Uri.file(repository.root), '**'));
 		this.disposables.push(repositoryWatcher);
@@ -1885,19 +1883,8 @@ export class Repository implements Disposable {
 
 		const limit = scopedConfig.get<number>('statusLimit', 10000);
 
+		// @ts-ignore
 		const { status, statusLength, didHitLimit } = await this.repository.getStatus({ limit, ignoreSubmodules, untrackedChanges });
-
-		if (didHitLimit) {
-			/* __GDPR__
-				"statusLimit" : {
-					"owner": "lszomoru",
-					"ignoreSubmodules": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-					"limit": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true },
-					"statusLength": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true }
-				}
-			*/
-			this.telemetryReporter.sendTelemetryEvent('statusLimit', { ignoreSubmodules: String(ignoreSubmodules) }, { limit, statusLength });
-		}
 
 		const config = workspace.getConfiguration('git');
 		const shouldIgnore = config.get<boolean>('ignoreLimitWarning') === true;

@@ -25,8 +25,6 @@ import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { MockKeybindingService } from 'vs/platform/keybinding/test/common/mockKeybindingService';
 import { ILogService, NullLogService } from 'vs/platform/log/common/log';
 import { InMemoryStorageService, IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 import assert = require('assert');
 import { createTextModel } from 'vs/editor/test/common/testTextModel';
 import { ILabelService } from 'vs/platform/label/common/label';
@@ -154,7 +152,6 @@ async function withAsyncTestCodeEditorAndInlineCompletionsModel(
 
 		try {
 			const serviceCollection = new ServiceCollection(
-				[ITelemetryService, NullTelemetryService],
 				[ILogService, new NullLogService()],
 				[IStorageService, new InMemoryStorageService()],
 				[IKeybindingService, new MockKeybindingService()],

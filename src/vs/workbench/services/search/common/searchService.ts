@@ -16,12 +16,11 @@ import { URI, URI as uri } from 'vs/base/common/uri';
 import { IModelService } from 'vs/editor/common/services/model';
 import { IFileService } from 'vs/platform/files/common/files';
 import { ILogService } from 'vs/platform/log/common/log';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { EditorResourceAccessor, SideBySideEditor } from 'vs/workbench/common/editor';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
-import { deserializeSearchError, FileMatch, ICachedSearchStats, IFileMatch, IFileQuery, IFileSearchStats, IFolderQuery, IProgressMessage, ISearchComplete, ISearchEngineStats, ISearchProgressItem, ISearchQuery, ISearchResultProvider, ISearchService, isFileMatch, isProgressMessage, ITextQuery, pathIncludedInQuery, QueryType, SearchError, SearchErrorCode, SearchProviderType } from 'vs/workbench/services/search/common/search';
+import { deserializeSearchError, FileMatch, IFileMatch, IFileQuery, IFolderQuery, IProgressMessage, ISearchComplete, ISearchProgressItem, ISearchQuery, ISearchResultProvider, ISearchService, isFileMatch, isProgressMessage, ITextQuery, pathIncludedInQuery, QueryType, SearchProviderType } from 'vs/workbench/services/search/common/search';
 import { addContextToEditorMatches, editorMatchesToTextSearchResults } from 'vs/workbench/services/search/common/searchHelpers';
 
 export class SearchService extends Disposable implements ISearchService {
@@ -39,7 +38,6 @@ export class SearchService extends Disposable implements ISearchService {
 	constructor(
 		@IModelService private readonly modelService: IModelService,
 		@IEditorService private readonly editorService: IEditorService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@ILogService private readonly logService: ILogService,
 		@IExtensionService private readonly extensionService: IExtensionService,
 		@IFileService private readonly fileService: IFileService,
@@ -245,16 +243,12 @@ export class SearchService extends Disposable implements ISearchService {
 		return Promise.all(searchPs).then(completes => {
 			const endToEndTime = e2eSW.elapsed();
 			this.logService.trace(`SearchService#search: ${endToEndTime}ms`);
-			completes.forEach(complete => {
-				this.sendTelemetry(query, endToEndTime, complete);
-			});
 			return completes;
 		}, err => {
 			const endToEndTime = e2eSW.elapsed();
 			this.logService.trace(`SearchService#search: ${endToEndTime}ms`);
 			const searchError = deserializeSearchError(err);
 			this.logService.trace(`SearchService#searchError: ${searchError.message}`);
-			this.sendTelemetry(query, endToEndTime, undefined, searchError);
 
 			throw searchError;
 		});
@@ -271,147 +265,6 @@ export class SearchService extends Disposable implements ISearchService {
 		});
 
 		return queries;
-	}
-
-	private sendTelemetry(query: ISearchQuery, endToEndTime: number, complete?: ISearchComplete, err?: SearchError): void {
-		const fileSchemeOnly = query.folderQueries.every(fq => fq.folder.scheme === Schemas.file);
-		const otherSchemeOnly = query.folderQueries.every(fq => fq.folder.scheme !== Schemas.file);
-		const scheme = fileSchemeOnly ? Schemas.file :
-			otherSchemeOnly ? 'other' :
-				'mixed';
-
-		if (query.type === QueryType.File && complete && complete.stats) {
-			const fileSearchStats = complete.stats as IFileSearchStats;
-			if (fileSearchStats.fromCache) {
-				const cacheStats: ICachedSearchStats = fileSearchStats.detailStats as ICachedSearchStats;
-
-				type CachedSearchCompleteClassifcation = {
-					owner: 'roblourens';
-					reason?: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-					resultCount: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true };
-					workspaceFolderCount: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true };
-					type: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-					endToEndTime: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true };
-					sortingTime?: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true };
-					cacheWasResolved: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-					cacheLookupTime: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true };
-					cacheFilterTime: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true };
-					cacheEntryCount: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true };
-					scheme: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-				};
-				type CachedSearchCompleteEvent = {
-					reason?: string;
-					resultCount: number;
-					workspaceFolderCount: number;
-					type: 'fileSearchProvider' | 'searchProcess';
-					endToEndTime: number;
-					sortingTime?: number;
-					cacheWasResolved: boolean;
-					cacheLookupTime: number;
-					cacheFilterTime: number;
-					cacheEntryCount: number;
-					scheme: string;
-				};
-				this.telemetryService.publicLog2<CachedSearchCompleteEvent, CachedSearchCompleteClassifcation>('cachedSearchComplete', {
-					reason: query._reason,
-					resultCount: fileSearchStats.resultCount,
-					workspaceFolderCount: query.folderQueries.length,
-					type: fileSearchStats.type,
-					endToEndTime: endToEndTime,
-					sortingTime: fileSearchStats.sortingTime,
-					cacheWasResolved: cacheStats.cacheWasResolved,
-					cacheLookupTime: cacheStats.cacheLookupTime,
-					cacheFilterTime: cacheStats.cacheFilterTime,
-					cacheEntryCount: cacheStats.cacheEntryCount,
-					scheme
-				});
-			} else {
-				const searchEngineStats: ISearchEngineStats = fileSearchStats.detailStats as ISearchEngineStats;
-
-				type SearchCompleteClassification = {
-					owner: 'roblourens';
-					reason?: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-					resultCount: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true };
-					workspaceFolderCount: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true };
-					type: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-					endToEndTime: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true };
-					sortingTime?: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true };
-					fileWalkTime: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true };
-					directoriesWalked: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true };
-					filesWalked: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true };
-					cmdTime: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true };
-					cmdResultCount?: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true };
-					scheme: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-				};
-				type SearchCompleteEvent = {
-					reason?: string;
-					resultCount: number;
-					workspaceFolderCount: number;
-					type: 'fileSearchProvider' | 'searchProcess';
-					endToEndTime: number;
-					sortingTime?: number;
-					fileWalkTime: number;
-					directoriesWalked: number;
-					filesWalked: number;
-					cmdTime: number;
-					cmdResultCount?: number;
-					scheme: string;
-
-				};
-
-				this.telemetryService.publicLog2<SearchCompleteEvent, SearchCompleteClassification>('searchComplete', {
-					reason: query._reason,
-					resultCount: fileSearchStats.resultCount,
-					workspaceFolderCount: query.folderQueries.length,
-					type: fileSearchStats.type,
-					endToEndTime: endToEndTime,
-					sortingTime: fileSearchStats.sortingTime,
-					fileWalkTime: searchEngineStats.fileWalkTime,
-					directoriesWalked: searchEngineStats.directoriesWalked,
-					filesWalked: searchEngineStats.filesWalked,
-					cmdTime: searchEngineStats.cmdTime,
-					cmdResultCount: searchEngineStats.cmdResultCount,
-					scheme
-				});
-			}
-		} else if (query.type === QueryType.Text) {
-			let errorType: string | undefined;
-			if (err) {
-				errorType = err.code === SearchErrorCode.regexParseError ? 'regex' :
-					err.code === SearchErrorCode.unknownEncoding ? 'encoding' :
-						err.code === SearchErrorCode.globParseError ? 'glob' :
-							err.code === SearchErrorCode.invalidLiteral ? 'literal' :
-								err.code === SearchErrorCode.other ? 'other' :
-									err.code === SearchErrorCode.canceled ? 'canceled' :
-										'unknown';
-			}
-
-			type TextSearchCompleteClassification = {
-				owner: 'roblourens';
-				reason?: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-				workspaceFolderCount: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true };
-				endToEndTime: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true };
-				scheme: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-				error?: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-				usePCRE2: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-			};
-			type TextSearchCompleteEvent = {
-				reason?: string;
-				workspaceFolderCount: number;
-				endToEndTime: number;
-				scheme: string;
-				error?: string;
-				usePCRE2: boolean;
-			};
-			this.telemetryService.publicLog2<TextSearchCompleteEvent, TextSearchCompleteClassification>('textSearchComplete', {
-				reason: query._reason,
-				workspaceFolderCount: query.folderQueries.length,
-				endToEndTime: endToEndTime,
-				scheme,
-				error: errorType,
-				usePCRE2: !!query.usePCRE2
-			});
-		}
 	}
 
 	private getLocalResults(query: ITextQuery): { results: ResourceMap<IFileMatch | null>; limitHit: boolean } {

@@ -2690,7 +2690,6 @@
   },
   "dependencies": {
     "@joaomoreno/unique-names-generator": "5.0.0",
-    "@vscode/extension-telemetry": "0.4.10",
     "@vscode/iconv-lite-umd": "0.7.0",
     "byline": "^5.0.0",
     "file-type": "^7.2.0",

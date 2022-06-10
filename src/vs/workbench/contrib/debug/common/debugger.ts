@@ -16,9 +16,6 @@ import { URI } from 'vs/base/common/uri';
 import { Schemas } from 'vs/base/common/network';
 import { isDebuggerMainContribution } from 'vs/workbench/contrib/debug/common/debugUtils';
 import { IExtensionDescription } from 'vs/platform/extensions/common/extensions';
-import { ITelemetryEndpoint } from 'vs/platform/telemetry/common/telemetry';
-import { cleanRemoteAuthority } from 'vs/platform/telemetry/common/telemetryUtils';
-import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
 import { ContextKeyExpr, ContextKeyExpression, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 
 export class Debugger implements IDebugger, IDebuggerMetadata {
@@ -36,7 +33,6 @@ export class Debugger implements IDebugger, IDebuggerMetadata {
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@ITextResourcePropertiesService private readonly resourcePropertiesService: ITextResourcePropertiesService,
 		@IConfigurationResolverService private readonly configurationResolverService: IConfigurationResolverService,
-		@IWorkbenchEnvironmentService private readonly environmentService: IWorkbenchEnvironmentService,
 		@IDebugService private readonly debugService: IDebugService,
 		@IContextKeyService private readonly contextKeyService: IContextKeyService,
 	) {
@@ -197,20 +193,6 @@ export class Debugger implements IDebugger, IDebuggerMetadata {
 
 	getMainExtensionDescriptor(): IExtensionDescription {
 		return this.mainExtensionDescription || this.mergedExtensionDescriptions[0];
-	}
-
-	getCustomTelemetryEndpoint(): ITelemetryEndpoint | undefined {
-		const aiKey = this.debuggerContribution.aiKey;
-		if (!aiKey) {
-			return undefined;
-		}
-
-		const sendErrorTelemtry = cleanRemoteAuthority(this.environmentService.remoteAuthority) !== 'other';
-		return {
-			id: `${this.getMainExtensionDescriptor().publisher}.${this.type}`,
-			aiKey,
-			sendErrorTelemetry: sendErrorTelemtry
-		};
 	}
 
 	getSchemaAttributes(definitions: IJSONSchemaMap): IJSONSchema[] | null {

@@ -16,7 +16,6 @@ import { DiffEditorInput } from 'vs/workbench/common/editor/diffEditorInput';
 import { DiffNavigator } from 'vs/editor/browser/widget/diffNavigator';
 import { DiffEditorWidget } from 'vs/editor/browser/widget/diffEditorWidget';
 import { TextDiffEditorModel } from 'vs/workbench/common/editor/textDiffEditorModel';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { ITextResourceConfigurationService } from 'vs/editor/common/services/textResourceConfiguration';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -60,7 +59,6 @@ export class TextDiffEditor extends BaseTextEditor<IDiffEditorViewState> impleme
 	}
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IStorageService storageService: IStorageService,
 		@ITextResourceConfigurationService configurationService: ITextResourceConfigurationService,
@@ -69,7 +67,7 @@ export class TextDiffEditor extends BaseTextEditor<IDiffEditorViewState> impleme
 		@IEditorGroupsService editorGroupService: IEditorGroupsService,
 		@IFileService private readonly fileService: IFileService
 	) {
-		super(TextDiffEditor.ID, telemetryService, instantiationService, storageService, configurationService, themeService, editorService, editorGroupService);
+		super(TextDiffEditor.ID, instantiationService, storageService, configurationService, themeService, editorService, editorGroupService);
 
 		// Listen to file system provider changes
 		this._register(this.fileService.onDidChangeFileSystemProviderCapabilities(e => this.onDidChangeFileSystemProvider(e.scheme)));

@@ -10,8 +10,6 @@ import { ILifecycleService } from 'vs/workbench/services/lifecycle/common/lifecy
 import { INotificationService, IPromptChoice, IPromptOptions, Severity } from 'vs/platform/notification/common/notification';
 import { TestNotificationService } from 'vs/platform/notification/test/common/testNotificationService';
 import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 import { ExperimentalPrompts } from 'vs/workbench/contrib/experiments/browser/experimentalPrompt';
 import { ExperimentActionType, ExperimentState, IExperiment, IExperimentActionPromptProperties, IExperimentService, LocalizedPromptText } from 'vs/workbench/contrib/experiments/common/experimentService';
 import { TestExperimentService } from 'vs/workbench/contrib/experiments/test/electron-browser/experimentService.test';
@@ -52,9 +50,7 @@ suite('Experimental Prompts', () => {
 
 	suiteSetup(() => {
 		instantiationService = new TestInstantiationService();
-
 		instantiationService.stub(ILifecycleService, new TestLifecycleService());
-		instantiationService.stub(ITelemetryService, NullTelemetryService);
 
 		onExperimentEnabledEvent = new Emitter<IExperiment>();
 

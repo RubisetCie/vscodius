@@ -32,7 +32,6 @@ import { ServiceCollection } from 'vs/platform/instantiation/common/serviceColle
 import { ILabelService } from 'vs/platform/label/common/label';
 import { IEditorProgressService, LongRunningOperation } from 'vs/platform/progress/common/progress';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { inputBorder, registerColor, searchEditorFindMatch, searchEditorFindMatchBorder } from 'vs/platform/theme/common/colorRegistry';
 import { attachInputBoxStyler } from 'vs/platform/theme/common/styler';
 import { IThemeService, registerThemingParticipant, ThemeIcon } from 'vs/platform/theme/common/themeService';
@@ -95,7 +94,6 @@ export class SearchEditor extends BaseTextEditor<SearchEditorViewState> {
 	private updatingModelForSearch: boolean = false;
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
 		@IStorageService storageService: IStorageService,
 		@IModelService private readonly modelService: IModelService,
@@ -114,7 +112,7 @@ export class SearchEditor extends BaseTextEditor<SearchEditorViewState> {
 		@IConfigurationService protected configurationService: IConfigurationService,
 		@IFileService private readonly fileService: IFileService
 	) {
-		super(SearchEditor.ID, telemetryService, instantiationService, storageService, textResourceService, themeService, editorService, editorGroupService);
+		super(SearchEditor.ID, instantiationService, storageService, textResourceService, themeService, editorService, editorGroupService);
 		this.container = DOM.$('.search-editor');
 
 		this.searchOperation = this._register(new LongRunningOperation(progressService));

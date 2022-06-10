@@ -227,7 +227,6 @@ export interface IGalleryExtension {
 	allTargetPlatforms: TargetPlatform[];
 	assets: IGalleryExtensionAssets;
 	properties: IGalleryExtensionProperties;
-	telemetryData?: any;
 }
 
 export interface IGalleryMetadata {

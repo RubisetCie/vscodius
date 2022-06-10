@@ -12,7 +12,6 @@ import { generateUuid } from 'vs/base/common/uuid';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { IEditorOptions } from 'vs/platform/editor/common/editor';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { EditorPane } from 'vs/workbench/browser/parts/editor/editorPane';
 import { IEditorOpenContext } from 'vs/workbench/common/editor';
@@ -44,7 +43,6 @@ export class WebviewEditor extends EditorPane {
 	private readonly _scopedContextKeyService = this._register(new MutableDisposable<IContextKeyService>());
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
 		@IStorageService storageService: IStorageService,
 		@IEditorGroupsService editorGroupsService: IEditorGroupsService,
@@ -52,9 +50,9 @@ export class WebviewEditor extends EditorPane {
 		@IWorkbenchLayoutService private readonly _workbenchLayoutService: IWorkbenchLayoutService,
 		@IEditorDropService private readonly _editorDropService: IEditorDropService,
 		@IHostService private readonly _hostService: IHostService,
-		@IContextKeyService private readonly _contextKeyService: IContextKeyService,
+		@IContextKeyService private readonly _contextKeyService: IContextKeyService
 	) {
-		super(WebviewEditor.ID, telemetryService, themeService, storageService);
+		super(WebviewEditor.ID, themeService, storageService);
 
 		this._register(editorGroupsService.onDidScroll(() => {
 			if (this.webview && this._visible) {

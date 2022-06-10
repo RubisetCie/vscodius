@@ -7,9 +7,7 @@ import { toErrorMessage } from 'vs/base/common/errorMessage';
 import { Disposable, MutableDisposable } from 'vs/base/common/lifecycle';
 import { SimpleIconLabel } from 'vs/base/browser/ui/iconLabel/simpleIconLabel';
 import { ICommandService } from 'vs/platform/commands/common/commands';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IStatusbarEntry, ShowTooltipCommand } from 'vs/workbench/services/statusbar/browser/statusbar';
-import { WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification } from 'vs/base/common/actions';
 import { IThemeService, ThemeColor } from 'vs/platform/theme/common/themeService';
 import { isThemeColor } from 'vs/editor/common/editorCommon';
 import { addDisposableListener, EventType, hide, show, append } from 'vs/base/browser/dom';
@@ -56,7 +54,6 @@ export class StatusbarEntryItem extends Disposable {
 		private readonly hoverDelegate: IHoverDelegate,
 		@ICommandService private readonly commandService: ICommandService,
 		@INotificationService private readonly notificationService: INotificationService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IThemeService private readonly themeService: IThemeService
 	) {
 		super();
@@ -187,7 +184,6 @@ export class StatusbarEntryItem extends Disposable {
 			const id = typeof command === 'string' ? command : command.id;
 			const args = typeof command === 'string' ? [] : command.arguments ?? [];
 
-			this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id, from: 'status bar' });
 			try {
 				await this.commandService.executeCommand(id, ...args);
 			} catch (error) {

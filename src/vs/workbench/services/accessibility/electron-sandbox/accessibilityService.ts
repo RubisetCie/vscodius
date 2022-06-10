@@ -11,24 +11,14 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { Registry } from 'vs/platform/registry/common/platform';
 import { AccessibilityService } from 'vs/platform/accessibility/browser/accessibilityService';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IJSONEditingService } from 'vs/workbench/services/configuration/common/jsonEditing';
 import { IWorkbenchContribution, IWorkbenchContributionsRegistry, Extensions as WorkbenchExtensions } from 'vs/workbench/common/contributions';
 import { LifecyclePhase } from 'vs/workbench/services/lifecycle/common/lifecycle';
 import { INativeHostService } from 'vs/platform/native/electron-sandbox/native';
 import { ILayoutService } from 'vs/platform/layout/browser/layoutService';
 
-interface AccessibilityMetrics {
-	enabled: boolean;
-}
-type AccessibilityMetricsClassification = {
-	owner: 'isidorn';
-	enabled: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-};
-
 export class NativeAccessibilityService extends AccessibilityService implements IAccessibilityService {
 
-	private didSendTelemetry = false;
 	private shouldAlwaysUnderlineAccessKeys: boolean | undefined = undefined;
 
 	constructor(
@@ -36,7 +26,6 @@ export class NativeAccessibilityService extends AccessibilityService implements 
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@ILayoutService _layoutService: ILayoutService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@INativeHostService private readonly nativeHostService: INativeHostService
 	) {
 		super(contextKeyService, _layoutService, configurationService);
@@ -58,11 +47,6 @@ export class NativeAccessibilityService extends AccessibilityService implements 
 
 	override setAccessibilitySupport(accessibilitySupport: AccessibilitySupport): void {
 		super.setAccessibilitySupport(accessibilitySupport);
-
-		if (!this.didSendTelemetry && accessibilitySupport === AccessibilitySupport.Enabled) {
-			this._telemetryService.publicLog2<AccessibilityMetrics, AccessibilityMetricsClassification>('accessibility', { enabled: true });
-			this.didSendTelemetry = true;
-		}
 	}
 }
 

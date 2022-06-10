@@ -17,7 +17,6 @@ import { IRemoteAuthorityResolverService, RemoteAuthorityResolverError, RemoteAu
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { ILifecycleService, LifecyclePhase } from 'vs/workbench/services/lifecycle/common/lifecycle';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IHostService } from 'vs/workbench/services/host/browser/host';
 import { IExtensionService, toExtension, ExtensionHostKind, IExtensionHost, webWorkerExtHostConfig, ExtensionRunningLocation, WebWorkerExtHostConfigValue, extensionHostKindToString } from 'vs/workbench/services/extensions/common/extensions';
 import { IExtensionHostManager } from 'vs/workbench/services/extensions/common/extensionHostManager';
@@ -62,7 +61,6 @@ export abstract class ElectronExtensionService extends AbstractExtensionService 
 		@IInstantiationService instantiationService: IInstantiationService,
 		@INotificationService notificationService: INotificationService,
 		@IWorkbenchEnvironmentService environmentService: IWorkbenchEnvironmentService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IWorkbenchExtensionEnablementService extensionEnablementService: IWorkbenchExtensionEnablementService,
 		@IFileService fileService: IFileService,
 		@IProductService productService: IProductService,
@@ -79,13 +77,12 @@ export abstract class ElectronExtensionService extends AbstractExtensionService 
 		@IHostService private readonly _hostService: IHostService,
 		@IRemoteExplorerService private readonly _remoteExplorerService: IRemoteExplorerService,
 		@IExtensionGalleryService private readonly _extensionGalleryService: IExtensionGalleryService,
-		@IWorkspaceTrustManagementService private readonly _workspaceTrustManagementService: IWorkspaceTrustManagementService,
+		@IWorkspaceTrustManagementService private readonly _workspaceTrustManagementService: IWorkspaceTrustManagementService
 	) {
 		super(
 			instantiationService,
 			notificationService,
 			environmentService,
-			telemetryService,
 			extensionEnablementService,
 			fileService,
 			productService,
@@ -257,7 +254,6 @@ export abstract class ElectronExtensionService extends AbstractExtensionService 
 	}
 
 	protected override _onExtensionHostCrashed(extensionHost: IExtensionHostManager, code: number, signal: string | null): void {
-		const activatedExtensions = Array.from(this._extensionHostActiveExtensions.values()).filter(extensionId => extensionHost.containsExtension(extensionId));
 		super._onExtensionHostCrashed(extensionHost, code, signal);
 
 		if (extensionHost.kind === ExtensionHostKind.LocalProcess) {
@@ -279,8 +275,6 @@ export abstract class ElectronExtensionService extends AbstractExtensionService 
 			}
 
 			this._logExtensionHostCrash(extensionHost);
-			this._sendExtensionHostCrashTelemetry(code, signal, activatedExtensions);
-
 			this._localCrashTracker.registerCrash();
 
 			if (this._localCrashTracker.shouldAutomaticallyRestart()) {
@@ -299,46 +293,6 @@ export abstract class ElectronExtensionService extends AbstractExtensionService 
 					}]
 				);
 			}
-		}
-	}
-
-	private _sendExtensionHostCrashTelemetry(code: number, signal: string | null, activatedExtensions: ExtensionIdentifier[]): void {
-		type ExtensionHostCrashClassification = {
-			owner: 'alexdima';
-			comment: 'The extension host has terminated unexpectedly';
-			code: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-			signal: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-			extensionIds: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-		};
-		type ExtensionHostCrashEvent = {
-			code: number;
-			signal: string | null;
-			extensionIds: string[];
-		};
-		this._telemetryService.publicLog2<ExtensionHostCrashEvent, ExtensionHostCrashClassification>('extensionHostCrash', {
-			code,
-			signal,
-			extensionIds: activatedExtensions.map(e => e.value)
-		});
-
-		for (const extensionId of activatedExtensions) {
-			type ExtensionHostCrashExtensionClassification = {
-				owner: 'alexdima';
-				comment: 'The extension host has terminated unexpectedly';
-				code: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-				signal: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-				extensionId: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-			};
-			type ExtensionHostCrashExtensionEvent = {
-				code: number;
-				signal: string | null;
-				extensionId: string;
-			};
-			this._telemetryService.publicLog2<ExtensionHostCrashExtensionEvent, ExtensionHostCrashExtensionClassification>('extensionHostCrashExtension', {
-				code,
-				signal,
-				extensionId: extensionId.value
-			});
 		}
 	}
 
@@ -609,17 +563,6 @@ export abstract class ElectronExtensionService extends AbstractExtensionService 
 		if (!recommendation) {
 			return false;
 		}
-		const sendTelemetry = (userReaction: 'install' | 'enable' | 'cancel') => {
-			/* __GDPR__
-			"remoteExtensionRecommendations:popup" : {
-				"owner": "sandy081",
-				"userReaction" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-				"extensionId": { "classification": "PublicNonPersonalData", "purpose": "FeatureInsight" }
-			}
-			*/
-			this._telemetryService.publicLog('remoteExtensionRecommendations:popup', { userReaction, extensionId: resolverExtensionId });
-		};
-
 		const resolverExtensionId = recommendation.extensionId;
 		const allExtensions = await this._scanAllLocalExtensions();
 		const extension = allExtensions.filter(e => e.identifier.value === resolverExtensionId)[0];
@@ -630,7 +573,6 @@ export abstract class ElectronExtensionService extends AbstractExtensionService 
 					[{
 						label: nls.localize('enable', 'Enable and Reload'),
 						run: async () => {
-							sendTelemetry('enable');
 							await this._extensionEnablementService.setEnablement([toExtension(extension)], EnablementState.EnabledGlobally);
 							await this._hostService.reload();
 						}
@@ -645,7 +587,6 @@ export abstract class ElectronExtensionService extends AbstractExtensionService 
 				[{
 					label: nls.localize('install', 'Install and Reload'),
 					run: async () => {
-						sendTelemetry('install');
 						const [galleryExtension] = await this._extensionGalleryService.getExtensions([{ id: resolverExtensionId }], CancellationToken.None);
 						if (galleryExtension) {
 							await this._extensionManagementService.installFromGallery(galleryExtension);
@@ -658,7 +599,6 @@ export abstract class ElectronExtensionService extends AbstractExtensionService 
 				}],
 				{
 					sticky: true,
-					onCancel: () => sendTelemetry('cancel')
 				}
 			);
 

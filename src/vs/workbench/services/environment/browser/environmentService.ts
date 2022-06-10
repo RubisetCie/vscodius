@@ -194,12 +194,6 @@ export class BrowserWorkbenchEnvironmentService implements IBrowserWorkbenchEnvi
 	}
 
 	@memoize
-	get telemetryLogResource(): URI { return joinPath(this.logsHome, 'telemetry.log'); }
-
-	@memoize
-	get disableTelemetry(): boolean { return false; }
-
-	@memoize
 	get verbose(): boolean { return this.payload?.get('verbose') === 'true'; }
 
 	@memoize

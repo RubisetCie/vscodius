@@ -17,7 +17,6 @@ import { Registry } from 'vs/platform/registry/common/platform';
 import { ToolBar } from 'vs/base/browser/ui/toolbar/toolbar';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService, ThemeIcon } from 'vs/platform/theme/common/themeService';
 import { IPaneOptions, Pane, IPaneStyles } from 'vs/base/browser/ui/splitview/paneview';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
@@ -49,12 +48,6 @@ export interface IViewPaneOptions extends IPaneOptions {
 	titleMenuId?: MenuId;
 	donotForwardArgs?: boolean;
 }
-
-type WelcomeActionClassification = {
-	owner: 'joaomoreno';
-	viewId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-	uri: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-};
 
 const viewPaneContainerExpandedIcon = registerIcon('view-pane-container-expanded', Codicon.chevronDown, nls.localize('viewPaneContainerExpandedIcon', 'Icon for an expanded view pane container.'));
 const viewPaneContainerCollapsedIcon = registerIcon('view-pane-container-collapsed', Codicon.chevronRight, nls.localize('viewPaneContainerCollapsedIcon', 'Icon for a collapsed view pane container.'));
@@ -219,8 +212,7 @@ export abstract class ViewPane extends Pane implements IView {
 		@IViewDescriptorService protected viewDescriptorService: IViewDescriptorService,
 		@IInstantiationService protected instantiationService: IInstantiationService,
 		@IOpenerService protected openerService: IOpenerService,
-		@IThemeService protected themeService: IThemeService,
-		@ITelemetryService protected telemetryService: ITelemetryService,
+		@IThemeService protected themeService: IThemeService
 	) {
 		super({ ...options, ...{ orientation: viewDescriptorService.getViewLocationById(options.id) === ViewContainerLocation.Panel ? Orientation.HORIZONTAL : Orientation.VERTICAL } });
 
@@ -567,7 +559,6 @@ export abstract class ViewPane extends Pane implements IView {
 					const button = new Button(buttonContainer, { title: node.title, supportIcons: true });
 					button.label = node.label;
 					button.onDidClick(_ => {
-						this.telemetryService.publicLog2<{ viewId: string; uri: string }, WelcomeActionClassification>('views.welcomeAction', { viewId: this.id, uri: node.href });
 						this.openerService.open(node.href, { allowCommands: true });
 					}, null, disposables);
 					disposables.add(button);

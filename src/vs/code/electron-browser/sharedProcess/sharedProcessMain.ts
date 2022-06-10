@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { ipcRenderer } from 'electron';
-import { hostname, release } from 'os';
 import { toErrorMessage } from 'vs/base/common/errorMessage';
 import { onUnexpectedError, setUnexpectedErrorHandler } from 'vs/base/common/errors';
 import { combinedDisposable, Disposable, toDisposable } from 'vs/base/common/lifecycle';
@@ -58,14 +57,6 @@ import { IRequestService } from 'vs/platform/request/common/request';
 import { ISharedProcessConfiguration } from 'vs/platform/sharedProcess/node/sharedProcess';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { NativeStorageService } from 'vs/platform/storage/electron-sandbox/storageService';
-import { resolveCommonProperties } from 'vs/platform/telemetry/common/commonProperties';
-import { ICustomEndpointTelemetryService, ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { TelemetryAppenderChannel } from 'vs/platform/telemetry/common/telemetryIpc';
-import { TelemetryLogAppender } from 'vs/platform/telemetry/common/telemetryLogAppender';
-import { TelemetryService } from 'vs/platform/telemetry/common/telemetryService';
-import { supportsTelemetry, ITelemetryAppender, NullAppender, NullTelemetryService, getPiiPathsFromEnvironment } from 'vs/platform/telemetry/common/telemetryUtils';
-import { AppInsightsAppender } from 'vs/platform/telemetry/node/appInsightsAppender';
-import { CustomEndpointTelemetryService } from 'vs/platform/telemetry/node/customEndpointTelemetryService';
 import { LocalReconnectConstants, TerminalIpcChannels, TerminalSettingId } from 'vs/platform/terminal/common/terminal';
 import { ILocalPtyService } from 'vs/platform/terminal/electron-sandbox/terminal';
 import { PtyHostService } from 'vs/platform/terminal/node/ptyHostService';
@@ -266,40 +257,6 @@ class SharedProcessMain extends Disposable {
 		const activeWindowRouter = new StaticRouter(ctx => activeWindowManager.getActiveClientId().then(id => ctx === id));
 		services.set(IExtensionRecommendationNotificationService, new ExtensionRecommendationNotificationServiceChannelClient(this.server.getChannel('extensionRecommendationNotification', activeWindowRouter)));
 
-		// Telemetry
-		let telemetryService: ITelemetryService;
-		const appenders: ITelemetryAppender[] = [];
-		if (supportsTelemetry(productService, environmentService)) {
-			const logAppender = new TelemetryLogAppender(loggerService, environmentService);
-			appenders.push(logAppender);
-			const { installSourcePath } = environmentService;
-
-			// Application Insights
-			if (productService.aiConfig && productService.aiConfig.asimovKey) {
-				const appInsightsAppender = new AppInsightsAppender('monacoworkbench', null, productService.aiConfig.asimovKey);
-				this._register(toDisposable(() => appInsightsAppender.flush())); // Ensure the AI appender is disposed so that it flushes remaining data
-				appenders.push(appInsightsAppender);
-			}
-
-			telemetryService = new TelemetryService({
-				appenders,
-				commonProperties: resolveCommonProperties(fileService, release(), hostname(), process.arch, productService.commit, productService.version, this.configuration.machineId, productService.msftInternalDomains, installSourcePath),
-				sendErrorTelemetry: true,
-				piiPaths: getPiiPathsFromEnvironment(environmentService),
-			}, configurationService, productService);
-		} else {
-			telemetryService = NullTelemetryService;
-			const nullAppender = NullAppender;
-			appenders.push(nullAppender);
-		}
-
-		this.server.registerChannel('telemetryAppender', new TelemetryAppenderChannel(appenders));
-		services.set(ITelemetryService, telemetryService);
-
-		// Custom Endpoint Telemetry
-		const customEndpointTelemetryService = new CustomEndpointTelemetryService(configurationService, telemetryService, loggerService, environmentService, productService);
-		services.set(ICustomEndpointTelemetryService, customEndpointTelemetryService);
-
 		// Extension Management
 		services.set(IExtensionsScannerService, new SyncDescriptor(ExtensionsScannerService));
 		services.set(IExtensionManagementService, new SyncDescriptor(ExtensionManagementService));
@@ -383,10 +340,6 @@ class SharedProcessMain extends Disposable {
 		// Settings Sync
 		const userDataSyncMachineChannel = new UserDataSyncMachinesServiceChannel(accessor.get(IUserDataSyncMachinesService));
 		this.server.registerChannel('userDataSyncMachines', userDataSyncMachineChannel);
-
-		// Custom Endpoint Telemetry
-		const customEndpointTelemetryChannel = ProxyChannel.fromService(accessor.get(ICustomEndpointTelemetryService));
-		this.server.registerChannel('customEndpointTelemetry', customEndpointTelemetryChannel);
 
 		const userDataSyncAccountChannel = new UserDataSyncAccountServiceChannel(accessor.get(IUserDataSyncAccountService));
 		this.server.registerChannel('userDataSyncAccount', userDataSyncAccountChannel);

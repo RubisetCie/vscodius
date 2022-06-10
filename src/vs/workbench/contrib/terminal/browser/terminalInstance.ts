@@ -14,7 +14,6 @@ import { AutoOpenBarrier, Promises } from 'vs/base/common/async';
 import { Codicon } from 'vs/base/common/codicons';
 import { fromNow } from 'vs/base/common/date';
 import { debounce } from 'vs/base/common/decorators';
-import { ErrorNoTelemetry } from 'vs/base/common/errors';
 import { Emitter, Event } from 'vs/base/common/event';
 import { KeyCode } from 'vs/base/common/keyCodes';
 import { ISeparator, template } from 'vs/base/common/labels';
@@ -80,7 +79,6 @@ import { IWorkbenchLayoutService, Position } from 'vs/workbench/services/layout/
 import { IPathService } from 'vs/workbench/services/path/common/pathService';
 import { IPreferencesService } from 'vs/workbench/services/preferences/common/preferences';
 import type { ITerminalAddon, Terminal as XTermTerminal } from 'xterm';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 
 const enum Constants {
 	/**
@@ -368,8 +366,7 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 		@IWorkspaceContextService private readonly _workspaceContextService: IWorkspaceContextService,
 		@IEditorService private readonly _editorService: IEditorService,
 		@IWorkspaceTrustRequestService private readonly _workspaceTrustRequestService: IWorkspaceTrustRequestService,
-		@IHistoryService private readonly _historyService: IHistoryService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService
+		@IHistoryService private readonly _historyService: IHistoryService
 	) {
 		super();
 
@@ -662,10 +659,10 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 	protected async _createXterm(): Promise<XtermTerminal> {
 		const Terminal = await getXtermConstructor();
 		if (this._isDisposed) {
-			throw new ErrorNoTelemetry('Terminal disposed of during xterm.js creation');
+			throw new Error('Terminal disposed of during xterm.js creation');
 		}
 
-		const xterm = this._instantiationService.createInstance(XtermTerminal, Terminal, this._configHelper, this._cols, this._rows, this.target || TerminalLocation.Panel, this.capabilities, this.disableShellIntegrationReporting);
+		const xterm = this._instantiationService.createInstance(XtermTerminal, Terminal, this._configHelper, this._cols, this._rows, this.target || TerminalLocation.Panel, this.capabilities);
 		this.xterm = xterm;
 		const lineDataEventAddon = new LineDataEventAddon();
 		this.xterm.raw.loadAddon(lineDataEventAddon);
@@ -1644,10 +1641,6 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 					this._logService.warn(exitMessage);
 				}
 			}
-		}
-
-		if (failedShellIntegrationInjection) {
-			this._telemetryService.publicLog2<{}, { owner: 'meganrogge'; comment: 'Indicates the process exited when created with shell integration args' }>('terminal/shellIntegrationFailureProcessExit');
 		}
 
 		// First onExit to consumers, this can happen after the terminal has already been disposed.

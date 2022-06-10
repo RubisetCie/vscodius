@@ -8,11 +8,10 @@ import { URI } from 'vs/base/common/uri';
 import { onUnexpectedError } from 'vs/base/common/errors';
 import { equals } from 'vs/base/common/objects';
 import { EventType, EventHelper, addDisposableListener, scheduleAtNextAnimationFrame, ModifierKeyEmitter } from 'vs/base/browser/dom';
-import { Separator, WorkbenchActionExecutedClassification, WorkbenchActionExecutedEvent } from 'vs/base/common/actions';
+import { Separator } from 'vs/base/common/actions';
 import { IFileService } from 'vs/platform/files/common/files';
 import { EditorResourceAccessor, IUntitledTextResourceEditorInput, SideBySideEditor, pathsToEditors, IResourceDiffEditorInput, IUntypedEditorInput } from 'vs/workbench/common/editor';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { WindowMinimumSize, IOpenFileRequest, IWindowsConfiguration, getTitleBarStyle, IAddFoldersRequest, INativeRunActionInWindowRequest, INativeRunKeybindingInWindowRequest, INativeOpenFileRequest } from 'vs/platform/window/common/window';
 import { ITitleService } from 'vs/workbench/services/title/common/titleService';
 import { IWorkbenchThemeService } from 'vs/workbench/services/themes/common/workbenchThemeService';
@@ -94,7 +93,6 @@ export class NativeWindow extends Disposable {
 		@INotificationService private readonly notificationService: INotificationService,
 		@ICommandService private readonly commandService: ICommandService,
 		@IKeybindingService private readonly keybindingService: IKeybindingService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IWorkspaceEditingService private readonly workspaceEditingService: IWorkspaceEditingService,
 		@IFileService private readonly fileService: IFileService,
 		@IMenuService private readonly menuService: IMenuService,
@@ -160,8 +158,6 @@ export class NativeWindow extends Disposable {
 
 			try {
 				await this.commandService.executeCommand(request.id, ...args);
-
-				this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: request.id, from: request.from });
 			} catch (error) {
 				this.notificationService.error(error);
 			}

@@ -20,7 +20,6 @@ import { ExtensionType, IExtensionIdentifier } from 'vs/platform/extensions/comm
 import { IFileService } from 'vs/platform/files/common/files';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { AbstractInitializer, AbstractSynchroniser, IAcceptResult, IMergeResult, IResourcePreview } from 'vs/platform/userDataSync/common/abstractSynchronizer';
 import { IMergeResult as IExtensionMergeResult, merge } from 'vs/platform/userDataSync/common/extensionsMerge';
@@ -97,11 +96,10 @@ export class ExtensionsSynchroniser extends AbstractSynchroniser implements IUse
 		@IExtensionGalleryService private readonly extensionGalleryService: IExtensionGalleryService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@IUserDataSyncEnablementService userDataSyncEnablementService: IUserDataSyncEnablementService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IExtensionStorageService private readonly extensionStorageService: IExtensionStorageService,
 		@IUriIdentityService uriIdentityService: IUriIdentityService,
 	) {
-		super(SyncResource.Extensions, fileService, environmentService, storageService, userDataSyncStoreService, userDataSyncBackupStoreService, userDataSyncEnablementService, telemetryService, logService, configurationService, uriIdentityService);
+		super(SyncResource.Extensions, fileService, environmentService, storageService, userDataSyncStoreService, userDataSyncBackupStoreService, userDataSyncEnablementService, logService, configurationService, uriIdentityService);
 		this._register(
 			Event.any<any>(
 				Event.filter(this.extensionManagementService.onDidInstallExtensions, (e => e.some(({ local }) => !!local))),

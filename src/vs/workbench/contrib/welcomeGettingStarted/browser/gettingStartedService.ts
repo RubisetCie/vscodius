@@ -19,7 +19,6 @@ import { FileAccess } from 'vs/base/common/network';
 import { IExtensionManagementService } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { ThemeIcon } from 'vs/platform/theme/common/themeService';
 import { walkthroughs } from 'vs/workbench/contrib/welcomeGettingStarted/common/gettingStartedContent';
-import { IWorkbenchAssignmentService } from 'vs/workbench/services/assignment/common/assignmentService';
 import { IHostService } from 'vs/workbench/services/host/browser/host';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { ILink, LinkedText, parseLinkedText } from 'vs/base/common/linkedText';
@@ -29,7 +28,6 @@ import { dirname } from 'vs/base/common/path';
 import { coalesce, flatten } from 'vs/base/common/arrays';
 import { IViewsService } from 'vs/workbench/common/views';
 import { localize } from 'vs/nls';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { checkGlobFileExists } from 'vs/workbench/services/extensions/common/workspaceContains';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { CancellationTokenSource } from 'vs/base/common/cancellation';
@@ -135,7 +133,6 @@ export class WalkthroughsService extends Disposable implements IWalkthroughsServ
 	private gettingStartedContributions = new Map<string, IWalkthrough>();
 	private steps = new Map<string, IWalkthroughStep>();
 
-	private tasExperimentService?: IWorkbenchAssignmentService;
 	private sessionInstalledExtensions = new Set<string>();
 
 	private categoryVisibilityContextKeys = new Set<string>();
@@ -157,13 +154,9 @@ export class WalkthroughsService extends Disposable implements IWalkthroughsServ
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IExtensionManagementService private readonly extensionManagementService: IExtensionManagementService,
 		@IHostService private readonly hostService: IHostService,
-		@IViewsService private readonly viewsService: IViewsService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
-		@IWorkbenchAssignmentService tasExperimentService: IWorkbenchAssignmentService,
+		@IViewsService private readonly viewsService: IViewsService
 	) {
 		super();
-
-		this.tasExperimentService = tasExperimentService;
 
 		this.metadata = new Map(
 			JSON.parse(
@@ -313,14 +306,8 @@ export class WalkthroughsService extends Disposable implements IWalkthroughsServ
 				this.metadata.set(categoryID, { firstSeen: +new Date(), stepIDs: walkthrough.steps?.map(s => s.id) ?? [], manaullyOpened: false });
 			}
 
-			const override = await Promise.race([
-				this.tasExperimentService?.getTreatment<string>(`gettingStarted.overrideCategory.${extension.identifier.value + '.' + walkthrough.id}.when`),
-				new Promise<string | undefined>(resolve => setTimeout(() => resolve(walkthrough.when), 5000))
-			]);
-
 			if (
 				this.sessionInstalledExtensions.has(extension.identifier.value.toLowerCase())
-				&& this.contextService.contextMatchesRules(ContextKeyExpr.deserialize(override ?? walkthrough.when) ?? ContextKeyExpr.true())
 			) {
 				this.sessionInstalledExtensions.delete(extension.identifier.value.toLowerCase());
 				if (index < sectionToOpenIndex && isNewlyInstalled) {
@@ -415,7 +402,7 @@ export class WalkthroughsService extends Disposable implements IWalkthroughsServ
 						? FileAccess.asBrowserUri(joinPath(extension.extensionLocation, extension.icon)).toString(true)
 						: DefaultIconPath
 				},
-				when: ContextKeyExpr.deserialize(override ?? walkthrough.when) ?? ContextKeyExpr.true(),
+				when: ContextKeyExpr.true(),
 			} as const;
 
 			this._registerWalkthrough(walkthoughDescriptor);
@@ -427,17 +414,6 @@ export class WalkthroughsService extends Disposable implements IWalkthroughsServ
 
 
 		if (sectionToOpen && this.configurationService.getValue<string>('workbench.welcomePage.walkthroughs.openOnInstall')) {
-			type GettingStartedAutoOpenClassification = {
-				id: {
-					classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight';
-					owner: 'JacksonKearl';
-					comment: 'Used to understand what walkthroughs are consulted most frequently';
-				};
-			};
-			type GettingStartedAutoOpenEvent = {
-				id: string;
-			};
-			this.telemetryService.publicLog2<GettingStartedAutoOpenEvent, GettingStartedAutoOpenClassification>('gettingStarted.didAutoOpenWalkthrough', { id: sectionToOpen });
 			this.commandService.executeCommand('workbench.action.openWalkthrough', sectionToOpen);
 		}
 	}

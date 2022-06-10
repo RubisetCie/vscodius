@@ -33,7 +33,6 @@ import { ILabelService } from 'vs/platform/label/common/label';
 import { WorkbenchCompressibleAsyncDataTree } from 'vs/platform/list/browser/listService';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { textLinkForeground } from 'vs/platform/theme/common/colorRegistry';
 import { attachStylerCallback } from 'vs/platform/theme/common/styler';
 import { IThemeService, ThemeIcon } from 'vs/platform/theme/common/themeService';
@@ -153,10 +152,9 @@ export class CallStackView extends ViewPane {
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IOpenerService openerService: IOpenerService,
 		@IThemeService themeService: IThemeService,
-		@ITelemetryService telemetryService: ITelemetryService,
-		@IMenuService private readonly menuService: IMenuService,
+		@IMenuService private readonly menuService: IMenuService
 	) {
-		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
+		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
 
 		// Create scheduler to prevent unnecessary flashing of tree when reacting to changes
 		this.onCallStackChangeScheduler = this._register(new RunOnceScheduler(async () => {

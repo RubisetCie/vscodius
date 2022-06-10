@@ -7,13 +7,12 @@ import { IContextMenuDelegate } from 'vs/base/browser/contextmenu';
 import { $, addDisposableListener, EventType, isHTMLElement } from 'vs/base/browser/dom';
 import { StandardMouseEvent } from 'vs/base/browser/mouseEvent';
 import { Menu } from 'vs/base/browser/ui/menu/menu';
-import { ActionRunner, IRunEvent, WorkbenchActionExecutedClassification, WorkbenchActionExecutedEvent } from 'vs/base/common/actions';
+import { ActionRunner, IRunEvent } from 'vs/base/common/actions';
 import { isCancellationError } from 'vs/base/common/errors';
 import { combinedDisposable, DisposableStore } from 'vs/base/common/lifecycle';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { attachMenuStyler } from 'vs/platform/theme/common/styler';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 
@@ -29,7 +28,6 @@ export class ContextMenuHandler {
 
 	constructor(
 		private contextViewService: IContextViewService,
-		private telemetryService: ITelemetryService,
 		private notificationService: INotificationService,
 		private keybindingService: IKeybindingService,
 		private themeService: IThemeService
@@ -144,8 +142,6 @@ export class ContextMenuHandler {
 	}
 
 	private onActionRun(e: IRunEvent): void {
-		this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: e.action.id, from: 'contextMenu' });
-
 		this.contextViewService.hideContextView(false);
 
 		// Restore focus here

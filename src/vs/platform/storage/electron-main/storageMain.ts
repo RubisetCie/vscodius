@@ -17,7 +17,6 @@ import { IEnvironmentService } from 'vs/platform/environment/common/environment'
 import { IFileService } from 'vs/platform/files/common/files';
 import { ILogService, LogLevel } from 'vs/platform/log/common/log';
 import { IS_NEW_KEY } from 'vs/platform/storage/common/storage';
-import { currentSessionDateStorageKey, firstSessionDateStorageKey, lastSessionDateStorageKey } from 'vs/platform/telemetry/common/telemetry';
 import { IEmptyWorkspaceIdentifier, ISingleFolderWorkspaceIdentifier, IWorkspaceIdentifier, isSingleFolderWorkspaceIdentifier, isWorkspaceIdentifier } from 'vs/platform/workspace/common/workspace';
 
 export interface IStorageMainOptions {
@@ -279,30 +278,6 @@ export class GlobalStorageMain extends BaseStorageMain implements IStorageMain {
 		return new Storage(new SQLiteStorageDatabase(this.path ?? SQLiteStorageDatabase.IN_MEMORY_PATH, {
 			logging: this.createLoggingOptions()
 		}));
-	}
-
-	protected override async doInit(storage: IStorage): Promise<void> {
-		await super.doInit(storage);
-
-		// Apply global telemetry values as part of the initialization
-		this.updateTelemetryState(storage);
-	}
-
-	private updateTelemetryState(storage: IStorage): void {
-
-		// First session date (once)
-		const firstSessionDate = storage.get(firstSessionDateStorageKey, undefined);
-		if (firstSessionDate === undefined) {
-			storage.set(firstSessionDateStorageKey, new Date().toUTCString());
-		}
-
-		// Last / current session (always)
-		// previous session date was the "current" one at that time
-		// current session date is "now"
-		const lastSessionDate = storage.get(currentSessionDateStorageKey, undefined);
-		const currentSessionDate = new Date().toUTCString();
-		storage.set(lastSessionDateStorageKey, typeof lastSessionDate === 'undefined' ? null : lastSessionDate);
-		storage.set(currentSessionDateStorageKey, currentSessionDate);
 	}
 }
 

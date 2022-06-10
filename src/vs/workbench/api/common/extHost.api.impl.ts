@@ -81,7 +81,6 @@ import { ExtHostTesting } from 'vs/workbench/api/common/extHostTesting';
 import { ExtHostUriOpeners } from 'vs/workbench/api/common/extHostUriOpener';
 import { IExtHostSecretState } from 'vs/workbench/api/common/exHostSecretState';
 import { IExtHostEditorTabs } from 'vs/workbench/api/common/extHostEditorTabs';
-import { IExtHostTelemetry } from 'vs/workbench/api/common/extHostTelemetry';
 import { ExtHostNotebookKernels } from 'vs/workbench/api/common/extHostNotebookKernels';
 import { TextSearchCompleteMessageType } from 'vs/workbench/services/search/common/searchExtTypes';
 import { ExtHostNotebookRenderers } from 'vs/workbench/api/common/extHostNotebookRenderers';
@@ -114,7 +113,6 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 	const extHostConsumerFileSystem = accessor.get(IExtHostConsumerFileSystem);
 	const extensionService = accessor.get(IExtHostExtensionService);
 	const extHostWorkspace = accessor.get(IExtHostWorkspace);
-	const extHostTelemetry = accessor.get(IExtHostTelemetry);
 	const extHostConfiguration = accessor.get(IExtHostConfiguration);
 	const uriTransformer = accessor.get(IURITransformerService);
 	const rpcProtocol = accessor.get(IExtHostRpcService);
@@ -138,7 +136,6 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 	rpcProtocol.set(ExtHostContext.ExtHostTunnelService, extHostTunnelService);
 	rpcProtocol.set(ExtHostContext.ExtHostWindow, extHostWindow);
 	rpcProtocol.set(ExtHostContext.ExtHostSecretState, extHostSecretState);
-	rpcProtocol.set(ExtHostContext.ExtHostTelemetry, extHostTelemetry);
 	rpcProtocol.set(ExtHostContext.ExtHostEditorTabs, extHostEditorTabs);
 
 	// automatically create and register addressable instances
@@ -297,8 +294,8 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 
 		// namespace: env
 		const env: typeof vscode.env = {
-			get machineId() { return initData.telemetryInfo.machineId; },
-			get sessionId() { return initData.telemetryInfo.sessionId; },
+			get machineId() { return ''; },
+			get sessionId() { return ''; },
 			get language() { return initData.environment.appLanguage; },
 			get appName() { return initData.environment.appName; },
 			get appRoot() { return initData.environment.appRoot?.fsPath ?? ''; },
@@ -308,23 +305,8 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 			get shell() {
 				return extHostTerminalService.getDefaultShell(false);
 			},
-			get isTelemetryEnabled() {
-				return extHostTelemetry.getTelemetryConfiguration();
-			},
-			get onDidChangeTelemetryEnabled(): Event<boolean> {
-				return extHostTelemetry.onDidChangeTelemetryEnabled;
-			},
-			get telemetryConfiguration(): vscode.TelemetryConfiguration {
-				checkProposedApiEnabled(extension, 'telemetry');
-				return extHostTelemetry.getTelemetryDetails();
-			},
-			get onDidChangeTelemetryConfiguration(): Event<vscode.TelemetryConfiguration> {
-				checkProposedApiEnabled(extension, 'telemetry');
-				return extHostTelemetry.onDidChangeTelemetryConfiguration;
-			},
 			get isNewAppInstall() {
-				const installAge = Date.now() - new Date(initData.telemetryInfo.firstSessionDate).getTime();
-				return isNaN(installAge) ? false : installAge < 1000 * 60 * 60 * 24; // install age is less than a day
+				return false;
 			},
 			openExternal(uri: URI, options?: { allowContributedOpeners?: boolean | string }) {
 				return extHostWindow.openUri(uri, {

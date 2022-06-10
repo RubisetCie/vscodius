@@ -22,7 +22,6 @@ import { Registry } from 'vs/platform/registry/common/platform';
 import { connectRemoteAgentExtensionHost, IConnectionOptions, IRemoteExtensionHostStartParams, ISocketFactory } from 'vs/platform/remote/common/remoteAgentConnection';
 import { IRemoteAuthorityResolverService, IRemoteConnectionData } from 'vs/platform/remote/common/remoteAuthorityResolver';
 import { ISignService } from 'vs/platform/sign/common/sign';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
 import { parseExtensionDevOptions } from 'vs/workbench/services/extensions/common/extensionDevOptions';
@@ -67,7 +66,6 @@ export class RemoteExtensionHost extends Disposable implements IExtensionHost {
 		private readonly _socketFactory: ISocketFactory,
 		@IWorkspaceContextService private readonly _contextService: IWorkspaceContextService,
 		@IWorkbenchEnvironmentService private readonly _environmentService: IWorkbenchEnvironmentService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@ILifecycleService private readonly _lifecycleService: ILifecycleService,
 		@ILogService private readonly _logService: ILogService,
 		@ILabelService private readonly _labelService: ILabelService,
@@ -212,7 +210,7 @@ export class RemoteExtensionHost extends Disposable implements IExtensionHost {
 	}
 
 	private async _createExtHostInitData(isExtensionDevelopmentDebug: boolean): Promise<IExtensionHostInitData> {
-		const [telemetryInfo, remoteInitData] = await Promise.all([this._telemetryService.getTelemetryInfo(), this._initDataProvider.getInitData()]);
+		const remoteInitData = await this._initDataProvider.getInitData();
 		const workspace = this._contextService.getWorkspace();
 		const deltaExtensions = this.extensions.set(remoteInitData.allExtensions, remoteInitData.myExtensions);
 		return {
@@ -244,7 +242,6 @@ export class RemoteExtensionHost extends Disposable implements IExtensionHost {
 			},
 			allExtensions: deltaExtensions.toAdd,
 			myExtensions: deltaExtensions.myToAdd,
-			telemetryInfo,
 			logLevel: this._logService.getLevel(),
 			logsLocation: remoteInitData.extensionHostLogsPath,
 			logFile: joinPath(remoteInitData.extensionHostLogsPath, `${ExtensionHostLogFileName}.log`),

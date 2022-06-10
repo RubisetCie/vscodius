@@ -16,23 +16,9 @@ import { URI } from 'vs/base/common/uri';
 import { localize } from 'vs/nls';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { ISyncTask, IUserDataAutoSyncService, IUserDataManifest, IUserDataSyncLogService, IUserDataSyncEnablementService, IUserDataSyncService, IUserDataSyncStoreManagementService, IUserDataSyncStoreService, UserDataAutoSyncError, UserDataSyncError, UserDataSyncErrorCode } from 'vs/platform/userDataSync/common/userDataSync';
 import { IUserDataSyncAccountService } from 'vs/platform/userDataSync/common/userDataSyncAccount';
 import { IUserDataSyncMachinesService } from 'vs/platform/userDataSync/common/userDataSyncMachines';
-
-type AutoSyncClassification = {
-	owner: 'sandy081';
-	comment: 'Information about the sources triggering auto sync';
-	sources: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Source that triggered auto sync' };
-};
-
-type AutoSyncErrorClassification = {
-	owner: 'sandy081';
-	comment: 'Information about the error that causes auto sync to fail';
-	code: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'error code' };
-	service: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Settings sync service for which this error has occurred' };
-};
 
 const disableMachineEventuallyKey = 'sync.disableMachineEventually';
 const sessionIdKey = 'sync.sessionId';
@@ -85,7 +71,6 @@ export class UserDataAutoSyncService extends Disposable implements IUserDataAuto
 		@IUserDataSyncService private readonly userDataSyncService: IUserDataSyncService,
 		@IUserDataSyncLogService private readonly logService: IUserDataSyncLogService,
 		@IUserDataSyncAccountService private readonly userDataSyncAccountService: IUserDataSyncAccountService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IUserDataSyncMachinesService private readonly userDataSyncMachinesService: IUserDataSyncMachinesService,
 		@IStorageService private readonly storageService: IStorageService,
 	) {
@@ -198,7 +183,6 @@ export class UserDataAutoSyncService extends Disposable implements IUserDataAuto
 
 			// Reset
 			if (everywhere) {
-				this.telemetryService.publicLog2<{}, { owner: 'sandy081'; comment: 'Reporting when settings sync is turned off in all devices' }>('sync/turnOffEveryWhere');
 				await this.userDataSyncService.reset();
 			} else {
 				await this.userDataSyncService.resetLocal();
@@ -233,11 +217,6 @@ export class UserDataAutoSyncService extends Disposable implements IUserDataAuto
 
 		// Error while syncing
 		const userDataSyncError = UserDataSyncError.toUserDataSyncError(error);
-
-		// Log to telemetry
-		if (userDataSyncError instanceof UserDataAutoSyncError) {
-			this.telemetryService.publicLog2<{ code: string; service: string }, AutoSyncErrorClassification>(`autosync/error`, { code: userDataSyncError.code, service: this.userDataSyncStoreManagementService.userDataSyncStore!.url.toString() });
-		}
 
 		// Session got expired
 		if (userDataSyncError.code === UserDataSyncErrorCode.SessionExpired) {
@@ -354,7 +333,6 @@ export class UserDataAutoSyncService extends Disposable implements IUserDataAuto
 		this.sources.push(...sources);
 		return this.syncTriggerDelayer.trigger(async () => {
 			this.logService.trace('activity sources', ...this.sources);
-			this.telemetryService.publicLog2<{ sources: string[] }, AutoSyncClassification>('sync/triggered', { sources: this.sources });
 			this.sources = [];
 			if (this.autoSync.value) {
 				await this.autoSync.value.sync('Activity', disableCache);

@@ -19,7 +19,6 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { IViewDescriptorService } from 'vs/workbench/common/views';
 import { SIDE_BAR_BACKGROUND } from 'vs/workbench/common/theme';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { RepositoryRenderer } from 'vs/workbench/contrib/scm/browser/scmRepositoryRenderer';
 import { collectContextMenuActions, getActionViewItemProvider } from 'vs/workbench/contrib/scm/browser/util';
 import { Orientation } from 'vs/base/browser/ui/sash/sash';
@@ -50,10 +49,9 @@ export class SCMRepositoriesViewPane extends ViewPane {
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@IOpenerService openerService: IOpenerService,
-		@IThemeService themeService: IThemeService,
-		@ITelemetryService telemetryService: ITelemetryService
+		@IThemeService themeService: IThemeService
 	) {
-		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
+		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
 	}
 
 	protected override renderBody(container: HTMLElement): void {

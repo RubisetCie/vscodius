@@ -8,7 +8,6 @@ import { URI, UriComponents } from 'vs/base/common/uri';
 import { ExtensionIdentifier, IExtensionDescription } from 'vs/platform/extensions/common/extensions';
 import { LogLevel } from 'vs/platform/log/common/log';
 import { IRemoteConnectionData } from 'vs/platform/remote/common/remoteAuthorityResolver';
-import { ITelemetryInfo } from 'vs/platform/telemetry/common/telemetry';
 
 export interface IExtensionDescriptionDelta {
 	readonly toRemove: ExtensionIdentifier[];
@@ -25,7 +24,6 @@ export interface IExtensionHostInitData {
 	workspace?: IStaticWorkspaceData | null;
 	allExtensions: IExtensionDescription[];
 	myExtensions: ExtensionIdentifier[];
-	telemetryInfo: ITelemetryInfo;
 	logLevel: LogLevel;
 	logsLocation: URI;
 	logFile: URI;

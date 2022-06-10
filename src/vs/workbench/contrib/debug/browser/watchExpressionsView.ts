@@ -28,7 +28,6 @@ import { dispose } from 'vs/base/common/lifecycle';
 import { IViewDescriptorService } from 'vs/workbench/common/views';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { watchExpressionsRemoveAll, watchExpressionsAdd } from 'vs/workbench/contrib/debug/browser/debugIcons';
 import { registerAction2, MenuId, Action2, IMenuService, IMenu } from 'vs/platform/actions/common/actions';
 import { localize } from 'vs/nls';
@@ -61,10 +60,9 @@ export class WatchExpressionsView extends ViewPane {
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IOpenerService openerService: IOpenerService,
 		@IThemeService themeService: IThemeService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IMenuService menuService: IMenuService
 	) {
-		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
+		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
 
 		this.menu = menuService.createMenu(MenuId.DebugWatchContext, contextKeyService);
 		this._register(this.menu);

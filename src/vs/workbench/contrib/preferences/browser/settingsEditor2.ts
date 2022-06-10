@@ -30,7 +30,6 @@ import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/c
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { badgeBackground, badgeForeground, contrastBorder, editorForeground } from 'vs/platform/theme/common/colorRegistry';
 import { attachButtonStyler, attachStylerCallback } from 'vs/platform/theme/common/styler';
 import { IThemeService, ThemeIcon } from 'vs/platform/theme/common/themeService';
@@ -111,7 +110,6 @@ export class SettingsEditor2 extends EditorPane {
 		`@tag:${WORKSPACE_TRUST_SETTING_TAG}`,
 		'@tag:sync',
 		'@tag:usesOnlineServices',
-		'@tag:telemetry',
 		`@${ID_SETTING_TAG}`,
 		`@${EXTENSION_SETTING_TAG}`,
 		`@${FEATURE_SETTING_TAG}scm`,
@@ -169,7 +167,6 @@ export class SettingsEditor2 extends EditorPane {
 	private tocTreeContainer!: HTMLElement;
 	private tocTree!: TOCTree;
 
-	private delayedFilterLogging: Delayer<void>;
 	private localSearchDelayer: Delayer<void>;
 	private remoteSearchThrottle: ThrottledDelayer<void>;
 	private searchInProgress: CancellationTokenSource | null = null;
@@ -208,7 +205,6 @@ export class SettingsEditor2 extends EditorPane {
 	private installedExtensionIds: string[] = [];
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IWorkbenchConfigurationService private readonly configurationService: IWorkbenchConfigurationService,
 		@ITextResourceConfigurationService textResourceConfigurationService: ITextResourceConfigurationService,
 		@IThemeService themeService: IThemeService,
@@ -226,8 +222,7 @@ export class SettingsEditor2 extends EditorPane {
 		@ILanguageService private readonly languageService: ILanguageService,
 		@IExtensionManagementService extensionManagementService: IExtensionManagementService
 	) {
-		super(SettingsEditor2.ID, telemetryService, themeService, storageService);
-		this.delayedFilterLogging = new Delayer<void>(1000);
+		super(SettingsEditor2.ID, themeService, storageService);
 		this.localSearchDelayer = new Delayer(300);
 		this.remoteSearchThrottle = new ThrottledDelayer(200);
 		this.viewState = { settingsTarget: ConfigurationTarget.USER_LOCAL };
@@ -1035,85 +1030,7 @@ export class SettingsEditor2 extends EditorPane {
 					this.refreshTOCTree();
 				}
 				this.renderTree(key, isManualReset);
-				const reportModifiedProps = {
-					key,
-					query,
-					searchResults: this.searchResultModel && this.searchResultModel.getUniqueResults(),
-					rawResults: this.searchResultModel && this.searchResultModel.getRawResults(),
-					showConfiguredOnly: !!this.viewState.tagFilters && this.viewState.tagFilters.has(MODIFIED_SETTING_TAG),
-					isReset: typeof value === 'undefined',
-					settingsTarget: this.settingsTargetsWidget.settingsTarget as SettingsTarget
-				};
-
-				return this.reportModifiedSetting(reportModifiedProps);
 			});
-	}
-
-	private reportModifiedSetting(props: { key: string; query: string; searchResults: ISearchResult[] | null; rawResults: ISearchResult[] | null; showConfiguredOnly: boolean; isReset: boolean; settingsTarget: SettingsTarget }): void {
-		type SettingsEditorModifiedSettingEvent = {
-			key: string;
-			groupId: string | undefined;
-			nlpIndex: number | undefined;
-			displayIndex: number | undefined;
-			showConfiguredOnly: boolean;
-			isReset: boolean;
-			target: string;
-		};
-		type SettingsEditorModifiedSettingClassification = {
-			key: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The setting that is being modified.' };
-			groupId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Whether the setting is from the local search or remote search provider, if applicable.' };
-			nlpIndex: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'The index of the setting in the remote search provider results, if applicable.' };
-			displayIndex: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'The index of the setting in the combined search results, if applicable.' };
-			showConfiguredOnly: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Whether the user is in the modified view, which shows configured settings only.' };
-			isReset: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Identifies whether a setting was reset to its default value.' };
-			target: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The scope of the setting, such as user or workspace.' };
-			owner: 'rzhao271';
-			comment: 'Event which fires when the user modifies a setting in the settings editor';
-		};
-
-		this.pendingSettingUpdate = null;
-
-		let groupId: string | undefined = undefined;
-		let nlpIndex: number | undefined = undefined;
-		let displayIndex: number | undefined = undefined;
-		if (props.searchResults) {
-			const remoteResult = props.searchResults[SearchResultIdx.Remote];
-			const localResult = props.searchResults[SearchResultIdx.Local];
-
-			const localIndex = localResult!.filterMatches.findIndex(m => m.setting.key === props.key);
-			groupId = localIndex >= 0 ?
-				'local' :
-				'remote';
-
-			displayIndex = localIndex >= 0 ?
-				localIndex :
-				remoteResult && (remoteResult.filterMatches.findIndex(m => m.setting.key === props.key) + localResult.filterMatches.length);
-
-			if (this.searchResultModel) {
-				const rawResults = this.searchResultModel.getRawResults();
-				if (rawResults[SearchResultIdx.Remote]) {
-					const _nlpIndex = rawResults[SearchResultIdx.Remote].filterMatches.findIndex(m => m.setting.key === props.key);
-					nlpIndex = _nlpIndex >= 0 ? _nlpIndex : undefined;
-				}
-			}
-		}
-
-		const reportedTarget = props.settingsTarget === ConfigurationTarget.USER_LOCAL ? 'user' :
-			props.settingsTarget === ConfigurationTarget.USER_REMOTE ? 'user_remote' :
-				props.settingsTarget === ConfigurationTarget.WORKSPACE ? 'workspace' :
-					'folder';
-
-		const data = {
-			key: props.key,
-			groupId,
-			nlpIndex,
-			displayIndex,
-			showConfiguredOnly: props.showConfiguredOnly,
-			isReset: props.isReset,
-			target: reportedTarget
-		};
-
-		this.telemetryService.publicLog2<SettingsEditorModifiedSettingEvent, SettingsEditorModifiedSettingClassification>('settingsEditor.settingModified', data);
 	}
 
 	private onSearchModeToggled(): void {
@@ -1319,12 +1236,7 @@ export class SettingsEditor2 extends EditorPane {
 		}
 
 		const query = this.searchWidget.getValue().trim();
-		this.delayedFilterLogging.cancel();
-		await this.triggerSearch(query.replace(/\u203A/g, ' '));
-
-		if (query && this.searchResultModel) {
-			this.delayedFilterLogging.trigger(() => this.reportFilteringUsed(this.searchResultModel!.getUniqueResults()));
-		}
+		this.triggerSearch(query.replace(/\u203A/g, ' '));
 	}
 
 	private parseSettingFromJSON(query: string): string | null {
@@ -1412,52 +1324,6 @@ export class SettingsEditor2 extends EditorPane {
 		filterModel.setResult(0, fullResult);
 
 		return filterModel;
-	}
-
-	private reportFilteringUsed(results: ISearchResult[]): void {
-		type SettingsEditorFilterEvent = {
-			'durations.nlpResult': number | undefined;
-			'counts.nlpResult': number | undefined;
-			'counts.filterResult': number | undefined;
-			'requestCount': number | undefined;
-		};
-		type SettingsEditorFilterClassification = {
-			'durations.nlpResult': { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; 'comment': 'How long the remote search provider took, if applicable.' };
-			'counts.nlpResult': { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; 'comment': 'The number of matches found by the remote search provider, if applicable.' };
-			'counts.filterResult': { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; 'comment': 'The number of matches found by the local search provider, if applicable.' };
-			'requestCount': { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; 'comment': 'The number of requests sent to Bing, if applicable.' };
-			owner: 'rzhao271';
-			comment: 'Tracks the number of requests and performance of the built-in search providers';
-		};
-
-		const nlpResult = results[SearchResultIdx.Remote];
-		const nlpMetadata = nlpResult?.metadata;
-
-		const duration = {
-			nlpResult: nlpMetadata?.duration
-		};
-
-		// Count unique results
-		const counts: { nlpResult?: number; filterResult?: number } = {};
-		const filterResult = results[SearchResultIdx.Local];
-		if (filterResult) {
-			counts['filterResult'] = filterResult.filterMatches.length;
-		}
-
-		if (nlpResult) {
-			counts['nlpResult'] = nlpResult.filterMatches.length;
-		}
-
-		const requestCount = nlpMetadata?.requestCount;
-
-		const data = {
-			'durations.nlpResult': duration.nlpResult,
-			'counts.nlpResult': counts['nlpResult'],
-			'counts.filterResult': counts['filterResult'],
-			requestCount
-		};
-
-		this.telemetryService.publicLog2<SettingsEditorFilterEvent, SettingsEditorFilterClassification>('settingsEditor.filter', data);
 	}
 
 	private triggerFilterPreferences(query: string): Promise<void> {
@@ -1582,17 +1448,9 @@ export class SettingsEditor2 extends EditorPane {
 				if (isCancellationError(err)) {
 					return Promise.reject(err);
 				} else {
-					type SettingsSearchErrorEvent = {
-						'message': string;
-					};
-					type SettingsSearchErrorClassification = {
-						'message': { 'classification': 'CallstackOrException'; 'purpose': 'FeatureInsight'; 'owner': 'rzhao271'; 'comment': 'The error message of the search error.' };
-					};
-
 					const message = getErrorMessage(err).trim();
 					if (message && message !== 'Error') {
 						// "Error" = any generic network error
-						this.telemetryService.publicLogError2<SettingsSearchErrorEvent, SettingsSearchErrorClassification>('settingsEditor.searchError', { message });
 						this.logService.info('Setting search error: ' + message);
 					}
 					return null;

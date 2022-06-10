@@ -10,7 +10,6 @@ import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { AbstractCommandsQuickAccessProvider, ICommandQuickPick, ICommandsQuickAccessOptions } from 'vs/platform/quickinput/browser/commandsQuickAccess';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 
 export abstract class AbstractEditorCommandsQuickAccessProvider extends AbstractCommandsQuickAccessProvider {
 
@@ -19,10 +18,9 @@ export abstract class AbstractEditorCommandsQuickAccessProvider extends Abstract
 		instantiationService: IInstantiationService,
 		keybindingService: IKeybindingService,
 		commandService: ICommandService,
-		telemetryService: ITelemetryService,
 		dialogService: IDialogService
 	) {
-		super(options, instantiationService, keybindingService, commandService, telemetryService, dialogService);
+		super(options, instantiationService, keybindingService, commandService, dialogService);
 	}
 
 	/**

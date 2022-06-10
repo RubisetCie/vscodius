@@ -18,7 +18,6 @@ import { ILabelService } from 'vs/platform/label/common/label';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { IViewDescriptorService } from 'vs/workbench/common/views';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { isWeb } from 'vs/base/common/platform';
 import { DragAndDropObserver } from 'vs/base/browser/dom';
 
@@ -38,10 +37,9 @@ export class EmptyView extends ViewPane {
 		@IConfigurationService configurationService: IConfigurationService,
 		@ILabelService private labelService: ILabelService,
 		@IContextKeyService contextKeyService: IContextKeyService,
-		@IOpenerService openerService: IOpenerService,
-		@ITelemetryService telemetryService: ITelemetryService,
+		@IOpenerService openerService: IOpenerService
 	) {
-		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
+		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
 
 		this._register(this.contextService.onDidChangeWorkbenchState(() => this.refreshTitle()));
 		this._register(this.labelService.onDidChangeFormatters(() => this.refreshTitle()));

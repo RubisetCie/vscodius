@@ -231,10 +231,6 @@ export abstract class AbstractNativeEnvironmentService implements INativeEnviron
 	get crashReporterDirectory(): string | undefined { return this.args['crash-reporter-directory']; }
 
 	@memoize
-	get telemetryLogResource(): URI { return URI.file(join(this.logsPath, 'telemetry.log')); }
-	get disableTelemetry(): boolean { return !!this.args['disable-telemetry']; }
-
-	@memoize
 	get disableWorkspaceTrust(): boolean { return !!this.args['disable-workspace-trust']; }
 
 	@memoize

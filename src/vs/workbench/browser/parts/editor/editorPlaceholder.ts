@@ -9,7 +9,6 @@ import Severity from 'vs/base/common/severity';
 import { IEditorOpenContext } from 'vs/workbench/common/editor';
 import { EditorInput } from 'vs/workbench/common/editor/editorInput';
 import { EditorPane } from 'vs/workbench/browser/parts/editor/editorPane';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { DomScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
 import { ScrollbarVisibility } from 'vs/base/common/scrollable';
 import { IThemeService, registerThemingParticipant } from 'vs/platform/theme/common/themeService';
@@ -54,12 +53,11 @@ export abstract class EditorPlaceholder extends EditorPane {
 
 	constructor(
 		id: string,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
 		@IStorageService storageService: IStorageService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService
 	) {
-		super(id, telemetryService, themeService, storageService);
+		super(id, themeService, storageService);
 	}
 
 	protected createEditor(parent: HTMLElement): void {
@@ -174,14 +172,13 @@ export class WorkspaceTrustRequiredPlaceholderEditor extends EditorPlaceholder {
 	static readonly DESCRIPTOR = EditorPaneDescriptor.create(WorkspaceTrustRequiredPlaceholderEditor, WorkspaceTrustRequiredPlaceholderEditor.ID, WorkspaceTrustRequiredPlaceholderEditor.LABEL);
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
 		@ICommandService private readonly commandService: ICommandService,
 		@IWorkspaceContextService private readonly workspaceService: IWorkspaceContextService,
 		@IStorageService storageService: IStorageService,
 		@IInstantiationService instantiationService: IInstantiationService
 	) {
-		super(WorkspaceTrustRequiredPlaceholderEditor.ID, telemetryService, themeService, storageService, instantiationService);
+		super(WorkspaceTrustRequiredPlaceholderEditor.ID, themeService, storageService, instantiationService);
 	}
 
 	override getTitle(): string {
@@ -212,14 +209,13 @@ export class ErrorPlaceholderEditor extends EditorPlaceholder {
 	static readonly DESCRIPTOR = EditorPaneDescriptor.create(ErrorPlaceholderEditor, ErrorPlaceholderEditor.ID, ErrorPlaceholderEditor.LABEL);
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
 		@IStorageService storageService: IStorageService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IFileService private readonly fileService: IFileService,
 		@IDialogService private readonly dialogService: IDialogService
 	) {
-		super(ErrorPlaceholderEditor.ID, telemetryService, themeService, storageService, instantiationService);
+		super(ErrorPlaceholderEditor.ID, themeService, storageService, instantiationService);
 	}
 
 	protected async getContents(input: EditorInput, options: IErrorEditorPlaceholderOptions, disposables: DisposableStore): Promise<IEditorPlaceholderContents> {

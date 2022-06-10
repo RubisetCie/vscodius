@@ -11,8 +11,6 @@ import { INotificationViewItem, isNotificationViewItem, NotificationsModel } fro
 import { MenuRegistry, MenuId } from 'vs/platform/actions/common/actions';
 import { localize } from 'vs/nls';
 import { IListService, WorkbenchList } from 'vs/platform/list/browser/listService';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { NotificationMetrics, NotificationMetricsClassification, notificationToMetrics } from 'vs/workbench/browser/parts/notifications/notificationsTelemetry';
 import { NotificationFocusedContext, NotificationsCenterVisibleContext, NotificationsToastsVisibleContext } from 'vs/workbench/common/contextkeys';
 
 // Center
@@ -85,13 +83,6 @@ export function registerNotificationCommands(center: INotificationsCenterControl
 		when: NotificationsCenterVisibleContext,
 		primary: KeyCode.Escape,
 		handler: accessor => {
-			const telemetryService = accessor.get(ITelemetryService);
-			for (const notification of model.notifications) {
-				if (notification.visible) {
-					telemetryService.publicLog2<NotificationMetrics, NotificationMetricsClassification>('notification:hide', notificationToMetrics(notification.message.original, notification.sourceId, notification.silent));
-				}
-			}
-
 			center.hide();
 		}
 	});
@@ -168,12 +159,6 @@ export function registerNotificationCommands(center: INotificationsCenterControl
 
 	// Hide Toasts
 	CommandsRegistry.registerCommand(HIDE_NOTIFICATION_TOAST, accessor => {
-		const telemetryService = accessor.get(ITelemetryService);
-		for (const notification of model.notifications) {
-			if (notification.visible) {
-				telemetryService.publicLog2<NotificationMetrics, NotificationMetricsClassification>('notification:hide', notificationToMetrics(notification.message.original, notification.sourceId, notification.silent));
-			}
-		}
 		toasts.hide();
 	});
 

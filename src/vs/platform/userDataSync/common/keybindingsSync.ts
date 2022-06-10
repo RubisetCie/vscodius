@@ -17,7 +17,6 @@ import { IEnvironmentService } from 'vs/platform/environment/common/environment'
 import { FileOperationError, FileOperationResult, IFileService } from 'vs/platform/files/common/files';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { AbstractInitializer, AbstractJsonFileSynchroniser, IAcceptResult, IFileResourcePreview, IMergeResult } from 'vs/platform/userDataSync/common/abstractSynchronizer';
 import { merge } from 'vs/platform/userDataSync/common/keybindingsMerge';
@@ -77,10 +76,9 @@ export class KeybindingsSynchroniser extends AbstractJsonFileSynchroniser implem
 		@IEnvironmentService environmentService: IEnvironmentService,
 		@IStorageService storageService: IStorageService,
 		@IUserDataSyncUtilService userDataSyncUtilService: IUserDataSyncUtilService,
-		@ITelemetryService telemetryService: ITelemetryService,
-		@IUriIdentityService uriIdentityService: IUriIdentityService,
+		@IUriIdentityService uriIdentityService: IUriIdentityService
 	) {
-		super(environmentService.keybindingsResource, SyncResource.Keybindings, fileService, environmentService, storageService, userDataSyncStoreService, userDataSyncBackupStoreService, userDataSyncEnablementService, telemetryService, logService, userDataSyncUtilService, configurationService, uriIdentityService);
+		super(environmentService.keybindingsResource, SyncResource.Keybindings, fileService, environmentService, storageService, userDataSyncStoreService, userDataSyncBackupStoreService, userDataSyncEnablementService, logService, userDataSyncUtilService, configurationService, uriIdentityService);
 		this._register(Event.filter(configurationService.onDidChangeConfiguration, e => e.affectsConfiguration('settingsSync.keybindingsPerPlatform'))(() => this.triggerLocalChange()));
 	}
 

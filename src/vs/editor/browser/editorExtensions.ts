@@ -18,7 +18,6 @@ import { ContextKeyExpr, IContextKeyService, ContextKeyExpression } from 'vs/pla
 import { ServicesAccessor as InstantiationServicesAccessor, BrandedService, IInstantiationService, IConstructorSignature } from 'vs/platform/instantiation/common/instantiation';
 import { IKeybindings, KeybindingsRegistry, KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
 import { Registry } from 'vs/platform/registry/common/platform';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { withNullAsUndefined, assertType } from 'vs/base/common/types';
 import { ThemeIcon } from 'vs/platform/theme/common/themeService';
 import { IDisposable } from 'vs/base/common/lifecycle';
@@ -332,21 +331,7 @@ export abstract class EditorAction extends EditorCommand {
 	}
 
 	public runEditorCommand(accessor: ServicesAccessor, editor: ICodeEditor, args: any): void | Promise<void> {
-		this.reportTelemetry(accessor, editor);
 		return this.run(accessor, editor, args || {});
-	}
-
-	protected reportTelemetry(accessor: ServicesAccessor, editor: ICodeEditor) {
-		type EditorActionInvokedClassification = {
-			owner: 'alexdima';
-			name: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-			id: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-		};
-		type EditorActionInvokedEvent = {
-			name: string;
-			id: string;
-		};
-		accessor.get(ITelemetryService).publicLog2<EditorActionInvokedEvent, EditorActionInvokedClassification>('editorActionInvoked', { name: this.label, id: this.id });
 	}
 
 	public abstract run(accessor: ServicesAccessor, editor: ICodeEditor, args: any): void | Promise<void>;

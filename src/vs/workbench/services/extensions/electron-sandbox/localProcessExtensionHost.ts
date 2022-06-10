@@ -21,7 +21,6 @@ import { ILifecycleService, WillShutdownEvent } from 'vs/workbench/services/life
 import { ILogService } from 'vs/platform/log/common/log';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { INativeHostService } from 'vs/platform/native/electron-sandbox/native';
 import { isUntitledWorkspace, IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { MessageType, isMessageOfType, IExtensionHostInitData, UIKind } from 'vs/workbench/services/extensions/common/extensionHostProtocol';
@@ -140,14 +139,13 @@ export class SandboxLocalProcessExtensionHost implements IExtensionHost {
 		@INativeHostService private readonly _nativeHostService: INativeHostService,
 		@ILifecycleService private readonly _lifecycleService: ILifecycleService,
 		@INativeWorkbenchEnvironmentService private readonly _environmentService: INativeWorkbenchEnvironmentService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@ILogService protected readonly _logService: ILogService,
 		@ILabelService private readonly _labelService: ILabelService,
 		@IExtensionHostDebugService private readonly _extensionHostDebugService: IExtensionHostDebugService,
 		@IHostService private readonly _hostService: IHostService,
 		@IProductService private readonly _productService: IProductService,
 		@IShellEnvironmentService private readonly _shellEnvironmentService: IShellEnvironmentService,
-		@IExtensionHostStarter protected readonly _extensionHostStarter: IExtensionHostStarter,
+		@IExtensionHostStarter protected readonly _extensionHostStarter: IExtensionHostStarter
 	) {
 		const devOpts = parseExtensionDevOptions(this._environmentService);
 		this._isExtensionDevHost = devOpts.isExtensionDevHost;
@@ -449,7 +447,7 @@ export class SandboxLocalProcessExtensionHost implements IExtensionHost {
 	}
 
 	private async _createExtHostInitData(): Promise<IExtensionHostInitData> {
-		const [telemetryInfo, initData] = await Promise.all([this._telemetryService.getTelemetryInfo(), this._initDataProvider.getInitData()]);
+		const initData = await this._initDataProvider.getInitData();
 		const workspace = this._contextService.getWorkspace();
 		const deltaExtensions = this.extensions.set(initData.allExtensions, initData.myExtensions);
 		return {
@@ -482,7 +480,6 @@ export class SandboxLocalProcessExtensionHost implements IExtensionHost {
 			},
 			allExtensions: deltaExtensions.toAdd,
 			myExtensions: deltaExtensions.myToAdd,
-			telemetryInfo,
 			logLevel: this._logService.getLevel(),
 			logsLocation: this._environmentService.extHostLogsPath,
 			logFile: this._extensionHostLogFile,

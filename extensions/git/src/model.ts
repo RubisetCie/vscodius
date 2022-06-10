@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { workspace, WorkspaceFoldersChangeEvent, Uri, window, Event, EventEmitter, QuickPickItem, Disposable, SourceControl, SourceControlResourceGroup, TextEditor, Memento, commands } from 'vscode';
-import TelemetryReporter from '@vscode/extension-telemetry';
 import { Repository, RepositoryState } from './repository';
 import { memoize, sequentialize, debounce } from './decorators';
 import { dispose, anyEvent, filterEvent, isDescendant, pathEquals, toDisposable, eventToPromise } from './util';
@@ -110,7 +109,7 @@ export class Model implements IRemoteSourcePublisherRegistry, IPushErrorHandlerR
 
 	private disposables: Disposable[] = [];
 
-	constructor(readonly git: Git, private readonly askpass: Askpass, private globalState: Memento, private outputChannelLogger: OutputChannelLogger, private telemetryReporter: TelemetryReporter) {
+	constructor(readonly git: Git, private readonly askpass: Askpass, private globalState: Memento, private outputChannelLogger: OutputChannelLogger) {
 		workspace.onDidChangeWorkspaceFolders(this.onDidChangeWorkspaceFolders, this, this.disposables);
 		window.onDidChangeVisibleTextEditors(this.onDidChangeVisibleTextEditors, this, this.disposables);
 		workspace.onDidChangeConfiguration(this.onDidChangeConfiguration, this, this.disposables);
@@ -369,7 +368,7 @@ export class Model implements IRemoteSourcePublisherRegistry, IPushErrorHandlerR
 			}
 
 			const dotGit = await this.git.getRepositoryDotGit(repositoryRoot);
-			const repository = new Repository(this.git.open(repositoryRoot, dotGit), this, this, this.globalState, this.outputChannelLogger, this.telemetryReporter);
+			const repository = new Repository(this.git.open(repositoryRoot, dotGit), this, this, this.globalState, this.outputChannelLogger);
 
 			this.open(repository);
 			repository.status(); // do not await this, we want SCM to know about the repo asap

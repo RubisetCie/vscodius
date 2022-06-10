@@ -12,7 +12,6 @@ import { TypeScriptServerError } from '../tsServer/serverError';
 import { ServerResponse, ServerType, TypeScriptRequests } from '../typescriptService';
 import { TypeScriptServiceConfiguration } from '../utils/configuration';
 import { Disposable } from '../utils/dispose';
-import { TelemetryReporter } from '../utils/telemetry';
 import Tracer from '../utils/tracer';
 import { OngoingRequestCanceller } from './cancellation';
 import { TypeScriptVersionManager } from './versionManager';
@@ -89,8 +88,7 @@ export class ProcessBasedTsServer extends Disposable implements ITypeScriptServe
 		private readonly _tsServerLogFile: string | undefined,
 		private readonly _requestCanceller: OngoingRequestCanceller,
 		private readonly _version: TypeScriptVersion,
-		private readonly _telemetryReporter: TelemetryReporter,
-		private readonly _tracer: Tracer,
+		private readonly _tracer: Tracer
 	) {
 		super();
 
@@ -226,21 +224,6 @@ export class ProcessBasedTsServer extends Disposable implements ITypeScriptServe
 					});
 				}
 			}).catch((err: Error) => {
-				if (err instanceof TypeScriptServerError) {
-					if (!executeInfo.token || !executeInfo.token.isCancellationRequested) {
-						/* __GDPR__
-							"languageServiceErrorResponse" : {
-								"owner": "mjbvz",
-								"${include}": [
-									"${TypeScriptCommonProperties}",
-									"${TypeScriptRequestErrorProperties}"
-								]
-							}
-						*/
-						this._telemetryReporter.logTelemetry('languageServiceErrorResponse', err.telemetry);
-					}
-				}
-
 				throw err;
 			});
 		}

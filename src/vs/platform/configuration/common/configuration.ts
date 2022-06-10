@@ -66,9 +66,6 @@ export interface IConfigurationChangeEvent {
 	readonly change: IConfigurationChange;
 
 	affectsConfiguration(configuration: string, overrides?: IConfigurationOverrides): boolean;
-
-	// Following data is used for telemetry
-	readonly sourceConfig: any;
 }
 
 export interface IConfigurationValue<T> {

@@ -24,7 +24,6 @@ import { IExtensionService, toExtension } from 'vs/workbench/services/extensions
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { attachBadgeStyler } from 'vs/platform/theme/common/styler';
 import { IViewletViewOptions } from 'vs/workbench/browser/parts/views/viewsViewlet';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { CountBadge } from 'vs/base/browser/ui/countBadge/countBadge';
 import { ManageExtensionAction, getContextMenuActions, ExtensionAction } from 'vs/workbench/contrib/extensions/browser/extensionsActions';
 import { WorkbenchPagedList } from 'vs/platform/list/browser/listService';
@@ -116,7 +115,6 @@ export class ExtensionsListView extends ViewPane {
 		@IExtensionService private readonly extensionService: IExtensionService,
 		@IExtensionsWorkbenchService protected extensionsWorkbenchService: IExtensionsWorkbenchService,
 		@IExtensionRecommendationsService protected extensionRecommendationsService: IExtensionRecommendationsService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@IWorkspaceContextService protected contextService: IWorkspaceContextService,
 		@IExperimentService private readonly experimentService: IExperimentService,
@@ -139,7 +137,7 @@ export class ExtensionsListView extends ViewPane {
 			...(viewletViewOptions as IViewPaneOptions),
 			showActionsAlways: true,
 			maximumBodySize: options.flexibleHeight ? (storageService.getNumber(`${viewletViewOptions.id}.size`, StorageScope.GLOBAL, 0) ? undefined : 0) : undefined
-		}, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
+		}, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
 		if (this.options.onDidChangeTitle) {
 			this._register(this.options.onDidChangeTitle(title => this.updateTitle(title)));
 		}

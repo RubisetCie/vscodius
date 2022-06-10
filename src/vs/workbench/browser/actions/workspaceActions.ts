@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { localize } from 'vs/nls';
-import { ITelemetryData } from 'vs/platform/telemetry/common/telemetry';
 import { IWorkspaceContextService, WorkbenchState, IWorkspaceFolder, hasWorkspaceFileExtension } from 'vs/platform/workspace/common/workspace';
 import { IWorkspaceEditingService } from 'vs/workbench/services/workspaces/common/workspaceEditing';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
@@ -44,10 +43,10 @@ export class OpenFileAction extends Action2 {
 		});
 	}
 
-	override async run(accessor: ServicesAccessor, data?: ITelemetryData): Promise<void> {
+	override async run(accessor: ServicesAccessor): Promise<void> {
 		const fileDialogService = accessor.get(IFileDialogService);
 
-		return fileDialogService.pickFileAndOpen({ forceNewWindow: false, telemetryExtraData: data });
+		return fileDialogService.pickFileAndOpen({ forceNewWindow: false });
 	}
 }
 
@@ -75,10 +74,10 @@ export class OpenFolderAction extends Action2 {
 		});
 	}
 
-	override async run(accessor: ServicesAccessor, data?: ITelemetryData): Promise<void> {
+	override async run(accessor: ServicesAccessor): Promise<void> {
 		const fileDialogService = accessor.get(IFileDialogService);
 
-		return fileDialogService.pickFolderAndOpen({ forceNewWindow: false, telemetryExtraData: data });
+		return fileDialogService.pickFolderAndOpen({ forceNewWindow: false });
 	}
 }
 
@@ -131,10 +130,10 @@ export class OpenFileFolderAction extends Action2 {
 		});
 	}
 
-	override async run(accessor: ServicesAccessor, data?: ITelemetryData): Promise<void> {
+	override async run(accessor: ServicesAccessor): Promise<void> {
 		const fileDialogService = accessor.get(IFileDialogService);
 
-		return fileDialogService.pickFileFolderAndOpen({ forceNewWindow: false, telemetryExtraData: data });
+		return fileDialogService.pickFileFolderAndOpen({ forceNewWindow: false });
 	}
 }
 
@@ -152,10 +151,8 @@ class OpenWorkspaceAction extends Action2 {
 		});
 	}
 
-	override async run(accessor: ServicesAccessor, data?: ITelemetryData): Promise<void> {
-		const fileDialogService = accessor.get(IFileDialogService);
-
-		return fileDialogService.pickWorkspaceAndOpen({ telemetryExtraData: data });
+	override async run(accessor: ServicesAccessor): Promise<void> {
+		return accessor.get(IFileDialogService).pickWorkspaceAndOpen({});
 	}
 }
 

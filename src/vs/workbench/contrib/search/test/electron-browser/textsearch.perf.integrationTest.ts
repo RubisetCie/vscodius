@@ -3,10 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as assert from 'assert';
 import * as fs from 'fs';
 import * as minimist from 'minimist';
-import { Emitter, Event } from 'vs/base/common/event';
 import * as path from 'vs/base/common/path';
 import { URI } from 'vs/base/common/uri';
 import { IModelService } from 'vs/editor/common/services/model';
@@ -25,8 +23,6 @@ import { ServiceCollection } from 'vs/platform/instantiation/common/serviceColle
 import { ILogService, NullLogService } from 'vs/platform/log/common/log';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { TestNotificationService } from 'vs/platform/notification/test/common/testNotificationService';
-import { ClassifiedEvent, GDPRClassification, StrictPropertyCheck } from 'vs/platform/telemetry/common/gdprTypings';
-import { ITelemetryInfo, ITelemetryService, TelemetryLevel } from 'vs/platform/telemetry/common/telemetry';
 import { TestThemeService } from 'vs/platform/theme/test/common/testThemeService';
 import { IUndoRedoService } from 'vs/platform/undoRedo/common/undoRedo';
 import { UndoRedoService } from 'vs/platform/undoRedo/common/undoRedoService';
@@ -43,7 +39,6 @@ import { TestContextService, TestTextResourcePropertiesService } from 'vs/workbe
 import { TestEnvironmentService } from 'vs/workbench/test/electron-browser/workbenchTestServices';
 import { LanguageFeatureDebounceService } from 'vs/editor/common/services/languageFeatureDebounce';
 import { LanguageFeaturesService } from 'vs/editor/common/services/languageFeaturesService';
-import { staticObservableValue } from 'vs/base/common/observableValue';
 
 // declare var __dirname: string;
 
@@ -66,7 +61,6 @@ suite.skip('TextSearch performance (integration)', () => {
 			throw new Error(`--testWorkspace doesn't exist`);
 		}
 
-		const telemetryService = new TestTelemetryService();
 		const configurationService = new TestConfigurationService();
 		const textResourcePropertiesService = new TestTextResourcePropertiesService(configurationService);
 		const logService = new NullLogService();
@@ -75,7 +69,6 @@ suite.skip('TextSearch performance (integration)', () => {
 		const undoRedoService = new UndoRedoService(dialogService, notificationService);
 		const instantiationService = new InstantiationService(
 			new ServiceCollection(
-				[ITelemetryService, telemetryService],
 				[IConfigurationService, configurationService],
 				[ITextResourcePropertiesService, textResourcePropertiesService],
 				[IDialogService, dialogService],
@@ -119,35 +112,7 @@ suite.skip('TextSearch performance (integration)', () => {
 			const queryBuilder: QueryBuilder = instantiationService.createInstance(QueryBuilder);
 			const query = queryBuilder.text({ pattern: 'static_library(' }, [URI.file(testWorkspacePath)], queryOptions);
 
-			// Wait for the 'searchResultsFinished' event, which is fired after the search() promise is resolved
-			const onSearchResultsFinished = Event.filter(telemetryService.eventLogged, e => e.name === 'searchResultsFinished');
-			Event.once(onSearchResultsFinished)(onComplete);
-
-			function onComplete(): void {
-				try {
-					const allEvents = telemetryService.events.map(e => JSON.stringify(e)).join('\n');
-					assert.strictEqual(telemetryService.events.length, 3, 'Expected 3 telemetry events, got:\n' + allEvents);
-
-					const [firstRenderEvent, resultsShownEvent, resultsFinishedEvent] = telemetryService.events;
-					assert.strictEqual(firstRenderEvent.name, 'searchResultsFirstRender');
-					assert.strictEqual(resultsShownEvent.name, 'searchResultsShown');
-					assert.strictEqual(resultsFinishedEvent.name, 'searchResultsFinished');
-
-					telemetryService.events = [];
-
-					resolve!(resultsFinishedEvent);
-				} catch (e) {
-					// Fail the runSearch() promise
-					error!(e);
-				}
-			}
-
-			let resolve: (result: any) => void;
-			let error: (error: Error) => void;
 			return new Promise((_resolve, _error) => {
-				resolve = _resolve;
-				error = _error;
-
 				// Don't wait on this promise, we're waiting on the event fired above
 				searchModel.search(query).then(
 					null,
@@ -180,51 +145,3 @@ suite.skip('TextSearch performance (integration)', () => {
 			});
 	});
 });
-
-class TestTelemetryService implements ITelemetryService {
-	public _serviceBrand: undefined;
-	public telemetryLevel = staticObservableValue(TelemetryLevel.USAGE);
-	public sendErrorTelemetry = true;
-
-	public events: any[] = [];
-
-	private readonly emitter = new Emitter<any>();
-
-	public get eventLogged(): Event<any> {
-		return this.emitter.event;
-	}
-
-	public setEnabled(value: boolean): void {
-	}
-
-	public setExperimentProperty(name: string, value: string): void {
-	}
-
-	public publicLog(eventName: string, data?: any): Promise<void> {
-		const event = { name: eventName, data: data };
-		this.events.push(event);
-		this.emitter.fire(event);
-		return Promise.resolve();
-	}
-
-	public publicLog2<E extends ClassifiedEvent<T> = never, T extends GDPRClassification<T> = never>(eventName: string, data?: StrictPropertyCheck<T, E>) {
-		return this.publicLog(eventName, data as any);
-	}
-
-	public publicLogError(eventName: string, data?: any): Promise<void> {
-		return this.publicLog(eventName, data);
-	}
-
-	public publicLogError2<E extends ClassifiedEvent<T> = never, T extends GDPRClassification<T> = never>(eventName: string, data?: StrictPropertyCheck<T, E>) {
-		return this.publicLogError(eventName, data as any);
-	}
-
-	public getTelemetryInfo(): Promise<ITelemetryInfo> {
-		return Promise.resolve({
-			instanceId: 'someValue.instanceId',
-			sessionId: 'someValue.sessionId',
-			machineId: 'someValue.machineId',
-			firstSessionDate: 'someValue.firstSessionDate'
-		});
-	}
-}

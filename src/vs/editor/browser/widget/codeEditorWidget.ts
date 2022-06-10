@@ -75,12 +75,6 @@ export interface ICodeEditorWidgetOptions {
 	 * Defaults to EditorExtensionsRegistry.getEditorContributions().
 	 */
 	contributions?: IEditorContributionDescription[];
-
-	/**
-	 * Telemetry data associated with this CodeEditorWidget.
-	 * Defaults to null.
-	 */
-	telemetryData?: object;
 }
 
 class ModelData {
@@ -234,8 +228,6 @@ export class CodeEditorWidget extends Disposable implements editorBrowser.ICodeE
 		return this._configuration.isSimpleWidget;
 	}
 
-	private readonly _telemetryData?: object;
-
 	private readonly _domElement: HTMLElement;
 	private readonly _overflowWidgetsDomNode: HTMLElement | undefined;
 	private readonly _id: number;
@@ -293,7 +285,6 @@ export class CodeEditorWidget extends Disposable implements editorBrowser.ICodeE
 		this._id = (++EDITOR_ID);
 		this._decorationTypeKeysToIds = {};
 		this._decorationTypeSubtypes = {};
-		this._telemetryData = codeEditorWidgetOptions.telemetryData;
 
 		this._configuration = this._register(this._createConfiguration(codeEditorWidgetOptions.isSimpleWidget || false, options, accessibilityService));
 		this._register(this._configuration.onDidChange((e) => {
@@ -1822,10 +1813,6 @@ export class CodeEditorWidget extends Disposable implements editorBrowser.ICodeE
 
 	private _resolveDecorationOptions(typeKey: string, writable: boolean): IModelDecorationOptions {
 		return this._codeEditorService.resolveDecorationOptions(typeKey, writable);
-	}
-
-	public getTelemetryData(): { [key: string]: any } | undefined {
-		return this._telemetryData;
 	}
 
 	public hasModel(): this is editorBrowser.IActiveCodeEditor {

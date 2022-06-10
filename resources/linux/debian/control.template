@@ -4,14 +4,14 @@ Section: devel
 Depends: libnss3 (>= 2:3.26), gnupg, apt, libxkbfile1, libsecret-1-0, libgtk-3-0 (>= 3.10.0), libxss1, libgbm1
 Priority: optional
 Architecture: @@ARCHITECTURE@@
-Maintainer: Microsoft Corporation <vscode-linux@microsoft.com>
-Homepage: https://code.visualstudio.com/
+Maintainer: VSCodium Team https://github.com/VSCodium/vscodium/graphs/contributors
+Homepage: https://vscodium.com
 Installed-Size: @@INSTALLEDSIZE@@
 Provides: visual-studio-@@NAME@@
 Conflicts: visual-studio-@@NAME@@
 Replaces: visual-studio-@@NAME@@
 Description: Code editing. Redefined.
- Visual Studio Code is a new choice of tool that combines the simplicity of
+ VSCodium is a new choice of tool that combines the simplicity of
  a code editor with what developers need for the core edit-build-debug cycle.
- See https://code.visualstudio.com/docs/setup/linux for installation
+ See https://github.com/VSCodium/vscodium#download-install for installation
  instructions and FAQ.

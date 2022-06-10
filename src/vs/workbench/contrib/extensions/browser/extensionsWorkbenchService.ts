@@ -11,14 +11,13 @@ import { Promises, ThrottledDelayer } from 'vs/base/common/async';
 import { CancellationError, isCancellationError } from 'vs/base/common/errors';
 import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { IPager, singlePagePager } from 'vs/base/common/paging';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import {
 	IExtensionGalleryService, ILocalExtension, IGalleryExtension, IQueryOptions,
 	InstallExtensionEvent, DidUninstallExtensionEvent, InstallOperation, InstallOptions, WEB_EXTENSION_TAG, InstallExtensionResult,
 	IExtensionsControlManifest, InstallVSIXOptions, IExtensionInfo, IExtensionQueryOptions, IDeprecationInfo
 } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { IWorkbenchExtensionEnablementService, EnablementState, IExtensionManagementServerService, IExtensionManagementServer, IWorkbenchExtensionManagementService, DefaultIconPath } from 'vs/workbench/services/extensionManagement/common/extensionManagement';
-import { getGalleryExtensionTelemetryData, getLocalExtensionTelemetryData, areSameExtensions, groupByExtension, ExtensionKey, getGalleryExtensionId } from 'vs/platform/extensionManagement/common/extensionManagementUtil';
+import { areSameExtensions, groupByExtension, ExtensionKey, getGalleryExtensionId } from 'vs/platform/extensionManagement/common/extensionManagementUtil';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IHostService } from 'vs/workbench/services/host/browser/host';
@@ -34,7 +33,7 @@ import * as resources from 'vs/base/common/resources';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
 import { IFileService } from 'vs/platform/files/common/files';
-import { IExtensionManifest, ExtensionType, IExtension as IPlatformExtension, TargetPlatform, ExtensionIdentifier, IExtensionIdentifier } from 'vs/platform/extensions/common/extensions';
+import { IExtensionManifest, ExtensionType, IExtension as IPlatformExtension, TargetPlatform, IExtensionIdentifier } from 'vs/platform/extensions/common/extensions';
 import { ILanguageService } from 'vs/editor/common/languages/language';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { FileAccess } from 'vs/base/common/network';
@@ -46,20 +45,9 @@ import { IExtensionManifestPropertiesService } from 'vs/workbench/services/exten
 import { IExtensionService, IExtensionsStatus } from 'vs/workbench/services/extensions/common/extensions';
 import { ExtensionEditor } from 'vs/workbench/contrib/extensions/browser/extensionEditor';
 import { isWeb } from 'vs/base/common/platform';
-import { GDPRClassification } from 'vs/platform/telemetry/common/gdprTypings';
 
 interface IExtensionStateProvider<T> {
 	(extension: Extension): T;
-}
-
-interface InstalledExtensionsEvent {
-	readonly extensionIds: string;
-	readonly count: number;
-}
-interface ExtensionsLoadClassification extends GDPRClassification<InstalledExtensionsEvent> {
-	owner: 'digitarald';
-	readonly extensionIds: { classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight' };
-	readonly count: { classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight' };
 }
 
 export class Extension implements IExtension {
@@ -72,7 +60,6 @@ export class Extension implements IExtension {
 		public local: ILocalExtension | undefined,
 		public gallery: IGalleryExtension | undefined,
 		@IExtensionGalleryService private readonly galleryService: IExtensionGalleryService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@ILogService private readonly logService: ILogService,
 		@IFileService private readonly fileService: IFileService,
 		@IProductService private readonly productService: IProductService
@@ -257,16 +244,6 @@ export class Extension implements IExtension {
 			&& semver.eq(this.latestVersion, this.version);
 	}
 
-	get telemetryData(): any {
-		const { local, gallery } = this;
-
-		if (gallery) {
-			return getGalleryExtensionTelemetryData(gallery);
-		} else {
-			return getLocalExtensionTelemetryData(local!);
-		}
-	}
-
 	get preview(): boolean {
 		return this.gallery ? this.gallery.preview : false;
 	}
@@ -323,7 +300,6 @@ export class Extension implements IExtension {
 			if (this.gallery.assets.readme) {
 				return this.galleryService.getReadme(this.gallery, token);
 			}
-			this.telemetryService.publicLog('extensions:NotFoundReadMe', this.telemetryData);
 		}
 
 		if (this.type === ExtensionType.System) {
@@ -670,7 +646,6 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 		@IWorkbenchExtensionManagementService private readonly extensionManagementService: IWorkbenchExtensionManagementService,
 		@IExtensionGalleryService private readonly galleryService: IExtensionGalleryService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@INotificationService private readonly notificationService: INotificationService,
 		@IURLService urlService: IURLService,
 		@IWorkbenchExtensionEnablementService private readonly extensionEnablementService: IWorkbenchExtensionEnablementService,
@@ -685,7 +660,7 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IExtensionManifestPropertiesService private readonly extensionManifestPropertiesService: IExtensionManifestPropertiesService,
 		@ILogService private readonly logService: ILogService,
-		@IExtensionService private readonly extensionService: IExtensionService,
+		@IExtensionService private readonly extensionService: IExtensionService
 	) {
 		super();
 		const preferPreReleasesValue = configurationService.getValue('_extensions.preferPreReleases');
@@ -738,7 +713,6 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 		this.queryLocal().then(() => {
 			this.resetIgnoreAutoUpdateExtensions();
 			this.eventuallyCheckForUpdates(true);
-			this._reportTelemetry();
 			// Always auto update builtin extensions in web
 			if (isWeb && !this.isAutoUpdateEnabled()) {
 				this.autoUpdateBuiltinExtensions();
@@ -749,14 +723,6 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 			this.updateContexts();
 			this.updateActivity();
 		}));
-	}
-	private _reportTelemetry() {
-		const extensionIds = this.installed.filter(extension =>
-			extension.type === ExtensionType.User &&
-			(extension.enablementState === EnablementState.EnabledWorkspace ||
-				extension.enablementState === EnablementState.EnabledGlobally))
-			.map(extension => ExtensionIdentifier.toKey(extension.identifier.id));
-		this.telemetryService.publicLog2<InstalledExtensionsEvent, ExtensionsLoadClassification>('installedExtensions', { extensionIds: extensionIds.join(';'), count: extensionIds.length });
 	}
 
 	get local(): IExtension[] {
@@ -1477,29 +1443,7 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 	}
 
 	private async doSetEnablement(extensions: IExtension[], enablementState: EnablementState): Promise<boolean[]> {
-		const changed = await this.extensionEnablementService.setEnablement(extensions.map(e => e.local!), enablementState);
-		for (let i = 0; i < changed.length; i++) {
-			if (changed[i]) {
-				/* __GDPR__
-				"extension:enable" : {
-					"owner": "sandy081",
-					"${include}": [
-						"${GalleryExtensionTelemetryData}"
-					]
-				}
-				*/
-				/* __GDPR__
-				"extension:disable" : {
-					"owner": "sandy081",
-					"${include}": [
-						"${GalleryExtensionTelemetryData}"
-					]
-				}
-				*/
-				this.telemetryService.publicLog(enablementState === EnablementState.EnabledGlobally || enablementState === EnablementState.EnabledWorkspace ? 'extension:enable' : 'extension:disable', extensions[i].telemetryData);
-			}
-		}
-		return changed;
+		return await this.extensionEnablementService.setEnablement(extensions.map(e => e.local!), enablementState);
 	}
 
 	private updateContexts(extension?: Extension): void {

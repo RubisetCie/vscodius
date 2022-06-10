@@ -17,7 +17,6 @@ import { ResolvedKeybindingItem } from 'vs/platform/keybinding/common/resolvedKe
 import { USLayoutResolvedKeybinding } from 'vs/platform/keybinding/common/usLayoutResolvedKeybinding';
 import { NullLogService } from 'vs/platform/log/common/log';
 import { INotification, INotificationService, IPromptChoice, IPromptOptions, IStatusMessageOptions, NoOpNotification } from 'vs/platform/notification/common/notification';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 
 function createContext(ctx: any) {
 	return {
@@ -38,7 +37,7 @@ suite('AbstractKeybindingService', () => {
 			commandService: ICommandService,
 			notificationService: INotificationService
 		) {
-			super(contextKeyService, commandService, NullTelemetryService, notificationService, new NullLogService());
+			super(contextKeyService, commandService, notificationService, new NullLogService());
 			this._resolver = resolver;
 		}
 

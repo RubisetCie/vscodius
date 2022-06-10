@@ -15,8 +15,6 @@ import { editorWidgetBackground, editorWidgetForeground, widgetShadow, inputBord
 import { append, $, addDisposableListener, EventType, EventHelper, prepend } from 'vs/base/browser/dom';
 import { IAnchor } from 'vs/base/browser/ui/contextview/contextview';
 import { Button } from 'vs/base/browser/ui/button/button';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification } from 'vs/base/common/actions';
 import { IStatusbarService } from 'vs/workbench/services/statusbar/browser/statusbar';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
@@ -69,7 +67,6 @@ export class FeedbackWidget extends Disposable {
 		@IContextViewService private readonly contextViewService: IContextViewService,
 		@IWorkbenchLayoutService private readonly layoutService: IWorkbenchLayoutService,
 		@ICommandService private readonly commandService: ICommandService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IIntegrityService private readonly integrityService: IIntegrityService,
 		@IThemeService private readonly themeService: IThemeService,
 		@IStatusbarService private readonly statusbarService: IStatusbarService,
@@ -230,7 +227,6 @@ export class FeedbackWidget extends Disposable {
 			const actionId = 'workbench.action.openIssueReporter';
 			this.commandService.executeCommand(actionId);
 			this.hide();
-			this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: actionId, from: 'feedback' });
 		}));
 
 		// Contact: Request a Feature

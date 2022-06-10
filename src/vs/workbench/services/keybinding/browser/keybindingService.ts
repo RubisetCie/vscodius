@@ -26,7 +26,6 @@ import { IKeybindingItem, IExtensionKeybindingRule, KeybindingWeight, Keybinding
 import { ResolvedKeybindingItem } from 'vs/platform/keybinding/common/resolvedKeybindingItem';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { Registry } from 'vs/platform/registry/common/platform';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { ExtensionMessageCollector, ExtensionsRegistry } from 'vs/workbench/services/extensions/common/extensionsRegistry';
 import { IUserKeybindingItem, KeybindingIO, OutputBuilder } from 'vs/workbench/services/keybinding/common/keybindingIO';
 import { IKeyboardMapper } from 'vs/platform/keyboardLayout/common/keyboardMapper';
@@ -189,7 +188,6 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
 	constructor(
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@ICommandService commandService: ICommandService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@INotificationService notificationService: INotificationService,
 		@IEnvironmentService environmentService: IEnvironmentService,
 		@IConfigurationService configurationService: IConfigurationService,
@@ -199,7 +197,7 @@ export class WorkbenchKeybindingService extends AbstractKeybindingService {
 		@ILogService logService: ILogService,
 		@IKeyboardLayoutService private readonly keyboardLayoutService: IKeyboardLayoutService
 	) {
-		super(contextKeyService, commandService, telemetryService, notificationService, logService);
+		super(contextKeyService, commandService, notificationService, logService);
 
 		this.isComposingGlobalContextKey = contextKeyService.createKey('isComposing', false);
 		this.updateSchema();

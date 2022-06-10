@@ -15,7 +15,6 @@ import { ICodeEditorViewState, IDecorationOptions } from 'vs/editor/common/edito
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { editorBackground, editorForeground, resolveColorValue } from 'vs/platform/theme/common/colorRegistry';
 import { IThemeService, registerThemingParticipant } from 'vs/platform/theme/common/themeService';
 import { EditorPane } from 'vs/workbench/browser/parts/editor/editorPane';
@@ -109,7 +108,6 @@ export class InteractiveEditor extends EditorPane {
 	readonly onDidChangeSelection = this.#onDidChangeSelection.event;
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
 		@IStorageService storageService: IStorageService,
 		@IInstantiationService instantiationService: IInstantiationService,
@@ -128,7 +126,6 @@ export class InteractiveEditor extends EditorPane {
 	) {
 		super(
 			InteractiveEditor.ID,
-			telemetryService,
 			themeService,
 			storageService
 		);

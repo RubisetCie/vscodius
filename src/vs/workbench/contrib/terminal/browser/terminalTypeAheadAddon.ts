@@ -9,7 +9,6 @@ import { debounce } from 'vs/base/common/decorators';
 import { Emitter } from 'vs/base/common/event';
 import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { escapeRegExpCharacters } from 'vs/base/common/strings';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { TerminalConfigHelper } from 'vs/workbench/contrib/terminal/browser/terminalConfigHelper';
 import { XtermAttributes, IXtermCore } from 'vs/workbench/contrib/terminal/browser/xterm-private';
 import { DEFAULT_LOCAL_ECHO_EXCLUDE, IBeforeProcessDataEvent, ITerminalConfiguration, ITerminalProcessManager } from 'vs/workbench/contrib/terminal/common/terminal';
@@ -26,7 +25,6 @@ const CSI_MOVE_RE = /^\x1b\[?([0-9]*)(;[35])?O?([DC])/;
 const NOT_WORD_RE = /[^a-z0-9]/i;
 
 const statsBufferSize = 24;
-const statsSendTelemetryEvery = 1000 * 60 * 5; // how often to collect stats
 const statsMinSamplesToTurnOn = 5;
 const statsMinAccuracyToTurnOn = 0.3;
 const statsToggleOffThreshold = 0.5; // if latency is less than `threshold * this`, turn off
@@ -1298,8 +1296,7 @@ export class TypeAheadAddon extends Disposable implements ITerminalAddon {
 
 	constructor(
 		private _processManager: ITerminalProcessManager,
-		private readonly _config: TerminalConfigHelper,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
+		private readonly _config: TerminalConfigHelper
 	) {
 		super();
 		this._register(toDisposable(() => this._clearPredictionDebounce?.dispose()));
@@ -1342,7 +1339,7 @@ export class TypeAheadAddon extends Disposable implements ITerminalAddon {
 				nextStatsSend = setTimeout(() => {
 					this._sendLatencyStats(stats);
 					nextStatsSend = undefined;
-				}, statsSendTelemetryEvery);
+				});
 			}
 
 			if (timeline.length === 0) {
@@ -1419,10 +1416,6 @@ export class TypeAheadAddon extends Disposable implements ITerminalAddon {
 				"predictionAccuracy" : { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true }
 			}
 		 */
-		this._telemetryService.publicLog('terminalLatencyStats', {
-			...stats.latency,
-			predictionAccuracy: stats.accuracy,
-		});
 	}
 
 	private _onUserData(data: string): void {

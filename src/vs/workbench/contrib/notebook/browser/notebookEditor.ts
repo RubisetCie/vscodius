@@ -10,7 +10,7 @@ import { CancellationToken } from 'vs/base/common/cancellation';
 import { createErrorWithActions } from 'vs/base/common/errorMessage';
 import { Emitter, Event } from 'vs/base/common/event';
 import { DisposableStore, MutableDisposable } from 'vs/base/common/lifecycle';
-import { extname, isEqual } from 'vs/base/common/resources';
+import { isEqual } from 'vs/base/common/resources';
 import { URI } from 'vs/base/common/uri';
 import { generateUuid } from 'vs/base/common/uuid';
 import { ITextResourceConfigurationService } from 'vs/editor/common/services/textResourceConfiguration';
@@ -20,7 +20,6 @@ import { IEditorOptions } from 'vs/platform/editor/common/editor';
 import { IFileService } from 'vs/platform/files/common/files';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { EditorPane } from 'vs/workbench/browser/parts/editor/editorPane';
 import { DEFAULT_EDITOR_ASSOCIATION, EditorInputCapabilities, EditorPaneSelectionChangeReason, EditorPaneSelectionCompareResult, EditorResourceAccessor, IEditorMemento, IEditorOpenContext, IEditorPaneSelection, IEditorPaneSelectionChangeEvent, IEditorPaneWithSelection } from 'vs/workbench/common/editor';
@@ -65,7 +64,6 @@ export class NotebookEditor extends EditorPane implements IEditorPaneWithSelecti
 	readonly onDidChangeSelection = this._onDidChangeSelection.event;
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 		@IStorageService storageService: IStorageService,
@@ -77,7 +75,7 @@ export class NotebookEditor extends EditorPane implements IEditorPaneWithSelecti
 		@IFileService private readonly _fileService: IFileService,
 		@ITextResourceConfigurationService configurationService: ITextResourceConfigurationService
 	) {
-		super(NotebookEditor.ID, telemetryService, themeService, storageService);
+		super(NotebookEditor.ID, themeService, storageService);
 		this._editorMemento = this.getEditorMemento<INotebookEditorViewState>(_editorGroupService, configurationService, NOTEBOOK_EDITOR_VIEW_STATE_PREFERENCE_KEY);
 
 		this._register(this._fileService.onDidChangeFileSystemProviderCapabilities(e => this._onDidChangeFileSystemProvider(e.scheme)));
@@ -244,29 +242,6 @@ export class NotebookEditor extends EditorPane implements IEditorPaneWithSelecti
 
 			mark(input.resource, 'editorLoaded');
 
-			type WorkbenchNotebookOpenClassification = {
-				owner: 'rebornix';
-				scheme: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-				ext: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-				viewType: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-				extensionActivated: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-				inputLoaded: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-				webviewCommLoaded: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-				customMarkdownLoaded: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-				editorLoaded: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-			};
-
-			type WorkbenchNotebookOpenEvent = {
-				scheme: string;
-				ext: string;
-				viewType: string;
-				extensionActivated: number;
-				inputLoaded: number;
-				webviewCommLoaded: number;
-				customMarkdownLoaded: number;
-				editorLoaded: number;
-			};
-
 			const perfMarks = getAndClearMarks(input.resource);
 
 			if (perfMarks) {
@@ -277,23 +252,12 @@ export class NotebookEditor extends EditorPane implements IEditorPaneWithSelecti
 				const editorLoaded = perfMarks['editorLoaded'];
 
 				if (
-					startTime !== undefined
-					&& extensionActivated !== undefined
-					&& inputLoaded !== undefined
-					&& customMarkdownLoaded !== undefined
-					&& editorLoaded !== undefined
+					startTime === undefined
+					|| extensionActivated === undefined
+					|| inputLoaded === undefined
+					|| customMarkdownLoaded === undefined
+					|| editorLoaded === undefined
 				) {
-					this.telemetryService.publicLog2<WorkbenchNotebookOpenEvent, WorkbenchNotebookOpenClassification>('notebook/editorOpenPerf', {
-						scheme: model.notebook.uri.scheme,
-						ext: extname(model.notebook.uri),
-						viewType: model.notebook.viewType,
-						extensionActivated: extensionActivated - startTime,
-						inputLoaded: inputLoaded - startTime,
-						webviewCommLoaded: inputLoaded - startTime,
-						customMarkdownLoaded: customMarkdownLoaded - startTime,
-						editorLoaded: editorLoaded - startTime
-					});
-				} else {
 					console.warn(`notebook file open perf marks are broken: startTime ${startTime}, extensionActiviated ${extensionActivated}, inputLoaded ${inputLoaded}, customMarkdownLoaded ${customMarkdownLoaded}, editorLoaded ${editorLoaded}`);
 				}
 			}

@@ -13,7 +13,6 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { FileOperationError, FileOperationResult, IFileContent, IFileService, IFileStat } from 'vs/platform/files/common/files';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { AbstractInitializer, AbstractSynchroniser, IAcceptResult, IFileResourcePreview, IMergeResult } from 'vs/platform/userDataSync/common/abstractSynchronizer';
 import { areSame, IMergeResult as ISnippetsMergeResult, merge } from 'vs/platform/userDataSync/common/snippetsMerge';
@@ -41,10 +40,9 @@ export class SnippetsSynchroniser extends AbstractSynchroniser implements IUserD
 		@IUserDataSyncLogService logService: IUserDataSyncLogService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@IUserDataSyncEnablementService userDataSyncEnablementService: IUserDataSyncEnablementService,
-		@ITelemetryService telemetryService: ITelemetryService,
-		@IUriIdentityService uriIdentityService: IUriIdentityService,
+		@IUriIdentityService uriIdentityService: IUriIdentityService
 	) {
-		super(SyncResource.Snippets, fileService, environmentService, storageService, userDataSyncStoreService, userDataSyncBackupStoreService, userDataSyncEnablementService, telemetryService, logService, configurationService, uriIdentityService);
+		super(SyncResource.Snippets, fileService, environmentService, storageService, userDataSyncStoreService, userDataSyncBackupStoreService, userDataSyncEnablementService, logService, configurationService, uriIdentityService);
 		this.snippetsFolder = environmentService.snippetsHome;
 		this._register(this.fileService.watch(environmentService.userRoamingDataHome));
 		this._register(this.fileService.watch(this.snippetsFolder));

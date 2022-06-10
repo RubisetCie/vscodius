@@ -13,7 +13,6 @@ import { InstantiationService } from 'vs/platform/instantiation/common/instantia
 import { ServiceCollection } from 'vs/platform/instantiation/common/serviceCollection';
 import { IKeyboardEvent } from 'vs/platform/keybinding/common/keybinding';
 import { NullLogService } from 'vs/platform/log/common/log';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 
 suite('StandaloneKeybindingService', () => {
 
@@ -33,7 +32,7 @@ suite('StandaloneKeybindingService', () => {
 		const notificationService = new StandaloneNotificationService();
 		const standaloneThemeService = new StandaloneThemeService();
 		const codeEditorService = new StandaloneCodeEditorService(contextKeyService, standaloneThemeService);
-		const keybindingService = new TestStandaloneKeybindingService(contextKeyService, commandService, NullTelemetryService, notificationService, new NullLogService(), codeEditorService);
+		const keybindingService = new TestStandaloneKeybindingService(contextKeyService, commandService, notificationService, new NullLogService(), codeEditorService);
 
 		let commandInvoked = false;
 		keybindingService.addDynamicKeybinding('testCommand', KeyCode.F9, () => {

@@ -8,8 +8,6 @@ import { TestInstantiationService } from 'vs/platform/instantiation/test/common/
 import { Match, FileMatch, SearchResult, SearchModel } from 'vs/workbench/contrib/search/common/searchModel';
 import { URI } from 'vs/base/common/uri';
 import { IFileMatch, TextSearchMatch, OneLineRange, ITextSearchMatch } from 'vs/workbench/services/search/common/search';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 import { Range } from 'vs/editor/common/core/range';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { TestConfigurationService } from 'vs/platform/configuration/test/common/testConfigurationService';
@@ -33,7 +31,6 @@ suite('SearchResult', () => {
 
 	setup(() => {
 		instantiationService = new TestInstantiationService();
-		instantiationService.stub(ITelemetryService, NullTelemetryService);
 		instantiationService.stub(IModelService, stubModelService(instantiationService));
 		instantiationService.stub(IUriIdentityService, new UriIdentityService(new FileService(new NullLogService())));
 		instantiationService.stubPromise(IReplaceService, {});

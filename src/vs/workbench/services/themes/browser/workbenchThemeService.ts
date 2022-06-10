@@ -8,7 +8,6 @@ import * as types from 'vs/base/common/types';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
 import { IWorkbenchThemeService, IWorkbenchColorTheme, IWorkbenchFileIconTheme, ExtensionData, VS_LIGHT_THEME, VS_DARK_THEME, VS_HC_THEME, VS_HC_LIGHT_THEME, ThemeSettings, IWorkbenchProductIconTheme, ThemeSettingTarget } from 'vs/workbench/services/themes/common/workbenchThemeService';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { Registry } from 'vs/platform/registry/common/platform';
 import * as errors from 'vs/base/common/errors';
 import { IConfigurationService, ConfigurationTarget } from 'vs/platform/configuration/common/configuration';
@@ -107,7 +106,6 @@ export class WorkbenchThemeService implements IWorkbenchThemeService {
 		@IExtensionService extensionService: IExtensionService,
 		@IStorageService private readonly storageService: IStorageService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IBrowserWorkbenchEnvironmentService readonly environmentService: IBrowserWorkbenchEnvironmentService,
 		@IFileService fileService: IFileService,
 		@IExtensionResourceLoaderService private readonly extensionResourceLoaderService: IExtensionResourceLoaderService,
@@ -556,8 +554,6 @@ export class WorkbenchThemeService implements IWorkbenchThemeService {
 
 		this.colorThemeWatcher.update(newTheme);
 
-		this.sendTelemetry(newTheme.id, newTheme.extensionData, 'color');
-
 		if (silent) {
 			return Promise.resolve(null);
 		}
@@ -570,39 +566,6 @@ export class WorkbenchThemeService implements IWorkbenchThemeService {
 		}
 
 		return this.settings.setColorTheme(this.currentColorTheme, settingsTarget);
-	}
-
-
-	private themeExtensionsActivated = new Map<string, boolean>();
-	private sendTelemetry(themeId: string, themeData: ExtensionData | undefined, themeType: string) {
-		if (themeData) {
-			const key = themeType + themeData.extensionId;
-			if (!this.themeExtensionsActivated.get(key)) {
-				type ActivatePluginClassification = {
-					owner: 'aeschli';
-					id: { classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight' };
-					name: { classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight' };
-					isBuiltin: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true };
-					publisherDisplayName: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-					themeId: { classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight' };
-				};
-				type ActivatePluginEvent = {
-					id: string;
-					name: string;
-					isBuiltin: boolean;
-					publisherDisplayName: string;
-					themeId: string;
-				};
-				this.telemetryService.publicLog2<ActivatePluginEvent, ActivatePluginClassification>('activatePlugin', {
-					id: themeData.extensionId,
-					name: themeData.extensionName,
-					isBuiltin: themeData.extensionIsBuiltin,
-					publisherDisplayName: themeData.extensionPublisher,
-					themeId: themeId
-				});
-				this.themeExtensionsActivated.set(key, true);
-			}
-		}
 	}
 
 	public async getFileIconThemes(): Promise<IWorkbenchFileIconTheme[]> {
@@ -703,10 +666,6 @@ export class WorkbenchThemeService implements IWorkbenchThemeService {
 
 		this.fileIconThemeWatcher.update(iconThemeData);
 
-		if (iconThemeData.id) {
-			this.sendTelemetry(iconThemeData.id, iconThemeData.extensionData, 'fileIcon');
-		}
-
 		if (!silent) {
 			this.onFileIconThemeChange.fire(this.currentFileIconTheme);
 		}
@@ -804,9 +763,6 @@ export class WorkbenchThemeService implements IWorkbenchThemeService {
 
 		this.productIconThemeWatcher.update(iconThemeData);
 
-		if (iconThemeData.id) {
-			this.sendTelemetry(iconThemeData.id, iconThemeData.extensionData, 'productIcon');
-		}
 		if (!silent) {
 			this.onProductIconThemeChange.fire(this.currentProductIconTheme);
 		}

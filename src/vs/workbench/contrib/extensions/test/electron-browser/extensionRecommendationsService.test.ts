@@ -14,8 +14,6 @@ import { IWorkbenchExtensionEnablementService } from 'vs/workbench/services/exte
 import { ExtensionGalleryService } from 'vs/platform/extensionManagement/common/extensionGalleryService';
 import { TestInstantiationService } from 'vs/platform/instantiation/test/common/instantiationServiceMock';
 import { Emitter, Event } from 'vs/base/common/event';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { TestLifecycleService } from 'vs/workbench/test/browser/workbenchTestServices';
 import { TestContextService, TestStorageService } from 'vs/workbench/test/common/workbenchTestServices';
@@ -225,7 +223,6 @@ suite('ExtensionRecommendationsService Test', () => {
 			async whenInstalledExtensionsRegistered() { return true; }
 		});
 		instantiationService.stub(IWorkbenchExtensionEnablementService, new TestExtensionEnablementService(instantiationService));
-		instantiationService.stub(ITelemetryService, NullTelemetryService);
 		instantiationService.stub(IURLService, NativeURLService);
 		instantiationService.stub(IWorkspaceTagsService, new NoOpWorkspaceTagsService());
 		instantiationService.stub(IStorageService, new TestStorageService());

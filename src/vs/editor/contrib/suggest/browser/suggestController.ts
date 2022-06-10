@@ -42,9 +42,6 @@ import { CommitCharacterController } from './suggestCommitCharacters';
 import { State, SuggestModel } from './suggestModel';
 import { OvertypingCapturer } from './suggestOvertypingCapturer';
 import { ISelectedSuggestion, SuggestWidget } from './suggestWidget';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { basename, extname } from 'vs/base/common/resources';
-import { hash } from 'vs/base/common/hash';
 
 // sticky suggest widget which doesn't disappear on focus out and such
 const _sticky = false;
@@ -123,8 +120,7 @@ export class SuggestController implements IEditorContribution {
 		@ICommandService private readonly _commandService: ICommandService,
 		@IContextKeyService private readonly _contextKeyService: IContextKeyService,
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
-		@ILogService private readonly _logService: ILogService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
+		@ILogService private readonly _logService: ILogService
 	) {
 		this.editor = editor;
 		this.model = _instantiationService.createInstance(SuggestModel, this.editor,);
@@ -434,38 +430,8 @@ export class SuggestController implements IEditorContribution {
 
 		// clear only now - after all tasks are done
 		Promise.all(tasks).finally(() => {
-			this._reportSuggestionAcceptedTelemetry(item, model, event);
-
 			this.model.clear();
 			cts.dispose();
-		});
-	}
-
-	private _telemetryGate: number = 0;
-	private _reportSuggestionAcceptedTelemetry(item: CompletionItem, model: ITextModel, acceptedSuggestion: ISelectedSuggestion) {
-		if (this._telemetryGate++ % 100 !== 0) {
-			return;
-		}
-
-		type AcceptedSuggestion = { providerId: string; fileExtension: string; languageId: string; basenameHash: string; kind: number };
-		type AcceptedSuggestionClassification = {
-			owner: 'jrieken';
-			comment: 'Information accepting completion items';
-			providerId: { classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight'; comment: 'Provider of the completions item' };
-			basenameHash: { classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight'; comment: 'Hash of the basename of the file into which the completion was inserted' };
-			fileExtension: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'File extension of the file into which the completion was inserted' };
-			languageId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Language type of the file into which the completion was inserted' };
-			kind: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The completion item kind' };
-		};
-		// _debugDisplayName looks like `vscode.css-language-features(/-:)`, where the last bit is the trigger chars
-		// normalize it to just the extension ID and lowercase
-		const providerId = item.extensionId ? item.extensionId.value : (acceptedSuggestion.item.provider._debugDisplayName ?? 'unknown').split('(', 1)[0].toLowerCase();
-		this._telemetryService.publicLog2<AcceptedSuggestion, AcceptedSuggestionClassification>('suggest.acceptedSuggestion', {
-			providerId,
-			kind: item.completion.kind,
-			basenameHash: hash(basename(model.uri)).toString(16),
-			languageId: model.getLanguageId(),
-			fileExtension: extname(model.uri),
 		});
 	}
 

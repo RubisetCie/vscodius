@@ -8,14 +8,7 @@ import { Disposable } from 'vs/base/common/lifecycle';
 import { isWeb } from 'vs/base/common/platform';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { IStorageService, IStorageValueChangeEvent, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { ALL_SYNC_RESOURCES, getEnablementKey, IUserDataSyncEnablementService, IUserDataSyncStoreManagementService, SyncResource } from 'vs/platform/userDataSync/common/userDataSync';
-
-type SyncEnablementClassification = {
-	owner: 'sandy081';
-	comment: 'Reporting when Settings Sync is turned on or off';
-	enabled?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Flag indicating if settings sync is enabled or not' };
-};
 
 const enablementKey = 'sync.enable';
 
@@ -31,9 +24,8 @@ export class UserDataSyncEnablementService extends Disposable implements IUserDa
 
 	constructor(
 		@IStorageService private readonly storageService: IStorageService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IEnvironmentService protected readonly environmentService: IEnvironmentService,
-		@IUserDataSyncStoreManagementService private readonly userDataSyncStoreManagementService: IUserDataSyncStoreManagementService,
+		@IUserDataSyncStoreManagementService private readonly userDataSyncStoreManagementService: IUserDataSyncStoreManagementService
 	) {
 		super();
 		this._register(storageService.onDidChangeValue(e => this.onDidStorageChange(e)));
@@ -57,7 +49,6 @@ export class UserDataSyncEnablementService extends Disposable implements IUserDa
 		if (enabled && !this.canToggleEnablement()) {
 			return;
 		}
-		this.telemetryService.publicLog2<{ enabled: boolean }, SyncEnablementClassification>(enablementKey, { enabled });
 		this.storageService.store(enablementKey, enabled, StorageScope.GLOBAL, StorageTarget.MACHINE);
 	}
 

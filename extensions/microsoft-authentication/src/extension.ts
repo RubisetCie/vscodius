@@ -5,11 +5,9 @@
 
 import * as vscode from 'vscode';
 import { AzureActiveDirectoryService, onDidChangeSessions } from './AADHelper';
-import TelemetryReporter from '@vscode/extension-telemetry';
 
 export async function activate(context: vscode.ExtensionContext) {
 	const { name, version, aiKey } = context.extension.packageJSON as { name: string; version: string; aiKey: string };
-	const telemetryReporter = new TelemetryReporter(name, version, aiKey);
 
 	const loginService = new AzureActiveDirectoryService(context);
 	await loginService.initialize();
@@ -26,11 +24,6 @@ export async function activate(context: vscode.ExtensionContext) {
 						"scopes": { "classification": "PublicNonPersonalData", "purpose": "FeatureInsight", "comment": "Used to determine what scope combinations are being requested." }
 					}
 				*/
-				telemetryReporter.sendTelemetryEvent('login', {
-					// Get rid of guids from telemetry.
-					scopes: JSON.stringify(scopes.map(s => s.replace(/[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}/i, '{guid}'))),
-				});
-
 				const session = await loginService.createSession(scopes.sort());
 				onDidChangeSessions.fire({ added: [session], removed: [], changed: [] });
 				return session;
@@ -38,8 +31,6 @@ export async function activate(context: vscode.ExtensionContext) {
 				/* __GDPR__
 					"loginFailed" : { "owner": "TylerLeonhardt", "comment": "Used to determine how often users run into issues with the login flow." }
 				*/
-				telemetryReporter.sendTelemetryEvent('loginFailed');
-
 				throw e;
 			}
 		},
@@ -48,8 +39,6 @@ export async function activate(context: vscode.ExtensionContext) {
 				/* __GDPR__
 					"logout" : { "owner": "TylerLeonhardt", "comment": "Used to determine how often users log out." }
 				*/
-				telemetryReporter.sendTelemetryEvent('logout');
-
 				const session = await loginService.removeSessionById(id);
 				if (session) {
 					onDidChangeSessions.fire({ added: [], removed: [session], changed: [] });
@@ -58,7 +47,6 @@ export async function activate(context: vscode.ExtensionContext) {
 				/* __GDPR__
 					"logoutFailed" : { "owner": "TylerLeonhardt", "comment": "Used to determine how often fail to log out." }
 				*/
-				telemetryReporter.sendTelemetryEvent('logoutFailed');
 			}
 		}
 	}, { supportsMultipleAccounts: true }));

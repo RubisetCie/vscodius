@@ -16,8 +16,6 @@ import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace
 import { Registry } from 'vs/platform/registry/common/platform';
 import { IEditorModel } from 'vs/platform/editor/common/editor';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 import { DiffEditorInput } from 'vs/workbench/common/editor/diffEditorInput';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { DisposableStore } from 'vs/base/common/lifecycle';
@@ -33,7 +31,6 @@ suite('EditorGroupModel', () => {
 		inst.stub(IStorageService, new TestStorageService());
 		inst.stub(ILifecycleService, new TestLifecycleService());
 		inst.stub(IWorkspaceContextService, new TestContextService());
-		inst.stub(ITelemetryService, NullTelemetryService);
 
 		const config = new TestConfigurationService();
 		config.setUserConfiguration('workbench', { editor: { openPositioning: 'right', focusRecentEditorAfterClose: true } });
@@ -1035,7 +1032,6 @@ suite('EditorGroupModel', () => {
 		inst.stub(IStorageService, new TestStorageService());
 		inst.stub(ILifecycleService, new TestLifecycleService());
 		inst.stub(IWorkspaceContextService, new TestContextService());
-		inst.stub(ITelemetryService, NullTelemetryService);
 
 		const config = new TestConfigurationService();
 		inst.stub(IConfigurationService, config);
@@ -1267,7 +1263,6 @@ suite('EditorGroupModel', () => {
 		inst.stub(IStorageService, new TestStorageService());
 		inst.stub(ILifecycleService, new TestLifecycleService());
 		inst.stub(IWorkspaceContextService, new TestContextService());
-		inst.stub(ITelemetryService, NullTelemetryService);
 
 		const config = new TestConfigurationService();
 		config.setUserConfiguration('workbench', { editor: { focusRecentEditorAfterClose: false } });
@@ -1646,7 +1641,6 @@ suite('EditorGroupModel', () => {
 		inst.stub(IWorkspaceContextService, new TestContextService());
 		const lifecycle = new TestLifecycleService();
 		inst.stub(ILifecycleService, lifecycle);
-		inst.stub(ITelemetryService, NullTelemetryService);
 
 		const config = new TestConfigurationService();
 		config.setUserConfiguration('workbench', { editor: { openPositioning: 'right' } });
@@ -1680,7 +1674,6 @@ suite('EditorGroupModel', () => {
 		inst.stub(IWorkspaceContextService, new TestContextService());
 		const lifecycle = new TestLifecycleService();
 		inst.stub(ILifecycleService, lifecycle);
-		inst.stub(ITelemetryService, NullTelemetryService);
 
 		const config = new TestConfigurationService();
 		config.setUserConfiguration('workbench', { editor: { openPositioning: 'right' } });
@@ -1750,7 +1743,6 @@ suite('EditorGroupModel', () => {
 		inst.stub(IWorkspaceContextService, new TestContextService());
 		const lifecycle = new TestLifecycleService();
 		inst.stub(ILifecycleService, lifecycle);
-		inst.stub(ITelemetryService, NullTelemetryService);
 
 		const config = new TestConfigurationService();
 		config.setUserConfiguration('workbench', { editor: { openPositioning: 'right' } });
@@ -1794,7 +1786,6 @@ suite('EditorGroupModel', () => {
 		inst.stub(IWorkspaceContextService, new TestContextService());
 		const lifecycle = new TestLifecycleService();
 		inst.stub(ILifecycleService, lifecycle);
-		inst.stub(ITelemetryService, NullTelemetryService);
 
 		const config = new TestConfigurationService();
 		config.setUserConfiguration('workbench', { editor: { openPositioning: 'right' } });
@@ -1829,7 +1820,6 @@ suite('EditorGroupModel', () => {
 		inst.stub(IWorkspaceContextService, new TestContextService());
 		const lifecycle = new TestLifecycleService();
 		inst.stub(ILifecycleService, lifecycle);
-		inst.stub(ITelemetryService, NullTelemetryService);
 
 		const config = new TestConfigurationService();
 		config.setUserConfiguration('workbench', { editor: { openPositioning: 'right' } });

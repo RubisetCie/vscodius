@@ -15,7 +15,6 @@ import { IContextMenuService } from 'vs/platform/contextview/browser/contextView
 import { IEditorOptions } from 'vs/platform/editor/common/editor';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { EditorPane } from 'vs/workbench/browser/parts/editor/editorPane';
 import { IEditorOpenContext } from 'vs/workbench/common/editor';
@@ -55,7 +54,6 @@ export class TerminalEditor extends EditorPane {
 	get findState(): FindReplaceState { return this._findState; }
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
 		@IStorageService storageService: IStorageService,
 		@ITerminalEditorService private readonly _terminalEditorService: ITerminalEditorService,
@@ -70,7 +68,7 @@ export class TerminalEditor extends EditorPane {
 		@INotificationService private readonly _notificationService: INotificationService,
 		@ITerminalProfileService private readonly _terminalProfileService: ITerminalProfileService
 	) {
-		super(terminalEditorId, telemetryService, themeService, storageService);
+		super(terminalEditorId, themeService, storageService);
 		this._findState = new FindReplaceState();
 		this._findWidget = instantiationService.createInstance(TerminalFindWidget, this._findState);
 		this._dropdownMenu = this._register(menuService.createMenu(MenuId.TerminalNewDropdownContext, _contextKeyService));

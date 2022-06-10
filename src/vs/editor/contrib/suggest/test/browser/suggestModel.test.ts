@@ -32,8 +32,6 @@ import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { MockKeybindingService } from 'vs/platform/keybinding/test/common/mockKeybindingService';
 import { ILabelService } from 'vs/platform/label/common/label';
 import { InMemoryStorageService, IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { LanguageFeaturesService } from 'vs/editor/common/services/languageFeaturesService';
 import { ILanguageFeaturesService } from 'vs/editor/common/services/languageFeatures';
@@ -45,7 +43,6 @@ function createMockEditor(model: TextModel, languageFeaturesService: ILanguageFe
 	const editor = createTestCodeEditor(model, {
 		serviceCollection: new ServiceCollection(
 			[ILanguageFeaturesService, languageFeaturesService],
-			[ITelemetryService, NullTelemetryService],
 			[IStorageService, new InMemoryStorageService()],
 			[IKeybindingService, new MockKeybindingService()],
 			[ISuggestMemoryService, new class implements ISuggestMemoryService {

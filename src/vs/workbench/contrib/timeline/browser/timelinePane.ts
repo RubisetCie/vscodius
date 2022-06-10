@@ -39,7 +39,6 @@ import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { ActionBar, IActionViewItemProvider } from 'vs/base/browser/ui/actionbar/actionbar';
 import { createAndFillInContextMenuActions, createActionViewItem } from 'vs/platform/actions/browser/menuEntryActionViewItem';
 import { IMenuService, MenuId, registerAction2, Action2, MenuRegistry } from 'vs/platform/actions/common/actions';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { ActionViewItem } from 'vs/base/browser/ui/actionbar/actionViewItems';
 import { ColorScheme } from 'vs/platform/theme/common/theme';
 import { Codicon } from 'vs/base/common/codicons';
@@ -260,12 +259,11 @@ export class TimelinePane extends ViewPane {
 		@ITimelineService protected timelineService: ITimelineService,
 		@IOpenerService openerService: IOpenerService,
 		@IThemeService themeService: IThemeService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@ILabelService private readonly labelService: ILabelService,
 		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService,
-		@IExtensionService private readonly extensionService: IExtensionService,
+		@IExtensionService private readonly extensionService: IExtensionService
 	) {
-		super({ ...options, titleMenuId: MenuId.TimelineTitle }, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
+		super({ ...options, titleMenuId: MenuId.TimelineTitle }, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
 
 		this.commands = this._register(this.instantiationService.createInstance(TimelinePaneCommands, this));
 

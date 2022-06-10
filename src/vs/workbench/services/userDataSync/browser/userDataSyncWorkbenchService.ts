@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { IUserDataSyncService, IAuthenticationProvider, isAuthenticationProvider, IUserDataAutoSyncService, SyncResource, IResourcePreview, ISyncResourcePreview, Change, IManualSyncTask, IUserDataSyncStoreManagementService, SyncStatus, IUserDataSyncEnablementService } from 'vs/platform/userDataSync/common/userDataSync';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IUserDataSyncWorkbenchService, IUserDataSyncAccount, AccountStatus, CONTEXT_SYNC_ENABLEMENT, CONTEXT_SYNC_STATE, CONTEXT_ACCOUNT_STATE, SHOW_SYNC_LOG_COMMAND_ID, getSyncAreaLabel, IUserDataSyncPreview, IUserDataSyncResource, CONTEXT_ENABLE_SYNC_MERGES_VIEW, SYNC_MERGES_VIEW_ID, CONTEXT_ENABLE_ACTIVITY_VIEWS, SYNC_VIEW_CONTAINER_ID, SYNC_TITLE } from 'vs/workbench/services/userDataSync/common/userDataSync';
 import { Disposable, DisposableStore } from 'vs/base/common/lifecycle';
@@ -35,12 +34,6 @@ import { UserDataSyncStoreClient } from 'vs/platform/userDataSync/common/userDat
 import { UserDataSyncStoreTypeSynchronizer } from 'vs/platform/userDataSync/common/globalStateSync';
 import { ICredentialsService } from 'vs/platform/credentials/common/credentials';
 import { CancellationError } from 'vs/base/common/errors';
-
-type FirstTimeSyncClassification = {
-	owner: 'sandy081';
-	comment: 'Action taken when there are merges while turning on settins sync';
-	action: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'action taken turning on sync. Eg: merge, pull, manual or cancel' };
-};
 
 type FirstTimeSyncAction = 'pull' | 'push' | 'merge' | 'manual';
 
@@ -94,7 +87,6 @@ export class UserDataSyncWorkbenchService extends Disposable implements IUserDat
 		@IStorageService private readonly storageService: IStorageService,
 		@IUserDataSyncEnablementService private readonly userDataSyncEnablementService: IUserDataSyncEnablementService,
 		@IUserDataAutoSyncService private readonly userDataAutoSyncService: IUserDataAutoSyncService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@ILogService private readonly logService: ILogService,
 		@IProductService private readonly productService: IProductService,
 		@IExtensionService private readonly extensionService: IExtensionService,
@@ -108,7 +100,7 @@ export class UserDataSyncWorkbenchService extends Disposable implements IUserDat
 		@IViewDescriptorService private readonly viewDescriptorService: IViewDescriptorService,
 		@IUserDataSyncStoreManagementService private readonly userDataSyncStoreManagementService: IUserDataSyncStoreManagementService,
 		@ILifecycleService private readonly lifecycleService: ILifecycleService,
-		@IInstantiationService private readonly instantiationService: IInstantiationService,
+		@IInstantiationService private readonly instantiationService: IInstantiationService
 	) {
 		super();
 		this.syncEnablementContext = CONTEXT_SYNC_ENABLEMENT.bindTo(contextKeyService);
@@ -416,32 +408,6 @@ export class UserDataSyncWorkbenchService extends Disposable implements IUserDat
 			return 'merge';
 		}
 
-		const result = await this.dialogService.show(
-			Severity.Info,
-			localize('merge or replace', "Merge or Replace"),
-			[
-				localize('merge', "Merge"),
-				localize('replace local', "Replace Local"),
-				localize('merge Manually', "Merge Manually..."),
-				localize('cancel', "Cancel"),
-			],
-			{
-				cancelId: 3,
-				detail: localize('first time sync detail', "It looks like you last synced from another machine.\nWould you like to merge or replace with your data in the cloud?"),
-			}
-		);
-		switch (result.choice) {
-			case 0:
-				this.telemetryService.publicLog2<{ action: string }, FirstTimeSyncClassification>('sync/firstTimeSync', { action: 'merge' });
-				return 'merge';
-			case 1:
-				this.telemetryService.publicLog2<{ action: string }, FirstTimeSyncClassification>('sync/firstTimeSync', { action: 'pull' });
-				return 'pull';
-			case 2:
-				this.telemetryService.publicLog2<{ action: string }, FirstTimeSyncClassification>('sync/firstTimeSync', { action: 'manual' });
-				return 'manual';
-		}
-		this.telemetryService.publicLog2<{ action: string }, FirstTimeSyncClassification>('sync/firstTimeSync', { action: 'cancelled' });
 		throw new CancellationError();
 	}
 
@@ -608,7 +574,6 @@ export class UserDataSyncWorkbenchService extends Disposable implements IUserDat
 	}
 
 	private async onDidSuccessiveAuthFailures(): Promise<void> {
-		this.telemetryService.publicLog2<{}, { owner: 'sandy081'; comment: 'Report when there are successive auth failures during settings sync' }>('sync/successiveAuthFailures');
 		this.currentSessionId = undefined;
 		await this.update();
 

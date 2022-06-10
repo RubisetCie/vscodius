@@ -7,7 +7,6 @@ import { Event } from 'vs/base/common/event';
 import { INativeHostService } from 'vs/platform/native/electron-sandbox/native';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { UserDataAutoSyncService as BaseUserDataAutoSyncService } from 'vs/platform/userDataSync/common/userDataAutoSyncService';
 import { IUserDataSyncEnablementService, IUserDataSyncLogService, IUserDataSyncService, IUserDataSyncStoreManagementService, IUserDataSyncStoreService } from 'vs/platform/userDataSync/common/userDataSync';
 import { IUserDataSyncAccountService } from 'vs/platform/userDataSync/common/userDataSyncAccount';
@@ -24,11 +23,10 @@ export class UserDataAutoSyncService extends BaseUserDataAutoSyncService {
 		@INativeHostService nativeHostService: INativeHostService,
 		@IUserDataSyncLogService logService: IUserDataSyncLogService,
 		@IUserDataSyncAccountService authTokenService: IUserDataSyncAccountService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IUserDataSyncMachinesService userDataSyncMachinesService: IUserDataSyncMachinesService,
-		@IStorageService storageService: IStorageService,
+		@IStorageService storageService: IStorageService
 	) {
-		super(productService, userDataSyncStoreManagementService, userDataSyncStoreService, userDataSyncEnablementService, userDataSyncService, logService, authTokenService, telemetryService, userDataSyncMachinesService, storageService);
+		super(productService, userDataSyncStoreManagementService, userDataSyncStoreService, userDataSyncEnablementService, userDataSyncService, logService, authTokenService, userDataSyncMachinesService, storageService);
 
 		this._register(Event.debounce<string, string[]>(Event.any<string>(
 			Event.map(nativeHostService.onDidFocusWindow, () => 'windowFocus'),

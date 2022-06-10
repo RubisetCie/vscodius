@@ -21,8 +21,6 @@ import { ExtensionGalleryService } from 'vs/platform/extensionManagement/common/
 import { IURLService } from 'vs/platform/url/common/url';
 import { Emitter, Event } from 'vs/base/common/event';
 import { IPager } from 'vs/base/common/paging';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 import { IExtensionService, toExtensionDescription } from 'vs/workbench/services/extensions/common/extensions';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { TestMenuService } from 'vs/workbench/test/browser/workbenchTestServices';
@@ -80,7 +78,6 @@ suite('ExtensionsListView Tests', () => {
 		didUninstallEvent = new Emitter<DidUninstallExtensionEvent>();
 
 		instantiationService = new TestInstantiationService();
-		instantiationService.stub(ITelemetryService, NullTelemetryService);
 		instantiationService.stub(ILogService, NullLogService);
 		instantiationService.stub(IProductService, {});
 

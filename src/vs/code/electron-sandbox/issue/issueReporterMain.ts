@@ -138,7 +138,6 @@ export class IssueReporter extends Disposable {
 		applyZoom(configuration.data.zoomLevel);
 		this.applyStyles(configuration.data.styles);
 		this.handleExtensionData(configuration.data.enabledExtensions);
-		this.updateExperimentsInfo(configuration.data.experiments);
 		this.updateRestrictedMode(configuration.data.restrictedMode);
 	}
 
@@ -1152,14 +1151,6 @@ export class IssueReporter extends Disposable {
 
 	private updateRestrictedMode(restrictedMode: boolean) {
 		this.issueReporterModel.update({ restrictedMode });
-	}
-
-	private updateExperimentsInfo(experimentInfo: string | undefined) {
-		this.issueReporterModel.update({ experimentInfo });
-		const target = document.querySelector<HTMLElement>('.block-experiments .block-info');
-		if (target) {
-			target.textContent = experimentInfo ? experimentInfo : localize('noCurrentExperiments', "No current experiments.");
-		}
 	}
 
 	private getExtensionTableHtml(extensions: IssueReporterExtensionData[]): HTMLTableElement {

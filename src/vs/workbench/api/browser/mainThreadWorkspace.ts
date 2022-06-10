@@ -150,8 +150,7 @@ export class MainThreadWorkspace implements MainThreadWorkspaceShape {
 				disregardSearchExcludeSettings: true,
 				disregardIgnoreFiles: true,
 				includePattern: withNullAsUndefined(includePattern),
-				excludePattern: typeof excludePatternOrDisregardExcludes === 'string' ? excludePatternOrDisregardExcludes : undefined,
-				_reason: 'startFileSearch'
+				excludePattern: typeof excludePatternOrDisregardExcludes === 'string' ? excludePatternOrDisregardExcludes : undefined
 			});
 
 		return this._searchService.fileSearch(query, token).then(result => {
@@ -170,7 +169,6 @@ export class MainThreadWorkspace implements MainThreadWorkspaceShape {
 		const folders = folder ? [folder] : workspace.folders.map(folder => folder.uri);
 
 		const query = this._queryBuilder.text(pattern, folders, options);
-		query._reason = 'startTextSearch';
 
 		const onProgress = (p: ISearchProgressItem) => {
 			if ((<IFileMatch>p).results) {

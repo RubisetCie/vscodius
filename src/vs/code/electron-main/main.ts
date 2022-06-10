@@ -60,7 +60,6 @@ import { ISignService } from 'vs/platform/sign/common/sign';
 import { SignService } from 'vs/platform/sign/node/signService';
 import { IStateMainService } from 'vs/platform/state/electron-main/state';
 import { StateMainService } from 'vs/platform/state/electron-main/stateMainService';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 import { IThemeMainService, ThemeMainService } from 'vs/platform/theme/electron-main/themeMainService';
 import { IPolicyService, NullPolicyService } from 'vs/platform/policy/common/policy';
 import { NativePolicyService } from 'vs/platform/policy/node/nativePolicyService';
@@ -331,7 +330,7 @@ class CodeMain {
 			// Process Info
 			if (environmentMainService.args.status) {
 				return instantiationService.invokeFunction(async () => {
-					const diagnosticsService = new DiagnosticsService(NullTelemetryService, productService);
+					const diagnosticsService = new DiagnosticsService(productService);
 					const mainProcessInfo = await otherInstanceLaunchMainService.getMainProcessInfo();
 					const remoteDiagnostics = await otherInstanceDiagnosticsMainService.getRemoteDiagnostics({ includeProcesses: true, includeWorkspaceMetadata: true });
 					const diagnostics = await diagnosticsService.getDiagnostics(mainProcessInfo, remoteDiagnostics);

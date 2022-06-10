@@ -13,7 +13,6 @@ import { AbstractTextResourceEditorInput, TextResourceEditorInput } from 'vs/wor
 import { BaseTextEditorModel } from 'vs/workbench/common/editor/textEditorModel';
 import { UntitledTextEditorInput } from 'vs/workbench/services/untitled/common/untitledTextEditorInput';
 import { BaseTextEditor } from 'vs/workbench/browser/parts/editor/textEditor';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { ITextResourceConfigurationService } from 'vs/editor/common/services/textResourceConfiguration';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -37,7 +36,6 @@ export class AbstractTextResourceEditor extends BaseTextEditor<ICodeEditorViewSt
 
 	constructor(
 		id: string,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IStorageService storageService: IStorageService,
 		@ITextResourceConfigurationService textResourceConfigurationService: ITextResourceConfigurationService,
@@ -45,7 +43,7 @@ export class AbstractTextResourceEditor extends BaseTextEditor<ICodeEditorViewSt
 		@IEditorGroupsService editorGroupService: IEditorGroupsService,
 		@IEditorService editorService: IEditorService
 	) {
-		super(id, telemetryService, instantiationService, storageService, textResourceConfigurationService, themeService, editorService, editorGroupService);
+		super(id, instantiationService, storageService, textResourceConfigurationService, themeService, editorService, editorGroupService);
 	}
 
 	override getTitle(): string | undefined {
@@ -136,7 +134,6 @@ export class TextResourceEditor extends AbstractTextResourceEditor {
 	static readonly ID = 'workbench.editors.textResourceEditor';
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IStorageService storageService: IStorageService,
 		@ITextResourceConfigurationService textResourceConfigurationService: ITextResourceConfigurationService,
@@ -146,7 +143,7 @@ export class TextResourceEditor extends AbstractTextResourceEditor {
 		@IModelService private readonly modelService: IModelService,
 		@ILanguageService private readonly languageService: ILanguageService
 	) {
-		super(TextResourceEditor.ID, telemetryService, instantiationService, storageService, textResourceConfigurationService, themeService, editorGroupService, editorService);
+		super(TextResourceEditor.ID, instantiationService, storageService, textResourceConfigurationService, themeService, editorGroupService, editorService);
 	}
 
 	protected override createEditorControl(parent: HTMLElement, configuration: ICodeEditorOptions): IEditor {

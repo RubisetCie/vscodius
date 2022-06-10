@@ -11,17 +11,13 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import { xhr, XHRResponse, getErrorStatusDescription, Headers } from 'request-light';
 
-import TelemetryReporter from '@vscode/extension-telemetry';
 import { JSONSchemaCache } from './schemaCache';
 
-let telemetry: TelemetryReporter | undefined;
 let client: BaseLanguageClient | undefined;
 
 // this method is called when vs code is activated
 export async function activate(context: ExtensionContext) {
 	const clientPackageJSON = await getPackageInfo(context);
-	telemetry = new TelemetryReporter(clientPackageJSON.name, clientPackageJSON.version, clientPackageJSON.aiKey);
-
 	const outputChannel = window.createOutputChannel(languageServerDescription);
 
 	const serverMain = `./server/${clientPackageJSON.main.indexOf('/dist/') !== -1 ? 'dist' : 'out'}/node/jsonServerMain`;
@@ -46,7 +42,7 @@ export async function activate(context: ExtensionContext) {
 
 	const schemaRequests = await getSchemaRequestService(context, log);
 
-	client = await startClient(context, newLanguageClient, { schemaRequests, telemetry });
+	client = await startClient(context, newLanguageClient, { schemaRequests });
 }
 
 export async function deactivate(): Promise<any> {
@@ -54,7 +50,6 @@ export async function deactivate(): Promise<any> {
 		await client.stop();
 		client = undefined;
 	}
-	telemetry?.dispose();
 }
 
 interface IPackageInfo {

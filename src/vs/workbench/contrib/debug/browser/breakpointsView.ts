@@ -36,7 +36,6 @@ import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { ILabelService } from 'vs/platform/label/common/label';
 import { WorkbenchList } from 'vs/platform/list/browser/listService';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { attachInputBoxStyler } from 'vs/platform/theme/common/styler';
 import { IThemeService, ThemeIcon } from 'vs/platform/theme/common/themeService';
 import { ViewAction, ViewPane } from 'vs/workbench/browser/parts/views/viewPane';
@@ -103,13 +102,12 @@ export class BreakpointsView extends ViewPane {
 		@IViewDescriptorService viewDescriptorService: IViewDescriptorService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IOpenerService openerService: IOpenerService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@ILabelService private readonly labelService: ILabelService,
 		@IMenuService menuService: IMenuService,
 		@IHoverService private readonly hoverService: IHoverService,
 		@ILanguageService private readonly languageService: ILanguageService,
 	) {
-		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
+		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
 
 		this.menu = menuService.createMenu(MenuId.DebugBreakpointsContext, contextKeyService);
 		this._register(this.menu);

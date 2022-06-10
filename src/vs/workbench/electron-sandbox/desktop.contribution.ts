@@ -21,7 +21,6 @@ import { IJSONContributionRegistry, Extensions as JSONExtensions } from 'vs/plat
 import { IJSONSchema } from 'vs/base/common/jsonSchema';
 import { InstallShellScriptAction, UninstallShellScriptAction } from 'vs/workbench/electron-sandbox/actions/installActions';
 import { EditorsVisibleContext, SingleEditorGroupsContext } from 'vs/workbench/common/contextkeys';
-import { TELEMETRY_SETTING_ID } from 'vs/platform/telemetry/common/telemetry';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { ShutdownReason } from 'vs/workbench/services/lifecycle/common/lifecycle';
 import { NativeWindow } from 'vs/workbench/electron-sandbox/window';
@@ -237,23 +236,6 @@ import { ModifierKeyEmitter } from 'vs/base/browser/dom';
 				'scope': ConfigurationScope.APPLICATION,
 				'description': localize('window.clickThroughInactive', "If enabled, clicking on an inactive window will both activate the window and trigger the element under the mouse if it is clickable. If disabled, clicking anywhere on an inactive window will activate it only and a second click is required on the element."),
 				'included': isMacintosh
-			}
-		}
-	});
-
-	// Telemetry
-	registry.registerConfiguration({
-		'id': 'telemetry',
-		'order': 110,
-		title: localize('telemetryConfigurationTitle', "Telemetry"),
-		'type': 'object',
-		'properties': {
-			'telemetry.enableCrashReporter': {
-				'type': 'boolean',
-				'description': localize('telemetry.enableCrashReporting', "Enable crash reports to be collected. This helps us improve stability. \nThis option requires restart to take effect."),
-				'default': true,
-				'tags': ['usesOnlineServices', 'telemetry'],
-				'markdownDeprecationMessage': localize('enableCrashReporterDeprecated', "If this setting is false, no telemetry will be sent regardless of the new setting's value. Deprecated due to being combined into the {0} setting.", `\`#${TELEMETRY_SETTING_ID}#\``),
 			}
 		}
 	});

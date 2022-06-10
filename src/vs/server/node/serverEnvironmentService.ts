@@ -26,13 +26,11 @@ export const serverOptions: OptionDescriptions<ServerParsedArgs> = {
 	'print-ip-address': { type: 'boolean' },
 	'accept-server-license-terms': { type: 'boolean', cat: 'o', description: nls.localize('acceptLicenseTerms', "If set, the user accepts the server license terms and the server will be started without a user prompt.") },
 	'server-data-dir': { type: 'string', cat: 'o', description: nls.localize('serverDataDir', "Specifies the directory that server data is kept in.") },
-	'telemetry-level': { type: 'string', cat: 'o', args: 'level', description: nls.localize('telemetry-level', "Sets the initial telemetry level. Valid levels are: 'off', 'crash', 'error' and 'all'. If not specified, the server will send telemetry until a client connects, it will then use the clients telemetry setting. Setting this to 'off' is equivalent to --disable-telemetry") },
 
 	/* ----- vs code options ---	-- */
 
 	'user-data-dir': OPTIONS['user-data-dir'],
 	'enable-smoke-test-driver': OPTIONS['enable-smoke-test-driver'],
-	'disable-telemetry': OPTIONS['disable-telemetry'],
 	'disable-workspace-trust': OPTIONS['disable-workspace-trust'],
 	'file-watcher-polling': { type: 'string', deprecates: ['fileWatcherPolling'] },
 	'log': OPTIONS['log'],
@@ -132,8 +130,6 @@ export interface ServerParsedArgs {
 
 	'server-data-dir'?: string;
 
-	'telemetry-level'?: string;
-
 	'disable-workspace-trust'?: boolean;
 
 	/* ----- vs code options ----- */
@@ -142,7 +138,6 @@ export interface ServerParsedArgs {
 
 	'enable-smoke-test-driver'?: boolean;
 
-	'disable-telemetry'?: boolean;
 	'file-watcher-polling'?: string;
 
 	'log'?: string;

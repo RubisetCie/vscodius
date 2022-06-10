@@ -6,7 +6,6 @@
 import { localize } from 'vs/nls';
 import { dirname, basename } from 'vs/base/common/path';
 import { IEditorOptions } from 'vs/editor/common/config/editorOptions';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { ITextResourceConfigurationService } from 'vs/editor/common/services/textResourceConfiguration';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -58,7 +57,6 @@ export class LogViewer extends AbstractTextResourceEditor {
 	static readonly LOG_VIEWER_EDITOR_ID = 'workbench.editors.logViewer';
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IStorageService storageService: IStorageService,
 		@ITextResourceConfigurationService textResourceConfigurationService: ITextResourceConfigurationService,
@@ -66,7 +64,7 @@ export class LogViewer extends AbstractTextResourceEditor {
 		@IEditorGroupsService editorGroupService: IEditorGroupsService,
 		@IEditorService editorService: IEditorService
 	) {
-		super(LogViewer.LOG_VIEWER_EDITOR_ID, telemetryService, instantiationService, storageService, textResourceConfigurationService, themeService, editorGroupService, editorService);
+		super(LogViewer.LOG_VIEWER_EDITOR_ID, instantiationService, storageService, textResourceConfigurationService, themeService, editorGroupService, editorService);
 	}
 
 	protected override getConfigurationOverrides(): IEditorOptions {

@@ -26,7 +26,6 @@ import { Logger } from './utils/logger';
 import { isWeb } from './utils/platform';
 import { TypeScriptPluginPathsProvider } from './utils/pluginPathsProvider';
 import { PluginManager } from './utils/plugins';
-import { TelemetryProperties, TelemetryReporter, VSCodeTelemetryReporter } from './utils/telemetry';
 import Tracer from './utils/tracer';
 import { inferredProjectCompilerOptions, ProjectType } from './utils/tsconfig';
 
@@ -117,7 +116,6 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 	private hasServerFatallyCrashedTooManyTimes = false;
 	private readonly loadingIndicator = new ServerInitializingIndicator();
 
-	public readonly telemetryReporter: TelemetryReporter;
 	public readonly bufferSyncSupport: BufferSyncSupport;
 	public readonly diagnosticsManager: DiagnosticsManager;
 	public readonly pluginManager: PluginManager;
@@ -205,16 +203,7 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 			}
 		}, this, this._disposables);
 
-		this.telemetryReporter = this._register(new VSCodeTelemetryReporter(() => {
-			if (this.serverState.type === ServerState.Type.Running) {
-				if (this.serverState.tsserverVersion) {
-					return this.serverState.tsserverVersion;
-				}
-			}
-			return this.apiVersion.fullVersionString;
-		}));
-
-		this.typescriptServerSpawner = new TypeScriptServerSpawner(this.versionProvider, this._versionManager, this.logDirectoryProvider, this.pluginPathsProvider, this.logger, this.telemetryReporter, this.tracer, this.processFactory);
+		this.typescriptServerSpawner = new TypeScriptServerSpawner(this.versionProvider, this._versionManager, this.logDirectoryProvider, this.pluginPathsProvider, this.logger, this.tracer, this.processFactory);
 
 		this._register(this.pluginManager.onDidUpdateConfig(update => {
 			this.configurePlugin(update.pluginId, update.config);
@@ -344,10 +333,6 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 		this.logger.error(message, data);
 	}
 
-	private logTelemetry(eventName: string, properties?: TelemetryProperties) {
-		this.telemetryReporter.logTelemetry(eventName, properties);
-	}
-
 	public ensureServiceStarted() {
 		if (this.serverState.type !== ServerState.Type.Running) {
 			this.startService();
@@ -396,11 +381,6 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 				"typeScriptVersionSource": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
 			}
 		*/
-		this.logTelemetry('tsserver.spawned', {
-			localTypeScriptVersion: this.versionProvider.localVersion ? this.versionProvider.localVersion.displayName : '',
-			typeScriptVersionSource: version.source,
-		});
-
 		handle.onError((err: Error) => {
 			if (this.token !== mytoken) {
 				// this is coming from an old process
@@ -425,7 +405,6 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 					]
 				}
 			*/
-			this.logTelemetry('tsserver.error');
 			this.serviceExited(false);
 		});
 
@@ -453,7 +432,6 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 						]
 					}
 				*/
-				this.logTelemetry('tsserver.exitWithCode', { code, signal: signal ?? undefined });
 			}
 
 			if (handle.tsServerLogFile) {
@@ -610,7 +588,6 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 							]
 						}
 					*/
-					this.logTelemetry('serviceExited');
 				} else if (diff < 60 * 1000 * 5 /* 5 Minutes */) {
 					this.lastStart = Date.now();
 					prompt = vscode.window.showWarningMessage(
@@ -858,7 +835,6 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 				"command" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
 			}
 		*/
-		this.logTelemetry('fatalError', { ...(error instanceof TypeScriptServerError ? error.telemetry : { command }) });
 		console.error(`A non-recoverable error occurred while executing tsserver command: ${command}`);
 		if (error instanceof TypeScriptServerError && error.serverErrorText) {
 			console.error(error.serverErrorText);
@@ -896,11 +872,6 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 				this._onConfigDiagnosticsReceived.fire(event as Proto.ConfigFileDiagnosticEvent);
 				break;
 
-			case EventName.telemetry: {
-				const body = (event as Proto.TelemetryEvent).body;
-				this.dispatchTelemetryEvent(body);
-				break;
-			}
 			case EventName.projectLanguageServiceState: {
 				const body = (event as Proto.ProjectLanguageServiceStateEvent).body!;
 				if (this.serverState.type === ServerState.Type.Running) {
@@ -941,58 +912,6 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 				this.loadingIndicator.finishedLoadingProject((event as Proto.ProjectLoadingFinishEvent).body.projectName);
 				break;
 		}
-	}
-
-	private dispatchTelemetryEvent(telemetryData: Proto.TelemetryEventBody): void {
-		const properties: { [key: string]: string } = Object.create(null);
-		switch (telemetryData.telemetryEventName) {
-			case 'typingsInstalled': {
-				const typingsInstalledPayload: Proto.TypingsInstalledTelemetryEventPayload = (telemetryData.payload as Proto.TypingsInstalledTelemetryEventPayload);
-				properties['installedPackages'] = typingsInstalledPayload.installedPackages;
-
-				if (typeof typingsInstalledPayload.installSuccess === 'boolean') {
-					properties['installSuccess'] = typingsInstalledPayload.installSuccess.toString();
-				}
-				if (typeof typingsInstalledPayload.typingsInstallerVersion === 'string') {
-					properties['typingsInstallerVersion'] = typingsInstalledPayload.typingsInstallerVersion;
-				}
-				break;
-			}
-			default: {
-				const payload = telemetryData.payload;
-				if (payload) {
-					Object.keys(payload).forEach((key) => {
-						try {
-							if (payload.hasOwnProperty(key)) {
-								properties[key] = typeof payload[key] === 'string' ? payload[key] : JSON.stringify(payload[key]);
-							}
-						} catch (e) {
-							// noop
-						}
-					});
-				}
-				break;
-			}
-		}
-		if (telemetryData.telemetryEventName === 'projectInfo') {
-			if (this.serverState.type === ServerState.Type.Running) {
-				this.serverState.updateTsserverVersion(properties['version']);
-			}
-		}
-
-		/* __GDPR__
-			"typingsInstalled" : {
-				"owner": "mjbvz",
-				"installedPackages" : { "classification": "PublicNonPersonalData", "purpose": "FeatureInsight" },
-				"installSuccess": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth" },
-				"typingsInstallerVersion": { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth" },
-				"${include}": [
-					"${TypeScriptCommonProperties}"
-				]
-			}
-		*/
-		// __GDPR__COMMENT__: Other events are defined by TypeScript.
-		this.logTelemetry(telemetryData.telemetryEventName, properties);
 	}
 
 	private configurePlugin(pluginName: string, configuration: {}): any {

@@ -6,13 +6,13 @@
 import 'vs/css!./media/compositepart';
 import { localize } from 'vs/nls';
 import { defaultGenerator } from 'vs/base/common/idGenerator';
-import { IDisposable, dispose, DisposableStore, MutableDisposable } from 'vs/base/common/lifecycle';
+import { IDisposable, dispose, DisposableStore } from 'vs/base/common/lifecycle';
 import { Emitter } from 'vs/base/common/event';
 import { isCancellationError } from 'vs/base/common/errors';
 import { ToolBar } from 'vs/base/browser/ui/toolbar/toolbar';
 import { ActionsOrientation, IActionViewItem, prepareActions } from 'vs/base/browser/ui/actionbar/actionbar';
 import { ProgressBar } from 'vs/base/browser/ui/progressbar/progressbar';
-import { IAction, WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification } from 'vs/base/common/actions';
+import { IAction } from 'vs/base/common/actions';
 import { Part, IPartOptions } from 'vs/workbench/browser/part';
 import { Composite, CompositeRegistry } from 'vs/workbench/browser/composite';
 import { IComposite } from 'vs/workbench/common/composite';
@@ -23,7 +23,6 @@ import { IContextMenuService } from 'vs/platform/contextview/browser/contextView
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ServiceCollection } from 'vs/platform/instantiation/common/serviceCollection';
 import { IProgressIndicator, IEditorProgressService } from 'vs/platform/progress/common/progress';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { attachProgressBarStyler } from 'vs/platform/theme/common/styler';
@@ -68,13 +67,11 @@ export abstract class CompositePart<T extends Composite> extends Part {
 	private titleLabel: ICompositeTitleLabel | undefined;
 	private progressBar: ProgressBar | undefined;
 	private contentAreaSize: Dimension | undefined;
-	private readonly telemetryActionsListener = this._register(new MutableDisposable());
 	private currentCompositeOpenToken: string | undefined;
 
 	constructor(
 		private readonly notificationService: INotificationService,
 		protected readonly storageService: IStorageService,
-		private readonly telemetryService: ITelemetryService,
 		protected readonly contextMenuService: IContextMenuService,
 		layoutService: IWorkbenchLayoutService,
 		protected readonly keybindingService: IKeybindingService,
@@ -83,7 +80,6 @@ export abstract class CompositePart<T extends Composite> extends Part {
 		protected readonly registry: CompositeRegistry<T>,
 		private readonly activeCompositeSettingsKey: string,
 		private readonly defaultCompositeId: string,
-		private readonly nameForTelemetry: string,
 		private readonly compositeCSSClass: string,
 		private readonly titleForegroundColor: string | undefined,
 		id: string,
@@ -256,15 +252,12 @@ export abstract class CompositePart<T extends Composite> extends Part {
 		actionsBinding();
 
 		// Action Run Handling
-		this.telemetryActionsListener.value = toolBar.actionRunner.onDidRun(e => {
+		toolBar.actionRunner.onDidRun(e => {
 
 			// Check for Error
 			if (e.error && !isCancellationError(e.error)) {
 				this.notificationService.error(e.error);
 			}
-
-			// Log in telemetry
-			this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: e.action.id, from: this.nameForTelemetry });
 		});
 
 		// Indicate to composite that it is now visible

@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { ExtensionRecommendations, ExtensionRecommendation } from 'vs/workbench/contrib/extensions/browser/extensionRecommendations';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { EnablementState, IExtensionManagementServerService } from 'vs/workbench/services/extensionManagement/common/extensionManagement';
@@ -26,7 +25,6 @@ import { IExtensionService } from 'vs/workbench/services/extensions/common/exten
 import { IModelService } from 'vs/editor/common/services/model';
 import { ILanguageService } from 'vs/editor/common/languages/language';
 import { IExtensionRecommendationNotificationService, RecommendationsNotificationResult, RecommendationSource } from 'vs/platform/extensionRecommendations/common/extensionRecommendations';
-import { IWorkbenchAssignmentService } from 'vs/workbench/services/assignment/common/assignmentService';
 import { distinct } from 'vs/base/common/arrays';
 import { DisposableStore } from 'vs/base/common/lifecycle';
 import { CellUri } from 'vs/workbench/contrib/notebook/common/notebookCommon';
@@ -35,13 +33,6 @@ import { IPaneCompositePartService } from 'vs/workbench/services/panecomposite/b
 import { ViewContainerLocation } from 'vs/workbench/common/views';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { areSameExtensions } from 'vs/platform/extensionManagement/common/extensionManagementUtil';
-
-type FileExtensionSuggestionClassification = {
-	owner: 'sandy081';
-	comment: 'Response information when a file based reccommendation is suggested';
-	userReaction: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'User reaction after showing the recommendation prompt. Eg., install, cancel, show, neverShowAgain' };
-	fileExtension: { classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight'; comment: 'Extension of the file for which an extension is being recommended.' };
-};
 
 const promptedRecommendationsStorageKey = 'fileBasedRecommendations/promptedRecommendations';
 const promptedFileExtensionsStorageKey = 'fileBasedRecommendations/promptedFileExtensions';
@@ -102,17 +93,13 @@ export class FileBasedRecommendations extends ExtensionRecommendations {
 		@ILanguageService private readonly languageService: ILanguageService,
 		@IProductService productService: IProductService,
 		@INotificationService private readonly notificationService: INotificationService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IStorageService private readonly storageService: IStorageService,
 		@IExtensionRecommendationNotificationService private readonly extensionRecommendationNotificationService: IExtensionRecommendationNotificationService,
 		@IExtensionIgnoredRecommendationsService private readonly extensionIgnoredRecommendationsService: IExtensionIgnoredRecommendationsService,
-		@IWorkbenchAssignmentService private readonly tasExperimentService: IWorkbenchAssignmentService,
 		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
-		@IExtensionManagementServerService private readonly extensionManagementServerService: IExtensionManagementServerService,
+		@IExtensionManagementServerService private readonly extensionManagementServerService: IExtensionManagementServerService
 	) {
 		super();
-
-		this.tasExperimentService = tasExperimentService;
 
 		if (productService.extensionTips) {
 			forEach(productService.extensionTips, ({ key, value }) => this.extensionTips.set(key.toLowerCase(), value));
@@ -274,8 +261,7 @@ export class FileBasedRecommendations extends ExtensionRecommendations {
 			return false;
 		}
 
-		const treatmentMessage = await this.tasExperimentService.getTreatment<string>('languageRecommendationMessage');
-		const message = treatmentMessage ? treatmentMessage.replace('{0}', name) : localize('reallyRecommended', "Do you want to install the recommended extensions for {0}?", name);
+		const message = localize('reallyRecommended', "Do you want to install the recommended extensions for {0}?", name);
 
 		this.extensionRecommendationNotificationService.promptImportantExtensionsInstallNotification([extensionId], message, `@id:${extensionId}`, RecommendationSource.FILE)
 			.then(result => {
@@ -350,7 +336,6 @@ export class FileBasedRecommendations extends ExtensionRecommendations {
 				label: searchMarketplace,
 				run: () => {
 					this.addToPromptedFileExtensions(fileExtension);
-					this.telemetryService.publicLog2<{ userReaction: string; fileExtension: string }, FileExtensionSuggestionClassification>('fileExtensionSuggestion:popup', { userReaction: 'ok', fileExtension });
 					this.paneCompositeService.openPaneComposite(EXTENSIONS_VIEWLET_ID, ViewContainerLocation.Sidebar, true)
 						.then(viewlet => viewlet?.getViewPaneContainer() as IExtensionsViewPaneContainer)
 						.then(viewlet => {
@@ -367,14 +352,10 @@ export class FileBasedRecommendations extends ExtensionRecommendations {
 						JSON.stringify(fileExtensionSuggestionIgnoreList),
 						StorageScope.GLOBAL,
 						StorageTarget.USER);
-					this.telemetryService.publicLog2<{ userReaction: string; fileExtension: string }, FileExtensionSuggestionClassification>('fileExtensionSuggestion:popup', { userReaction: 'neverShowAgain', fileExtension });
 				}
 			}],
 			{
-				sticky: true,
-				onCancel: () => {
-					this.telemetryService.publicLog2<{ userReaction: string; fileExtension: string }, FileExtensionSuggestionClassification>('fileExtensionSuggestion:popup', { userReaction: 'cancelled', fileExtension });
-				}
+				sticky: true
 			}
 		);
 	}

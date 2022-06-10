@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { hostname, release } from 'os';
-import { raceTimeout } from 'vs/base/common/async';
 import { VSBuffer } from 'vs/base/common/buffer';
 import { toErrorMessage } from 'vs/base/common/errorMessage';
 import { onUnexpectedError, setUnexpectedErrorHandler } from 'vs/base/common/errors';
@@ -13,7 +11,6 @@ import { Schemas } from 'vs/base/common/network';
 import { isAbsolute, join } from 'vs/base/common/path';
 import { isWindows } from 'vs/base/common/platform';
 import { cwd } from 'vs/base/common/process';
-import { joinPath } from 'vs/base/common/resources';
 import { URI } from 'vs/base/common/uri';
 import { Promises } from 'vs/base/node/pfs';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
@@ -47,12 +44,6 @@ import product from 'vs/platform/product/common/product';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { IRequestService } from 'vs/platform/request/common/request';
 import { RequestService } from 'vs/platform/request/node/requestService';
-import { resolveCommonProperties } from 'vs/platform/telemetry/common/commonProperties';
-import { ITelemetryService, machineIdKey } from 'vs/platform/telemetry/common/telemetry';
-import { ITelemetryServiceConfig, TelemetryService } from 'vs/platform/telemetry/common/telemetryService';
-import { supportsTelemetry, NullTelemetryService, getPiiPathsFromEnvironment } from 'vs/platform/telemetry/common/telemetryUtils';
-import { AppInsightsAppender } from 'vs/platform/telemetry/node/appInsightsAppender';
-import { buildTelemetryMessage } from 'vs/platform/telemetry/node/telemetry';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { UriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentityService';
 
@@ -75,7 +66,7 @@ class CliMain extends Disposable {
 	async run(): Promise<void> {
 
 		// Services
-		const [instantiationService, appenders] = await this.initServices();
+		const instantiationService = await this.initServices();
 
 		return instantiationService.invokeFunction(async accessor => {
 			const logService = accessor.get(ILogService);
@@ -92,15 +83,11 @@ class CliMain extends Disposable {
 			// Run based on argv
 			await this.doRun(environmentService, extensionManagementCLIService, fileService);
 
-			// Flush the remaining data in AI adapter (with 1s timeout)
-			await Promise.all(appenders.map(a => {
-				raceTimeout(a.flush(), 1000);
-			}));
 			return;
 		});
 	}
 
-	private async initServices(): Promise<[IInstantiationService, AppInsightsAppender[]]> {
+	private async initServices(): Promise<IInstantiationService> {
 		const services = new ServiceCollection();
 
 		// Product
@@ -163,41 +150,7 @@ class CliMain extends Disposable {
 		// Localizations
 		services.set(ILanguagePackService, new SyncDescriptor(NativeLanguagePackService));
 
-		// Telemetry
-		const appenders: AppInsightsAppender[] = [];
-		if (supportsTelemetry(productService, environmentService)) {
-			if (productService.aiConfig && productService.aiConfig.asimovKey) {
-				appenders.push(new AppInsightsAppender('monacoworkbench', null, productService.aiConfig.asimovKey));
-			}
-
-			const { installSourcePath } = environmentService;
-
-			const config: ITelemetryServiceConfig = {
-				appenders,
-				sendErrorTelemetry: false,
-				commonProperties: (async () => {
-					let machineId: string | undefined = undefined;
-					try {
-						const storageContents = await Promises.readFile(joinPath(environmentService.globalStorageHome, 'storage.json').fsPath);
-						machineId = JSON.parse(storageContents.toString())[machineIdKey];
-					} catch (error) {
-						if (error.code !== 'ENOENT') {
-							logService.error(error);
-						}
-					}
-
-					return resolveCommonProperties(fileService, release(), hostname(), process.arch, productService.commit, productService.version, machineId, productService.msftInternalDomains, installSourcePath);
-				})(),
-				piiPaths: getPiiPathsFromEnvironment(environmentService)
-			};
-
-			services.set(ITelemetryService, new SyncDescriptor(TelemetryService, [config]));
-
-		} else {
-			services.set(ITelemetryService, NullTelemetryService);
-		}
-
-		return [new InstantiationService(services), appenders];
+		return new InstantiationService(services);
 	}
 
 	private registerErrorHandler(logService: ILogService): void {
@@ -243,11 +196,6 @@ class CliMain extends Disposable {
 		// Locate Extension
 		else if (this.argv['locate-extension']) {
 			return extensionManagementCLIService.locateExtension(this.argv['locate-extension']);
-		}
-
-		// Telemetry
-		else if (this.argv['telemetry']) {
-			console.log(await buildTelemetryMessage(environmentService.appRoot, environmentService.extensionsPath));
 		}
 	}
 

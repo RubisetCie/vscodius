@@ -27,7 +27,6 @@ import { EditorProgressIndicator } from 'vs/workbench/services/progress/browser/
 import { localize } from 'vs/nls';
 import { coalesce, firstOrDefault } from 'vs/base/common/arrays';
 import { combinedDisposable, dispose, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { DeferredPromise, Promises, RunOnceWorker } from 'vs/base/common/async';
 import { EventType as TouchEventType, GestureEvent } from 'vs/base/browser/touch';
 import { TitleControl } from 'vs/workbench/browser/parts/editor/titleControl';
@@ -41,10 +40,8 @@ import { StandardMouseEvent } from 'vs/base/browser/mouseEvent';
 import { createAndFillInActionBarActions, createAndFillInContextMenuActions } from 'vs/platform/actions/browser/menuEntryActionViewItem';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { hash } from 'vs/base/common/hash';
-import { getMimeTypes } from 'vs/editor/common/services/languagesAssociations';
-import { extname, isEqual } from 'vs/base/common/resources';
-import { FileAccess, Schemas } from 'vs/base/common/network';
+import { isEqual } from 'vs/base/common/resources';
+import { FileAccess } from 'vs/base/common/network';
 import { EditorActivation, IEditorOptions } from 'vs/platform/editor/common/editor';
 import { IFileDialogService, ConfirmResult } from 'vs/platform/dialogs/common/dialogs';
 import { IFilesConfigurationService, AutoSaveMode } from 'vs/workbench/services/filesConfiguration/common/filesConfigurationService';
@@ -138,7 +135,6 @@ export class EditorGroupView extends Themable implements IEditorGroupView {
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IContextKeyService private readonly contextKeyService: IContextKeyService,
 		@IThemeService themeService: IThemeService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IKeybindingService private readonly keybindingService: IKeybindingService,
 		@IMenuService private readonly menuService: IMenuService,
 		@IContextMenuService private readonly contextMenuService: IContextMenuService,
@@ -581,7 +577,6 @@ export class EditorGroupView extends Themable implements IEditorGroupView {
 				]
 			}
 		*/
-		this.telemetryService.publicLog('editorOpened', this.toEditorTelemetryDescriptor(editor));
 
 		// Update container
 		this.updateContainer();
@@ -618,7 +613,6 @@ export class EditorGroupView extends Themable implements IEditorGroupView {
 				]
 			}
 		*/
-		this.telemetryService.publicLog('editorClosed', this.toEditorTelemetryDescriptor(editor));
 
 		// Update container
 		this.updateContainer();
@@ -638,29 +632,6 @@ export class EditorGroupView extends Themable implements IEditorGroupView {
 		}
 
 		return true;
-	}
-
-	private toEditorTelemetryDescriptor(editor: EditorInput): object {
-		const descriptor = editor.getTelemetryDescriptor();
-
-		const resource = EditorResourceAccessor.getOriginalUri(editor);
-		const path = resource ? resource.scheme === Schemas.file ? resource.fsPath : resource.path : undefined;
-		if (resource && path) {
-			let resourceExt = extname(resource);
-			// Remove query parameters from the resource extension
-			const queryStringLocation = resourceExt.indexOf('?');
-			resourceExt = queryStringLocation !== -1 ? resourceExt.substr(0, queryStringLocation) : resourceExt;
-			descriptor['resource'] = { mimeType: getMimeTypes(resource).join(', '), scheme: resource.scheme, ext: resourceExt, path: hash(path) };
-
-			/* __GDPR__FRAGMENT__
-				"EditorTelemetryDescriptor" : {
-					"resource": { "${inline}": [ "${URIDescriptor}" ] }
-				}
-			*/
-			return descriptor;
-		}
-
-		return descriptor;
 	}
 
 	private onWillDisposeEditor(editor: EditorInput): void {

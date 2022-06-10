@@ -28,8 +28,6 @@ import product from 'vs/platform/product/common/product';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { IRequestService } from 'vs/platform/request/common/request';
 import { InMemoryStorageService, IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { UriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentityService';
 import { ExtensionStorageService, IExtensionStorageService } from 'vs/platform/extensionManagement/common/extensionStorage';
@@ -95,7 +93,6 @@ export class UserDataSyncClient extends Disposable {
 		this.instantiationService.stub(IRequestService, this.testServer);
 
 		this.instantiationService.stub(IUserDataSyncLogService, logService);
-		this.instantiationService.stub(ITelemetryService, NullTelemetryService);
 		this.instantiationService.stub(IUserDataSyncStoreManagementService, this._register(this.instantiationService.createInstance(UserDataSyncStoreManagementService)));
 		this.instantiationService.stub(IUserDataSyncStoreService, this._register(this.instantiationService.createInstance(UserDataSyncStoreService)));
 

@@ -24,7 +24,6 @@ import { CATEGORIES } from 'vs/workbench/common/actions';
 import { Barrier, timeout } from 'vs/base/common/async';
 import { URI } from 'vs/base/common/uri';
 import { ILogService } from 'vs/platform/log/common/log';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IExtensionHostProxy, IResolveAuthorityResult } from 'vs/workbench/services/extensions/common/extensionHostProxy';
 import { IExtensionDescriptionDelta } from 'vs/workbench/services/extensions/common/extensionHostProtocol';
 
@@ -113,8 +112,7 @@ class ExtensionHostManager extends Disposable implements IExtensionHostManager {
 		private readonly _internalExtensionService: IInternalExtensionService,
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 		@IWorkbenchEnvironmentService private readonly _environmentService: IWorkbenchEnvironmentService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
-		@ILogService private readonly _logService: ILogService,
+		@ILogService private readonly _logService: ILogService
 	) {
 		super();
 		this._cachedActivationEvents = new Map<string, Promise<void>>();
@@ -125,49 +123,14 @@ class ExtensionHostManager extends Disposable implements IExtensionHostManager {
 		this._extensionHost = extensionHost;
 		this.onDidExit = this._extensionHost.onExit;
 
-		const startingTelemetryEvent: ExtensionHostStartupEvent = {
-			time: Date.now(),
-			action: 'starting',
-			kind: extensionHostKindToString(this.kind)
-		};
-		this._telemetryService.publicLog2<ExtensionHostStartupEvent, ExtensionHostStartupClassification>('extensionHostStartup', startingTelemetryEvent);
-
 		this._proxy = this._extensionHost.start()!.then(
 			(protocol) => {
 				this._hasStarted = true;
-
-				// Track healthy extension host startup
-				const successTelemetryEvent: ExtensionHostStartupEvent = {
-					time: Date.now(),
-					action: 'success',
-					kind: extensionHostKindToString(this.kind)
-				};
-				this._telemetryService.publicLog2<ExtensionHostStartupEvent, ExtensionHostStartupClassification>('extensionHostStartup', successTelemetryEvent);
-
 				return this._createExtensionHostCustomers(protocol);
 			},
 			(err) => {
 				this._logService.error(`Error received from starting extension host (kind: ${extensionHostKindToString(this.kind)})`);
 				this._logService.error(err);
-
-				// Track errors during extension host startup
-				const failureTelemetryEvent: ExtensionHostStartupEvent = {
-					time: Date.now(),
-					action: 'error',
-					kind: extensionHostKindToString(this.kind)
-				};
-
-				if (err && err.name) {
-					failureTelemetryEvent.errorName = err.name;
-				}
-				if (err && err.message) {
-					failureTelemetryEvent.errorMessage = err.message;
-				}
-				if (err && err.stack) {
-					failureTelemetryEvent.errorStack = err.stack;
-				}
-				this._telemetryService.publicLog2<ExtensionHostStartupEvent, ExtensionHostStartupClassification>('extensionHostStartup', failureTelemetryEvent, true);
-
 				return null;
 			}
 		);

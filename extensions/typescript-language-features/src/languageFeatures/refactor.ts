@@ -14,7 +14,6 @@ import { nulToken } from '../utils/cancellation';
 import { conditionalRegistration, requireMinVersion, requireSomeCapability } from '../utils/dependentRegistration';
 import { DocumentSelector } from '../utils/documentSelector';
 import * as fileSchemes from '../utils/fileSchemes';
-import { TelemetryReporter } from '../utils/telemetry';
 import * as typeConverters from '../utils/typeConverters';
 import FormattingOptionsManager from './fileConfigurationManager';
 
@@ -29,10 +28,6 @@ class DidApplyRefactoringCommand implements Command {
 	public static readonly ID = '_typescript.didApplyRefactoring';
 	public readonly id = DidApplyRefactoringCommand.ID;
 
-	constructor(
-		private readonly telemetryReporter: TelemetryReporter
-	) { }
-
 	public async execute(args: DidApplyRefactoringCommand_Args): Promise<void> {
 		/* __GDPR__
 			"refactor.execute" : {
@@ -43,10 +38,6 @@ class DidApplyRefactoringCommand implements Command {
 				]
 			}
 		*/
-		this.telemetryReporter.logTelemetry('refactor.execute', {
-			action: args.codeAction.action,
-		});
-
 		if (!args.codeAction.edit?.size) {
 			vscode.window.showErrorMessage(localize('refactoringFailed', "Could not apply refactoring"));
 			return;
@@ -256,10 +247,9 @@ class TypeScriptRefactorProvider implements vscode.CodeActionProvider<TsCodeActi
 	constructor(
 		private readonly client: ITypeScriptServiceClient,
 		private readonly formattingOptionsManager: FormattingOptionsManager,
-		commandManager: CommandManager,
-		telemetryReporter: TelemetryReporter
+		commandManager: CommandManager
 	) {
-		const didApplyRefactoringCommand = commandManager.register(new DidApplyRefactoringCommand(telemetryReporter));
+		const didApplyRefactoringCommand = commandManager.register(new DidApplyRefactoringCommand());
 		commandManager.register(new SelectRefactorCommand(this.client, didApplyRefactoringCommand));
 	}
 
@@ -503,15 +493,14 @@ export function register(
 	selector: DocumentSelector,
 	client: ITypeScriptServiceClient,
 	formattingOptionsManager: FormattingOptionsManager,
-	commandManager: CommandManager,
-	telemetryReporter: TelemetryReporter,
+	commandManager: CommandManager
 ) {
 	return conditionalRegistration([
 		requireMinVersion(client, TypeScriptRefactorProvider.minVersion),
 		requireSomeCapability(client, ClientCapability.Semantic),
 	], () => {
 		return vscode.languages.registerCodeActionsProvider(selector.semantic,
-			new TypeScriptRefactorProvider(client, formattingOptionsManager, commandManager, telemetryReporter),
+			new TypeScriptRefactorProvider(client, formattingOptionsManager, commandManager),
 			TypeScriptRefactorProvider.metadata);
 	});
 }

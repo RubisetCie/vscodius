@@ -7,7 +7,6 @@ import 'vs/css!./media/runtimeExtensionsEditor';
 import * as nls from 'vs/nls';
 import { Action, IAction, Separator } from 'vs/base/common/actions';
 import { EditorPane } from 'vs/workbench/browser/parts/editor/editorPane';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { IExtensionsWorkbenchService, IExtension } from 'vs/workbench/contrib/extensions/common/extensions';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
@@ -70,7 +69,6 @@ export abstract class AbstractRuntimeExtensionsEditor extends EditorPane {
 	private _updateSoon: RunOnceScheduler;
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IExtensionsWorkbenchService private readonly _extensionsWorkbenchService: IExtensionsWorkbenchService,
@@ -83,7 +81,7 @@ export abstract class AbstractRuntimeExtensionsEditor extends EditorPane {
 		@IWorkbenchEnvironmentService private readonly _environmentService: IWorkbenchEnvironmentService,
 		@IClipboardService private readonly _clipboardService: IClipboardService,
 	) {
-		super(AbstractRuntimeExtensionsEditor.ID, telemetryService, themeService, storageService);
+		super(AbstractRuntimeExtensionsEditor.ID, themeService, storageService);
 
 		this._list = null;
 		this._elements = null;

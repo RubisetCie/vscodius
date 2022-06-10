@@ -69,7 +69,6 @@ export interface IExtension {
 	readonly categories: readonly string[];
 	readonly dependencies: string[];
 	readonly extensionPack: string[];
-	readonly telemetryData: any;
 	readonly preview: boolean;
 	getManifest(token: CancellationToken): Promise<IExtensionManifest | null>;
 	hasReadme(): boolean;

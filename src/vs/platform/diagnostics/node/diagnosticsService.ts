@@ -18,7 +18,6 @@ import { IDiagnosticsService, IMachineInfo, IRemoteDiagnosticError, IRemoteDiagn
 import { ByteSize } from 'vs/platform/files/common/files';
 import { IMainProcessInfo } from 'vs/platform/launch/common/launch';
 import { IProductService } from 'vs/platform/product/common/productService';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IWorkspace } from 'vs/platform/workspace/common/workspace';
 
 export interface VersionInfo {
@@ -221,7 +220,6 @@ export class DiagnosticsService implements IDiagnosticsService {
 	declare readonly _serviceBrand: undefined;
 
 	constructor(
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IProductService private readonly productService: IProductService
 	) { }
 
@@ -525,66 +523,5 @@ export class DiagnosticsService implements IDiagnosticsService {
 		return { extensions: [...items] };
 	}
 
-	public async reportWorkspaceStats(workspace: IWorkspaceInformation): Promise<void> {
-		for (const { uri } of workspace.folders) {
-			const folderUri = URI.revive(uri);
-			if (folderUri.scheme !== Schemas.file) {
-				continue;
-			}
-
-			const folder = folderUri.fsPath;
-			try {
-				const stats = await collectWorkspaceStats(folder, ['node_modules', '.git']);
-				type WorkspaceStatsClassification = {
-					owner: 'lramos15';
-					comment: 'Metadata related to the workspace';
-					'workspace.id': { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'A UUID given to a workspace to identify it.' };
-					rendererSessionId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The ID of the session' };
-				};
-				type WorkspaceStatsEvent = {
-					'workspace.id': string | undefined;
-					rendererSessionId: string;
-				};
-				this.telemetryService.publicLog2<WorkspaceStatsEvent, WorkspaceStatsClassification>('workspace.stats', {
-					'workspace.id': workspace.telemetryId,
-					rendererSessionId: workspace.rendererSessionId
-				});
-				type WorkspaceStatsFileClassification = {
-					owner: 'lramos15';
-					comment: 'Helps us gain insights into what type of files are being used in a workspace';
-					rendererSessionId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The ID of the session.' };
-					type: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'The type of file' };
-					count: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'How many types of that file are present' };
-				};
-				type WorkspaceStatsFileEvent = {
-					rendererSessionId: string;
-					type: string;
-					count: number;
-				};
-				stats.fileTypes.forEach(e => {
-					this.telemetryService.publicLog2<WorkspaceStatsFileEvent, WorkspaceStatsFileClassification>('workspace.stats.file', {
-						rendererSessionId: workspace.rendererSessionId,
-						type: e.name,
-						count: e.count
-					});
-				});
-				stats.launchConfigFiles.forEach(e => {
-					this.telemetryService.publicLog2<WorkspaceStatsFileEvent, WorkspaceStatsFileClassification>('workspace.stats.launchConfigFile', {
-						rendererSessionId: workspace.rendererSessionId,
-						type: e.name,
-						count: e.count
-					});
-				});
-				stats.configFiles.forEach(e => {
-					this.telemetryService.publicLog2<WorkspaceStatsFileEvent, WorkspaceStatsFileClassification>('workspace.stats.configFiles', {
-						rendererSessionId: workspace.rendererSessionId,
-						type: e.name,
-						count: e.count
-					});
-				});
-			} catch {
-				// Report nothing if collecting metadata fails.
-			}
-		}
-	}
+	public async reportWorkspaceStats(workspace: IWorkspaceInformation): Promise<void> {}
 }

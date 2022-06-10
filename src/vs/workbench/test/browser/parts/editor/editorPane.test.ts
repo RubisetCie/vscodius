@@ -10,8 +10,6 @@ import { IEditorSerializer, IEditorFactoryRegistry, EditorExtensions, EditorInpu
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { SyncDescriptor } from 'vs/platform/instantiation/common/descriptors';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 import { workbenchInstantiationService, TestEditorGroupView, TestEditorGroupsService, registerTestResourceEditor, TestEditorInput, createEditorPart, TestTextResourceConfigurationService } from 'vs/workbench/test/browser/workbenchTestServices';
 import { TextResourceEditorInput } from 'vs/workbench/common/editor/textResourceEditorInput';
 import { TestThemeService } from 'vs/platform/theme/test/common/testThemeService';
@@ -37,8 +35,8 @@ const editorInputRegistry: IEditorFactoryRegistry = Registry.as(EditorExtensions
 
 class TestEditor extends EditorPane {
 
-	constructor(@ITelemetryService telemetryService: ITelemetryService) {
-		super('TestEditor', NullTelemetryService, NullThemeService, new TestStorageService());
+	constructor() {
+		super('TestEditor', NullThemeService, new TestStorageService());
 	}
 
 	override getId(): string { return 'testEditor'; }
@@ -48,8 +46,8 @@ class TestEditor extends EditorPane {
 
 export class OtherTestEditor extends EditorPane {
 
-	constructor(@ITelemetryService telemetryService: ITelemetryService) {
-		super('testOtherEditor', NullTelemetryService, NullThemeService, new TestStorageService());
+	constructor() {
+		super('testOtherEditor', NullThemeService, new TestStorageService());
 	}
 
 	override getId(): string { return 'testOtherEditor'; }
@@ -107,7 +105,7 @@ class TestResourceEditorInput extends TextResourceEditorInput { }
 suite('EditorPane', () => {
 
 	test('EditorPane API', async () => {
-		const editor = new TestEditor(NullTelemetryService);
+		const editor = new TestEditor();
 		const input = new OtherTestInput();
 		const options = {};
 
@@ -458,8 +456,8 @@ suite('EditorPane', () => {
 	test('WorkspaceTrustRequiredEditor', async function () {
 
 		class TrustRequiredTestEditor extends EditorPane {
-			constructor(@ITelemetryService telemetryService: ITelemetryService) {
-				super('TestEditor', NullTelemetryService, NullThemeService, new TestStorageService());
+			constructor() {
+				super('TestEditor', NullThemeService, new TestStorageService());
 			}
 
 			override getId(): string { return 'trustRequiredTestEditor'; }

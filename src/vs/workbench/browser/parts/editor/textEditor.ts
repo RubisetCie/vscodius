@@ -19,7 +19,6 @@ import { IEditorViewState, IEditor, ScrollType } from 'vs/editor/common/editorCo
 import { Selection } from 'vs/editor/common/core/selection';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { ITextResourceConfigurationService } from 'vs/editor/common/services/textResourceConfiguration';
 import { IEditorOptions as ICodeEditorOptions } from 'vs/editor/common/config/editorOptions';
@@ -59,7 +58,6 @@ export abstract class BaseTextEditor<T extends IEditorViewState> extends Abstrac
 
 	constructor(
 		id: string,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IStorageService storageService: IStorageService,
 		@ITextResourceConfigurationService textResourceConfigurationService: ITextResourceConfigurationService,
@@ -67,7 +65,7 @@ export abstract class BaseTextEditor<T extends IEditorViewState> extends Abstrac
 		@IEditorService editorService: IEditorService,
 		@IEditorGroupsService editorGroupService: IEditorGroupsService
 	) {
-		super(id, BaseTextEditor.VIEW_STATE_PREFERENCE_KEY, telemetryService, instantiationService, storageService, textResourceConfigurationService, themeService, editorService, editorGroupService);
+		super(id, BaseTextEditor.VIEW_STATE_PREFERENCE_KEY, instantiationService, storageService, textResourceConfigurationService, themeService, editorService, editorGroupService);
 
 		this._register(this.textResourceConfigurationService.onDidChangeConfiguration(() => {
 			const resource = this.getActiveResource();

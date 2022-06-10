@@ -27,9 +27,7 @@ import { WorkspaceTrustEditorInput } from 'vs/workbench/services/workspaces/brow
 import { WORKSPACE_TRUST_BANNER, WORKSPACE_TRUST_EMPTY_WINDOW, WORKSPACE_TRUST_ENABLED, WORKSPACE_TRUST_STARTUP_PROMPT, WORKSPACE_TRUST_UNTRUSTED_FILES } from 'vs/workbench/services/workspaces/common/workspaceTrust';
 import { IEditorSerializer, IEditorFactoryRegistry, EditorExtensions } from 'vs/workbench/common/editor';
 import { EditorInput } from 'vs/workbench/common/editor/editorInput';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { ISingleFolderWorkspaceIdentifier, isSingleFolderWorkspaceIdentifier, IWorkspaceContextService, IWorkspaceFoldersWillChangeEvent, toWorkspaceIdentifier, WorkbenchState } from 'vs/platform/workspace/common/workspace';
-import { dirname, resolve } from 'vs/base/common/path';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IMarkdownString, MarkdownString } from 'vs/base/common/htmlContent';
 import { STATUS_BAR_PROMINENT_ITEM_BACKGROUND, STATUS_BAR_PROMINENT_ITEM_FOREGROUND } from 'vs/workbench/common/theme';
@@ -39,7 +37,6 @@ import { IHostService } from 'vs/workbench/services/host/browser/host';
 import { IBannerItem, IBannerService } from 'vs/workbench/services/banner/browser/bannerService';
 import { isVirtualWorkspace } from 'vs/platform/workspace/common/virtualWorkspace';
 import { LIST_WORKSPACE_UNSUPPORTED_EXTENSIONS_COMMAND_ID } from 'vs/workbench/contrib/extensions/common/extensions';
-import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
 import { WORKSPACE_TRUST_SETTING_TAG } from 'vs/workbench/contrib/preferences/common/preferences';
 import { IPreferencesService } from 'vs/workbench/services/preferences/common/preferences';
 import { ILabelService } from 'vs/platform/label/common/label';
@@ -736,125 +733,3 @@ Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration)
 			}
 		}
 	});
-
-class WorkspaceTrustTelemetryContribution extends Disposable implements IWorkbenchContribution {
-	constructor(
-		@IWorkbenchEnvironmentService private readonly environmentService: IWorkbenchEnvironmentService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
-		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
-		@IWorkspaceTrustEnablementService private readonly workspaceTrustEnablementService: IWorkspaceTrustEnablementService,
-		@IWorkspaceTrustManagementService private readonly workspaceTrustManagementService: IWorkspaceTrustManagementService,
-	) {
-		super();
-
-		this.workspaceTrustManagementService.workspaceTrustInitialized
-			.then(() => {
-				this.logInitialWorkspaceTrustInfo();
-				this.logWorkspaceTrust(this.workspaceTrustManagementService.isWorkspaceTrusted());
-
-				this._register(this.workspaceTrustManagementService.onDidChangeTrust(isTrusted => this.logWorkspaceTrust(isTrusted)));
-			});
-	}
-
-	private logInitialWorkspaceTrustInfo(): void {
-		if (!this.workspaceTrustEnablementService.isWorkspaceTrustEnabled()) {
-			const disabledByCliFlag = this.environmentService.disableWorkspaceTrust;
-
-			type WorkspaceTrustDisabledEventClassification = {
-				owner: 'sbatten';
-				comment: 'Logged when workspace trust is disabled';
-				reason: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The reason workspace trust is disabled. e.g. cli or setting' };
-			};
-
-			type WorkspaceTrustDisabledEvent = {
-				reason: 'setting' | 'cli';
-			};
-
-			this.telemetryService.publicLog2<WorkspaceTrustDisabledEvent, WorkspaceTrustDisabledEventClassification>('workspaceTrustDisabled', {
-				reason: disabledByCliFlag ? 'cli' : 'setting'
-			});
-			return;
-		}
-
-		type WorkspaceTrustInfoEventClassification = {
-			owner: 'sbatten';
-			comment: 'Information about the workspaces trusted on the machine';
-			trustedFoldersCount: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'The number of trusted folders on the machine' };
-		};
-
-		type WorkspaceTrustInfoEvent = {
-			trustedFoldersCount: number;
-		};
-
-		this.telemetryService.publicLog2<WorkspaceTrustInfoEvent, WorkspaceTrustInfoEventClassification>('workspaceTrustFolderCounts', {
-			trustedFoldersCount: this.workspaceTrustManagementService.getTrustedUris().length,
-		});
-	}
-
-	private async logWorkspaceTrust(isTrusted: boolean): Promise<void> {
-		if (!this.workspaceTrustEnablementService.isWorkspaceTrustEnabled()) {
-			return;
-		}
-
-		type WorkspaceTrustStateChangedEvent = {
-			workspaceId: string;
-			isTrusted: boolean;
-		};
-
-		type WorkspaceTrustStateChangedEventClassification = {
-			owner: 'sbatten';
-			comment: 'Logged when the workspace transitions between trusted and restricted modes';
-			workspaceId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'An id of the workspace' };
-			isTrusted: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'true if the workspace is trusted' };
-		};
-
-		this.telemetryService.publicLog2<WorkspaceTrustStateChangedEvent, WorkspaceTrustStateChangedEventClassification>('workspaceTrustStateChanged', {
-			workspaceId: this.workspaceContextService.getWorkspace().id,
-			isTrusted: isTrusted
-		});
-
-		if (isTrusted) {
-			type WorkspaceTrustFolderInfoEventClassification = {
-				owner: 'sbatten';
-				comment: 'Some metrics on the trusted workspaces folder structure';
-				trustedFolderDepth: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'The number of directories deep of the trusted path' };
-				workspaceFolderDepth: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'The number of directories deep of the workspace path' };
-				delta: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'The difference between the trusted path and the workspace path directories depth' };
-			};
-
-			type WorkspaceTrustFolderInfoEvent = {
-				trustedFolderDepth: number;
-				workspaceFolderDepth: number;
-				delta: number;
-			};
-
-			const getDepth = (folder: string): number => {
-				let resolvedPath = resolve(folder);
-
-				let depth = 0;
-				while (dirname(resolvedPath) !== resolvedPath && depth < 100) {
-					resolvedPath = dirname(resolvedPath);
-					depth++;
-				}
-
-				return depth;
-			};
-
-			for (const folder of this.workspaceContextService.getWorkspace().folders) {
-				const { trusted, uri } = await this.workspaceTrustManagementService.getUriTrustInfo(folder.uri);
-				if (!trusted) {
-					continue;
-				}
-
-				const workspaceFolderDepth = getDepth(folder.uri.fsPath);
-				const trustedFolderDepth = getDepth(uri.fsPath);
-				const delta = workspaceFolderDepth - trustedFolderDepth;
-
-				this.telemetryService.publicLog2<WorkspaceTrustFolderInfoEvent, WorkspaceTrustFolderInfoEventClassification>('workspaceFolderDepthBelowTrustedFolder', { workspaceFolderDepth, trustedFolderDepth, delta });
-			}
-		}
-	}
-}
-
-Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench)
-	.registerWorkbenchContribution(WorkspaceTrustTelemetryContribution, LifecyclePhase.Restored);

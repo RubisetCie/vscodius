@@ -12,7 +12,6 @@ import API from '../utils/api';
 import { nulToken } from '../utils/cancellation';
 import { conditionalRegistration, requireMinVersion, requireSomeCapability } from '../utils/dependentRegistration';
 import { DocumentSelector } from '../utils/documentSelector';
-import { TelemetryReporter } from '../utils/telemetry';
 import * as typeConverters from '../utils/typeConverters';
 import FileConfigurationManager from './fileConfigurationManager';
 
@@ -25,8 +24,7 @@ class OrganizeImportsCommand implements Command {
 	public readonly id = OrganizeImportsCommand.Id;
 
 	constructor(
-		private readonly client: ITypeScriptServiceClient,
-		private readonly telemetryReporter: TelemetryReporter,
+		private readonly client: ITypeScriptServiceClient
 	) { }
 
 	public async execute(file: string, sortOnly = false): Promise<any> {
@@ -38,8 +36,6 @@ class OrganizeImportsCommand implements Command {
 				]
 			}
 		*/
-		this.telemetryReporter.logTelemetry('organizeImports.execute', {});
-
 		const args: Proto.OrganizeImportsRequestArgs = {
 			scope: {
 				type: 'file',
@@ -71,14 +67,13 @@ class ImportsCodeActionProvider implements vscode.CodeActionProvider {
 		sortOnly: boolean,
 		commandManager: CommandManager,
 		fileConfigurationManager: FileConfigurationManager,
-		telemetryReporter: TelemetryReporter,
 		selector: DocumentSelector
 	): vscode.Disposable {
 		return conditionalRegistration([
 			requireMinVersion(client, minVersion),
 			requireSomeCapability(client, ClientCapability.Semantic),
 		], () => {
-			const provider = new ImportsCodeActionProvider(client, kind, title, sortOnly, commandManager, fileConfigurationManager, telemetryReporter);
+			const provider = new ImportsCodeActionProvider(client, kind, title, sortOnly, commandManager, fileConfigurationManager);
 			return vscode.languages.registerCodeActionsProvider(selector.semantic, provider, {
 				providedCodeActionKinds: [kind]
 			});
@@ -91,10 +86,9 @@ class ImportsCodeActionProvider implements vscode.CodeActionProvider {
 		private readonly title: string,
 		private readonly sortOnly: boolean,
 		commandManager: CommandManager,
-		private readonly fileConfigManager: FileConfigurationManager,
-		telemetryReporter: TelemetryReporter,
+		private readonly fileConfigManager: FileConfigurationManager
 	) {
-		commandManager.register(new OrganizeImportsCommand(client, telemetryReporter));
+		commandManager.register(new OrganizeImportsCommand(client));
 	}
 
 	public provideCodeActions(
@@ -124,8 +118,7 @@ export function register(
 	selector: DocumentSelector,
 	client: ITypeScriptServiceClient,
 	commandManager: CommandManager,
-	fileConfigurationManager: FileConfigurationManager,
-	telemetryReporter: TelemetryReporter,
+	fileConfigurationManager: FileConfigurationManager
 ) {
 	return vscode.Disposable.from(
 		ImportsCodeActionProvider.register(
@@ -136,7 +129,6 @@ export function register(
 			false,
 			commandManager,
 			fileConfigurationManager,
-			telemetryReporter,
 			selector
 		),
 		ImportsCodeActionProvider.register(
@@ -147,7 +139,6 @@ export function register(
 			true,
 			commandManager,
 			fileConfigurationManager,
-			telemetryReporter,
 			selector
 		),
 	);

@@ -19,7 +19,6 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { INativeHostService } from 'vs/platform/native/electron-sandbox/native';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { IRemoteAuthorityResolverService } from 'vs/platform/remote/common/remoteAuthorityResolver';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { ITunnelService } from 'vs/platform/tunnel/common/tunnel';
 import { FindInFrameOptions, IWebviewManagerService } from 'vs/platform/webview/common/webviewManagerService';
 import { WebviewThemeDataProvider } from 'vs/workbench/contrib/webview/browser/themeing';
@@ -48,7 +47,6 @@ export class ElectronWebviewElement extends WebviewElement {
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@ITunnelService tunnelService: ITunnelService,
 		@IFileService fileService: IFileService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IWorkbenchEnvironmentService environmentService: IWorkbenchEnvironmentService,
 		@IRemoteAuthorityResolverService remoteAuthorityResolverService: IRemoteAuthorityResolverService,
 		@IMenuService menuService: IMenuService,
@@ -58,11 +56,11 @@ export class ElectronWebviewElement extends WebviewElement {
 		@INotificationService notificationService: INotificationService,
 		@INativeHostService private readonly nativeHostService: INativeHostService,
 		@IInstantiationService instantiationService: IInstantiationService,
-		@IAccessibilityService accessibilityService: IAccessibilityService,
+		@IAccessibilityService accessibilityService: IAccessibilityService
 	) {
 		super(initInfo, webviewThemeDataProvider,
 			configurationService, contextMenuService, menuService, notificationService, environmentService,
-			fileService, logService, remoteAuthorityResolverService, telemetryService, tunnelService, instantiationService, accessibilityService);
+			fileService, logService, remoteAuthorityResolverService, tunnelService, instantiationService, accessibilityService);
 
 		this._webviewKeyboardHandler = new WindowIgnoreMenuShortcutsManager(configurationService, mainProcessService, nativeHostService);
 

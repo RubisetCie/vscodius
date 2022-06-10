@@ -13,7 +13,6 @@ import { Disposable, MutableDisposable } from 'vs/base/common/lifecycle';
 import { Event } from 'vs/base/common/event';
 import { Action } from 'vs/base/common/actions';
 import { append, $, Dimension, hide, show, DragAndDropObserver } from 'vs/base/browser/dom';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
 import { IExtensionsWorkbenchService, IExtensionsViewPaneContainer, VIEWLET_ID, CloseExtensionDetailsOnViewChangeKey, INSTALL_EXTENSION_FROM_VSIX_COMMAND_ID, DefaultViewsContext, ExtensionsSortByContext, WORKSPACE_RECOMMENDATIONS_VIEW_ID, AutoCheckUpdatesConfigurationKey } from '../common/extensions';
@@ -438,7 +437,6 @@ export class ExtensionsViewPaneContainer extends ViewPaneContainer implements IE
 
 	constructor(
 		@IWorkbenchLayoutService layoutService: IWorkbenchLayoutService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IProgressService private readonly progressService: IProgressService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IEditorGroupsService private readonly editorGroupService: IEditorGroupsService,
@@ -457,7 +455,7 @@ export class ExtensionsViewPaneContainer extends ViewPaneContainer implements IE
 		@IPreferencesService private readonly preferencesService: IPreferencesService,
 		@ICommandService private readonly commandService: ICommandService
 	) {
-		super(VIEWLET_ID, { mergeViewWithContainerWhenSingleView: true }, instantiationService, configurationService, layoutService, contextMenuService, telemetryService, extensionService, themeService, storageService, contextService, viewDescriptorService);
+		super(VIEWLET_ID, { mergeViewWithContainerWhenSingleView: true }, instantiationService, configurationService, layoutService, contextMenuService, extensionService, themeService, storageService, contextService, viewDescriptorService);
 
 		this.searchDelayer = new Delayer(500);
 		this.defaultViewsContextKey = DefaultViewsContext.bindTo(contextKeyService);

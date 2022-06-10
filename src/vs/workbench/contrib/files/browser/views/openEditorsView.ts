@@ -6,7 +6,7 @@
 import 'vs/css!./media/openeditors';
 import * as nls from 'vs/nls';
 import { RunOnceScheduler } from 'vs/base/common/async';
-import { IAction, ActionRunner, WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification } from 'vs/base/common/actions';
+import { IAction, ActionRunner } from 'vs/base/common/actions';
 import * as dom from 'vs/base/browser/dom';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
@@ -26,7 +26,6 @@ import { WorkbenchList } from 'vs/platform/list/browser/listService';
 import { IListVirtualDelegate, IListRenderer, IListContextMenuEvent, IListDragAndDrop, IListDragOverReaction } from 'vs/base/browser/ui/list/list';
 import { ResourceLabels, IResourceLabel } from 'vs/workbench/browser/labels';
 import { ActionBar } from 'vs/base/browser/ui/actionbar/actionbar';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IDisposable, dispose } from 'vs/base/common/lifecycle';
 import { createAndFillInContextMenuActions } from 'vs/platform/actions/browser/menuEntryActionViewItem';
 import { IMenuService, MenuId, IMenu, Action2, registerAction2, MenuRegistry } from 'vs/platform/actions/common/actions';
@@ -88,13 +87,12 @@ export class OpenEditorsView extends ViewPane {
 		@IKeybindingService keybindingService: IKeybindingService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IThemeService themeService: IThemeService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IMenuService private readonly menuService: IMenuService,
 		@IWorkingCopyService private readonly workingCopyService: IWorkingCopyService,
 		@IFilesConfigurationService private readonly filesConfigurationService: IFilesConfigurationService,
-		@IOpenerService openerService: IOpenerService,
+		@IOpenerService openerService: IOpenerService
 	) {
-		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
+		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
 
 		this.structuralRefreshDelay = 0;
 		let labelChangeListeners: IDisposable[] = [];
@@ -381,8 +379,6 @@ export class OpenEditorsView extends ViewPane {
 
 	private openEditor(element: OpenEditor, options: { preserveFocus?: boolean; pinned?: boolean; sideBySide?: boolean }): void {
 		if (element) {
-			this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: 'workbench.files.openFile', from: 'openEditors' });
-
 			const preserveActivateGroup = options.sideBySide && options.preserveFocus; // needed for https://github.com/microsoft/vscode/issues/42399
 			if (!preserveActivateGroup) {
 				this.editorGroupService.activateGroup(element.group); // needed for https://github.com/microsoft/vscode/issues/6672

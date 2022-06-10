@@ -65,7 +65,6 @@ import { ModesHoverController } from 'vs/editor/contrib/hover/browser/hover';
 import { ColorDetector } from 'vs/editor/contrib/colorPicker/browser/colorDetector';
 import { LinkDetector } from 'vs/editor/contrib/links/browser/links';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IListAccessibilityProvider } from 'vs/base/browser/ui/list/listWidget';
 import { ILanguageService } from 'vs/editor/common/languages/language';
 import { ILabelService } from 'vs/platform/label/common/label';
@@ -2189,10 +2188,9 @@ export class SCMViewPane extends ViewPane {
 		@IConfigurationService configurationService: IConfigurationService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IMenuService private menuService: IMenuService,
-		@IOpenerService openerService: IOpenerService,
-		@ITelemetryService telemetryService: ITelemetryService,
+		@IOpenerService openerService: IOpenerService
 	) {
-		super({ ...options, titleMenuId: MenuId.SCMTitle }, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
+		super({ ...options, titleMenuId: MenuId.SCMTitle }, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
 
 		this._onDidLayout = new Emitter<void>();
 		this.layoutCache = {

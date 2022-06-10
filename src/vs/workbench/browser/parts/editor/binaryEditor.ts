@@ -7,7 +7,6 @@ import { localize } from 'vs/nls';
 import { Emitter } from 'vs/base/common/event';
 import { EditorInput } from 'vs/workbench/common/editor/editorInput';
 import { BinaryEditorModel } from 'vs/workbench/common/editor/binaryEditorModel';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { ByteSize } from 'vs/platform/files/common/files';
@@ -35,12 +34,11 @@ export abstract class BaseBinaryResourceEditor extends EditorPlaceholder {
 	constructor(
 		id: string,
 		private readonly callbacks: IOpenCallbacks,
-		telemetryService: ITelemetryService,
 		themeService: IThemeService,
 		@IStorageService storageService: IStorageService,
 		@IInstantiationService instantiationService: IInstantiationService
 	) {
-		super(id, telemetryService, themeService, storageService, instantiationService);
+		super(id, themeService, storageService, instantiationService);
 	}
 
 	override getTitle(): string {

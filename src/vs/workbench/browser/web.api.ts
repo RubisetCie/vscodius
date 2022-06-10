@@ -15,8 +15,6 @@ import type { IProductConfiguration } from 'vs/base/common/product';
 import type { ICredentialsProvider } from 'vs/platform/credentials/common/credentials';
 import type { TunnelProviderFeatures } from 'vs/platform/tunnel/common/tunnel';
 import type { IProgress, IProgressCompositeOptions, IProgressDialogOptions, IProgressNotificationOptions, IProgressOptions, IProgressStep, IProgressWindowOptions } from 'vs/platform/progress/common/progress';
-import { IObservableValue } from 'vs/base/common/observableValue';
-import { TelemetryLevel } from 'vs/platform/telemetry/common/telemetry';
 import { IEditorOptions } from 'vs/platform/editor/common/editor';
 
 /**
@@ -76,11 +74,6 @@ export interface IWorkbench {
 		 * workbench.
 		 */
 		openUri(target: URI): Promise<boolean>;
-
-		/**
-		 * Current workbench telemetry level.
-		 */
-		readonly telemetryLevel: IObservableValue<TelemetryLevel>;
 	};
 
 	window: {
@@ -223,11 +216,6 @@ export interface IWorkbenchConstructionOptions {
 	readonly urlCallbackProvider?: IURLCallbackProvider;
 
 	/**
-	 * Support adding additional properties to telemetry.
-	 */
-	readonly resolveCommonTelemetryProperties?: ICommonTelemetryPropertiesResolver;
-
-	/**
 	 * A set of optional commands that should be registered with the commands
 	 * registry.
 	 *
@@ -323,10 +311,6 @@ export interface IResourceUriProvider {
 export type ExtensionId = string;
 
 export type MarketplaceExtension = ExtensionId | { readonly id: ExtensionId; preRelease?: boolean; migrateStorageFrom?: ExtensionId };
-
-export interface ICommonTelemetryPropertiesResolver {
-	(): { [key: string]: any };
-}
 
 export interface IExternalUriResolver {
 	(uri: URI): Promise<URI>;

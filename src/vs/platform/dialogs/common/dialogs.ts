@@ -11,7 +11,6 @@ import Severity from 'vs/base/common/severity';
 import { URI } from 'vs/base/common/uri';
 import { localize } from 'vs/nls';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
-import { ITelemetryData } from 'vs/platform/telemetry/common/telemetry';
 
 export interface FileFilter {
 	readonly extensions: string[];
@@ -102,7 +101,6 @@ export interface IInputResult extends IShowResult {
 export interface IPickAndOpenOptions {
 	forceNewWindow?: boolean;
 	defaultUri?: URI;
-	telemetryExtraData?: ITelemetryData;
 	availableFileSystems?: string[];
 	remoteAuthority?: string | null;
 }
@@ -391,9 +389,5 @@ export function getFileNamesMessage(fileNamesOrResources: readonly (string | URI
 
 export interface INativeOpenDialogOptions {
 	readonly forceNewWindow?: boolean;
-
 	readonly defaultPath?: string;
-
-	readonly telemetryEventName?: string;
-	readonly telemetryExtraData?: ITelemetryData;
 }

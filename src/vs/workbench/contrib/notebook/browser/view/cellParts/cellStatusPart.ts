@@ -6,7 +6,6 @@
 import * as DOM from 'vs/base/browser/dom';
 import { StandardKeyboardEvent } from 'vs/base/browser/keyboardEvent';
 import { SimpleIconLabel } from 'vs/base/browser/ui/iconLabel/simpleIconLabel';
-import { WorkbenchActionExecutedClassification, WorkbenchActionExecutedEvent } from 'vs/base/common/actions';
 import { toErrorMessage } from 'vs/base/common/errorMessage';
 import { Emitter, Event } from 'vs/base/common/event';
 import { stripIcons } from 'vs/base/common/iconLabels';
@@ -18,7 +17,6 @@ import { isThemeColor } from 'vs/editor/common/editorCommon';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService, ThemeColor } from 'vs/platform/theme/common/themeService';
 import { INotebookCellActionContext } from 'vs/workbench/contrib/notebook/browser/controller/coreActions';
 import { CellFocusMode, ICellViewModel, INotebookEditorDelegate } from 'vs/workbench/contrib/notebook/browser/notebookBrowser';
@@ -238,10 +236,9 @@ class CellStatusBarItem extends Disposable {
 		private readonly _context: INotebookCellActionContext,
 		itemModel: INotebookCellStatusBarItem,
 		maxWidth: number | undefined,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@ICommandService private readonly _commandService: ICommandService,
 		@INotificationService private readonly _notificationService: INotificationService,
-		@IThemeService private readonly _themeService: IThemeService,
+		@IThemeService private readonly _themeService: IThemeService
 	) {
 		super();
 
@@ -315,7 +312,6 @@ class CellStatusBarItem extends Disposable {
 
 		args.unshift(this._context);
 
-		this._telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id, from: 'cell status bar' });
 		try {
 			await this._commandService.executeCommand(id, ...args);
 		} catch (error) {

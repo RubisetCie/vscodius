@@ -646,7 +646,7 @@ export class AnythingQuickAccessProvider extends PickerQuickAccessProvider<IAnyt
 
 	private getFileQueryOptions(input: { filePattern?: string; cacheKey?: string; maxResults?: number }): IFileQueryBuilderOptions {
 		return {
-			_reason: 'openFileHandler', // used for telemetry - do not change
+			//_reason: 'openFileHandler', // used for telemetry - do not change
 			extraFileResources: this.instantiationService.invokeFunction(getOutOfWorkspaceEditorResources),
 			filePattern: input.filePattern || '',
 			cacheKey: input.cacheKey,

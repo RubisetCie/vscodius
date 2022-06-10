@@ -16,7 +16,6 @@ import { applyTextEditorOptions } from 'vs/workbench/common/editor/editorOptions
 import { BinaryEditorModel } from 'vs/workbench/common/editor/binaryEditorModel';
 import { FileEditorInput } from 'vs/workbench/contrib/files/browser/editors/fileEditorInput';
 import { FileOperationError, FileOperationResult, FileChangesEvent, IFileService, FileOperationEvent, FileOperation } from 'vs/platform/files/common/files';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { ITextResourceConfigurationService } from 'vs/editor/common/services/textResourceConfiguration';
@@ -45,7 +44,6 @@ export class TextFileEditor extends BaseTextEditor<ICodeEditorViewState> {
 	private readonly inputListener = this._register(new MutableDisposable());
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IFileService private readonly fileService: IFileService,
 		@IPaneCompositePartService private readonly paneCompositeService: IPaneCompositePartService,
 		@IInstantiationService instantiationService: IInstantiationService,
@@ -61,7 +59,7 @@ export class TextFileEditor extends BaseTextEditor<ICodeEditorViewState> {
 		@IPathService private readonly pathService: IPathService,
 		@IConfigurationService private readonly configurationService: IConfigurationService
 	) {
-		super(TextFileEditor.ID, telemetryService, instantiationService, storageService, textResourceConfigurationService, themeService, editorService, editorGroupService);
+		super(TextFileEditor.ID, instantiationService, storageService, textResourceConfigurationService, themeService, editorService, editorGroupService);
 
 		// Clear view state for deleted files
 		this._register(this.fileService.onDidFilesChange(e => this.onDidFilesChange(e)));

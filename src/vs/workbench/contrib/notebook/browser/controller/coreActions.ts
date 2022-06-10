@@ -13,10 +13,7 @@ import { getNotebookEditorFromEditorPane, IActiveNotebookEditor, ICellViewModel,
 import { NOTEBOOK_EDITOR_EDITABLE, NOTEBOOK_EDITOR_FOCUSED, NOTEBOOK_IS_ACTIVE_EDITOR, NOTEBOOK_KERNEL_COUNT, NOTEBOOK_KERNEL_SOURCE_COUNT } from 'vs/workbench/contrib/notebook/common/notebookContextKeys';
 import { ICellRange, isICellRange } from 'vs/workbench/contrib/notebook/common/notebookRange';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { IEditorCommandsContext } from 'vs/workbench/common/editor';
 import { INotebookEditorService } from 'vs/workbench/contrib/notebook/browser/notebookEditorService';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { WorkbenchActionExecutedClassification, WorkbenchActionExecutedEvent } from 'vs/base/common/actions';
 import { TypeConstraint } from 'vs/base/common/types';
 import { IJSONSchema } from 'vs/base/common/jsonSchema';
 import { MarshalledId } from 'vs/base/common/marshallingIds';
@@ -136,18 +133,11 @@ export abstract class NotebookAction extends Action2 {
 	}
 
 	async run(accessor: ServicesAccessor, context?: any, ...additionalArgs: any[]): Promise<void> {
-		const isFromUI = !!context;
-		const from = isFromUI ? (this.isNotebookActionContext(context) ? 'notebookToolbar' : 'editorToolbar') : undefined;
 		if (!this.isNotebookActionContext(context)) {
 			context = this.getEditorContextFromArgsOrActive(accessor, context, ...additionalArgs);
 			if (!context) {
 				return;
 			}
-		}
-
-		if (from !== undefined) {
-			const telemetryService = accessor.get(ITelemetryService);
-			telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: this.desc.id, from: from });
 		}
 
 		return this.runWithContext(accessor, context);
@@ -200,9 +190,6 @@ export abstract class NotebookMultiCellAction extends Action2 {
 	private isCellToolbarContext(context?: unknown): context is INotebookCellToolbarActionContext {
 		return !!context && !!(context as INotebookActionContext).notebookEditor && (context as any).$mid === MarshalledId.NotebookCellActionContext;
 	}
-	private isEditorContext(context?: unknown): boolean {
-		return !!context && (context as IEditorCommandsContext).groupId !== undefined;
-	}
 
 	/**
 	 * The action/command args are resolved in following order
@@ -213,12 +200,8 @@ export abstract class NotebookMultiCellAction extends Action2 {
 	async run(accessor: ServicesAccessor, ...additionalArgs: any[]): Promise<void> {
 		const context = additionalArgs[0];
 		const isFromCellToolbar = this.isCellToolbarContext(context);
-		const isFromEditorToolbar = this.isEditorContext(context);
-		const from = isFromCellToolbar ? 'cellToolbar' : (isFromEditorToolbar ? 'editorToolbar' : 'other');
-		const telemetryService = accessor.get(ITelemetryService);
 
 		if (isFromCellToolbar) {
-			telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: this.desc.id, from: from });
 			return this.runWithContext(accessor, context);
 		}
 
@@ -226,15 +209,12 @@ export abstract class NotebookMultiCellAction extends Action2 {
 
 		const parsedArgs = this.parseArgs(accessor, ...additionalArgs);
 		if (parsedArgs) {
-			telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: this.desc.id, from: from });
 			return this.runWithContext(accessor, parsedArgs);
 		}
 
 		// no parsed args, try handle active editor
 		const editor = getEditorFromArgsOrActivePane(accessor);
 		if (editor) {
-			telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: this.desc.id, from: from });
-
 			return this.runWithContext(accessor, {
 				ui: false,
 				notebookEditor: editor,
@@ -255,9 +235,6 @@ export abstract class NotebookCellAction<T = INotebookCellActionContext> extends
 
 	override async run(accessor: ServicesAccessor, context?: INotebookCellActionContext, ...additionalArgs: any[]): Promise<void> {
 		if (this.isCellActionContext(context)) {
-			const telemetryService = accessor.get(ITelemetryService);
-			telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: this.desc.id, from: 'cellToolbar' });
-
 			return this.runWithContext(accessor, context);
 		}
 

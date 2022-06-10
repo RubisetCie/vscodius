@@ -45,8 +45,7 @@
     "timeline",
     "tokenInformation",
     "treeViewReveal",
-    "workspaceTrust",
-    "telemetry"
+    "workspaceTrust"
   ],
   "private": true,
   "activationEvents": [],

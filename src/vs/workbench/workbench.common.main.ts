@@ -94,7 +94,6 @@ import 'vs/workbench/services/quickinput/browser/quickInputService';
 import 'vs/workbench/services/userDataSync/browser/userDataSyncWorkbenchService';
 import 'vs/workbench/services/authentication/browser/authenticationService';
 import 'vs/workbench/services/hover/browser/hoverService';
-import 'vs/workbench/services/assignment/common/assignmentService';
 import 'vs/workbench/services/outline/browser/outlineService';
 import 'vs/workbench/services/languageDetection/browser/languageDetectionWorkerServiceImpl';
 import 'vs/editor/common/services/languageFeaturesService';
@@ -147,9 +146,6 @@ registerSingleton(IOpenerService, OpenerService, true);
 
 
 //#region --- workbench contributions
-
-// Telemetry
-import 'vs/workbench/contrib/telemetry/browser/telemetry.contribution';
 
 // Preferences
 import 'vs/workbench/contrib/preferences/browser/preferences.contribution';
@@ -284,11 +280,6 @@ import 'vs/workbench/contrib/update/browser/update.contribution';
 
 // Watermark
 import 'vs/workbench/contrib/watermark/browser/watermark';
-
-// Surveys
-import 'vs/workbench/contrib/surveys/browser/nps.contribution';
-import 'vs/workbench/contrib/surveys/browser/ces.contribution';
-import 'vs/workbench/contrib/surveys/browser/languageSurveys.contribution';
 
 // Welcome
 import 'vs/workbench/contrib/welcomeOverlay/browser/welcomeOverlay';

@@ -18,25 +18,13 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { IExtensionGalleryService } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { ExtensionsSynchroniser } from 'vs/platform/userDataSync/common/extensionsSync';
 import { GlobalStateSynchroniser } from 'vs/platform/userDataSync/common/globalStateSync';
 import { KeybindingsSynchroniser } from 'vs/platform/userDataSync/common/keybindingsSync';
 import { SettingsSynchroniser } from 'vs/platform/userDataSync/common/settingsSync';
 import { SnippetsSynchroniser } from 'vs/platform/userDataSync/common/snippetsSync';
 import { TasksSynchroniser } from 'vs/platform/userDataSync/common/tasksSync';
-import { ALL_SYNC_RESOURCES, Change, createSyncHeaders, IManualSyncTask, IResourcePreview, ISyncResourceHandle, ISyncResourcePreview, ISyncTask, IUserDataManifest, IUserDataSyncConfiguration, IUserDataSyncEnablementService, IUserDataSynchroniser, IUserDataSyncLogService, IUserDataSyncService, IUserDataSyncStoreManagementService, IUserDataSyncStoreService, MergeState, SyncResource, SyncStatus, UserDataSyncError, UserDataSyncErrorCode, UserDataSyncStoreError, USER_DATA_SYNC_CONFIGURATION_SCOPE } from 'vs/platform/userDataSync/common/userDataSync';
-
-type SyncErrorClassification = {
-	owner: 'sandy081';
-	comment: 'Information about the error that occurred while syncing';
-	code: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'error code' };
-	service: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Settings Sync service for which this error has occurred' };
-	serverCode?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Settings Sync service error code' };
-	url?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Settings Sync resource URL for which this error has occurred' };
-	resource?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Settings Sync resource for which this error has occurred' };
-	executionId?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Settings Sync execution id for which this error has occurred' };
-};
+import { ALL_SYNC_RESOURCES, Change, createSyncHeaders, IManualSyncTask, IResourcePreview, ISyncResourceHandle, ISyncResourcePreview, ISyncTask, IUserDataManifest, IUserDataSyncConfiguration, IUserDataSyncEnablementService, IUserDataSynchroniser, IUserDataSyncLogService, IUserDataSyncService, IUserDataSyncStoreManagementService, IUserDataSyncStoreService, MergeState, SyncResource, SyncStatus, UserDataSyncError, UserDataSyncErrorCode, USER_DATA_SYNC_CONFIGURATION_SCOPE } from 'vs/platform/userDataSync/common/userDataSync';
 
 const LAST_SYNC_TIME_KEY = 'sync.lastSyncTime';
 
@@ -79,9 +67,8 @@ export class UserDataSyncService extends Disposable implements IUserDataSyncServ
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IUserDataSyncLogService private readonly logService: IUserDataSyncLogService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IStorageService private readonly storageService: IStorageService,
-		@IUserDataSyncEnablementService private readonly userDataSyncEnablementService: IUserDataSyncEnablementService,
+		@IUserDataSyncEnablementService private readonly userDataSyncEnablementService: IUserDataSyncEnablementService
 	) {
 		super();
 		this.updateStatus([]);
@@ -99,9 +86,7 @@ export class UserDataSyncService extends Disposable implements IUserDataSyncServ
 			}
 			manifest = await this.userDataSyncStoreService.manifest(manifest, syncHeaders);
 		} catch (error) {
-			const userDataSyncError = UserDataSyncError.toUserDataSyncError(error);
-			this.reportUserDataSyncError(userDataSyncError, executionId);
-			throw userDataSyncError;
+			throw UserDataSyncError.toUserDataSyncError(error);
 		}
 
 		const executed = false;
@@ -142,9 +127,7 @@ export class UserDataSyncService extends Disposable implements IUserDataSyncServ
 		try {
 			manifest = await this.userDataSyncStoreService.manifest(null, syncHeaders);
 		} catch (error) {
-			const userDataSyncError = UserDataSyncError.toUserDataSyncError(error);
-			this.reportUserDataSyncError(userDataSyncError, executionId);
-			throw userDataSyncError;
+			throw UserDataSyncError.toUserDataSyncError(error);
 		}
 
 		/* Manual sync shall start on clean local state */
@@ -214,7 +197,6 @@ export class UserDataSyncService extends Disposable implements IUserDataSyncServ
 					}
 
 					const userDataSyncError = UserDataSyncError.toUserDataSyncError(e);
-					this.reportUserDataSyncError(userDataSyncError, executionId);
 					if (bailout) {
 						throw userDataSyncError;
 					}
@@ -229,9 +211,7 @@ export class UserDataSyncService extends Disposable implements IUserDataSyncServ
 			this.logService.info(`Sync done. Took ${new Date().getTime() - startTime}ms`);
 			this.updateLastSyncTime();
 		} catch (error) {
-			const userDataSyncError = UserDataSyncError.toUserDataSyncError(error);
-			this.reportUserDataSyncError(userDataSyncError, executionId);
-			throw userDataSyncError;
+			throw UserDataSyncError.toUserDataSyncError(error);
 		} finally {
 			this.updateStatus(synchronizers);
 			this._onSyncErrors.fire(this._syncErrors);
@@ -454,18 +434,6 @@ export class UserDataSyncService extends Disposable implements IUserDataSyncServ
 			this.storageService.store(LAST_SYNC_TIME_KEY, this._lastSyncTime, StorageScope.GLOBAL, StorageTarget.MACHINE);
 			this._onDidChangeLastSyncTime.fire(this._lastSyncTime);
 		}
-	}
-
-	private reportUserDataSyncError(userDataSyncError: UserDataSyncError, executionId: string) {
-		this.telemetryService.publicLog2<{ code: string; service: string; serverCode?: string; url?: string; resource?: string; executionId?: string }, SyncErrorClassification>('sync/error',
-			{
-				code: userDataSyncError.code,
-				serverCode: userDataSyncError instanceof UserDataSyncStoreError ? String(userDataSyncError.serverCode) : undefined,
-				url: userDataSyncError instanceof UserDataSyncStoreError ? userDataSyncError.url : undefined,
-				resource: userDataSyncError.resource,
-				executionId,
-				service: this.userDataSyncStoreManagementService.userDataSyncStore!.url.toString()
-			});
 	}
 
 	getEnabledSynchronizers(): IUserDataSynchroniser[] {

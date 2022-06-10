@@ -11,7 +11,6 @@ import * as errors from 'vs/base/common/errors';
 import { Emitter, Event } from 'vs/base/common/event';
 import { Disposable, DisposableStore, IDisposable } from 'vs/base/common/lifecycle';
 import { ResourceMap, TernarySearchTree } from 'vs/base/common/map';
-import { Schemas } from 'vs/base/common/network';
 import { lcut } from 'vs/base/common/strings';
 import { URI } from 'vs/base/common/uri';
 import { Range } from 'vs/editor/common/core/range';
@@ -23,13 +22,12 @@ import { IFileService, IFileStatWithPartialMetadata } from 'vs/platform/files/co
 import { createDecorator, IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ILabelService } from 'vs/platform/label/common/label';
 import { IProgress, IProgressStep } from 'vs/platform/progress/common/progress';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { minimapFindMatch, overviewRulerFindMatchForeground } from 'vs/platform/theme/common/colorRegistry';
 import { themeColorFromId } from 'vs/platform/theme/common/themeService';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { IReplaceService } from 'vs/workbench/contrib/search/common/replace';
 import { ReplacePattern } from 'vs/workbench/services/search/common/replace';
-import { IFileMatch, IPatternInfo, ISearchComplete, ISearchConfigurationProperties, ISearchProgressItem, ISearchRange, ISearchService, ITextQuery, ITextSearchContext, ITextSearchMatch, ITextSearchPreviewOptions, ITextSearchResult, ITextSearchStats, OneLineRange, resultIsMatch, SearchCompletionExitCode, SearchSortOrder } from 'vs/workbench/services/search/common/search';
+import { IFileMatch, IPatternInfo, ISearchComplete, ISearchConfigurationProperties, ISearchProgressItem, ISearchRange, ISearchService, ITextQuery, ITextSearchContext, ITextSearchMatch, ITextSearchPreviewOptions, ITextSearchResult, OneLineRange, resultIsMatch, SearchCompletionExitCode, SearchSortOrder } from 'vs/workbench/services/search/common/search';
 import { addContextToEditorMatches, editorMatchesToTextSearchResults } from 'vs/workbench/services/search/common/searchHelpers';
 
 export class Match {
@@ -1012,7 +1010,6 @@ export class SearchModel extends Disposable {
 
 	constructor(
 		@ISearchService private readonly searchService: ISearchService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService
 	) {
@@ -1085,31 +1082,13 @@ export class SearchModel extends Disposable {
 
 		const start = Date.now();
 
-		Promise.race([currentRequest, Event.toPromise(progressEmitter.event)]).finally(() => {
-			/* __GDPR__
-				"searchResultsFirstRender" : {
-					"owner": "roblourens",
-					"duration" : { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true }
-				}
-			*/
-			this.telemetryService.publicLog('searchResultsFirstRender', { duration: Date.now() - start });
-		});
-
 		currentRequest.then(
 			value => this.onSearchCompleted(value, Date.now() - start),
 			e => this.onSearchError(e, Date.now() - start));
 
 		try {
 			return await currentRequest;
-		} finally {
-			/* __GDPR__
-				"searchResultsFinished" : {
-					"owner": "roblourens",
-					"duration" : { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true }
-				}
-			*/
-			this.telemetryService.publicLog('searchResultsFinished', { duration: Date.now() - start });
-		}
+		} finally {}
 	}
 
 	private onSearchCompleted(completed: ISearchComplete | null, duration: number): ISearchComplete | null {
@@ -1123,14 +1102,6 @@ export class SearchModel extends Disposable {
 		const options: IPatternInfo = Object.assign({}, this._searchQuery.contentPattern);
 		delete (options as any).pattern;
 
-		const stats = completed && completed.stats as ITextSearchStats;
-
-		const fileSchemeOnly = this._searchQuery.folderQueries.every(fq => fq.folder.scheme === Schemas.file);
-		const otherSchemeOnly = this._searchQuery.folderQueries.every(fq => fq.folder.scheme !== Schemas.file);
-		const scheme = fileSchemeOnly ? Schemas.file :
-			otherSchemeOnly ? 'other' :
-				'mixed';
-
 		/* __GDPR__
 			"searchResultsShown" : {
 				"owner": "roblourens",
@@ -1143,15 +1114,6 @@ export class SearchModel extends Disposable {
 				"searchOnTypeEnabled" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
 			}
 		*/
-		this.telemetryService.publicLog('searchResultsShown', {
-			count: this._searchResult.count(),
-			fileCount: this._searchResult.fileCount(),
-			options,
-			duration,
-			type: stats && stats.type,
-			scheme,
-			searchOnTypeEnabled: this.searchConfig.searchOnType
-		});
 		return completed;
 	}
 

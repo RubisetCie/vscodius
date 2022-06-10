@@ -6,7 +6,6 @@
 import { Composite } from 'vs/workbench/browser/composite';
 import { IEditorPane, GroupIdentifier, IEditorMemento, IEditorOpenContext, isEditorInput } from 'vs/workbench/common/editor';
 import { EditorInput } from 'vs/workbench/common/editor/editorInput';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { IEditorGroup, IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
@@ -79,11 +78,10 @@ export abstract class EditorPane extends Composite implements IEditorPane {
 
 	constructor(
 		id: string,
-		telemetryService: ITelemetryService,
 		themeService: IThemeService,
 		storageService: IStorageService
 	) {
-		super(id, telemetryService, themeService, storageService);
+		super(id, themeService, storageService);
 	}
 
 	override create(parent: HTMLElement): void {

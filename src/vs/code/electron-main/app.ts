@@ -6,13 +6,11 @@
 import { app, BrowserWindow, contentTracing, dialog, protocol, session, Session, systemPreferences, WebFrameMain } from 'electron';
 import { validatedIpcMain } from 'vs/base/parts/ipc/electron-main/ipcMain';
 import { statSync } from 'fs';
-import { hostname, release } from 'os';
 import { VSBuffer } from 'vs/base/common/buffer';
 import { toErrorMessage } from 'vs/base/common/errorMessage';
 import { onUnexpectedError, setUnexpectedErrorHandler } from 'vs/base/common/errors';
 import { isEqualOrParent, randomPath } from 'vs/base/common/extpath';
 import { once } from 'vs/base/common/functional';
-import { stripComments } from 'vs/base/common/json';
 import { getPathLabel, mnemonicButtonLabel } from 'vs/base/common/labels';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { Schemas } from 'vs/base/common/network';
@@ -20,7 +18,6 @@ import { isAbsolute, join, posix } from 'vs/base/common/path';
 import { IProcessEnvironment, isLinux, isLinuxSnap, isMacintosh, isWindows, OS } from 'vs/base/common/platform';
 import { assertType, withNullAsUndefined } from 'vs/base/common/types';
 import { URI } from 'vs/base/common/uri';
-import { generateUuid } from 'vs/base/common/uuid';
 import { getMachineId } from 'vs/base/node/id';
 import { registerContextMenuListener } from 'vs/base/parts/contextmenu/electron-main/contextmenu';
 import { getDelayedChannel, ProxyChannel, StaticRouter } from 'vs/base/parts/ipc/common/ipc';
@@ -71,11 +68,6 @@ import { ISignService } from 'vs/platform/sign/common/sign';
 import { IStateMainService } from 'vs/platform/state/electron-main/state';
 import { StorageDatabaseChannel } from 'vs/platform/storage/electron-main/storageIpc';
 import { GlobalStorageMainService, IGlobalStorageMainService, IStorageMainService, StorageMainService } from 'vs/platform/storage/electron-main/storageMainService';
-import { resolveCommonProperties } from 'vs/platform/telemetry/common/commonProperties';
-import { ITelemetryService, machineIdKey, TelemetryLevel } from 'vs/platform/telemetry/common/telemetry';
-import { TelemetryAppenderClient } from 'vs/platform/telemetry/common/telemetryIpc';
-import { ITelemetryServiceConfig, TelemetryService } from 'vs/platform/telemetry/common/telemetryService';
-import { getPiiPathsFromEnvironment, getTelemetryLevel, NullTelemetryService, supportsTelemetry } from 'vs/platform/telemetry/common/telemetryUtils';
 import { IUpdateService } from 'vs/platform/update/common/update';
 import { UpdateChannel } from 'vs/platform/update/common/updateIpc';
 import { DarwinUpdateService } from 'vs/platform/update/electron-main/updateService.darwin';
@@ -546,11 +538,11 @@ export class CodeApplication extends Disposable {
 
 		// We cache the machineId for faster lookups on startup
 		// and resolve it only once initially if not cached or we need to replace the macOS iBridge device
-		let machineId = this.stateMainService.getItem<string>(machineIdKey);
+		let machineId = this.stateMainService.getItem<string>('telemetry.machineId');
 		if (!machineId || (isMacintosh && machineId === '6c9d2bc8f91b89624add29c0abeae7fb42bf539fa1cdb2e3e57cd668fa9bcead')) {
 			machineId = await getMachineId();
 
-			this.stateMainService.setItem(machineIdKey, machineId);
+			this.stateMainService.setItem('telemetry.machineId', machineId);
 		}
 
 		return machineId;
@@ -664,19 +656,6 @@ export class CodeApplication extends Disposable {
 
 		// URL handling
 		services.set(IURLService, new SyncDescriptor(NativeURLService));
-
-		// Telemetry
-		if (supportsTelemetry(this.productService, this.environmentMainService)) {
-			const channel = getDelayedChannel(sharedProcessReady.then(client => client.getChannel('telemetryAppender')));
-			const appender = new TelemetryAppenderClient(channel);
-			const commonProperties = resolveCommonProperties(this.fileService, release(), hostname(), process.arch, this.productService.commit, this.productService.version, machineId, this.productService.msftInternalDomains, this.environmentMainService.installSourcePath);
-			const piiPaths = getPiiPathsFromEnvironment(this.environmentMainService);
-			const config: ITelemetryServiceConfig = { appenders: [appender], commonProperties, piiPaths, sendErrorTelemetry: true };
-
-			services.set(ITelemetryService, new SyncDescriptor(TelemetryService, [config]));
-		} else {
-			services.set(ITelemetryService, NullTelemetryService);
-		}
 
 		// Init services that require it
 		await backupMainService.initialize();
@@ -1078,9 +1057,6 @@ export class CodeApplication extends Disposable {
 		this.lifecycleMainService.phase = LifecycleMainPhase.AfterWindowOpen;
 
 		// Observe shared process for errors
-		let willShutdown = false;
-		once(this.lifecycleMainService.onWillShutdown)(() => willShutdown = true);
-		const telemetryService = accessor.get(ITelemetryService);
 		this._register(sharedProcess.onDidError(({ type, details }) => {
 
 			// Logging
@@ -1097,32 +1073,6 @@ export class CodeApplication extends Disposable {
 					break;
 			}
 			onUnexpectedError(new Error(message));
-
-			// Telemetry
-			type SharedProcessErrorClassification = {
-				type: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true; comment: 'The type of shared process crash to understand the nature of the crash better.' };
-				reason: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true; comment: 'The type of shared process crash to understand the nature of the crash better.' };
-				code: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true; comment: 'The type of shared process crash to understand the nature of the crash better.' };
-				visible: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true; comment: 'Whether shared process window was visible or not.' };
-				shuttingdown: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true; comment: 'Whether the application is shutting down when the crash happens.' };
-				owner: 'bpasero';
-				comment: 'Event which fires whenever an error occurs in the shared process';
-
-			};
-			type SharedProcessErrorEvent = {
-				type: WindowError;
-				reason: string | undefined;
-				code: number | undefined;
-				visible: boolean;
-				shuttingdown: boolean;
-			};
-			telemetryService.publicLog2<SharedProcessErrorEvent, SharedProcessErrorClassification>('sharedprocesserror', {
-				type,
-				reason: details?.reason,
-				code: details?.exitCode,
-				visible: sharedProcess.isVisible(),
-				shuttingdown: willShutdown
-			});
 		}));
 
 		// Windows: install mutex
@@ -1156,35 +1106,6 @@ export class CodeApplication extends Disposable {
 		// the window is opening.
 		// We also show an error to the user in case this fails.
 		this.resolveShellEnvironment(this.environmentMainService.args, process.env, true);
-
-		// If enable-crash-reporter argv is undefined then this is a fresh start,
-		// based on telemetry.enableCrashreporter settings, generate a UUID which
-		// will be used as crash reporter id and also update the json file.
-		try {
-			const argvContent = await this.fileService.readFile(this.environmentMainService.argvResource);
-			const argvString = argvContent.value.toString();
-			const argvJSON = JSON.parse(stripComments(argvString));
-			if (argvJSON['enable-crash-reporter'] === undefined) {
-				const telemetryLevel = getTelemetryLevel(this.configurationService);
-				const enableCrashReporter = telemetryLevel >= TelemetryLevel.CRASH;
-				const additionalArgvContent = [
-					'',
-					'	// Allows to disable crash reporting.',
-					'	// Should restart the app if the value is changed.',
-					`	"enable-crash-reporter": ${enableCrashReporter},`,
-					'',
-					'	// Unique id used for correlating crash reports sent from this instance.',
-					'	// Do not edit this value.',
-					`	"crash-reporter-id": "${generateUuid()}"`,
-					'}'
-				];
-				const newArgvString = argvString.substring(0, argvString.length - 2).concat(',\n', additionalArgvContent.join('\n'));
-
-				await this.fileService.writeFile(this.environmentMainService.argvResource, VSBuffer.fromString(newArgvString));
-			}
-		} catch (error) {
-			this.logService.error(error);
-		}
 	}
 
 	private async resolveShellEnvironment(args: NativeParsedArgs, env: IProcessEnvironment, notifyOnError: boolean): Promise<typeof process.env> {

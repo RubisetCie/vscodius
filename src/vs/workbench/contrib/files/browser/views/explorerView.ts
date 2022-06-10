@@ -6,7 +6,7 @@
 import * as nls from 'vs/nls';
 import { URI } from 'vs/base/common/uri';
 import * as perf from 'vs/base/common/performance';
-import { IAction, WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification } from 'vs/base/common/actions';
+import { IAction } from 'vs/base/common/actions';
 import { memoize } from 'vs/base/common/decorators';
 import { IFilesConfiguration, ExplorerFolderContext, FilesExplorerFocusedContext, ExplorerFocusedContext, ExplorerRootContext, ExplorerResourceReadonlyContext, ExplorerResourceCut, ExplorerResourceMoveableToTrash, ExplorerCompressedFocusContext, ExplorerCompressedFirstFocusContext, ExplorerCompressedLastFocusContext, ExplorerResourceAvailableEditorIdsContext, VIEW_ID, VIEWLET_ID, ExplorerResourceNotReadonlyContext } from 'vs/workbench/contrib/files/common/files';
 import { FileCopiedContext, NEW_FILE_COMMAND_ID, NEW_FOLDER_COMMAND_ID } from 'vs/workbench/contrib/files/browser/fileActions';
@@ -33,7 +33,6 @@ import { IWorkbenchThemeService } from 'vs/workbench/services/themes/common/work
 import { ITreeContextMenuEvent, TreeVisibility } from 'vs/base/browser/ui/tree/tree';
 import { IMenuService, MenuId, IMenu, Action2, registerAction2 } from 'vs/platform/actions/common/actions';
 import { createAndFillInContextMenuActions } from 'vs/platform/actions/browser/menuEntryActionViewItem';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { ExplorerItem, NewExplorerItem } from 'vs/workbench/contrib/files/common/explorerModel';
 import { ResourceLabels } from 'vs/workbench/browser/labels';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
@@ -185,7 +184,6 @@ export class ExplorerView extends ViewPane implements IExplorerView {
 		@ILabelService private readonly labelService: ILabelService,
 		@IThemeService themeService: IWorkbenchThemeService,
 		@IMenuService private readonly menuService: IMenuService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IExplorerService private readonly explorerService: IExplorerService,
 		@IStorageService private readonly storageService: IStorageService,
 		@IClipboardService private clipboardService: IClipboardService,
@@ -194,7 +192,7 @@ export class ExplorerView extends ViewPane implements IExplorerView {
 		@ICommandService private readonly commandService: ICommandService,
 		@IOpenerService openerService: IOpenerService
 	) {
-		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
+		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
 
 		this.resourceContext = instantiationService.createInstance(ResourceContextKey);
 		this._register(this.resourceContext);
@@ -466,7 +464,6 @@ export class ExplorerView extends ViewPane implements IExplorerView {
 					// Do not react if clicking on directories
 					return;
 				}
-				this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: 'workbench.files.openFile', from: 'explorer' });
 				try {
 					this.delegate.willOpenElement(e.browserEvent);
 					await this.editorService.openEditor({ resource: element.resource, options: { preserveFocus: e.editorOptions.preserveFocus, pinned: e.editorOptions.pinned, source: EditorOpenSource.USER } }, e.sideBySide ? SIDE_GROUP : ACTIVE_GROUP);

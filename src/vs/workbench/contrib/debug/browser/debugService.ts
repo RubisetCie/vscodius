@@ -39,12 +39,11 @@ import { ConfigurationManager } from 'vs/workbench/contrib/debug/browser/debugCo
 import { DebugMemoryFileSystemProvider } from 'vs/workbench/contrib/debug/browser/debugMemory';
 import { DebugSession } from 'vs/workbench/contrib/debug/browser/debugSession';
 import { DebugTaskRunner, TaskRunResult } from 'vs/workbench/contrib/debug/browser/debugTaskRunner';
-import { CALLSTACK_VIEW_ID, CONTEXT_BREAKPOINTS_EXIST, CONTEXT_DEBUG_STATE, CONTEXT_DEBUG_TYPE, CONTEXT_DEBUG_UX, CONTEXT_DISASSEMBLY_VIEW_FOCUS, CONTEXT_IN_DEBUG_MODE, debuggerDisabledMessage, DEBUG_MEMORY_SCHEME, getStateLabel, IAdapterManager, IBreakpoint, IBreakpointData, ICompound, IConfig, IConfigurationManager, IDebugConfiguration, IDebugModel, IDebugService, IDebugSession, IDebugSessionOptions, IEnablement, IExceptionBreakpoint, IGlobalConfig, ILaunch, IStackFrame, IThread, IViewModel, REPL_VIEW_ID, State, VIEWLET_ID } from 'vs/workbench/contrib/debug/common/debug';
+import { CALLSTACK_VIEW_ID, CONTEXT_BREAKPOINTS_EXIST, CONTEXT_DEBUG_STATE, CONTEXT_DEBUG_TYPE, CONTEXT_DEBUG_UX, CONTEXT_DISASSEMBLY_VIEW_FOCUS, CONTEXT_IN_DEBUG_MODE, debuggerDisabledMessage, DEBUG_MEMORY_SCHEME, getStateLabel, IAdapterManager, IBreakpoint, IBreakpointData, ICompound, IConfig, IConfigurationManager, IDebugConfiguration, IDebugModel, IDebugService, IDebugSession, IDebugSessionOptions, IEnablement, IExceptionBreakpoint, ILaunch, IStackFrame, IThread, IViewModel, REPL_VIEW_ID, State, VIEWLET_ID } from 'vs/workbench/contrib/debug/common/debug';
 import { DebugCompoundRoot } from 'vs/workbench/contrib/debug/common/debugCompoundRoot';
 import { Debugger } from 'vs/workbench/contrib/debug/common/debugger';
 import { Breakpoint, DataBreakpoint, DebugModel, FunctionBreakpoint, InstructionBreakpoint } from 'vs/workbench/contrib/debug/common/debugModel';
 import { DebugStorage } from 'vs/workbench/contrib/debug/common/debugStorage';
-import { DebugTelemetry } from 'vs/workbench/contrib/debug/common/debugTelemetry';
 import { getExtensionHostDebugSession, saveAllBeforeDebugStart } from 'vs/workbench/contrib/debug/common/debugUtils';
 import { ViewModel } from 'vs/workbench/contrib/debug/common/debugViewModel';
 import { DisassemblyViewInput } from 'vs/workbench/contrib/debug/common/disassemblyViewInput';
@@ -66,7 +65,6 @@ export class DebugService implements IDebugService {
 	private debugStorage: DebugStorage;
 	private model: DebugModel;
 	private viewModel: ViewModel;
-	private telemetry: DebugTelemetry;
 	private taskRunner: DebugTaskRunner;
 	private configurationManager: ConfigurationManager;
 	private adapterManager: AdapterManager;
@@ -133,7 +131,6 @@ export class DebugService implements IDebugService {
 		this.chosenEnvironments = this.debugStorage.loadChosenEnvironments();
 
 		this.model = this.instantiationService.createInstance(DebugModel, this.debugStorage);
-		this.telemetry = this.instantiationService.createInstance(DebugTelemetry, this.model);
 		const setBreakpointsExistContext = () => this.breakpointsExist.set(!!(this.model.getBreakpoints().length || this.model.getDataBreakpoints().length || this.model.getFunctionBreakpoints().length));
 		setBreakpointsExistContext();
 
@@ -538,7 +535,7 @@ export class DebugService implements IDebugService {
 	}
 
 	/**
-	 * instantiates the new session, initializes the session, registers session listeners and reports telemetry
+	 * instantiates the new session, initializes the session and registers session listeners
 	 */
 	private async doCreateSession(sessionId: string, root: IWorkspaceFolder | undefined, configuration: { resolved: IConfig; unresolved: IConfig | undefined }, options?: IDebugSessionOptions): Promise<boolean> {
 
@@ -616,8 +613,6 @@ export class DebugService implements IDebugService {
 		try {
 			await session.initialize(dbgr!);
 			await session.launchOrAttach(session.configuration);
-			const launchJsonExists = !!session.root && !!this.configurationService.getValue<IGlobalConfig>('launch', { resource: session.root.uri });
-			await this.telemetry.logDebugSessionStart(dbgr!, launchJsonExists);
 
 			if (forceFocus || !this.viewModel.focusedSession || (session.parentSession === this.viewModel.focusedSession && session.compact)) {
 				await this.focusStackFrame(undefined, undefined, session);
@@ -652,7 +647,6 @@ export class DebugService implements IDebugService {
 				if (adapterExitEvent.error) {
 					this.notificationService.error(nls.localize('debugAdapterCrash', "Debug adapter process has terminated unexpectedly ({0})", adapterExitEvent.error.message || adapterExitEvent.error.toString()));
 				}
-				this.telemetry.logDebugSessionStop(session, adapterExitEvent);
 			}
 
 			// 'Run without debugging' mode VSCode must terminate the extension host. More details: #3905

@@ -17,7 +17,6 @@ import { Language } from 'vs/base/common/platform';
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { ICommandService } from 'vs/platform/commands/common/commands';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
 import { DefaultQuickAccessFilterValue } from 'vs/platform/quickinput/common/quickAccess';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
@@ -61,11 +60,10 @@ export class CommandsQuickAccessProvider extends AbstractEditorCommandsQuickAcce
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IKeybindingService keybindingService: IKeybindingService,
 		@ICommandService commandService: ICommandService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IDialogService dialogService: IDialogService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IEditorGroupsService private readonly editorGroupService: IEditorGroupsService,
-		@IPreferencesService private readonly preferencesService: IPreferencesService,
+		@IPreferencesService private readonly preferencesService: IPreferencesService
 	) {
 		super({
 			showAlias: !Language.isDefaultVariant(),
@@ -73,7 +71,7 @@ export class CommandsQuickAccessProvider extends AbstractEditorCommandsQuickAcce
 				label: localize('noCommandResults', "No matching commands"),
 				commandId: ''
 			}
-		}, instantiationService, keybindingService, commandService, telemetryService, dialogService);
+		}, instantiationService, keybindingService, commandService, dialogService);
 	}
 
 	private get configuration() {

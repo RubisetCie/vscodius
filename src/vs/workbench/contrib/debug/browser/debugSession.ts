@@ -23,7 +23,6 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { IProductService } from 'vs/platform/product/common/productService';
-import { ICustomEndpointTelemetryService, ITelemetryService, TelemetryLevel } from 'vs/platform/telemetry/common/telemetry';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { IWorkspaceContextService, IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
 import { ViewContainerLocation } from 'vs/workbench/common/views';
@@ -32,7 +31,6 @@ import { AdapterEndEvent, IBreakpoint, IConfig, IDataBreakpoint, IDebugConfigura
 import { DebugCompoundRoot } from 'vs/workbench/contrib/debug/common/debugCompoundRoot';
 import { DebugModel, ExpressionContainer, MemoryRegion, Thread } from 'vs/workbench/contrib/debug/common/debugModel';
 import { Source } from 'vs/workbench/contrib/debug/common/debugSource';
-import { filterExceptionsFromTelemetry } from 'vs/workbench/contrib/debug/common/debugUtils';
 import { ReplModel } from 'vs/workbench/contrib/debug/common/replModel';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
 import { IHostService } from 'vs/workbench/services/host/browser/host';
@@ -79,7 +77,6 @@ export class DebugSession implements IDebugSession {
 		private model: DebugModel,
 		options: IDebugSessionOptions | undefined,
 		@IDebugService private readonly debugService: IDebugService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IHostService private readonly hostService: IHostService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IPaneCompositePartService private readonly paneCompositeService: IPaneCompositePartService,
@@ -89,8 +86,7 @@ export class DebugSession implements IDebugSession {
 		@ILifecycleService lifecycleService: ILifecycleService,
 		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
-		@ICustomEndpointTelemetryService private readonly customEndpointTelemetryService: ICustomEndpointTelemetryService,
-		@IWorkbenchEnvironmentService private readonly workbenchEnvironmentService: IWorkbenchEnvironmentService,
+		@IWorkbenchEnvironmentService private readonly workbenchEnvironmentService: IWorkbenchEnvironmentService
 	) {
 		this._options = options || {};
 		if (this.hasSeparateRepl()) {
@@ -1073,22 +1069,6 @@ export class DebugSession implements IDebugSession {
 				}
 
 				const outputSeverity = event.body.category === 'stderr' ? Severity.Error : event.body.category === 'console' ? Severity.Warning : Severity.Info;
-				if (event.body.category === 'telemetry') {
-					// only log telemetry events from debug adapter if the debug extension provided the telemetry key
-					// and the user opted in telemetry
-					const telemetryEndpoint = this.raw.dbgr.getCustomTelemetryEndpoint();
-					if (telemetryEndpoint && this.telemetryService.telemetryLevel.value !== TelemetryLevel.NONE) {
-						// __GDPR__TODO__ We're sending events in the name of the debug extension and we can not ensure that those are declared correctly.
-						let data = event.body.data;
-						if (!telemetryEndpoint.sendErrorTelemetry && event.body.data) {
-							data = filterExceptionsFromTelemetry(event.body.data);
-						}
-
-						this.customEndpointTelemetryService.publicLog(telemetryEndpoint, event.body.output, data);
-					}
-
-					return;
-				}
 
 				// Make sure to append output in the correct order by properly waiting on preivous promises #33822
 				const source = event.body.source && event.body.line ? {

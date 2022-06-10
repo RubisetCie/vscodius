@@ -12,7 +12,6 @@ import { ILifecycleService } from 'vs/workbench/services/lifecycle/common/lifecy
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IAccessibilityService } from 'vs/platform/accessibility/common/accessibility';
 import { IStartupMetrics, AbstractTimerService, Writeable, ITimerService } from 'vs/workbench/services/timer/browser/timerService';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { process } from 'vs/base/parts/sandbox/electron-sandbox/globals';
 import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IWorkbenchLayoutService } from 'vs/workbench/services/layout/browser/layoutService';
@@ -32,12 +31,11 @@ export class TimerService extends AbstractTimerService {
 		@IPaneCompositePartService paneCompositeService: IPaneCompositePartService,
 		@IEditorService editorService: IEditorService,
 		@IAccessibilityService accessibilityService: IAccessibilityService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IWorkbenchLayoutService layoutService: IWorkbenchLayoutService,
 		@IProductService private readonly _productService: IProductService,
 		@IStorageService private readonly _storageService: IStorageService
 	) {
-		super(lifecycleService, contextService, extensionService, updateService, paneCompositeService, editorService, accessibilityService, telemetryService, layoutService);
+		super(lifecycleService, contextService, extensionService, updateService, paneCompositeService, editorService, accessibilityService, layoutService);
 		this.setPerformanceMarks('main', _environmentService.window.perfMarks);
 	}
 

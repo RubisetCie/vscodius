@@ -13,7 +13,6 @@ export interface NativeParsedArgs {
 	_urls?: string[];
 	help?: boolean;
 	version?: boolean;
-	telemetry?: boolean;
 	status?: boolean;
 	wait?: boolean;
 	waitMarkerFilePath?: string;
@@ -66,7 +65,6 @@ export interface NativeParsedArgs {
 	'open-url'?: boolean;
 	'skip-release-notes'?: boolean;
 	'skip-welcome'?: boolean;
-	'disable-telemetry'?: boolean;
 	'export-default-configuration'?: string;
 	'install-source'?: string;
 	'disable-updates'?: boolean;

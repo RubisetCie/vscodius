@@ -20,7 +20,6 @@ import { IFileService } from 'vs/platform/files/common/files';
 import { ILogService } from 'vs/platform/log/common/log';
 import { getServiceMachineId } from 'vs/platform/externalServices/common/serviceMachineId';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { AbstractInitializer, AbstractSynchroniser, IAcceptResult, IMergeResult, IResourcePreview, isSyncData } from 'vs/platform/userDataSync/common/abstractSynchronizer';
 import { edit } from 'vs/platform/userDataSync/common/content';
@@ -79,12 +78,11 @@ export class GlobalStateSynchroniser extends AbstractSynchroniser implements IUs
 		@IUserDataSyncLogService logService: IUserDataSyncLogService,
 		@IEnvironmentService environmentService: IEnvironmentService,
 		@IUserDataSyncEnablementService userDataSyncEnablementService: IUserDataSyncEnablementService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@IStorageService private readonly storageService: IStorageService,
 		@IUriIdentityService uriIdentityService: IUriIdentityService,
 	) {
-		super(SyncResource.GlobalState, fileService, environmentService, storageService, userDataSyncStoreService, userDataSyncBackupStoreService, userDataSyncEnablementService, telemetryService, logService, configurationService, uriIdentityService);
+		super(SyncResource.GlobalState, fileService, environmentService, storageService, userDataSyncStoreService, userDataSyncBackupStoreService, userDataSyncEnablementService, logService, configurationService, uriIdentityService);
 		this._register(fileService.watch(this.extUri.dirname(this.environmentService.argvResource)));
 		this._register(
 			Event.any(

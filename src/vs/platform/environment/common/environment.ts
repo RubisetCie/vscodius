@@ -83,8 +83,6 @@ export interface IEnvironmentService {
 	isBuilt: boolean;
 
 	// --- telemetry
-	disableTelemetry: boolean;
-	telemetryLogResource: URI;
 	serviceMachineIdResource: URI;
 
 	// --- Policy

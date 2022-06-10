@@ -11,9 +11,7 @@ import * as path from 'vs/base/common/path';
 import { IEnvironmentMainService } from 'vs/platform/environment/electron-main/environmentMainService';
 import { ILifecycleMainService } from 'vs/platform/lifecycle/electron-main/lifecycleMainService';
 import { ILogService } from 'vs/platform/log/common/log';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { AvailableForDownload, IUpdateService, State, StateType, UpdateType } from 'vs/platform/update/common/update';
-import { UpdateNotAvailableClassification } from 'vs/platform/update/electron-main/abstractUpdateService';
 
 abstract class AbstractUpdateService implements IUpdateService {
 
@@ -139,8 +137,7 @@ export class SnapUpdateService extends AbstractUpdateService {
 		private snapRevision: string,
 		@ILifecycleMainService lifecycleMainService: ILifecycleMainService,
 		@IEnvironmentMainService environmentMainService: IEnvironmentMainService,
-		@ILogService logService: ILogService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService
+		@ILogService logService: ILogService
 	) {
 		super(lifecycleMainService, environmentMainService, logService);
 
@@ -162,13 +159,10 @@ export class SnapUpdateService extends AbstractUpdateService {
 			if (result) {
 				this.setState(State.Ready({ version: 'something', productVersion: 'something' }));
 			} else {
-				this.telemetryService.publicLog2<{ explicit: boolean }, UpdateNotAvailableClassification>('update:notAvailable', { explicit: false });
-
 				this.setState(State.Idle(UpdateType.Snap));
 			}
 		}, err => {
 			this.logService.error(err);
-			this.telemetryService.publicLog2<{ explicit: boolean }, UpdateNotAvailableClassification>('update:notAvailable', { explicit: false });
 			this.setState(State.Idle(UpdateType.Snap, err.message || err));
 		});
 	}

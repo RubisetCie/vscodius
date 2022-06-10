@@ -9,7 +9,6 @@ import { Emitter } from 'vs/base/common/event';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { ContextMenuHandler, IContextMenuHandlerOptions } from './contextMenuHandler';
 import { IContextMenuService, IContextViewService } from './contextView';
@@ -26,7 +25,6 @@ export class ContextMenuService extends Disposable implements IContextMenuServic
 	readonly onDidHideContextMenu = this._onDidHideContextMenu.event;
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@INotificationService notificationService: INotificationService,
 		@IContextViewService contextViewService: IContextViewService,
 		@IKeybindingService keybindingService: IKeybindingService,
@@ -34,7 +32,7 @@ export class ContextMenuService extends Disposable implements IContextMenuServic
 	) {
 		super();
 
-		this.contextMenuHandler = new ContextMenuHandler(contextViewService, telemetryService, notificationService, keybindingService, themeService);
+		this.contextMenuHandler = new ContextMenuHandler(contextViewService, notificationService, keybindingService, themeService);
 	}
 
 	configure(options: IContextMenuHandlerOptions): void {

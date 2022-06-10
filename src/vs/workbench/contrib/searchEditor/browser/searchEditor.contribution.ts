@@ -18,7 +18,6 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
 import { LifecyclePhase } from 'vs/workbench/services/lifecycle/common/lifecycle';
 import { Registry } from 'vs/platform/registry/common/platform';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { EditorPaneDescriptor, IEditorPaneRegistry } from 'vs/workbench/browser/editor';
 import { Extensions as WorkbenchExtensions, IWorkbenchContribution, IWorkbenchContributionsRegistry } from 'vs/workbench/common/contributions';
 import { IEditorSerializer, IEditorFactoryRegistry, EditorExtensions, DEFAULT_EDITOR_ASSOCIATION } from 'vs/workbench/common/editor';
@@ -72,8 +71,7 @@ class SearchEditorContribution implements IWorkbenchContribution {
 	constructor(
 		@IEditorResolverService private readonly editorResolverService: IEditorResolverService,
 		@IInstantiationService protected readonly instantiationService: IInstantiationService,
-		@ITelemetryService protected readonly telemetryService: ITelemetryService,
-		@IContextKeyService protected readonly contextKeyService: IContextKeyService,
+		@IContextKeyService protected readonly contextKeyService: IContextKeyService
 	) {
 
 		this.editorResolverService.registerEditor(

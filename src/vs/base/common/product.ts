@@ -59,13 +59,6 @@ export interface IProductConfiguration {
 	readonly settingsSearchBuildId?: number;
 	readonly settingsSearchUrl?: string;
 
-	readonly tasConfig?: {
-		endpoint: string;
-		telemetryEventName: string;
-		featuresTelemetryPropertyName: string;
-		assignmentContextTelemetryPropertyName: string;
-	};
-
 	readonly experimentsUrl?: string;
 
 	readonly extensionsGallery?: {
@@ -95,9 +88,6 @@ export interface IProductConfiguration {
 		readonly productName: string;
 	};
 
-	readonly removeTelemetryMachineId?: boolean;
-	readonly enabledTelemetryLevels?: { error: boolean; usage: boolean };
-	readonly enableTelemetry?: boolean;
 	readonly openToWelcomeMainPage?: boolean;
 	readonly aiConfig?: {
 		readonly asimovKey: string;
@@ -122,7 +112,6 @@ export interface IProductConfiguration {
 	readonly reportMarketplaceIssueUrl?: string;
 	readonly licenseUrl?: string;
 	readonly privacyStatementUrl?: string;
-	readonly showTelemetryOptOut?: boolean;
 
 	readonly serverGreeting?: string[];
 	readonly serverLicense?: string[];

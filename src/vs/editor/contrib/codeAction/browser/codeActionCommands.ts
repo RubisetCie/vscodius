@@ -29,7 +29,6 @@ import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegis
 import { IMarkerService } from 'vs/platform/markers/common/markers';
 import { IEditorProgressService } from 'vs/platform/progress/common/progress';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { CodeActionModel, CodeActionsState, SUPPORTED_CODE_ACTIONS } from './codeActionModel';
 import { CodeActionAutoApply, CodeActionCommandArgs, CodeActionFilter, CodeActionKind, CodeActionTrigger } from './types';
 
@@ -167,27 +166,7 @@ export async function applyCodeAction(
 ): Promise<void> {
 	const bulkEditService = accessor.get(IBulkEditService);
 	const commandService = accessor.get(ICommandService);
-	const telemetryService = accessor.get(ITelemetryService);
 	const notificationService = accessor.get(INotificationService);
-
-	type ApplyCodeActionEvent = {
-		codeActionTitle: string;
-		codeActionKind: string | undefined;
-		codeActionIsPreferred: boolean;
-	};
-	type ApplyCodeEventClassification = {
-		codeActionTitle: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The display label of the applied code action' };
-		codeActionKind: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The kind (refactor, quickfix) of the applied code action' };
-		codeActionIsPreferred: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Was the code action marked as being a preferred action?' };
-		owner: 'mjbvz';
-		comment: 'Event used to gain insights into which code actions are being triggered';
-	};
-
-	telemetryService.publicLog2<ApplyCodeActionEvent, ApplyCodeEventClassification>('codeAction.applyCodeAction', {
-		codeActionTitle: item.action.title,
-		codeActionKind: item.action.kind,
-		codeActionIsPreferred: !!item.action.isPreferred,
-	});
 
 	await item.resolve(CancellationToken.None);
 

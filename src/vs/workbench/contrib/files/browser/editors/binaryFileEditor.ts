@@ -5,7 +5,6 @@
 
 import { localize } from 'vs/nls';
 import { BaseBinaryResourceEditor } from 'vs/workbench/browser/parts/editor/binaryEditor';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { EditorInput } from 'vs/workbench/common/editor/editorInput';
 import { FileEditorInput } from 'vs/workbench/contrib/files/browser/editors/fileEditorInput';
@@ -26,7 +25,6 @@ export class BinaryFileEditor extends BaseBinaryResourceEditor {
 	static readonly ID = BINARY_FILE_EDITOR_ID;
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
 		@IEditorResolverService private readonly editorResolverService: IEditorResolverService,
 		@IStorageService storageService: IStorageService,
@@ -38,7 +36,6 @@ export class BinaryFileEditor extends BaseBinaryResourceEditor {
 			{
 				openInternal: (input, options) => this.openInternal(input, options)
 			},
-			telemetryService,
 			themeService,
 			storageService,
 			instantiationService

@@ -5,7 +5,6 @@
 
 import { IWorkbenchContribution } from 'vs/workbench/common/contributions';
 import { IExtensionService, IResponsiveStateChangeEvent, IExtensionHostProfile, ProfileSession, ExtensionHostKind } from 'vs/workbench/services/extensions/common/extensions';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { ILogService } from 'vs/platform/log/common/log';
 import { CancellationTokenSource } from 'vs/base/common/cancellation';
@@ -33,7 +32,6 @@ export class ExtensionsAutoProfiler extends Disposable implements IWorkbenchCont
 	constructor(
 		@IExtensionService private readonly _extensionService: IExtensionService,
 		@IExtensionHostProfileService private readonly _extensionProfileService: IExtensionHostProfileService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@ILogService private readonly _logService: ILogService,
 		@INotificationService private readonly _notificationService: INotificationService,
 		@IEditorService private readonly _editorService: IEditorService,
@@ -154,21 +152,6 @@ export class ExtensionsAutoProfiler extends Disposable implements IWorkbenchCont
 		const path = joinPath(this._environmentServie.tmpDir, `exthost-${Math.random().toString(16).slice(2, 8)}.cpuprofile`);
 		await this._fileService.writeFile(path, VSBuffer.fromString(JSON.stringify(profile.data)));
 		this._logService.warn(`UNRESPONSIVE extension host: '${top.id}' took ${top.percentage}% of ${duration / 1e3}ms, saved PROFILE here: '${path}'`, data);
-
-		type UnresponsiveData = {
-			duration: number;
-			data: NamedSlice[];
-		};
-		type UnresponsiveDataClassification = {
-			owner: 'jrieken';
-			comment: 'Profiling data that was collected while the extension host was unresponsive';
-			duration: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true; comment: 'Duration for which the extension host was unresponsive' };
-			data: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'Extensions ids and core parts that were active while the extension host was froozen' };
-		};
-		this._telemetryService.publicLog2<UnresponsiveData, UnresponsiveDataClassification>('exthostunresponsive', {
-			duration,
-			data,
-		});
 
 		// add to running extensions view
 		this._extensionProfileService.setUnresponsiveProfile(extension.identifier, profile);

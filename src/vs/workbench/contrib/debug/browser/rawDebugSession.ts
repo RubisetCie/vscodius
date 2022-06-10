@@ -256,7 +256,7 @@ export class RawDebugSession implements IDisposable {
 	//---- DebugAdapter lifecycle
 
 	/**
-	 * Starts the underlying debug adapter and tracks the session time for telemetry.
+	 * Starts the underlying debug adapter and tracks the session time.
 	 */
 	async start(): Promise<void> {
 		if (!this.debugAdapter) {

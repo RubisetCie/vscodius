@@ -21,7 +21,6 @@ import * as UUID from 'vs/base/common/uuid';
 import * as Platform from 'vs/base/common/platform';
 import { LRUCache, Touch } from 'vs/base/common/map';
 import { IMarkerService } from 'vs/platform/markers/common/markers';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IConfigurationService, ConfigurationTarget } from 'vs/platform/configuration/common/configuration';
 import { IFileService, IFileStatWithPartialMetadata } from 'vs/platform/files/common/files';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
@@ -187,7 +186,6 @@ class TaskMap {
 
 export abstract class AbstractTaskService extends Disposable implements ITaskService {
 
-	// private static autoDetectTelemetryName: string = 'taskServer.autoDetect';
 	private static readonly RecentlyUsedTasks_Key = 'workbench.tasks.recentlyUsedTasks';
 	private static readonly RecentlyUsedTasks_KeyV2 = 'workbench.tasks.recentlyUsedTasks2';
 	private static readonly IgnoreTask010DonotShowAgain_key = 'workbench.tasks.ignoreTask010Shown';
@@ -234,7 +232,6 @@ export abstract class AbstractTaskService extends Disposable implements ITaskSer
 		@IEditorService private readonly _editorService: IEditorService,
 		@IFileService protected readonly _fileService: IFileService,
 		@IWorkspaceContextService protected readonly _contextService: IWorkspaceContextService,
-		@ITelemetryService protected readonly _telemetryService: ITelemetryService,
 		@ITextFileService private readonly _textFileService: ITextFileService,
 		@IModelService protected readonly _modelService: IModelService,
 		@IExtensionService private readonly _extensionService: IExtensionService,
@@ -2279,9 +2276,6 @@ export abstract class AbstractTaskService extends Disposable implements ITaskSer
 			const workspaceFolder: IWorkspaceFolder = this._contextService.getWorkspace().folders[0];
 			workspaceFolders.push(workspaceFolder);
 			executionEngine = this._computeExecutionEngine(workspaceFolder);
-			const telemetryData: { [key: string]: any } = {
-				executionEngineVersion: executionEngine
-			};
 			/* __GDPR__
 				"taskService.engineVersion" : {
 					"owner": "alexr00",
@@ -2289,7 +2283,6 @@ export abstract class AbstractTaskService extends Disposable implements ITaskSer
 					"executionEngineVersion" : { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "The engine version of tasks." }
 				}
 			*/
-			this._telemetryService.publicLog('taskService.engineVersion', telemetryData);
 			schemaVersion = this._computeJsonSchemaVersion(workspaceFolder);
 		} else if (this._contextService.getWorkbenchState() === WorkbenchState.WORKSPACE) {
 			workspace = this._contextService.getWorkspace();

@@ -87,19 +87,10 @@ namespace StorageIds {
 	export const maxItemsExceededInformation = 'json.maxItemsExceededInformation';
 }
 
-export interface TelemetryReporter {
-	sendTelemetryEvent(eventName: string, properties?: {
-		[key: string]: string;
-	}, measurements?: {
-		[key: string]: number;
-	}): void;
-}
-
 export type LanguageClientConstructor = (name: string, description: string, clientOptions: LanguageClientOptions) => BaseLanguageClient;
 
 export interface Runtime {
 	schemaRequests: SchemaRequestService;
-	telemetry?: TelemetryReporter;
 }
 
 export interface SchemaRequestService {
@@ -235,16 +226,6 @@ export async function startClient(context: ExtensionContext, newLanguageClient: 
 				return Promise.reject(new ResponseError(2, error.toString()));
 			});
 		} else if (schemaDownloadEnabled) {
-			if (runtime.telemetry && uri.authority === 'schema.management.azure.com') {
-				/* __GDPR__
-					"json.schema" : {
-						"owner": "aeschli",
-						"comment": "Measure the use of the Azure resource manager schemas",
-						"schemaURL" : { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "The azure schema URL that was requested." }
-					}
-				*/
-				runtime.telemetry.sendTelemetryEvent('json.schema', { schemaURL: uriPath });
-			}
 			return runtime.schemaRequests.getContent(uriPath).catch(e => {
 				return Promise.reject(new ResponseError(4, e.toString()));
 			});

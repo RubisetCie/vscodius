@@ -24,14 +24,6 @@ import { INativeHostService } from 'vs/platform/native/electron-sandbox/native';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { IRequestService } from 'vs/platform/request/common/request';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-
-type ExeExtensionRecommendationsClassification = {
-	owner: 'sandy081';
-	comment: 'Information about executable based extension recommendation';
-	extensionId: { classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight'; comment: 'id of the recommended extension' };
-	exeName: { classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight'; comment: 'name of the executable for which extension is being recommended' };
-};
 
 type IExeBasedExtensionTips = {
 	readonly exeFriendlyName: string;
@@ -55,7 +47,6 @@ export class ExtensionTipsService extends BaseExtensionTipsService {
 
 	constructor(
 		@INativeEnvironmentService private readonly environmentService: INativeEnvironmentService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IExtensionManagementService private readonly extensionManagementService: IExtensionManagementService,
 		@IStorageService private readonly storageService: IStorageService,
 		@INativeHostService private readonly nativeHostService: INativeHostService,
@@ -128,22 +119,8 @@ export class ExtensionTipsService extends BaseExtensionTipsService {
 		const importantExeBasedRecommendations = new Map<string, IExecutableBasedExtensionTip>();
 		importantExeBasedTips.forEach(tip => importantExeBasedRecommendations.set(tip.extensionId.toLowerCase(), tip));
 
+		// @ts-ignore
 		const { installed, uninstalled: recommendations } = this.groupByInstalled([...importantExeBasedRecommendations.keys()], local);
-
-		/* Log installed and uninstalled exe based recommendations */
-		for (const extensionId of installed) {
-			const tip = importantExeBasedRecommendations.get(extensionId);
-			if (tip) {
-				this.telemetryService.publicLog2<{ exeName: string; extensionId: string }, ExeExtensionRecommendationsClassification>('exeExtensionRecommendations:alreadyInstalled', { extensionId, exeName: tip.exeName });
-			}
-		}
-		for (const extensionId of recommendations) {
-			const tip = importantExeBasedRecommendations.get(extensionId);
-			if (tip) {
-				this.telemetryService.publicLog2<{ exeName: string; extensionId: string }, ExeExtensionRecommendationsClassification>('exeExtensionRecommendations:notInstalled', { extensionId, exeName: tip.exeName });
-			}
-		}
-
 		const promptedExecutableTips = this.getPromptedExecutableTips();
 		const tipsByExe = new Map<string, IExecutableBasedExtensionTip[]>();
 		for (const extensionId of recommendations) {

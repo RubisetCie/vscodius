@@ -13,7 +13,6 @@ import { Logger } from '../utils/logger';
 import { isWeb } from '../utils/platform';
 import { TypeScriptPluginPathsProvider } from '../utils/pluginPathsProvider';
 import { PluginManager } from '../utils/plugins';
-import { TelemetryReporter } from '../utils/telemetry';
 import Tracer from '../utils/tracer';
 import { ILogDirectoryProvider } from './logDirectoryProvider';
 import { GetErrRoutingTsServer, ITypeScriptServer, ProcessBasedTsServer, SyntaxRoutingTsServer, TsServerDelegate, TsServerProcessFactory, TsServerProcessKind } from './server';
@@ -41,7 +40,6 @@ export class TypeScriptServerSpawner {
 		private readonly _logDirectoryProvider: ILogDirectoryProvider,
 		private readonly _pluginPathsProvider: TypeScriptPluginPathsProvider,
 		private readonly _logger: Logger,
-		private readonly _telemetryReporter: TelemetryReporter,
 		private readonly _tracer: Tracer,
 		private readonly _factory: TsServerProcessFactory,
 	) { }
@@ -162,7 +160,6 @@ export class TypeScriptServerSpawner {
 			tsServerLogFile,
 			canceller,
 			version,
-			this._telemetryReporter,
 			this._tracer);
 	}
 
@@ -207,10 +204,6 @@ export class TypeScriptServerSpawner {
 
 		if (configuration.disableAutomaticTypeAcquisition || kind === TsServerProcessKind.Syntax || kind === TsServerProcessKind.Diagnostics) {
 			args.push('--disableAutomaticTypingAcquisition');
-		}
-
-		if (kind === TsServerProcessKind.Semantic || kind === TsServerProcessKind.Main) {
-			args.push('--enableTelemetry');
 		}
 
 		if (cancellationPipeName) {

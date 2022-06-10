@@ -14,9 +14,7 @@ import { getErrorMessage, isCancellationError, onUnexpectedError } from 'vs/base
 import { dispose, toDisposable, Disposable, DisposableStore, IDisposable, MutableDisposable } from 'vs/base/common/lifecycle';
 import { append, $, finalHandler, join, addDisposableListener, EventType, setParentFlowTo, reset, Dimension } from 'vs/base/browser/dom';
 import { EditorPane } from 'vs/workbench/browser/parts/editor/editorPane';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
-import { IExtensionRecommendationsService } from 'vs/workbench/services/extensionRecommendations/common/extensionRecommendations';
 import { IExtensionManifest, IKeyBinding, IView, IViewContainer } from 'vs/platform/extensions/common/extensions';
 import { KeyMod, KeyCode } from 'vs/base/common/keyCodes';
 import { ResolvedKeybinding } from 'vs/base/common/keybindings';
@@ -238,7 +236,6 @@ export class ExtensionEditor extends EditorPane {
 	private showPreReleaseVersionContextKey: IContextKey<boolean> | undefined;
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IPaneCompositePartService private readonly paneCompositeService: IPaneCompositePartService,
 		@IExtensionsWorkbenchService private readonly extensionsWorkbenchService: IExtensionsWorkbenchService,
@@ -247,15 +244,14 @@ export class ExtensionEditor extends EditorPane {
 		@IKeybindingService private readonly keybindingService: IKeybindingService,
 		@INotificationService private readonly notificationService: INotificationService,
 		@IOpenerService private readonly openerService: IOpenerService,
-		@IExtensionRecommendationsService private readonly extensionRecommendationsService: IExtensionRecommendationsService,
 		@IStorageService storageService: IStorageService,
 		@IExtensionService private readonly extensionService: IExtensionService,
 		@IWebviewService private readonly webviewService: IWebviewService,
 		@ILanguageService private readonly languageService: ILanguageService,
 		@IContextMenuService private readonly contextMenuService: IContextMenuService,
-		@IContextKeyService private readonly contextKeyService: IContextKeyService,
+		@IContextKeyService private readonly contextKeyService: IContextKeyService
 	) {
-		super(ExtensionEditor.ID, telemetryService, themeService, storageService);
+		super(ExtensionEditor.ID, themeService, storageService);
 		this.extensionReadme = null;
 		this.extensionChangelog = null;
 		this.extensionManifest = null;
@@ -564,24 +560,6 @@ export class ExtensionEditor extends EditorPane {
 		}
 
 		this.renderNavbar(extension, manifest, template, preserveFocus);
-
-		// report telemetry
-		const extRecommendations = this.extensionRecommendationsService.getAllRecommendationsWithReason();
-		let recommendationsData = {};
-		if (extRecommendations[extension.identifier.id.toLowerCase()]) {
-			recommendationsData = { recommendationReason: extRecommendations[extension.identifier.id.toLowerCase()].reasonId };
-		}
-		/* __GDPR__
-		"extensionGallery:openExtension" : {
-			"owner": "sandy081",
-			"recommendationReason": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true },
-			"${include}": [
-				"${GalleryExtensionTelemetryData}"
-			]
-		}
-		*/
-		this.telemetryService.publicLog('extensionGallery:openExtension', { ...extension.telemetryData, ...recommendationsData });
-
 	}
 
 	private renderNavbar(extension: IExtension, manifest: IExtensionManifest | null, template: IExtensionEditorTemplate, preserveFocus: boolean): void {

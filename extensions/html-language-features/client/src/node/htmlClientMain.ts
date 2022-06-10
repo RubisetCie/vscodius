@@ -9,17 +9,13 @@ import { startClient, LanguageClientConstructor } from '../htmlClient';
 import { ServerOptions, TransportKind, LanguageClientOptions, LanguageClient, BaseLanguageClient } from 'vscode-languageclient/node';
 import { TextDecoder } from 'util';
 import * as fs from 'fs';
-import TelemetryReporter from '@vscode/extension-telemetry';
 
-
-let telemetry: TelemetryReporter | undefined;
 let client: BaseLanguageClient | undefined;
 
 // this method is called when vs code is activated
 export async function activate(context: ExtensionContext) {
 
 	const clientPackageJSON = getPackageInfo(context);
-	telemetry = new TelemetryReporter(clientPackageJSON.name, clientPackageJSON.version, clientPackageJSON.aiKey);
 
 	const serverMain = `./server/${clientPackageJSON.main.indexOf('/dist/') !== -1 ? 'dist' : 'out'}/node/htmlServerMain`;
 	const serverModule = context.asAbsolutePath(serverMain);
@@ -45,7 +41,7 @@ export async function activate(context: ExtensionContext) {
 		}
 	};
 
-	client = await startClient(context, newLanguageClient, { fileFs: getNodeFileFS(), TextDecoder, telemetry, timer });
+	client = await startClient(context, newLanguageClient, { fileFs: getNodeFileFS(), TextDecoder, timer });
 }
 
 export async function deactivate(): Promise<void> {

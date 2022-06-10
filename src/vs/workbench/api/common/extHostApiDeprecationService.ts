@@ -6,7 +6,6 @@
 import { IExtensionDescription } from 'vs/platform/extensions/common/extensions';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { ILogService } from 'vs/platform/log/common/log';
-import * as extHostProtocol from 'vs/workbench/api/common/extHost.protocol';
 import { IExtHostRpcService } from 'vs/workbench/api/common/extHostRpcService';
 
 export interface IExtHostApiDeprecationService {
@@ -22,14 +21,11 @@ export class ExtHostApiDeprecationService implements IExtHostApiDeprecationServi
 	declare readonly _serviceBrand: undefined;
 
 	private readonly _reportedUsages = new Set<string>();
-	private readonly _telemetryShape: extHostProtocol.MainThreadTelemetryShape;
 
 	constructor(
 		@IExtHostRpcService rpc: IExtHostRpcService,
 		@ILogService private readonly _extHostLogService: ILogService,
-	) {
-		this._telemetryShape = rpc.getProxy(extHostProtocol.MainContext.MainThreadTelemetry);
-	}
+	) {}
 
 	public report(apiId: string, extension: IExtensionDescription, migrationSuggestion: string): void {
 		const key = this.getUsageKey(apiId, extension);
@@ -41,21 +37,6 @@ export class ExtHostApiDeprecationService implements IExtHostApiDeprecationServi
 		if (extension.isUnderDevelopment) {
 			this._extHostLogService.warn(`[Deprecation Warning] '${apiId}' is deprecated. ${migrationSuggestion}`);
 		}
-
-		type DeprecationTelemetry = {
-			extensionId: string;
-			apiId: string;
-		};
-		type DeprecationTelemetryMeta = {
-			extensionId: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The id of the extension that is using the deprecated API' };
-			apiId: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The id of the deprecated API' };
-			owner: 'mjbvz';
-			comment: 'Helps us gain insights on extensions using deprecated API so we can assist in migration to new API';
-		};
-		this._telemetryShape.$publicLog2<DeprecationTelemetry, DeprecationTelemetryMeta>('extHostDeprecatedApiUsage', {
-			extensionId: extension.identifier.value,
-			apiId: apiId,
-		});
 	}
 
 	private getUsageKey(apiId: string, extension: IExtensionDescription): string {

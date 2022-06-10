@@ -19,7 +19,6 @@ import { createDecorator } from 'vs/platform/instantiation/common/instantiation'
 import { IProductService } from 'vs/platform/product/common/productService';
 import { asJson, IRequestService } from 'vs/platform/request/common/request';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { ITelemetryService, lastSessionDateStorageKey } from 'vs/platform/telemetry/common/telemetry';
 import { IWorkspaceTagsService } from 'vs/workbench/contrib/tags/common/workspaceTags';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
@@ -177,7 +176,6 @@ export class ExperimentService extends Disposable implements IExperimentService 
 		@IStorageService private readonly storageService: IStorageService,
 		@IExtensionManagementService private readonly extensionManagementService: IExtensionManagementService,
 		@ITextFileService private readonly textFileService: ITextFileService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@ILifecycleService private readonly lifecycleService: ILifecycleService,
 		@IRequestService private readonly requestService: IRequestService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
@@ -304,13 +302,7 @@ export class ExperimentService extends Disposable implements IExperimentService 
 			}
 
 			const promises = rawExperiments.map(experiment => this.evaluateExperiment(experiment));
-			return Promise.all(promises).then(() => {
-				type ExperimentsClassification = {
-					owner: 'sbatten';
-					experiments: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-				};
-				this.telemetryService.publicLog2<{ experiments: string[] }, ExperimentsClassification>('experiments', { experiments: this._experiments.map(e => e.id) });
-			});
+			return Promise.all(promises);
 		});
 	}
 
@@ -480,12 +472,6 @@ export class ExperimentService extends Disposable implements IExperimentService 
 		}
 
 		if (this.productService.quality === 'stable' && condition.insidersOnly === true) {
-			return Promise.resolve(ExperimentState.NoRun);
-		}
-
-		const isNewUser = !this.storageService.get(lastSessionDateStorageKey, StorageScope.GLOBAL);
-		if ((condition.newUser === true && !isNewUser)
-			|| (condition.newUser === false && isNewUser)) {
 			return Promise.resolve(ExperimentState.NoRun);
 		}
 

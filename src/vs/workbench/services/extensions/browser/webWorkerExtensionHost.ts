@@ -8,7 +8,6 @@ import { toDisposable, Disposable } from 'vs/base/common/lifecycle';
 import { IMessagePassingProtocol } from 'vs/base/parts/ipc/common/ipc';
 import { VSBuffer } from 'vs/base/common/buffer';
 import { createMessageOfType, MessageType, isMessageOfType, ExtensionHostExitCode, IExtensionHostInitData, UIKind } from 'vs/workbench/services/extensions/common/extensionHostProtocol';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { ILabelService } from 'vs/platform/label/common/label';
 import { ILogService } from 'vs/platform/log/common/log';
@@ -61,14 +60,13 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 		public readonly runningLocation: LocalWebWorkerRunningLocation,
 		lazyStart: boolean,
 		private readonly _initDataProvider: IWebWorkerExtensionHostDataProvider,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@IWorkspaceContextService private readonly _contextService: IWorkspaceContextService,
 		@ILabelService private readonly _labelService: ILabelService,
 		@ILogService private readonly _logService: ILogService,
 		@IBrowserWorkbenchEnvironmentService private readonly _environmentService: IBrowserWorkbenchEnvironmentService,
 		@IProductService private readonly _productService: IProductService,
 		@ILayoutService private readonly _layoutService: ILayoutService,
-		@IStorageService private readonly _storageService: IStorageService,
+		@IStorageService private readonly _storageService: IStorageService
 	) {
 		super();
 		this.lazyStart = lazyStart;
@@ -266,7 +264,7 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 	}
 
 	private async _createExtHostInitData(): Promise<IExtensionHostInitData> {
-		const [telemetryInfo, initData] = await Promise.all([this._telemetryService.getTelemetryInfo(), this._initDataProvider.getInitData()]);
+		const initData = await this._initDataProvider.getInitData();
 		const workspace = this._contextService.getWorkspace();
 		const deltaExtensions = this.extensions.set(initData.allExtensions, initData.myExtensions);
 		return {
@@ -292,7 +290,6 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 			},
 			allExtensions: deltaExtensions.toAdd,
 			myExtensions: deltaExtensions.myToAdd,
-			telemetryInfo,
 			logLevel: this._logService.getLevel(),
 			logsLocation: this._extensionHostLogsLocation,
 			logFile: this._extensionHostLogFile,

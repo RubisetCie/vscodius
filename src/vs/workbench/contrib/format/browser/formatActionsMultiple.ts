@@ -14,7 +14,6 @@ import { CancellationToken, CancellationTokenSource } from 'vs/base/common/cance
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { formatDocumentRangesWithProvider, formatDocumentWithProvider, getRealAndSyntheticDocumentFormattersOrdered, FormattingConflicts, FormattingMode } from 'vs/editor/contrib/format/browser/format';
 import { Range } from 'vs/editor/common/core/range';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { ExtensionIdentifier } from 'vs/platform/extensions/common/extensions';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { IConfigurationRegistry, Extensions as ConfigurationExtensions } from 'vs/platform/configuration/common/configurationRegistry';
@@ -261,29 +260,6 @@ interface IIndexedPick extends IQuickPickItem {
 	index: number;
 }
 
-function logFormatterTelemetry<T extends { extensionId?: ExtensionIdentifier }>(telemetryService: ITelemetryService, mode: 'document' | 'range', options: T[], pick?: T) {
-	type FormatterPicks = {
-		mode: 'document' | 'range';
-		extensions: string[];
-		pick: string;
-	};
-	type FormatterPicksClassification = {
-		owner: 'jrieken';
-		comment: 'Information about resolving formatter conflicts';
-		mode: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Formatting mode: whole document or a range/selection' };
-		extensions: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The extension that got picked' };
-		pick: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comments: 'The possible extensions to pick' };
-	};
-	function extKey(obj: T): string {
-		return obj.extensionId ? ExtensionIdentifier.toKey(obj.extensionId) : 'unknown';
-	}
-	telemetryService.publicLog2<FormatterPicks, FormatterPicksClassification>('formatterpick', {
-		mode,
-		extensions: options.map(extKey),
-		pick: pick ? extKey(pick) : 'none'
-	});
-}
-
 async function showFormatterPick(accessor: ServicesAccessor, model: ITextModel, formatters: FormattingEditProvider[]): Promise<number | undefined> {
 	const quickPickService = accessor.get(IQuickInputService);
 	const configService = accessor.get(IConfigurationService);
@@ -360,7 +336,6 @@ registerEditorAction(class FormatDocumentMultipleAction extends EditorAction {
 			return;
 		}
 		const instaService = accessor.get(IInstantiationService);
-		const telemetryService = accessor.get(ITelemetryService);
 		const languageFeaturesService = accessor.get(ILanguageFeaturesService);
 		const model = editor.getModel();
 		const provider = getRealAndSyntheticDocumentFormattersOrdered(languageFeaturesService.documentFormattingEditProvider, languageFeaturesService.documentRangeFormattingEditProvider, model);
@@ -368,7 +343,6 @@ registerEditorAction(class FormatDocumentMultipleAction extends EditorAction {
 		if (typeof pick === 'number') {
 			await instaService.invokeFunction(formatDocumentWithProvider, provider[pick], editor, FormattingMode.Explicit, CancellationToken.None);
 		}
-		logFormatterTelemetry(telemetryService, 'document', provider, typeof pick === 'number' && provider[pick] || undefined);
 	}
 });
 
@@ -394,7 +368,6 @@ registerEditorAction(class FormatSelectionMultipleAction extends EditorAction {
 		}
 		const instaService = accessor.get(IInstantiationService);
 		const languageFeaturesService = accessor.get(ILanguageFeaturesService);
-		const telemetryService = accessor.get(ITelemetryService);
 
 		const model = editor.getModel();
 		let range: Range = editor.getSelection();
@@ -407,7 +380,5 @@ registerEditorAction(class FormatSelectionMultipleAction extends EditorAction {
 		if (typeof pick === 'number') {
 			await instaService.invokeFunction(formatDocumentRangesWithProvider, provider[pick], editor, range, CancellationToken.None);
 		}
-
-		logFormatterTelemetry(telemetryService, 'range', provider, typeof pick === 'number' && provider[pick] || undefined);
 	}
 });

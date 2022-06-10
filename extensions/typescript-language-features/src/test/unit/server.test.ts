@@ -12,14 +12,8 @@ import { ProcessBasedTsServer, TsServerProcess } from '../../tsServer/server';
 import { ServerType } from '../../typescriptService';
 import { nulToken } from '../../utils/cancellation';
 import { Logger } from '../../utils/logger';
-import { TelemetryReporter } from '../../utils/telemetry';
 import Tracer from '../../utils/tracer';
 
-
-const NoopTelemetryReporter = new class implements TelemetryReporter {
-	logTelemetry(): void { /* noop */ }
-	dispose(): void { /* noop */ }
-};
 
 class FakeServerProcess implements TsServerProcess {
 	private readonly _out: stream.PassThrough;
@@ -65,7 +59,7 @@ suite.skip('Server', () => {
 
 	test('should send requests with increasing sequence numbers', async () => {
 		const process = new FakeServerProcess();
-		const server = new ProcessBasedTsServer('semantic', ServerType.Semantic, process, undefined, new NodeRequestCanceller('semantic', tracer), undefined!, NoopTelemetryReporter, tracer);
+		const server = new ProcessBasedTsServer('semantic', ServerType.Semantic, process, undefined, new NodeRequestCanceller('semantic', tracer), undefined!, tracer);
 
 		const onWrite1 = process.onWrite();
 		server.executeImpl('geterr', {}, { isAsync: false, token: nulToken, expectsResult: true });

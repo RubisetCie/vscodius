@@ -5,12 +5,11 @@
 
 import * as assert from 'assert';
 import { IBuffer, Terminal } from 'xterm';
-import { SinonStub, stub, useFakeTimers } from 'sinon';
+import { useFakeTimers } from 'sinon';
 import { Emitter } from 'vs/base/common/event';
 import { CharPredictState, IPrediction, PredictionStats, TypeAheadAddon } from 'vs/workbench/contrib/terminal/browser/terminalTypeAheadAddon';
 import { DEFAULT_LOCAL_ECHO_EXCLUDE, IBeforeProcessDataEvent, ITerminalConfiguration, ITerminalProcessManager } from 'vs/workbench/contrib/terminal/common/terminal';
 import { TerminalConfigHelper } from 'vs/workbench/contrib/terminal/browser/terminalConfigHelper';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 
 const CSI = `\x1b[`;
 
@@ -76,7 +75,6 @@ suite('Workbench - Terminal Typeahead', () => {
 	suite('timeline', () => {
 		const onBeforeProcessData = new Emitter<IBeforeProcessDataEvent>();
 		const onConfigChanged = new Emitter<void>();
-		let publicLog: SinonStub;
 		let config: ITerminalConfiguration;
 		let addon: TestTypeAheadAddon;
 
@@ -100,11 +98,9 @@ suite('Workbench - Terminal Typeahead', () => {
 				localEchoLatencyThreshold: 0,
 				localEchoExcludePrograms: DEFAULT_LOCAL_ECHO_EXCLUDE,
 			});
-			publicLog = stub();
 			addon = new TestTypeAheadAddon(
 				upcastPartial<ITerminalProcessManager>({ onBeforeProcessData: onBeforeProcessData.event }),
-				upcastPartial<TerminalConfigHelper>({ config, onConfigChanged: onConfigChanged.event }),
-				upcastPartial<ITelemetryService>({ publicLog })
+				upcastPartial<TerminalConfigHelper>({ config, onConfigChanged: onConfigChanged.event })
 			);
 			addon.unlockMakingPredictions();
 		});

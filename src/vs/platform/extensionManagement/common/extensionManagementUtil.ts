@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { compareIgnoreCase } from 'vs/base/common/strings';
-import { IExtensionIdentifier, IGalleryExtension, ILocalExtension, IExtensionsControlManifest, getTargetPlatform } from 'vs/platform/extensionManagement/common/extensionManagement';
+import { IExtensionIdentifier, IGalleryExtension, IExtensionsControlManifest, getTargetPlatform } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { ExtensionIdentifier, IExtension, TargetPlatform } from 'vs/platform/extensions/common/extensions';
 import { IFileService } from 'vs/platform/files/common/files';
 import { isLinux, platform } from 'vs/base/common/platform';
@@ -100,48 +100,6 @@ export function groupByExtension<T>(extensions: T[], getExtensionIdentifier: (t:
 		}
 	}
 	return byExtension;
-}
-
-export function getLocalExtensionTelemetryData(extension: ILocalExtension): any {
-	return {
-		id: extension.identifier.id,
-		name: extension.manifest.name,
-		galleryId: null,
-		publisherId: extension.publisherId,
-		publisherName: extension.manifest.publisher,
-		publisherDisplayName: extension.publisherDisplayName,
-		dependencies: extension.manifest.extensionDependencies && extension.manifest.extensionDependencies.length > 0
-	};
-}
-
-
-/* __GDPR__FRAGMENT__
-	"GalleryExtensionTelemetryData" : {
-		"id" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		"name": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		"galleryId": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		"publisherId": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		"publisherName": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		"publisherDisplayName": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		"isPreReleaseVersion": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-		"dependencies": { "classification": "SystemMetaData", "purpose": "FeatureInsight", "isMeasurement": true },
-		"${include}": [
-			"${GalleryExtensionTelemetryData2}"
-		]
-	}
-*/
-export function getGalleryExtensionTelemetryData(extension: IGalleryExtension): any {
-	return {
-		id: extension.identifier.id,
-		name: extension.name,
-		galleryId: extension.identifier.uuid,
-		publisherId: extension.publisherId,
-		publisherName: extension.publisher,
-		publisherDisplayName: extension.publisherDisplayName,
-		isPreReleaseVersion: extension.properties.isPreReleaseVersion,
-		dependencies: !!(extension.properties.dependencies && extension.properties.dependencies.length > 0),
-		...extension.telemetryData
-	};
 }
 
 export const BetterMergeId = new ExtensionIdentifier('pprice.better-merge');

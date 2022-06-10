@@ -28,7 +28,6 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { ILogService } from 'vs/platform/log/common/log';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { IRemoteAuthorityResolverService } from 'vs/platform/remote/common/remoteAuthorityResolver';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { ITunnelService } from 'vs/platform/tunnel/common/tunnel';
 import { WebviewPortMappingManager } from 'vs/platform/webview/common/webviewPortMapping';
 import { parentOriginHash } from 'vs/workbench/browser/webview';
@@ -191,10 +190,9 @@ export class WebviewElement extends Disposable implements IWebview, WebviewFindD
 		@IFileService private readonly _fileService: IFileService,
 		@ILogService private readonly _logService: ILogService,
 		@IRemoteAuthorityResolverService private readonly _remoteAuthorityResolverService: IRemoteAuthorityResolverService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@ITunnelService private readonly _tunnelService: ITunnelService,
 		@IInstantiationService instantiationService: IInstantiationService,
-		@IAccessibilityService private readonly _accessibilityService: IAccessibilityService,
+		@IAccessibilityService private readonly _accessibilityService: IAccessibilityService
 	) {
 		super();
 
@@ -595,18 +593,6 @@ export class WebviewElement extends Disposable implements IWebview, WebviewFindD
 			if (this._environmentService.isExtensionDevelopment) {
 				this._onMissingCsp.fire(this.extension.id);
 			}
-
-			const payload = {
-				extension: this.extension.id.value
-			} as const;
-
-			type Classification = {
-				extension: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The id of the extension that created the webview.' };
-				owner: 'mjbz';
-				comment: 'Helps find which extensions are contributing webviews with invalid CSPs';
-			};
-
-			this._telemetryService.publicLog2<typeof payload, Classification>('webviewMissingCsp', payload);
 		}
 	}
 

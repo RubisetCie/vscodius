@@ -7,7 +7,6 @@ import { CancellationToken } from 'vs/base/common/cancellation';
 import { DisposableStore, dispose, IDisposable } from 'vs/base/common/lifecycle';
 import { URI, UriComponents } from 'vs/base/common/uri';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { extHostNamedCustomer, IExtHostContext } from 'vs/workbench/services/extensions/common/extHostCustomers';
 import { IFileMatch, IFileQuery, IRawFileMatch2, ISearchComplete, ISearchCompleteStats, ISearchProgressItem, ISearchResultProvider, ISearchService, ITextQuery, QueryType, SearchProviderType } from 'vs/workbench/services/search/common/search';
 import { ExtHostContext, ExtHostSearchShape, MainContext, MainThreadSearchShape } from '../common/extHost.protocol';
@@ -21,8 +20,7 @@ export class MainThreadSearch implements MainThreadSearchShape {
 	constructor(
 		extHostContext: IExtHostContext,
 		@ISearchService private readonly _searchService: ISearchService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
-		@IConfigurationService _configurationService: IConfigurationService,
+		@IConfigurationService _configurationService: IConfigurationService
 	) {
 		this._proxy = extHostContext.getProxy(ExtHostContext.ExtHostSearch);
 		this._proxy.$enableExtensionHostSearch();
@@ -62,10 +60,6 @@ export class MainThreadSearch implements MainThreadSearchShape {
 		}
 
 		provider.handleFindMatch(session, data);
-	}
-
-	$handleTelemetry(eventName: string, data: any): void {
-		this._telemetryService.publicLog(eventName, data);
 	}
 }
 

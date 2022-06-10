@@ -29,9 +29,6 @@ import { IsWebContext } from 'vs/platform/contextkey/common/contextkeys';
 import { IExtensionUrlTrustService } from 'vs/platform/extensionManagement/common/extensionUrlTrust';
 import { CancellationToken } from 'vs/base/common/cancellation';
 
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { GDPRClassification } from 'vs/platform/telemetry/common/gdprTypings';
-
 const FIVE_MINUTES = 5 * 60 * 1000;
 const THIRTY_SECONDS = 30 * 1000;
 const URL_TO_HANDLE = 'extensionUrlHandler.urlToHandle';
@@ -81,11 +78,6 @@ export interface ExtensionUrlHandlerEvent {
 	readonly extensionId: string;
 }
 
-export interface ExtensionUrlHandlerClassification extends GDPRClassification<ExtensionUrlHandlerEvent> {
-	owner: 'joaomoreno';
-	readonly extensionId: { classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight' };
-}
-
 /**
  * This class handles URLs which are directed towards extensions.
  * If a URL is directed towards an inactive extension, it buffers it,
@@ -116,7 +108,6 @@ class ExtensionUrlHandler implements IExtensionUrlHandler, IURLHandler {
 		@IStorageService private readonly storageService: IStorageService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IProgressService private readonly progressService: IProgressService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IExtensionUrlTrustService private readonly extensionUrlTrustService: IExtensionUrlTrustService
 	) {
 		this.userTrustedExtensionsStorage = new UserTrustedExtensionIdStorage(storageService);
@@ -143,8 +134,6 @@ class ExtensionUrlHandler implements IExtensionUrlHandler, IURLHandler {
 		}
 
 		const extensionId = uri.authority;
-		this.telemetryService.publicLog2<ExtensionUrlHandlerEvent, ExtensionUrlHandlerClassification>('uri_invoked/start', { extensionId });
-
 		const wasHandlerAvailable = this.extensionHandlers.has(ExtensionIdentifier.toKey(extensionId));
 		const extension = await this.extensionService.getExtension(extensionId);
 
@@ -175,7 +164,6 @@ class ExtensionUrlHandler implements IExtensionUrlHandler, IURLHandler {
 			});
 
 			if (!result.confirmed) {
-				this.telemetryService.publicLog2<ExtensionUrlHandlerEvent, ExtensionUrlHandlerClassification>('uri_invoked/cancel', { extensionId });
 				return true;
 			}
 
@@ -229,7 +217,6 @@ class ExtensionUrlHandler implements IExtensionUrlHandler, IURLHandler {
 	}
 
 	private async handleURLByExtension(extensionId: ExtensionIdentifier | string, handler: IURLHandler, uri: URI, options?: IOpenURLOptions): Promise<boolean> {
-		this.telemetryService.publicLog2<ExtensionUrlHandlerEvent, ExtensionUrlHandlerClassification>('uri_invoked/end', { extensionId: ExtensionIdentifier.toKey(extensionId) });
 		return await handler.handleURL(uri, options);
 	}
 
@@ -251,8 +238,6 @@ class ExtensionUrlHandler implements IExtensionUrlHandler, IURLHandler {
 				return;
 			}
 
-			this.telemetryService.publicLog2<ExtensionUrlHandlerEvent, ExtensionUrlHandlerClassification>('uri_invoked/install_extension/start', { extensionId: extensionIdentifier.id });
-
 			// Install the Extension and reload the window to handle.
 			const result = await this.dialogService.confirm({
 				message: localize('installAndHandle', "Extension '{0}' is not installed. Would you like to install the extension and open this URL?", galleryExtension.displayName || galleryExtension.name),
@@ -262,11 +247,8 @@ class ExtensionUrlHandler implements IExtensionUrlHandler, IURLHandler {
 			});
 
 			if (!result.confirmed) {
-				this.telemetryService.publicLog2<ExtensionUrlHandlerEvent, ExtensionUrlHandlerClassification>('uri_invoked/install_extension/cancel', { extensionId: extensionIdentifier.id });
 				return;
 			}
-
-			this.telemetryService.publicLog2<ExtensionUrlHandlerEvent, ExtensionUrlHandlerClassification>('uri_invoked/install_extension/accept', { extensionId: extensionIdentifier.id });
 
 			try {
 				extension = await this.progressService.withProgress({
@@ -281,7 +263,6 @@ class ExtensionUrlHandler implements IExtensionUrlHandler, IURLHandler {
 
 		// Extension is installed but not enabled
 		if (!this.extensionEnablementService.isEnabled(extension)) {
-			this.telemetryService.publicLog2<ExtensionUrlHandlerEvent, ExtensionUrlHandlerClassification>('uri_invoked/enable_extension/start', { extensionId: extensionIdentifier.id });
 			const result = await this.dialogService.confirm({
 				message: localize('enableAndHandle', "Extension '{0}' is disabled. Would you like to enable the extension and open the URL?", extension.manifest.displayName || extension.manifest.name),
 				detail: `${extension.manifest.displayName || extension.manifest.name} (${extensionIdentifier.id}) wants to open a URL:\n\n${uri.toString()}`,
@@ -290,11 +271,9 @@ class ExtensionUrlHandler implements IExtensionUrlHandler, IURLHandler {
 			});
 
 			if (!result.confirmed) {
-				this.telemetryService.publicLog2<ExtensionUrlHandlerEvent, ExtensionUrlHandlerClassification>('uri_invoked/enable_extension/cancel', { extensionId: extensionIdentifier.id });
 				return;
 			}
 
-			this.telemetryService.publicLog2<ExtensionUrlHandlerEvent, ExtensionUrlHandlerClassification>('uri_invoked/enable_extension/accept', { extensionId: extensionIdentifier.id });
 			await this.extensionEnablementService.setEnablement([extension], EnablementState.EnabledGlobally);
 		}
 
@@ -305,7 +284,6 @@ class ExtensionUrlHandler implements IExtensionUrlHandler, IURLHandler {
 
 		/* Extension cannot be added and require window reload */
 		else {
-			this.telemetryService.publicLog2<ExtensionUrlHandlerEvent, ExtensionUrlHandlerClassification>('uri_invoked/activate_extension/start', { extensionId: extensionIdentifier.id });
 			const result = await this.dialogService.confirm({
 				message: localize('reloadAndHandle', "Extension '{0}' is not loaded. Would you like to reload the window to load the extension and open the URL?", extension.manifest.displayName || extension.manifest.name),
 				detail: `${extension.manifest.displayName || extension.manifest.name} (${extensionIdentifier.id}) wants to open a URL:\n\n${uri.toString()}`,
@@ -314,11 +292,9 @@ class ExtensionUrlHandler implements IExtensionUrlHandler, IURLHandler {
 			});
 
 			if (!result.confirmed) {
-				this.telemetryService.publicLog2<ExtensionUrlHandlerEvent, ExtensionUrlHandlerClassification>('uri_invoked/activate_extension/cancel', { extensionId: extensionIdentifier.id });
 				return;
 			}
 
-			this.telemetryService.publicLog2<ExtensionUrlHandlerEvent, ExtensionUrlHandlerClassification>('uri_invoked/activate_extension/accept', { extensionId: extensionIdentifier.id });
 			this.storageService.store(URL_TO_HANDLE, JSON.stringify(uri.toJSON()), StorageScope.WORKSPACE, StorageTarget.MACHINE);
 			await this.hostService.reload();
 		}
