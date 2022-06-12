@@ -233,7 +233,7 @@ export function optimizeTask(opts: IOptimizeTaskOpts): () => NodeJS.ReadWriteStr
 		return result
 			.pipe(sourcemaps.write('./', {
 				sourceRoot: undefined,
-				addComment: true,
+				addComment: false,
 				includeContent: true
 			}))
 			.pipe(opts.languages && opts.languages.length ? processNlsFiles({
@@ -261,7 +261,7 @@ export function minifyTask(src: string, sourceMapBaseUrl?: string): (cb: any) =>
 		pump(
 			gulp.src([src + '/**', '!' + src + '/**/*.map']),
 			jsFilter,
-			sourcemaps.init({ loadMaps: true }),
+			sourcemaps.init({ loadMaps: false }),
 			es.map((f: any, cb) => {
 				esbuild.build({
 					entryPoints: [f.path],
@@ -299,7 +299,7 @@ export function minifyTask(src: string, sourceMapBaseUrl?: string): (cb: any) =>
 				sourceMappingURL,
 				sourceRoot: undefined,
 				includeContent: true,
-				addComment: true
+				addComment: false
 			} as any),
 			gulp.dest(src + '-min'),
 			(err: any) => cb(err));

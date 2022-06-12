@@ -159,7 +159,7 @@ function optimizeTask(opts) {
         return result
             .pipe(sourcemaps.write('./', {
             sourceRoot: undefined,
-            addComment: true,
+            addComment: false,
             includeContent: true
         }))
             .pipe(opts.languages && opts.languages.length ? (0, i18n_1.processNlsFiles)({
@@ -181,7 +181,7 @@ function minifyTask(src, sourceMapBaseUrl) {
         const jsFilter = filter('**/*.js', { restore: true });
         const cssFilter = filter('**/*.css', { restore: true });
         const svgFilter = filter('**/*.svg', { restore: true });
-        pump(gulp.src([src + '/**', '!' + src + '/**/*.map']), jsFilter, sourcemaps.init({ loadMaps: true }), es.map((f, cb) => {
+        pump(gulp.src([src + '/**', '!' + src + '/**/*.map']), jsFilter, sourcemaps.init({ loadMaps: false }), es.map((f, cb) => {
             esbuild.build({
                 entryPoints: [f.path],
                 minify: true,
@@ -206,7 +206,7 @@ function minifyTask(src, sourceMapBaseUrl) {
             sourceMappingURL,
             sourceRoot: undefined,
             includeContent: true,
-            addComment: true
+            addComment: false
         }), gulp.dest(src + '-min'), (err) => cb(err));
     };
 }
