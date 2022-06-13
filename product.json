@@ -9,6 +9,17 @@
 	"serverGreeting": [],
 	"serverLicense": [],
 	"serverLicensePrompt": "",
+	"quality": "stable",
+	"checksumFailMoreInfoUrl": "https://go.microsoft.com/fwlink/?LinkId=828886",
+	"tipsAndTricksUrl": "https://go.microsoft.com/fwlink/?linkid=852118",
+	"twitterUrl": "https://go.microsoft.com/fwlink/?LinkID=533687",
+	"requestFeatureUrl": "https://go.microsoft.com/fwlink/?LinkID=533482",
+	"documentationUrl": "https://go.microsoft.com/fwlink/?LinkID=533484#vscode",
+	"introductoryVideosUrl": "https://go.microsoft.com/fwlink/?linkid=832146",
+	"releaseNotesUrl": "https://go.microsoft.com/fwlink/?LinkID=533483#vscode",
+	"keyboardShortcutsUrlMac": "https://go.microsoft.com/fwlink/?linkid=832143",
+	"keyboardShortcutsUrlLinux": "https://go.microsoft.com/fwlink/?linkid=832144",
+	"keyboardShortcutsUrlWin": "https://go.microsoft.com/fwlink/?linkid=832145",
 	"serverApplicationName": "codium-server-oss",
 	"serverDataFolderName": ".vscodium-server-oss",
 	"win32DirName": "VSCodium",
@@ -28,6 +39,20 @@
 	"reportIssueUrl": "https://github.com/microsoft/vscode/issues/new",
 	"urlProtocol": "vscodium",
 	"webviewContentExternalBaseUrlTemplate": "https://{{uuid}}.vscode-cdn.net/insider/3c8520fab514b9f56070214496b26ff68d1b1cb5/out/vs/workbench/contrib/webview/browser/pre/",
+	"extensionsGallery": {
+		"serviceUrl": "https://marketplace.visualstudio.com/_apis/public/gallery",
+		"itemUrl": "https://marketplace.visualstudio.com/items"
+	},
+	"linkProtectionTrustedDomains": [
+		"https://*.visualstudio.com",
+		"https://*.microsoft.com",
+		"https://*.gallerycdn.vsassets.io",
+		"https://github.com/microsoft/",
+		"https://github.com/MicrosoftDocs/",
+		"https://login.microsoftonline.com",
+		"https://open-vsx.org",
+		"https://aka.ms"
+	],
 	"builtInExtensions": [
 		{
 			"name": "ms-vscode.js-debug-companion",
