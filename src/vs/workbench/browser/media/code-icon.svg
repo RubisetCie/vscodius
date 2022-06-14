@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="1024px" height="1024px" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <!-- Generator: Sketch 51.2 (57519) - http://www.bohemiancoding.com/sketch -->
-    <title>codium_blue_light</title>
-    <desc>Created with Sketch.</desc>
+    <title>codius_blue_light</title>
     <defs>
         <circle id="path-1" cx="512" cy="512" r="465"></circle>
         <filter x="-2.0%" y="-1.5%" width="104.1%" height="104.1%" filterUnits="objectBoundingBox" id="filter-2">
@@ -16,7 +14,7 @@
             <stop stop-color="#2F80ED" offset="100%"></stop>
         </linearGradient>
     </defs>
-    <g id="codium_blue_light" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+    <g id="codius_blue_light" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
         <g id="Oval">
             <use fill="black" fill-opacity="1" filter="url(#filter-2)" xlink:href="#path-1"></use>
             <use fill="#FFFFFF" fill-rule="evenodd" xlink:href="#path-1"></use>

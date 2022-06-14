@@ -14,7 +14,7 @@ import { ExtensionType, IExtensionDescription } from 'vs/platform/extensions/com
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { URI } from 'vs/base/common/uri';
 
-const builtinExtensionIssueUrl = 'https://github.com/RubisetCie/vscodium-wrungout';
+const builtinExtensionIssueUrl = 'https://github.com/RubisetCie/vscodius';
 
 export class ReportExtensionIssueAction extends Action {
 
@@ -76,7 +76,7 @@ export class ReportExtensionIssueAction extends Action {
 - Extension Name: \`${extension.description.name}\`
 - Extension Version: \`${extension.description.version}\`
 - OS Version: \`${osVersion}\`
-- VSCodium version: \`${this.productService.version}\`\n\n${message}`
+- VSCodius version: \`${this.productService.version}\`\n\n${message}`
 		);
 
 		return `${baseUrl}${queryStringPrefix}body=${body}&title=${encodeURIComponent(title)}`;
