@@ -1,0 +1,27 @@
+{
+  "name": "theme-standard",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "categories": [
+    "Themes"
+  ],
+  "version": "1.0.0",
+  "publisher": "rubisetcie",
+  "license": "MIT",
+  "engines": {
+    "vscode": "*"
+  },
+  "contributes": {
+    "iconThemes": [
+      {
+        "id": "vs-standard",
+        "label": "%standardIconThemeLabel%",
+        "path": "./fileicons/standard-icon-theme.json"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RubisetCie/vscodius.git"
+  }
+}
