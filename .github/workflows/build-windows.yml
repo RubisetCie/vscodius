@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       vs_arch:
-        description: 'Target architecture (x64, x86, x86_amd64, x86_arm, x86_arm64, amd64_x86, amd64_arm, amd64_arm64)'
+        description: 'Target architecture (x64, x86, etc)'
         required: true
         default: 'x64'
       vs_toolset:
@@ -33,7 +33,8 @@ jobs:
           toolset: '${{ github.event.inputs.vs_toolset }}'
           spectre: false
           uwp: false
-        run: npm config set msvs_version ${{ github.event.inputs.vs_version_year }}
+#      - name: 
+#        run: npm config set msvs_version ${{ github.event.inputs.vs_version }}
       - name: Install the dependencies
         run: yarn
       - name: Compilation
