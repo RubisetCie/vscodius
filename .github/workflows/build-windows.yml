@@ -29,8 +29,8 @@ jobs:
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: '${{ github.event.inputs.vs_arch }}'
-          toolset: '${{ github.event.inputs.vs_toolset }}'
+          arch: ${{ github.event.inputs.vs_arch }}
+          toolset: ${{ github.event.inputs.vs_toolset }}
           spectre: false
           uwp: false
 #      - name: 
