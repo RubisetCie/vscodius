@@ -2,8 +2,12 @@ name: Build for Windows
 on:
   workflow_dispatch:
     inputs:
+      pkg_arch:
+        description: 'Target package architecture (x64 or ia32)'
+        required: true
+        default: 'x64'
       vs_arch:
-        description: 'Target architecture (x64, x86, etc)'
+        description: 'Target MSVC architecture (x64, x86, etc)'
         required: true
         default: 'x64'
       node_version:
@@ -17,22 +21,25 @@ jobs:
       - name: Setup Node & Yarn
         uses: mskelton/setup-yarn@v1
         with:
-          node-version: '${{ github.event.inputs.node_version }}'
-#      - name: Setup Python
-#        uses: actions/setup-python@v4
-#        with:
-#          python-version: '3.x'
+          node-version: '${{github.event.inputs.node_version}}'
       - name: Set up MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: '${{ github.event.inputs.vs_arch }}'
+          arch: '${{github.event.inputs.vs_arch}}'
           spectre: false
           uwp: false
-#      - name: 
-#        run: npm config set msvs_version ${{ github.event.inputs.vs_version }}
-      - name: Install the dependencies
+      - name: Dependencies
         run: yarn
       - name: Compilation
         run: yarn compile
       - name: Packaging
-        run: yarn gulp vscode-win32-x64-min
+        run: yarn gulp vscode-win32-${{github.event.inputs.pkg_arch}}-min
+      - name: Compress 7zip
+        uses: edgarrc/action-7z@v1
+        with:
+          args: 7z a -t7z -mx=9 build.7z ../VSCode-win32-${{github.event.inputs.pkg_arch}}/
+      - name: Post artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: VSCodius-win32-${{github.event.inputs.pkg_arch}}.7z
+          path: build.7z
