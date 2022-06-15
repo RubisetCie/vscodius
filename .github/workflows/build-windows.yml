@@ -42,4 +42,4 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: VSCodius-win32-${{github.event.inputs.pkg_arch}}.7z
-          path: build.7z
+          path: 'release.zip'
