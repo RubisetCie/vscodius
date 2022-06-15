@@ -6,31 +6,26 @@ on:
         description: 'Target architecture (x64, x86, etc)'
         required: true
         default: 'x64'
-      vs_toolset:
-        description: 'Build toolset version (e.g. 16.4)'
+      node_version:
+        description: 'Node.js version'
         required: true
-        default: '16.4'
-      vs_version:
-        description: 'Visual Studio version (e.g. 2019)'
-        required: true
-        default: '2019'
+        default: '16.x'
 jobs:
   build:
     runs-on: windows-latest
     steps:
-#      - name: Setup Node & Yarn
-#        uses: mskelton/setup-yarn@v1
-#        with:
-#          node-version: '16.x'
+      - name: Setup Node & Yarn
+        uses: mskelton/setup-yarn@v1
+        with:
+          node-version: '${{ github.event.inputs.node_version }}'
 #      - name: Setup Python
 #        uses: actions/setup-python@v4
 #        with:
 #          python-version: '3.x'
-      - name: Setup MSVC
+      - name: Set up MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
-          arch: ${{ github.event.inputs.vs_arch }}
-          toolset: ${{ github.event.inputs.vs_toolset }}
+          arch: '${{ github.event.inputs.vs_arch }}'
           spectre: false
           uwp: false
 #      - name: 
