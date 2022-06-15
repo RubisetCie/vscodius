@@ -1,7 +1,15 @@
 name: Build for Windows
 on:
-  workflow_dispatch
-
+  workflow_dispatch:
+    inputs:
+      vs_versions:
+        description: 'Visual Studio version range'
+        required: true
+        default: '[16.4,16.5)'
+      vs_version_year:
+        description: 'Visual Studio version year (e.g. 2019)'
+        required: true
+        default: '2019'
 jobs:
   build:
     runs-on: windows-latest
@@ -10,3 +18,19 @@ jobs:
         uses: mskelton/setup-yarn@v1
         with:
           node-version: '16.x'
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1.1
+        with:
+          vs-version: '${{ github.event.inputs.vs_versions }}'
+      - name: Set VS version
+        run: npm config set msvs_version ${{ github.event.inputs.vs_version_year }}
+      - name: Install the dependencies
+        run: yarn
+      - name: Compilation
+        run: yarn compile
+      - name: Packaging
+        run: yarn gulp vscode-win32-x64-min
