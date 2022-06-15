@@ -213,6 +213,11 @@ const registry = Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Con
 				'default': 'right',
 				'markdownDescription': localize('sideBySideDirection', "Controls the default direction of editors that are opened side by side (for example, from the Explorer). By default, editors will open on the right hand side of the currently active one. If changed to `down`, the editors will open below the currently active one.")
 			},
+			'workbench.editor.showSideBySideButton': {
+				'type': 'boolean',
+				'description': localize('showSideBySideButton', "Displays the tool button item to open side by side editor."),
+				'default': true
+			},
 			'workbench.editor.closeEmptyGroups': {
 				'type': 'boolean',
 				'description': localize('closeEmptyGroups', "Controls the behavior of empty editor groups when the last tab in the group is closed. When enabled, empty groups will automatically close. When disabled, empty groups will remain part of the grid."),

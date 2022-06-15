@@ -61,7 +61,7 @@ export class SideBySideEditor extends AbstractEditorWithViewState<ISideBySideEdi
 
 	static readonly ID: string = SIDE_BY_SIDE_EDITOR_ID;
 
-	static SIDE_BY_SIDE_LAYOUT_SETTING = 'workbench.editor.splitInGroupLayout';
+	static readonly SIDE_BY_SIDE_LAYOUT_SETTING = 'workbench.editor.splitInGroupLayout';
 
 	private static readonly VIEW_STATE_PREFERENCE_KEY = 'sideBySideEditorViewState';
 
