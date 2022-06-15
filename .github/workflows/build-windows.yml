@@ -2,31 +2,37 @@ name: Build for Windows
 on:
   workflow_dispatch:
     inputs:
-      vs_versions:
-        description: 'Visual Studio version range'
+      vs_arch:
+        description: 'Target architecture (x64, x86, x86_amd64, x86_arm, x86_arm64, amd64_x86, amd64_arm, amd64_arm64)'
         required: true
-        default: '[16.4,16.5)'
-      vs_version_year:
-        description: 'Visual Studio version year (e.g. 2019)'
+        default: 'x64'
+      vs_toolset:
+        description: 'Build toolset version (e.g. 16.4)'
+        required: true
+        default: '16.4'
+      vs_version:
+        description: 'Visual Studio version (e.g. 2019)'
         required: true
         default: '2019'
 jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Setup Node & Yarn
-        uses: mskelton/setup-yarn@v1
+#      - name: Setup Node & Yarn
+#        uses: mskelton/setup-yarn@v1
+#        with:
+#          node-version: '16.x'
+#      - name: Setup Python
+#        uses: actions/setup-python@v4
+#        with:
+#          python-version: '3.x'
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
         with:
-          node-version: '16.x'
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1.1
-        with:
-          vs-version: '${{ github.event.inputs.vs_versions }}'
-      - name: Set VS version
+          arch: '${{ github.event.inputs.vs_arch }}'
+          toolset: '${{ github.event.inputs.vs_toolset }}'
+          spectre: false
+          uwp: false
         run: npm config set msvs_version ${{ github.event.inputs.vs_version_year }}
       - name: Install the dependencies
         run: yarn
