@@ -18,7 +18,7 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Setup Node & Yarn
+      - name: Set up Yarn
         uses: mskelton/setup-yarn@v1
         with:
           node-version: '${{github.event.inputs.node_version}}'
@@ -28,16 +28,16 @@ jobs:
           arch: '${{github.event.inputs.vs_arch}}'
           spectre: false
           uwp: false
-      - name: Dependencies
-        run: yarn
       - name: Compilation
         run: yarn compile
       - name: Packaging
         run: yarn gulp vscode-win32-${{github.event.inputs.pkg_arch}}-min
-      - name: Compress 7zip
-        uses: edgarrc/action-7z@v1
+      - name: Compression
+        uses: thedoctor0/zip-release@main
         with:
-          args: 7z a -t7z -mx=9 build.7z ../VSCode-win32-${{github.event.inputs.pkg_arch}}/
+          type: 'zip'
+          filename: 'release.zip'
+          path: '../VSCode-win32-${{github.event.inputs.pkg_arch}}/'
       - name: Post artifact
         uses: actions/download-artifact@v3
         with:
