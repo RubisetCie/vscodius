@@ -38,8 +38,8 @@ jobs:
           type: 'zip'
           filename: 'release.zip'
           path: '../VSCode-win32-${{github.event.inputs.pkg_arch}}/'
-      - name: Post artifact
-        uses: actions/download-artifact@v3
+      - name: Post Artifact
+        uses: actions/upload-artifact@v3
         with:
-          name: VSCodius-win32-${{github.event.inputs.pkg_arch}}.7z
+          name: VSCodius-win32-${{github.event.inputs.pkg_arch}}.zip
           path: 'release.zip'
