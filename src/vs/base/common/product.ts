@@ -91,6 +91,7 @@ export interface IProductConfiguration {
 	readonly openToWelcomeMainPage?: boolean;
 	readonly aiConfig?: {
 		readonly asimovKey: string;
+		readonly ariaKey: string;
 	};
 
 	readonly sendASmile?: {
@@ -142,6 +143,8 @@ export interface IProductConfiguration {
 	readonly linkProtectionTrustedDomains?: readonly string[];
 
 	readonly 'configurationSync.store'?: ConfigurationSyncStore;
+
+	readonly 'sessionSync.store'?: Omit<ConfigurationSyncStore, 'insidersUrl' | 'stableUrl'>;
 
 	readonly darwinUniversalAssetId?: string;
 }

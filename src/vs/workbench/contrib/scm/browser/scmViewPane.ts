@@ -2378,9 +2378,7 @@ export class SCMViewPane extends ViewPane {
 			if (e.editorOptions.pinned) {
 				const activeEditorPane = this.editorService.activeEditorPane;
 
-				if (activeEditorPane) {
-					activeEditorPane.group.pinEditor(activeEditorPane.input);
-				}
+				activeEditorPane?.group.pinEditor(activeEditorPane.input);
 			}
 		}
 

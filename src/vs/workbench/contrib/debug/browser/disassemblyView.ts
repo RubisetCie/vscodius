@@ -282,9 +282,7 @@ export class DisassemblyView extends EditorPane {
 	}
 
 	layout(dimension: Dimension): void {
-		if (this._disassembledInstructions) {
-			this._disassembledInstructions.layout(dimension.height);
-		}
+		this._disassembledInstructions?.layout(dimension.height);
 	}
 
 	/**
