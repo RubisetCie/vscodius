@@ -38,6 +38,7 @@ import { delta, distinct } from 'vs/base/common/arrays';
 import { forEach, IStringDictionary } from 'vs/base/common/collections';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
 import { localize } from 'vs/nls';
+import { IUserDataProfileService } from 'vs/workbench/services/userDataProfile/common/userDataProfile';
 import { IPolicyService, NullPolicyService } from 'vs/platform/policy/common/policy';
 
 class Workspace extends BaseWorkspace {
@@ -99,6 +100,7 @@ export class WorkspaceService extends Disposable implements IWorkbenchConfigurat
 	constructor(
 		{ remoteAuthority, configurationCache }: { remoteAuthority?: string; configurationCache: IConfigurationCache },
 		environmentService: IWorkbenchEnvironmentService,
+		userDataProfileService: IUserDataProfileService,
 		fileService: IFileService,
 		remoteAgentService: IRemoteAgentService,
 		uriIdentityService: IUriIdentityService,
@@ -119,7 +121,7 @@ export class WorkspaceService extends Disposable implements IWorkbenchConfigurat
 		this.logService = logService;
 		this._configuration = new Configuration(this.defaultConfiguration.configurationModel, this.policyConfiguration.configurationModel, new ConfigurationModel(), new ConfigurationModel(), new ConfigurationModel(), new ResourceMap(), new ConfigurationModel(), new ResourceMap<ConfigurationModel>(), this.workspace);
 		this.cachedFolderConfigs = new ResourceMap<FolderConfiguration>();
-		this.localUserConfiguration = this._register(new UserConfiguration(environmentService.settingsResource, remoteAuthority ? LOCAL_MACHINE_SCOPES : undefined, fileService, uriIdentityService, logService));
+		this.localUserConfiguration = this._register(new UserConfiguration(userDataProfileService.currentProfile, remoteAuthority ? LOCAL_MACHINE_SCOPES : undefined, fileService, uriIdentityService, logService));
 		this._register(this.localUserConfiguration.onDidChangeConfiguration(userConfiguration => this.onLocalUserConfigurationChanged(userConfiguration)));
 		if (remoteAuthority) {
 			const remoteUserConfiguration = this.remoteUserConfiguration = this._register(new RemoteUserConfiguration(remoteAuthority, configurationCache, fileService, uriIdentityService, remoteAgentService));
@@ -452,9 +454,7 @@ export class WorkspaceService extends Disposable implements IWorkbenchConfigurat
 			if (this.restrictedSettings.workspace) {
 				keys.push(...this.restrictedSettings.workspace);
 			}
-			if (this.restrictedSettings.workspaceFolder) {
-				this.restrictedSettings.workspaceFolder.forEach((value) => keys.push(...value));
-			}
+			this.restrictedSettings.workspaceFolder?.forEach((value) => keys.push(...value));
 			keys = distinct(keys);
 			if (keys.length) {
 				this.triggerConfigurationChange({ keys, overrides: [] }, { data, workspace: this.workspace }, ConfigurationTarget.WORKSPACE);

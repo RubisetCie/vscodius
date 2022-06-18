@@ -62,9 +62,10 @@ export class LogViewer extends AbstractTextResourceEditor {
 		@ITextResourceConfigurationService textResourceConfigurationService: ITextResourceConfigurationService,
 		@IThemeService themeService: IThemeService,
 		@IEditorGroupsService editorGroupService: IEditorGroupsService,
-		@IEditorService editorService: IEditorService
+		@IEditorService editorService: IEditorService,
+		@IFileService fileService: IFileService
 	) {
-		super(LogViewer.LOG_VIEWER_EDITOR_ID, instantiationService, storageService, textResourceConfigurationService, themeService, editorGroupService, editorService);
+		super(LogViewer.LOG_VIEWER_EDITOR_ID, instantiationService, storageService, textResourceConfigurationService, themeService, editorGroupService, editorService, fileService);
 	}
 
 	protected override getConfigurationOverrides(): IEditorOptions {

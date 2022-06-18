@@ -17,6 +17,7 @@ import { IEnvironmentService } from 'vs/platform/environment/common/environment'
 import { IFileService } from 'vs/platform/files/common/files';
 import { ILogService, LogLevel } from 'vs/platform/log/common/log';
 import { IS_NEW_KEY } from 'vs/platform/storage/common/storage';
+import { IUserDataProfile, IUserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
 import { IEmptyWorkspaceIdentifier, ISingleFolderWorkspaceIdentifier, IWorkspaceIdentifier, isSingleFolderWorkspaceIdentifier, isWorkspaceIdentifier } from 'vs/platform/workspace/common/workspace';
 
 export interface IStorageMainOptions {
@@ -29,8 +30,8 @@ export interface IStorageMainOptions {
 }
 
 /**
- * Provides access to global and workspace storage from the
- * electron-main side that is the owner of all storage connections.
+ * Provides access to application, global and workspace storage from
+ * the electron-main side that is the owner of all storage connections.
  */
 export interface IStorageMain extends IDisposable {
 
@@ -253,22 +254,22 @@ abstract class BaseStorageMain extends Disposable implements IStorageMain {
 	}
 }
 
-export class GlobalStorageMain extends BaseStorageMain implements IStorageMain {
+class BaseProfileAwareStorageMain extends BaseStorageMain {
 
 	private static readonly STORAGE_NAME = 'state.vscdb';
 
 	get path(): string | undefined {
 		if (!this.options.useInMemoryStorage) {
-			return join(this.environmentService.globalStorageHome.fsPath, GlobalStorageMain.STORAGE_NAME);
+			return join(this.profile.globalStorageHome.fsPath, BaseProfileAwareStorageMain.STORAGE_NAME);
 		}
 
 		return undefined;
 	}
 
 	constructor(
+		private readonly profile: IUserDataProfile,
 		private readonly options: IStorageMainOptions,
 		logService: ILogService,
-		private readonly environmentService: IEnvironmentService,
 		fileService: IFileService
 	) {
 		super(logService, fileService);
@@ -281,7 +282,31 @@ export class GlobalStorageMain extends BaseStorageMain implements IStorageMain {
 	}
 }
 
-export class WorkspaceStorageMain extends BaseStorageMain implements IStorageMain {
+export class GlobalStorageMain extends BaseProfileAwareStorageMain {
+
+	constructor(
+		profile: IUserDataProfile,
+		options: IStorageMainOptions,
+		logService: ILogService,
+		fileService: IFileService
+	) {
+		super(profile, options, logService, fileService);
+	}
+}
+
+export class ApplicationStorageMain extends BaseProfileAwareStorageMain {
+
+	constructor(
+		options: IStorageMainOptions,
+		userDataProfileService: IUserDataProfilesService,
+		logService: ILogService,
+		fileService: IFileService
+	) {
+		super(userDataProfileService.defaultProfile, options, logService, fileService);
+	}
+}
+
+export class WorkspaceStorageMain extends BaseStorageMain {
 
 	private static readonly WORKSPACE_STORAGE_NAME = 'state.vscdb';
 	private static readonly WORKSPACE_META_NAME = 'workspace.json';

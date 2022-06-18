@@ -155,14 +155,21 @@ export class QuickFixController extends Disposable implements IEditorContributio
 	}
 
 	private _applyCodeAction(action: CodeActionItem, preview: boolean): Promise<void> {
-		return this._instantiationService.invokeFunction(applyCodeAction, action, { preview, editor: this._editor });
+		return this._instantiationService.invokeFunction(applyCodeAction, action, ApplyCodeActionReason.FromCodeActions, { preview, editor: this._editor });
 	}
+}
+
+export enum ApplyCodeActionReason {
+	OnSave = 'onSave',
+	FromProblemsView = 'fromProblemsView',
+	FromCodeActions = 'fromCodeActions'
 }
 
 export async function applyCodeAction(
 	accessor: ServicesAccessor,
 	item: CodeActionItem,
-	options?: { preview?: boolean; editor?: ICodeEditor }
+	codeActionReason: ApplyCodeActionReason,
+	options?: { preview?: boolean; editor?: ICodeEditor },
 ): Promise<void> {
 	const bulkEditService = accessor.get(IBulkEditService);
 	const commandService = accessor.get(ICommandService);
@@ -213,9 +220,7 @@ function triggerCodeActionsForEditorSelection(
 ): void {
 	if (editor.hasModel()) {
 		const controller = QuickFixController.get(editor);
-		if (controller) {
-			controller.manualTriggerAtCurrentPosition(notAvailableMessage, filter, autoApply, preview);
-		}
+		controller?.manualTriggerAtCurrentPosition(notAvailableMessage, filter, autoApply, preview);
 	}
 }
 

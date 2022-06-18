@@ -5,7 +5,6 @@
 
 import * as os from 'os';
 import * as path from 'path';
-import * as picomatch from 'picomatch';
 import { Command, commands, Disposable, LineChange, MessageOptions, Position, ProgressLocation, QuickPickItem, Range, SourceControlResourceState, TextDocumentShowOptions, TextEditor, Uri, ViewColumn, window, workspace, WorkspaceEdit, WorkspaceFolder, TimelineItem, env, Selection, TextDocumentContentProvider, InputBoxValidationSeverity, TabInputText } from 'vscode';
 import * as nls from 'vscode-nls';
 import { uniqueNamesGenerator, adjectives, animals, colors, NumberDictionary } from '@joaomoreno/unique-names-generator';
@@ -26,24 +25,25 @@ const localize = nls.loadMessageBundle();
 class CheckoutItem implements QuickPickItem {
 
 	protected get shortCommit(): string { return (this.ref.commit || '').substr(0, 8); }
-	get label(): string { return this.ref.name || this.shortCommit; }
+	get label(): string { return this.ref.name ? `${this.ref.name}${this.repository.isBranchProtected(this.ref.name) ? ' $(lock-small)' : ''}` : this.shortCommit; }
 	get description(): string { return this.shortCommit; }
 
-	constructor(protected ref: Ref) { }
+	constructor(protected repository: Repository, protected ref: Ref) { }
 
-	async run(repository: Repository, opts?: { detached?: boolean }): Promise<void> {
+	async run(opts?: { detached?: boolean }): Promise<void> {
 		const ref = this.ref.name;
 
 		if (!ref) {
 			return;
 		}
 
-		await repository.checkout(ref, opts);
+		await this.repository.checkout(ref, opts);
 	}
 }
 
 class CheckoutTagItem extends CheckoutItem {
 
+	override get label(): string { return this.ref.name || this.shortCommit; }
 	override get description(): string {
 		return localize('tag at', "Tag at {0}", this.shortCommit);
 	}
@@ -51,21 +51,22 @@ class CheckoutTagItem extends CheckoutItem {
 
 class CheckoutRemoteHeadItem extends CheckoutItem {
 
+	override get label(): string { return this.ref.name || this.shortCommit; }
 	override get description(): string {
 		return localize('remote branch at', "Remote branch at {0}", this.shortCommit);
 	}
 
-	override async run(repository: Repository, opts?: { detached?: boolean }): Promise<void> {
+	override async run(opts?: { detached?: boolean }): Promise<void> {
 		if (!this.ref.name) {
 			return;
 		}
 
-		const branches = await repository.findTrackingBranches(this.ref.name);
+		const branches = await this.repository.findTrackingBranches(this.ref.name);
 
 		if (branches.length > 0) {
-			await repository.checkout(branches[0].name!, opts);
+			await this.repository.checkout(branches[0].name!, opts);
 		} else {
-			await repository.checkoutTracking(this.ref.name, opts);
+			await this.repository.checkoutTracking(this.ref.name, opts);
 		}
 	}
 }
@@ -218,7 +219,7 @@ function createCheckoutItems(repository: Repository): CheckoutItem[] {
 		checkoutTypes = checkoutTypeConfig;
 	}
 
-	const processors = checkoutTypes.map(getCheckoutProcessor)
+	const processors = checkoutTypes.map(type => getCheckoutProcessor(repository, type))
 		.filter(p => !!p) as CheckoutProcessor[];
 
 	for (const ref of repository.refs) {
@@ -233,8 +234,8 @@ function createCheckoutItems(repository: Repository): CheckoutItem[] {
 class CheckoutProcessor {
 
 	private refs: Ref[] = [];
-	get items(): CheckoutItem[] { return this.refs.map(r => new this.ctor(r)); }
-	constructor(private type: RefType, private ctor: { new(ref: Ref): CheckoutItem }) { }
+	get items(): CheckoutItem[] { return this.refs.map(r => new this.ctor(this.repository, r)); }
+	constructor(private repository: Repository, private type: RefType, private ctor: { new(repository: Repository, ref: Ref): CheckoutItem }) { }
 
 	onRef(ref: Ref): void {
 		if (ref.type === this.type) {
@@ -243,14 +244,14 @@ class CheckoutProcessor {
 	}
 }
 
-function getCheckoutProcessor(type: string): CheckoutProcessor | undefined {
+function getCheckoutProcessor(repository: Repository, type: string): CheckoutProcessor | undefined {
 	switch (type) {
 		case 'local':
-			return new CheckoutProcessor(RefType.Head, CheckoutItem);
+			return new CheckoutProcessor(repository, RefType.Head, CheckoutItem);
 		case 'remote':
-			return new CheckoutProcessor(RefType.RemoteHead, CheckoutRemoteHeadItem);
+			return new CheckoutProcessor(repository, RefType.RemoteHead, CheckoutRemoteHeadItem);
 		case 'tags':
-			return new CheckoutProcessor(RefType.Tag, CheckoutTagItem);
+			return new CheckoutProcessor(repository, RefType.Tag, CheckoutTagItem);
 	}
 
 	return undefined;
@@ -1558,11 +1559,8 @@ export class CommandCenter {
 		}
 
 		// Branch protection
-		const branchProtection = config.get<string[]>('branchProtection')!.map(bp => bp.trim()).filter(bp => bp !== '');
 		const branchProtectionPrompt = config.get<'alwaysCommit' | 'alwaysCommitToNewBranch' | 'alwaysPrompt'>('branchProtectionPrompt')!;
-		const branchIsProtected = branchProtection.some(bp => picomatch.isMatch(repository.HEAD?.name ?? '', bp));
-
-		if (branchIsProtected && (branchProtectionPrompt === 'alwaysPrompt' || branchProtectionPrompt === 'alwaysCommitToNewBranch')) {
+		if (repository.isBranchProtected() && (branchProtectionPrompt === 'alwaysPrompt' || branchProtectionPrompt === 'alwaysCommitToNewBranch')) {
 			const commitToNewBranch = localize('commit to branch', "Commit to a New Branch");
 
 			let pick: string | undefined = commitToNewBranch;
@@ -1833,7 +1831,7 @@ export class CommandCenter {
 			const item = choice as CheckoutItem;
 
 			try {
-				await item.run(repository, opts);
+				await item.run(opts);
 			} catch (err) {
 				if (err.gitErrorCode !== GitErrorCodes.DirtyWorkTree) {
 					throw err;
@@ -1845,10 +1843,10 @@ export class CommandCenter {
 
 				if (choice === force) {
 					await this.cleanAll(repository);
-					await item.run(repository, opts);
+					await item.run(opts);
 				} else if (choice === stash) {
 					await this.stash(repository);
-					await item.run(repository, opts);
+					await item.run(opts);
 					await this.stashPopLatest(repository);
 				}
 			}
@@ -2944,13 +2942,7 @@ export class CommandCenter {
 
 	@command('git.closeAllDiffEditors', { repository: true })
 	closeDiffEditors(repository: Repository): void {
-		const resources = [
-			...repository.indexGroup.resourceStates.map(r => r.resourceUri.fsPath),
-			...repository.workingTreeGroup.resourceStates.map(r => r.resourceUri.fsPath),
-			...repository.untrackedGroup.resourceStates.map(r => r.resourceUri.fsPath)
-		];
-
-		repository.closeDiffEditors(resources, resources, true);
+		repository.closeDiffEditors(undefined, undefined, true);
 	}
 
 	private createCommand(key: string, method: Function, options: ScmCommandOptions): (...args: any[]) => any {

@@ -526,9 +526,7 @@ export class FolderMatch extends Disposable {
 
 	bindModel(model: ITextModel): void {
 		const fileMatch = this._fileMatches.get(model.uri);
-		if (fileMatch) {
-			fileMatch.bindModel(model);
-		}
+		fileMatch?.bindModel(model);
 	}
 
 	add(raw: IFileMatch[], silent: boolean): void {
@@ -782,9 +780,7 @@ export class SearchResult extends Disposable {
 
 	private onModelAdded(model: ITextModel): void {
 		const folderMatch = this._folderMatchesMap.findSubstr(model.uri);
-		if (folderMatch) {
-			folderMatch.bindModel(model);
-		}
+		folderMatch?.bindModel(model);
 	}
 
 	private createFolderMatchWithResource(resource: URI, id: string, index: number, query: ITextQuery): FolderMatchWithResource {
@@ -816,9 +812,7 @@ export class SearchResult extends Disposable {
 			}
 
 			const folderMatch = this.getFolderMatch(raw[0].resource);
-			if (folderMatch) {
-				folderMatch.add(raw, silent);
-			}
+			folderMatch?.add(raw, silent);
 		});
 
 		this._otherFilesMatch?.add(other, silent);

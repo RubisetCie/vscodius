@@ -552,6 +552,11 @@ export class TestingExplorerViewModel extends Disposable {
 			followRunningTests = getTestingConfiguration(configurationService, TestingConfigKeys.FollowRunningTest);
 		}));
 
+		let alwaysRevealTestAfterStateChange = getTestingConfiguration(configurationService, TestingConfigKeys.AlwaysRevealTestOnStateChange);
+		this._register(configurationService.onDidChangeConfiguration(() => {
+			alwaysRevealTestAfterStateChange = getTestingConfiguration(configurationService, TestingConfigKeys.AlwaysRevealTestOnStateChange);
+		}));
+
 		this._register(testResults.onTestChanged(evt => {
 			if (!followRunningTests) {
 				return;
@@ -567,7 +572,7 @@ export class TestingExplorerViewModel extends Disposable {
 				return;
 			}
 
-			this.revealById(evt.item.item.extId, false, false);
+			this.revealById(evt.item.item.extId, alwaysRevealTestAfterStateChange, false);
 		}));
 
 		this._register(testResults.onResultsChanged(() => {

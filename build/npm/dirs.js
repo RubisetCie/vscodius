@@ -31,7 +31,6 @@ exports.dirs = [
 	'extensions/markdown-language-features',
 	'extensions/markdown-math',
 	'extensions/merge-conflict',
-	'extensions/microsoft-authentication',
 	'extensions/notebook-renderers',
 	'extensions/npm',
 	'extensions/php-language-features',

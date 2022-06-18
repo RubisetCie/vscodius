@@ -38,6 +38,7 @@ steps:
     - script: |
         set -e
         yarn gulp \
+          compile-extension:configuration-editing \
           compile-extension:css-language-features-server \
           compile-extension:emmet \
           compile-extension:git \
@@ -47,7 +48,6 @@ steps:
           compile-extension:json-language-features-server \
           compile-extension:markdown-language-features \
           compile-extension-media \
-          compile-extension:microsoft-authentication \
           compile-extension:typescript-language-features \
           compile-extension:vscode-api-tests \
           compile-extension:vscode-colorize-tests \
