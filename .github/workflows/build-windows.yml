@@ -2,6 +2,10 @@ name: Build for Windows
 on:
   workflow_dispatch:
     inputs:
+      pkg_version:
+        description: 'Arbitrary release version'
+        required: false
+        default: '1.0.0'
       pkg_arch:
         description: 'Target package architecture (x64 or ia32)'
         required: true
@@ -43,5 +47,8 @@ jobs:
         with:
           repo_token: '${{ secrets.GITHUB_TOKEN }}'
           file: 'release.zip'
+          tag: ${{github.event.inputs.pkg_version}}
+          body: 'VSCodius version ${{github.event.inputs.pkg_version}} official release.'
           overwrite: true
-          asset_name: VSCodius-win32-${{github.event.inputs.pkg_arch}}.zip
+          release_name: '${{github.event.inputs.pkg_version}}'
+          asset_name: VSCodius-win32-${{github.event.inputs.pkg_arch}}-${{github.event.inputs.pkg_version}}.zip
