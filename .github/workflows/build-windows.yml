@@ -38,8 +38,10 @@ jobs:
           type: 'zip'
           filename: 'release.zip'
           path: '../VSCode-win32-${{github.event.inputs.pkg_arch}}/'
-      - name: Post Artifact
-        uses: actions/upload-artifact@v3
+      - name: Release binaries
+        uses: svenstaro/upload-release-action@v2
         with:
-          name: VSCodius-win32-${{github.event.inputs.pkg_arch}}.zip
-          path: 'release.zip'
+          repo_token: '${{ secrets.GITHUB_TOKEN }}'
+          file: 'release.zip'
+          overwrite: true
+          asset_name: VSCodius-win32-${{github.event.inputs.pkg_arch}}.zip
