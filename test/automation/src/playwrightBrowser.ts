@@ -43,7 +43,7 @@ async function launchServer(options: LaunchOptions) {
 
 	const args = [
 		'--disable-workspace-trust',
-		`--port${port++}`,
+		`--port=${port++}`,
 		'--enable-smoke-test-driver',
 		`--extensions-dir=${extensionsPath}`,
 		`--server-data-dir=${agentFolder}`,
