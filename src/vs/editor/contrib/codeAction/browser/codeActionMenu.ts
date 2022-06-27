@@ -47,6 +47,7 @@ function stripNewlines(str: string): string {
 
 export interface CodeActionShowOptions {
 	readonly includeDisabledActions: boolean;
+	readonly fromLightbulb?: boolean;
 }
 
 export class CodeActionMenu extends Disposable {
@@ -116,7 +117,6 @@ export class CodeActionMenu extends Disposable {
 		documentation: readonly Command[]
 	): IAction[] {
 		const toCodeActionAction = (item: CodeActionItem): CodeActionAction => new CodeActionAction(item.action, () => this._delegate.onSelectCodeAction(item, trigger));
-
 		const result: IAction[] = actionsToShow
 			.map(toCodeActionAction);
 

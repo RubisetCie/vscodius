@@ -30,7 +30,7 @@ import { IMarkerService } from 'vs/platform/markers/common/markers';
 import { IEditorProgressService } from 'vs/platform/progress/common/progress';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { CodeActionModel, CodeActionsState, SUPPORTED_CODE_ACTIONS } from './codeActionModel';
-import { CodeActionAutoApply, CodeActionCommandArgs, CodeActionFilter, CodeActionKind, CodeActionTrigger } from './types';
+import { CodeActionAutoApply, CodeActionCommandArgs, CodeActionFilter, CodeActionKind, CodeActionTrigger, CodeActionTriggerSource } from './types';
 
 function contextKeyForSupportedActions(kind: CodeActionKind) {
 	return ContextKeyExpr.regex(
@@ -38,7 +38,7 @@ function contextKeyForSupportedActions(kind: CodeActionKind) {
 		new RegExp('(\\s|^)' + escapeRegExpCharacters(kind.value) + '\\b'));
 }
 
-function RefactorTrigger(editor: ICodeEditor, userArgs: any, preview: boolean) {
+function refactorTrigger(editor: ICodeEditor, userArgs: any, preview: boolean, codeActionFrom: CodeActionTriggerSource) {
 	const args = CodeActionCommandArgs.fromUser(userArgs, {
 		kind: CodeActionKind.Refactor,
 		apply: CodeActionAutoApply.Never
@@ -55,7 +55,7 @@ function RefactorTrigger(editor: ICodeEditor, userArgs: any, preview: boolean) {
 			include: CodeActionKind.Refactor.contains(args.kind) ? args.kind : CodeActionKind.None,
 			onlyIncludePreferredActions: args.preferred
 		},
-		args.apply, preview);
+		args.apply, preview, codeActionFrom);
 }
 
 const argsSchema: IJSONSchema = {
@@ -119,7 +119,7 @@ export class QuickFixController extends Disposable implements IEditorContributio
 						await this._applyCodeAction(action, preview);
 					} finally {
 						if (retrigger) {
-							this._trigger({ type: CodeActionTriggerType.Auto, filter: {} });
+							this._trigger({ type: CodeActionTriggerType.Auto, triggerAction: CodeActionTriggerSource.QuickFix, filter: {} });
 						}
 					}
 				}
@@ -132,14 +132,16 @@ export class QuickFixController extends Disposable implements IEditorContributio
 	}
 
 	public showCodeActions(trigger: CodeActionTrigger, actions: CodeActionSet, at: IAnchor | IPosition) {
-		return this._ui.getValue().showCodeActionList(trigger, actions, at, { includeDisabledActions: false });
+		return this._ui.getValue().showCodeActionList(trigger, actions, at, { includeDisabledActions: false, fromLightbulb: false });
 	}
 
 	public manualTriggerAtCurrentPosition(
 		notAvailableMessage: string,
+		triggerAction: CodeActionTriggerSource,
 		filter?: CodeActionFilter,
 		autoApply?: CodeActionAutoApply,
-		preview?: boolean
+		preview?: boolean,
+
 	): void {
 		if (!this._editor.hasModel()) {
 			return;
@@ -147,7 +149,7 @@ export class QuickFixController extends Disposable implements IEditorContributio
 
 		MessageController.get(this._editor)?.closeMessage();
 		const triggerPosition = this._editor.getPosition();
-		this._trigger({ type: CodeActionTriggerType.Invoke, filter, autoApply, context: { notAvailableMessage, position: triggerPosition }, preview });
+		this._trigger({ type: CodeActionTriggerType.Invoke, triggerAction, filter, autoApply, context: { notAvailableMessage, position: triggerPosition }, preview });
 	}
 
 	private _trigger(trigger: CodeActionTrigger) {
@@ -164,6 +166,7 @@ export enum ApplyCodeActionReason {
 	FromProblemsView = 'fromProblemsView',
 	FromCodeActions = 'fromCodeActions'
 }
+
 
 export async function applyCodeAction(
 	accessor: ServicesAccessor,
@@ -216,11 +219,12 @@ function triggerCodeActionsForEditorSelection(
 	notAvailableMessage: string,
 	filter: CodeActionFilter | undefined,
 	autoApply: CodeActionAutoApply | undefined,
-	preview: boolean = false
+	preview: boolean = false,
+	triggerAction: CodeActionTriggerSource = CodeActionTriggerSource.Default
 ): void {
 	if (editor.hasModel()) {
 		const controller = QuickFixController.get(editor);
-		controller?.manualTriggerAtCurrentPosition(notAvailableMessage, filter, autoApply, preview);
+		controller?.manualTriggerAtCurrentPosition(notAvailableMessage, triggerAction, filter, autoApply, preview);
 	}
 }
 
@@ -243,7 +247,7 @@ export class QuickFixAction extends EditorAction {
 	}
 
 	public run(_accessor: ServicesAccessor, editor: ICodeEditor): void {
-		return triggerCodeActionsForEditorSelection(editor, nls.localize('editor.action.quickFix.noneMessage', "No code actions available"), undefined, undefined);
+		return triggerCodeActionsForEditorSelection(editor, nls.localize('editor.action.quickFix.noneMessage', "No code actions available"), undefined, undefined, false, CodeActionTriggerSource.QuickFix);
 	}
 }
 
@@ -314,7 +318,7 @@ export class RefactorAction extends EditorAction {
 	}
 
 	public run(_accessor: ServicesAccessor, editor: ICodeEditor, userArgs: any): void {
-		return RefactorTrigger(editor, userArgs, false);
+		return refactorTrigger(editor, userArgs, false, CodeActionTriggerSource.Refactor);
 	}
 }
 
@@ -334,7 +338,7 @@ export class RefactorPreview extends EditorAction {
 	}
 
 	public run(_accessor: ServicesAccessor, editor: ICodeEditor, userArgs: any): void {
-		return RefactorTrigger(editor, userArgs, true);
+		return refactorTrigger(editor, userArgs, true, CodeActionTriggerSource.RefactorPreview);
 	}
 }
 
@@ -378,7 +382,7 @@ export class SourceAction extends EditorAction {
 				includeSourceActions: true,
 				onlyIncludePreferredActions: args.preferred,
 			},
-			args.apply);
+			args.apply, undefined, CodeActionTriggerSource.SourceAction);
 	}
 }
 
@@ -404,7 +408,7 @@ export class OrganizeImportsAction extends EditorAction {
 		return triggerCodeActionsForEditorSelection(editor,
 			nls.localize('editor.action.organize.noneMessage', "No organize imports action available"),
 			{ include: CodeActionKind.SourceOrganizeImports, includeSourceActions: true },
-			CodeActionAutoApply.IfSingle);
+			CodeActionAutoApply.IfSingle, undefined, CodeActionTriggerSource.OrganizeImports);
 	}
 }
 
@@ -425,7 +429,7 @@ export class FixAllAction extends EditorAction {
 		return triggerCodeActionsForEditorSelection(editor,
 			nls.localize('fixAll.noneMessage', "No fix all action available"),
 			{ include: CodeActionKind.SourceFixAll, includeSourceActions: true },
-			CodeActionAutoApply.IfSingle);
+			CodeActionAutoApply.IfSingle, undefined, CodeActionTriggerSource.FixAll);
 	}
 }
 
@@ -459,6 +463,6 @@ export class AutoFixAction extends EditorAction {
 				include: CodeActionKind.QuickFix,
 				onlyIncludePreferredActions: true
 			},
-			CodeActionAutoApply.IfSingle);
+			CodeActionAutoApply.IfSingle, undefined, CodeActionTriggerSource.AutoFix);
 	}
 }

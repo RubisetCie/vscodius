@@ -71,6 +71,7 @@ export interface IConfigurationChangeEvent {
 export interface IConfigurationValue<T> {
 
 	readonly defaultValue?: T;
+	readonly applicationValue?: T;
 	readonly userValue?: T;
 	readonly userLocalValue?: T;
 	readonly userRemoteValue?: T;
@@ -81,6 +82,7 @@ export interface IConfigurationValue<T> {
 	readonly value?: T;
 
 	readonly default?: { value?: T; override?: T };
+	readonly application?: { value?: T; override?: T };
 	readonly user?: { value?: T; override?: T };
 	readonly userLocal?: { value?: T; override?: T };
 	readonly userRemote?: { value?: T; override?: T };
@@ -163,6 +165,7 @@ export interface IOverrides {
 export interface IConfigurationData {
 	defaults: IConfigurationModel;
 	policy: IConfigurationModel;
+	application: IConfigurationModel;
 	user: IConfigurationModel;
 	workspace: IConfigurationModel;
 	folders: [UriComponents, IConfigurationModel][];

@@ -33,7 +33,7 @@ import { ExtensionGalleryService } from 'vs/platform/extensionManagement/common/
 import { IExtensionGalleryService, IExtensionManagementService, IExtensionTipsService, IGlobalExtensionEnablementService } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { ExtensionManagementChannel, ExtensionTipsChannel } from 'vs/platform/extensionManagement/common/extensionManagementIpc';
 import { ExtensionTipsService } from 'vs/platform/extensionManagement/electron-sandbox/extensionTipsService';
-import { ExtensionManagementService } from 'vs/platform/extensionManagement/node/extensionManagementService';
+import { ExtensionManagementService, INativeServerExtensionManagementService } from 'vs/platform/extensionManagement/node/extensionManagementService';
 import { IExtensionRecommendationNotificationService } from 'vs/platform/extensionRecommendations/common/extensionRecommendations';
 import { ExtensionRecommendationNotificationServiceChannelClient } from 'vs/platform/extensionRecommendations/electron-sandbox/extensionRecommendationsIpc';
 import { IFileService } from 'vs/platform/files/common/files';
@@ -91,10 +91,11 @@ import { InspectProfilingService as V8InspectProfilingService } from 'vs/platfor
 import { IV8InspectProfilingService } from 'vs/platform/profiling/common/profiling';
 import { IExtensionsScannerService } from 'vs/platform/extensionManagement/common/extensionsScannerService';
 import { ExtensionsScannerService } from 'vs/platform/extensionManagement/node/extensionsScannerService';
-import { IUserDataProfilesService, UserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
+import { IUserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
 import { ExtensionsProfileScannerService, IExtensionsProfileScannerService } from 'vs/platform/extensionManagement/common/extensionsProfileScannerService';
 import { PolicyChannelClient } from 'vs/platform/policy/common/policyIpc';
 import { IPolicyService, NullPolicyService } from 'vs/platform/policy/common/policy';
+import { UserDataProfilesNativeService } from 'vs/platform/userDataProfile/electron-sandbox/userDataProfile';
 
 class SharedProcessMain extends Disposable {
 
@@ -221,7 +222,7 @@ class SharedProcessMain extends Disposable {
 		fileService.registerProvider(Schemas.vscodeUserData, userDataFileSystemProvider);
 
 		// User Data Profiles
-		const userDataProfilesService = this._register(new UserDataProfilesService(this.configuration.defaultProfile, environmentService, fileService, logService));
+		const userDataProfilesService = this._register(new UserDataProfilesNativeService(this.configuration.profiles, mainProcessService, environmentService, fileService, logService));
 		services.set(IUserDataProfilesService, userDataProfilesService);
 
 		// Configuration
@@ -266,7 +267,7 @@ class SharedProcessMain extends Disposable {
 		// Extension Management
 		services.set(IExtensionsProfileScannerService, new SyncDescriptor(ExtensionsProfileScannerService));
 		services.set(IExtensionsScannerService, new SyncDescriptor(ExtensionsScannerService));
-		services.set(IExtensionManagementService, new SyncDescriptor(ExtensionManagementService));
+		services.set(INativeServerExtensionManagementService, new SyncDescriptor(ExtensionManagementService));
 
 		// Extension Gallery
 		services.set(IExtensionGalleryService, new SyncDescriptor(ExtensionGalleryService));

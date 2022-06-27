@@ -133,7 +133,7 @@ export class WalkthroughsService extends Disposable implements IWalkthroughsServ
 	private gettingStartedContributions = new Map<string, IWalkthrough>();
 	private steps = new Map<string, IWalkthroughStep>();
 
-	private sessionInstalledExtensions = new Set<string>();
+	private sessionInstalledExtensions: Set<string> = new Set<string>();
 
 	private categoryVisibilityContextKeys = new Set<string>();
 	private stepCompletionContextKeyExpressions = new Set<ContextKeyExpression>();
@@ -160,10 +160,10 @@ export class WalkthroughsService extends Disposable implements IWalkthroughsServ
 
 		this.metadata = new Map(
 			JSON.parse(
-				this.storageService.get(walkthroughMetadataConfigurationKey, StorageScope.GLOBAL, '[]')));
+				this.storageService.get(walkthroughMetadataConfigurationKey, StorageScope.PROFILE, '[]')));
 
 		this.memento = new Memento('gettingStartedService', this.storageService);
-		this.stepProgress = this.memento.getMemento(StorageScope.GLOBAL, StorageTarget.USER);
+		this.stepProgress = this.memento.getMemento(StorageScope.PROFILE, StorageTarget.USER);
 
 		walkthroughsExtensionPoint.setHandler(async (_, { added, removed }) => {
 			await Promise.all(
@@ -228,7 +228,9 @@ export class WalkthroughsService extends Disposable implements IWalkthroughsServ
 		this._register(this.extensionManagementService.onDidInstallExtensions(async (result) => {
 			const hadLastFoucs = await this.hostService.hadLastFocus();
 			for (const e of result) {
-				if (hadLastFoucs) {
+				// If the window had last focus and the install didn't specify to skip the walkthrough
+				// Then add it to the sessionInstallExtensions to be opened
+				if (hadLastFoucs && !e?.context?.skipWalkthrough) {
 					this.sessionInstalledExtensions.add(e.identifier.id.toLowerCase());
 				}
 				this.progressByEvent(`extensionInstalled:${e.identifier.id.toLowerCase()}`);
@@ -266,7 +268,7 @@ export class WalkthroughsService extends Disposable implements IWalkthroughsServ
 			this.metadata.set(id, { ...prior, manaullyOpened: true, stepIDs: walkthrough.steps.map(s => s.id) });
 		}
 
-		this.storageService.store(walkthroughMetadataConfigurationKey, JSON.stringify([...this.metadata.entries()]), StorageScope.GLOBAL, StorageTarget.USER);
+		this.storageService.store(walkthroughMetadataConfigurationKey, JSON.stringify([...this.metadata.entries()]), StorageScope.PROFILE, StorageTarget.USER);
 	}
 
 	private async registerExtensionWalkthroughContributions(extension: IExtensionDescription) {
@@ -410,11 +412,10 @@ export class WalkthroughsService extends Disposable implements IWalkthroughsServ
 			this._onDidAddWalkthrough.fire(this.resolveWalkthrough(walkthoughDescriptor));
 		}));
 
-		this.storageService.store(walkthroughMetadataConfigurationKey, JSON.stringify([...this.metadata.entries()]), StorageScope.GLOBAL, StorageTarget.USER);
-
+		this.storageService.store(walkthroughMetadataConfigurationKey, JSON.stringify([...this.metadata.entries()]), StorageScope.PROFILE, StorageTarget.USER);
 
 		if (sectionToOpen && this.configurationService.getValue<string>('workbench.welcomePage.walkthroughs.openOnInstall')) {
-			this.commandService.executeCommand('workbench.action.openWalkthrough', sectionToOpen);
+			this.commandService.executeCommand('workbench.action.openWalkthrough', sectionToOpen, true);
 		}
 	}
 
@@ -679,17 +680,17 @@ registerAction2(class extends Action2 {
 		storageService.store(
 			hiddenEntriesConfigurationKey,
 			JSON.stringify([]),
-			StorageScope.GLOBAL,
+			StorageScope.PROFILE,
 			StorageTarget.USER);
 
 		storageService.store(
 			walkthroughMetadataConfigurationKey,
 			JSON.stringify([]),
-			StorageScope.GLOBAL,
+			StorageScope.PROFILE,
 			StorageTarget.USER);
 
 		const memento = new Memento('gettingStartedService', accessor.get(IStorageService));
-		const record = memento.getMemento(StorageScope.GLOBAL, StorageTarget.USER);
+		const record = memento.getMemento(StorageScope.PROFILE, StorageTarget.USER);
 		for (const key in record) {
 			if (Object.prototype.hasOwnProperty.call(record, key)) {
 				try {
