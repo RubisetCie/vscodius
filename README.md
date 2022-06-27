@@ -82,6 +82,12 @@ These `gulp` tasks are available:
 
 Run `gulp` via `yarn` to avoid potential out of memory issues, for example: `yarn gulp vscode-linux-x64`
 
+Note on Windows: sometimes the default `ElectronJS` resources will remain on the packaged executable. In order to fix this, run the following command:
+
+```
+node build\win32-resources-patch.js [exe path]
+```
+
 ## Code of Conduct
 
 This project still remain under the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
