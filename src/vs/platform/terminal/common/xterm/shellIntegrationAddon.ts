@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { IShellIntegration } from 'vs/platform/terminal/common/terminal';
-import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
+import { Disposable, dispose, IDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { TerminalCapabilityStore } from 'vs/platform/terminal/common/capabilities/terminalCapabilityStore';
 import { CommandDetectionCapability } from 'vs/platform/terminal/common/capabilities/commandDetectionCapability';
 import { CwdDetectionCapability } from 'vs/platform/terminal/common/capabilities/cwdDetectionCapability';
@@ -124,12 +124,21 @@ export class ShellIntegrationAddon extends Disposable implements IShellIntegrati
 	private _terminal?: Terminal;
 	readonly capabilities = new TerminalCapabilityStore();
 	private _activationTimeout: any;
+	private _commonProtocolDisposables: IDisposable[] = [];
 
 	constructor(
 		@ILogService private readonly _logService: ILogService
 	) {
 		super();
-		this._register(toDisposable(() => this._clearActivationTimeout()));
+		this._register(toDisposable(() => {
+			this._clearActivationTimeout();
+			this._disposeCommonProtocol();
+		}));
+	}
+
+	private _disposeCommonProtocol(): void {
+		dispose(this._commonProtocolDisposables);
+		this._commonProtocolDisposables.length = 0;
 	}
 
 	activate(xterm: Terminal) {

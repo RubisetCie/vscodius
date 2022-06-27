@@ -240,6 +240,10 @@ export class RemoteExtensionHost extends Disposable implements IExtensionHost {
 				authority: this._initDataProvider.remoteAuthority,
 				connectionData: remoteInitData.connectionData
 			},
+			consoleForward: {
+				includeStack: false,
+				logNative: Boolean(this._environmentService.debugExtensionHost.debugId)
+			},
 			allExtensions: deltaExtensions.toAdd,
 			myExtensions: deltaExtensions.myToAdd,
 			logLevel: this._logService.getLevel(),

@@ -11,7 +11,7 @@ import { Disposable, IDisposable, toDisposable } from 'vs/base/common/lifecycle'
 import * as perf from 'vs/base/common/performance';
 import { isEqualOrParent } from 'vs/base/common/resources';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
-import { IWebExtensionsScannerService, IWorkbenchExtensionEnablementService } from 'vs/workbench/services/extensionManagement/common/extensionManagement';
+import { IWebExtensionsScannerService, IWorkbenchExtensionEnablementService, IWorkbenchExtensionManagementService } from 'vs/workbench/services/extensionManagement/common/extensionManagement';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { ActivationTimes, ExtensionPointContribution, IExtensionService, IExtensionsStatus, IMessage, IWillActivateEvent, IResponsiveStateChangeEvent, toExtension, IExtensionHost, ActivationKind, ExtensionHostKind, toExtensionDescription, ExtensionRunningLocation, extensionHostKindToString, ExtensionActivationReason, IInternalExtensionService, RemoteRunningLocation, LocalProcessRunningLocation, LocalWebWorkerRunningLocation } from 'vs/workbench/services/extensions/common/extensions';
@@ -24,7 +24,7 @@ import { ExtensionKind } from 'vs/platform/environment/common/environment';
 import { IFileService } from 'vs/platform/files/common/files';
 import { parseExtensionDevOptions } from 'vs/workbench/services/extensions/common/extensionDevOptions';
 import { IProductService } from 'vs/platform/product/common/productService';
-import { IExtensionManagementService, InstallOperation } from 'vs/platform/extensionManagement/common/extensionManagement';
+import { InstallOperation } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { IExtensionActivationHost as IWorkspaceContainsActivationHost, checkGlobFileExists, checkActivateWorkspaceContainsExtension } from 'vs/workbench/services/extensions/common/workspaceContains';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
@@ -178,7 +178,7 @@ export abstract class AbstractExtensionService extends Disposable implements IEx
 		@IWorkbenchExtensionEnablementService protected readonly _extensionEnablementService: IWorkbenchExtensionEnablementService,
 		@IFileService protected readonly _fileService: IFileService,
 		@IProductService protected readonly _productService: IProductService,
-		@IExtensionManagementService protected readonly _extensionManagementService: IExtensionManagementService,
+		@IWorkbenchExtensionManagementService protected readonly _extensionManagementService: IWorkbenchExtensionManagementService,
 		@IWorkspaceContextService private readonly _contextService: IWorkspaceContextService,
 		@IConfigurationService protected readonly _configurationService: IConfigurationService,
 		@IExtensionManifestPropertiesService protected readonly _extensionManifestPropertiesService: IExtensionManifestPropertiesService,
@@ -230,6 +230,8 @@ export abstract class AbstractExtensionService extends Disposable implements IEx
 			}
 			this._handleDeltaExtensions(new DeltaExtensionsQueueItem(toAdd, toRemove));
 		}));
+
+		this._register(this._extensionManagementService.onDidChangeProfileExtensions(({ added, removed }) => this._handleDeltaExtensions(new DeltaExtensionsQueueItem(added, removed))));
 
 		this._register(this._extensionManagementService.onDidInstallExtensions((result) => {
 			const extensions: IExtension[] = [];
@@ -769,7 +771,6 @@ export abstract class AbstractExtensionService extends Disposable implements IEx
 			exitCode = 1 /* ERROR */;
 		}
 
-		await extensionHostManager.extensionTestsSendExit(exitCode);
 		this._onExtensionHostExit(exitCode);
 	}
 

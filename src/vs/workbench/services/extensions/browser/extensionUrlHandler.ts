@@ -42,7 +42,7 @@ function isExtensionId(value: string): boolean {
 class UserTrustedExtensionIdStorage {
 
 	get extensions(): string[] {
-		const userTrustedExtensionIdsJson = this.storageService.get(USER_TRUSTED_EXTENSIONS_STORAGE_KEY, StorageScope.GLOBAL, '[]');
+		const userTrustedExtensionIdsJson = this.storageService.get(USER_TRUSTED_EXTENSIONS_STORAGE_KEY, StorageScope.PROFILE, '[]');
 
 		try {
 			return JSON.parse(userTrustedExtensionIdsJson);
@@ -62,7 +62,7 @@ class UserTrustedExtensionIdStorage {
 	}
 
 	set(ids: string[]): void {
-		this.storageService.store(USER_TRUSTED_EXTENSIONS_STORAGE_KEY, JSON.stringify(ids), StorageScope.GLOBAL, StorageTarget.MACHINE);
+		this.storageService.store(USER_TRUSTED_EXTENSIONS_STORAGE_KEY, JSON.stringify(ids), StorageScope.PROFILE, StorageTarget.MACHINE);
 	}
 }
 

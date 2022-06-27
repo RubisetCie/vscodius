@@ -283,7 +283,7 @@ export class Workbench extends Layout {
 	}
 
 	private restoreFontInfo(storageService: IStorageService, configurationService: IConfigurationService): void {
-		const storedFontInfoRaw = storageService.get('editorFontInfo', StorageScope.GLOBAL);
+		const storedFontInfoRaw = storageService.get('editorFontInfo', StorageScope.APPLICATION);
 		if (storedFontInfoRaw) {
 			try {
 				const storedFontInfo = JSON.parse(storedFontInfoRaw);
@@ -301,7 +301,7 @@ export class Workbench extends Layout {
 	private storeFontInfo(storageService: IStorageService): void {
 		const serializedFontInfo = FontMeasurements.serializeFontInfo();
 		if (serializedFontInfo) {
-			storageService.store('editorFontInfo', JSON.stringify(serializedFontInfo), StorageScope.GLOBAL, StorageTarget.MACHINE);
+			storageService.store('editorFontInfo', JSON.stringify(serializedFontInfo), StorageScope.APPLICATION, StorageTarget.MACHINE);
 		}
 	}
 

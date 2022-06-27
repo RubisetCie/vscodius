@@ -102,7 +102,7 @@ export class ExtensionRecommendationNotificationService implements IExtensionRec
 
 	// Ignored Important Recommendations
 	get ignoredRecommendations(): string[] {
-		return distinct([...(<string[]>JSON.parse(this.storageService.get(ignoreImportantExtensionRecommendationStorageKey, StorageScope.GLOBAL, '[]')))].map(i => i.toLowerCase()));
+		return distinct([...(<string[]>JSON.parse(this.storageService.get(ignoreImportantExtensionRecommendationStorageKey, StorageScope.PROFILE, '[]')))].map(i => i.toLowerCase()));
 	}
 
 	private recommendedExtensions: string[] = [];
@@ -397,7 +397,7 @@ export class ExtensionRecommendationNotificationService implements IExtensionRec
 		const importantRecommendationsIgnoreList = [...this.ignoredRecommendations];
 		if (!importantRecommendationsIgnoreList.includes(id.toLowerCase())) {
 			importantRecommendationsIgnoreList.push(id.toLowerCase());
-			this.storageService.store(ignoreImportantExtensionRecommendationStorageKey, JSON.stringify(importantRecommendationsIgnoreList), StorageScope.GLOBAL, StorageTarget.USER);
+			this.storageService.store(ignoreImportantExtensionRecommendationStorageKey, JSON.stringify(importantRecommendationsIgnoreList), StorageScope.PROFILE, StorageTarget.USER);
 		}
 	}
 
