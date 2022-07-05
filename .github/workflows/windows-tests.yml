@@ -1,11 +1,7 @@
-name: Build for Windows
+name: Unit tests for Windows
 on:
   workflow_dispatch:
     inputs:
-      pkg_version:
-        description: 'Arbitrary release version'
-        required: false
-        default: '1.0.0'
       pkg_arch:
         description: 'Target package architecture (x64 or ia32)'
         required: true
@@ -34,21 +30,16 @@ jobs:
           uwp: false
       - name: Compilation
         run: yarn compile
-      - name: Packaging
-        run: yarn gulp vscode-win32-${{github.event.inputs.pkg_arch}}-min
+      - name: Testing
+        run: ./scripts/test.bat > output.txt
       - name: Compression
         uses: thedoctor0/zip-release@main
         with:
           type: 'zip'
-          filename: 'release.zip'
-          path: '../VSCode-win32-${{github.event.inputs.pkg_arch}}/'
-      - name: Release binaries
-        uses: svenstaro/upload-release-action@v2
+          filename: 'output.zip'
+          path: 'output.txt'
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
         with:
-          repo_token: '${{ secrets.GITHUB_TOKEN }}'
-          file: 'release.zip'
-          tag: ${{github.event.inputs.pkg_version}}
-          body: 'VSCodius version ${{github.event.inputs.pkg_version}} official release.'
-          overwrite: true
-          release_name: '${{github.event.inputs.pkg_version}}'
-          asset_name: VSCodius-win32-${{github.event.inputs.pkg_arch}}-${{github.event.inputs.pkg_version}}.zip
+          name: VSCodius-Win32-Testing-Logs.zip
+          path: 'output.zip'
