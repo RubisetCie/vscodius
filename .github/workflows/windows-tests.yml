@@ -1,11 +1,7 @@
-name: Unit tests for Windows
+name: Windows Unit Tests
 on:
   workflow_dispatch:
     inputs:
-      pkg_arch:
-        description: 'Target package architecture (x64 or ia32)'
-        required: true
-        default: 'x64'
       vs_arch:
         description: 'Target MSVC architecture (x64, x86, etc)'
         required: true
@@ -32,14 +28,8 @@ jobs:
         run: yarn compile
       - name: Testing
         run: ./scripts/test.bat > output.txt
-      - name: Compression
-        uses: thedoctor0/zip-release@main
-        with:
-          type: 'zip'
-          filename: 'output.zip'
-          path: 'output.txt'
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: VSCodius-Win32-Testing-Logs.zip
-          path: 'output.zip'
+          path: 'output.txt'

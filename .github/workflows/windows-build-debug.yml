@@ -1,4 +1,4 @@
-name: Debug build for Windows
+name: Windows Build Debug
 on:
   workflow_dispatch:
     inputs:
@@ -40,15 +40,9 @@ jobs:
       - name: Patch resources
         if: ${{github.event.inputs.patch_resources == 'true'}}
         run: node build\win32-resources-patch ..\VSCode-win32-${{github.event.inputs.pkg_arch}}/VSCodius.exe
-      - name: Compression
-        uses: thedoctor0/zip-release@main
-        with:
-          type: 'zip'
-          filename: 'debug.zip'
-          path: '../VSCode-win32-${{github.event.inputs.pkg_arch}}/'
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: VSCodius-Win32-${{github.event.inputs.pkg_arch}}-Debug.zip
-          path: 'debug.zip'
+          path: '../VSCode-win32-${{github.event.inputs.pkg_arch}}'
           if-no-files-found: error
