@@ -71,8 +71,8 @@ export abstract class ElectronExtensionService extends AbstractExtensionService 
 		@IWebExtensionsScannerService webExtensionsScannerService: IWebExtensionsScannerService,
 		@ILogService logService: ILogService,
 		@IRemoteAgentService remoteAgentService: IRemoteAgentService,
+		@ILifecycleService lifecycleService: ILifecycleService,
 		@IRemoteAuthorityResolverService private readonly _remoteAuthorityResolverService: IRemoteAuthorityResolverService,
-		@ILifecycleService private readonly _lifecycleService: ILifecycleService,
 		@INativeHostService private readonly _nativeHostService: INativeHostService,
 		@IHostService private readonly _hostService: IHostService,
 		@IRemoteExplorerService private readonly _remoteExplorerService: IRemoteExplorerService,
@@ -92,7 +92,8 @@ export abstract class ElectronExtensionService extends AbstractExtensionService 
 			extensionManifestPropertiesService,
 			webExtensionsScannerService,
 			logService,
-			remoteAgentService
+			remoteAgentService,
+			lifecycleService
 		);
 
 		[this._enableLocalWebWorker, this._lazyLocalWebWorker] = this._isLocalWebWorkerEnabled();
@@ -105,7 +106,7 @@ export abstract class ElectronExtensionService extends AbstractExtensionService 
 		// some editors require the extension host to restore
 		// and this would result in a deadlock
 		// see https://github.com/microsoft/vscode/issues/41322
-		this._lifecycleService.when(LifecyclePhase.Ready).then(() => {
+		lifecycleService.when(LifecyclePhase.Ready).then(() => {
 			// reschedule to ensure this runs after restoring viewlets, panels, and editors
 			runWhenIdle(() => {
 				this._initialize();

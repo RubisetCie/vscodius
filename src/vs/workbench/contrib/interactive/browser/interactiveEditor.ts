@@ -617,7 +617,7 @@ export class InteractiveEditor extends EditorPane {
 			});
 		}
 
-		this.#codeEditorWidget.setDecorations('interactive-decoration', DECORATION_KEY, decorations);
+		this.#codeEditorWidget.setDecorationsByType('interactive-decoration', DECORATION_KEY, decorations);
 	}
 
 	override focus() {

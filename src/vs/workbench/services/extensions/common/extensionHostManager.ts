@@ -122,7 +122,7 @@ class ExtensionHostManager extends Disposable implements IExtensionHostManager {
 		this._extensionHost = extensionHost;
 		this.onDidExit = this._extensionHost.onExit;
 
-		this._proxy = this._extensionHost.start()!.then(
+		this._proxy = this._extensionHost.start().then(
 			(protocol) => {
 				this._hasStarted = true;
 				return this._createExtensionHostCustomers(protocol);

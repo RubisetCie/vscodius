@@ -247,7 +247,6 @@
 							"spdlog",
 							"stream",
 							"string_decoder",
-							"tas-client-umd",
 							"tls",
 							"url",
 							"util",
@@ -327,8 +326,7 @@
 						"restrictions": [
 							"vs/base/~",
 							"vs/base/parts/*/~",
-							"vs/platform/*/~",
-							"tas-client-umd" // node module allowed even in /common/
+							"vs/platform/*/~"
 						]
 					},
 					{
@@ -440,7 +438,6 @@
 								"when": "test",
 								"pattern": "vs/workbench/contrib/*/~"
 							}, // TODO@layers
-							"tas-client-umd", // node module allowed even in /common/
 							"vscode-textmate", // node module allowed even in /common/
 							"@vscode/vscode-languagedetection" // node module allowed even in /common/
 						]

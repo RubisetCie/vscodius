@@ -40,7 +40,7 @@ import { IKeybindingItem, KeybindingsRegistry } from 'vs/platform/keybinding/com
 import { ResolvedKeybindingItem } from 'vs/platform/keybinding/common/resolvedKeybindingItem';
 import { USLayoutResolvedKeybinding } from 'vs/platform/keybinding/common/usLayoutResolvedKeybinding';
 import { ILabelService, ResourceLabelFormatter, IFormatterChangeEvent } from 'vs/platform/label/common/label';
-import { INotification, INotificationHandle, INotificationService, IPromptChoice, IPromptOptions, NoOpNotification, IStatusMessageOptions, NotificationsFilter } from 'vs/platform/notification/common/notification';
+import { INotification, INotificationHandle, INotificationService, IPromptChoice, IPromptOptions, NoOpNotification, IStatusMessageOptions } from 'vs/platform/notification/common/notification';
 import { IProgressRunner, IEditorProgressService } from 'vs/platform/progress/common/progress';
 import { ISingleFolderWorkspaceIdentifier, IWorkspaceIdentifier, IWorkspace, IWorkspaceContextService, IWorkspaceFolder, IWorkspaceFoldersChangeEvent, IWorkspaceFoldersWillChangeEvent, WorkbenchState, WorkspaceFolder } from 'vs/platform/workspace/common/workspace';
 import { ILayoutService } from 'vs/platform/layout/browser/layoutService';
@@ -229,7 +229,11 @@ export class StandaloneNotificationService implements INotificationService {
 
 	readonly onDidRemoveNotification: Event<INotification> = Event.None;
 
+	readonly onDidChangeDoNotDisturbMode: Event<void> = Event.None;
+
 	public _serviceBrand: undefined;
+
+	public doNotDisturbMode: boolean = false;
 
 	private static readonly NO_OP: INotificationHandle = new NoOpNotification();
 
@@ -268,8 +272,6 @@ export class StandaloneNotificationService implements INotificationService {
 	public status(message: string | Error, options?: IStatusMessageOptions): IDisposable {
 		return Disposable.None;
 	}
-
-	public setFilter(filter: NotificationsFilter): void { }
 }
 
 export class StandaloneCommandService implements ICommandService {

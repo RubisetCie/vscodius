@@ -82,13 +82,6 @@ node-fetch@2.6.7:
   dependencies:
     whatwg-url "^5.0.0"
 
-tas-client@0.1.45:
-  version "0.1.45"
-  resolved "https://registry.yarnpkg.com/tas-client/-/tas-client-0.1.45.tgz#83bbf73f8458a0f527f9a389f7e1c37f63a64a76"
-  integrity sha512-IG9UmCpDbDPK23UByQ27rLybkRZYEx2eC9EkieXdwPKKjZPD2zPwfQmyGnZrZet4FUt3yj0ytkwz+liR9Nz/nA==
-  dependencies:
-    axios "^0.26.1"
-
 tr46@~0.0.3:
   version "0.0.3"
   resolved "https://registry.yarnpkg.com/tr46/-/tr46-0.0.3.tgz#8184fd347dac9cdc185992f3a6622e14b9d9ab6a"
@@ -103,13 +96,6 @@ vscode-nls@^5.0.0:
   version "5.0.0"
   resolved "https://registry.yarnpkg.com/vscode-nls/-/vscode-nls-5.0.0.tgz#99f0da0bd9ea7cda44e565a74c54b1f2bc257840"
   integrity sha512-u0Lw+IYlgbEJFF6/qAqG2d1jQmJl0eyAGJHoAJqr2HT4M2BNuQYSEiSE75f52pXHSJm8AlTjnLLbBFPrdz2hpA==
-
-vscode-tas-client@^0.1.47:
-  version "0.1.47"
-  resolved "https://registry.yarnpkg.com/vscode-tas-client/-/vscode-tas-client-0.1.47.tgz#d66795cbbaa231aba659b6c40d43927d73596375"
-  integrity sha512-SlEPDi+0gwxor4ANzBtXwqROPQdQkClHeVJgnkvdDF5Xnl407htCsabTPAq4Di8muObORtLchqQS/k1ocaGDEg==
-  dependencies:
-    tas-client "0.1.45"
 
 webidl-conversions@^3.0.0:
   version "3.0.1"

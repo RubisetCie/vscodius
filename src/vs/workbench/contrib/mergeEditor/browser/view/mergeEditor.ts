@@ -17,13 +17,13 @@ import 'vs/css!./media/mergeEditor';
 import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
 import { CodeEditorWidget } from 'vs/editor/browser/widget/codeEditorWidget';
 import { IEditorOptions as ICodeEditorOptions } from 'vs/editor/common/config/editorOptions';
-import { ScrollType } from 'vs/editor/common/editorCommon';
+import { ICodeEditorViewState, ScrollType } from 'vs/editor/common/editorCommon';
 import { ITextResourceConfigurationService } from 'vs/editor/common/services/textResourceConfiguration';
 import { localize } from 'vs/nls';
 import { createAndFillInActionBarActions } from 'vs/platform/actions/browser/menuEntryActionViewItem';
 import { IMenuService, MenuId } from 'vs/platform/actions/common/actions';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { IContextKey, IContextKeyService, RawContextKey } from 'vs/platform/contextkey/common/contextkey';
+import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { IEditorOptions, ITextEditorOptions } from 'vs/platform/editor/common/editor';
 import { IFileService } from 'vs/platform/files/common/files';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -39,8 +39,9 @@ import { autorunWithStore, IObservable } from 'vs/workbench/contrib/audioCues/br
 import { MergeEditorInput } from 'vs/workbench/contrib/mergeEditor/browser/mergeEditorInput';
 import { DocumentMapping, getOppositeDirection, MappingDirection } from 'vs/workbench/contrib/mergeEditor/browser/model/mapping';
 import { MergeEditorModel } from 'vs/workbench/contrib/mergeEditor/browser/model/mergeEditorModel';
-import { ReentrancyBarrier, thenIfNotDisposed } from 'vs/workbench/contrib/mergeEditor/browser/utils';
+import { deepMerge, ReentrancyBarrier, thenIfNotDisposed } from 'vs/workbench/contrib/mergeEditor/browser/utils';
 import { MergeEditorViewModel } from 'vs/workbench/contrib/mergeEditor/browser/view/viewModel';
+import { ctxBaseResourceScheme, ctxIsMergeEditor, ctxMergeEditorLayout, MergeEditorLayoutTypes } from 'vs/workbench/contrib/mergeEditor/common/mergeEditor';
 import { settingsSashBorder } from 'vs/workbench/contrib/preferences/common/settingsEditorColorRegistry';
 import { IEditorGroup, IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { IEditorResolverService, RegisteredEditorPriority } from 'vs/workbench/services/editor/common/editorResolverService';
@@ -48,12 +49,6 @@ import { IEditorService } from 'vs/workbench/services/editor/common/editorServic
 import './colors';
 import { InputCodeEditorView } from './editors/inputCodeEditorView';
 import { ResultCodeEditorView } from './editors/resultCodeEditorView';
-
-export const ctxIsMergeEditor = new RawContextKey<boolean>('isMergeEditor', false);
-export const ctxMergeEditorLayout = new RawContextKey<MergeEditorLayoutTypes>('mergeEditorLayout', 'mixed');
-export const ctxBaseResourceScheme = new RawContextKey<string>('baseResourceScheme', '');
-
-export type MergeEditorLayoutTypes = 'mixed' | 'columns';
 
 class MergeEditorLayout {
 
@@ -82,7 +77,7 @@ class MergeEditorLayout {
 	}
 }
 
-export class MergeEditor extends AbstractTextEditor<any> {
+export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 
 	static readonly ID = 'mergeEditor';
 
@@ -91,9 +86,9 @@ export class MergeEditor extends AbstractTextEditor<any> {
 	private _grid!: Grid<IView>;
 
 
-	private readonly input1View = this._register(this.instantiation.createInstance(InputCodeEditorView, 1, { readonly: !this.inputsWritable }));
-	private readonly input2View = this._register(this.instantiation.createInstance(InputCodeEditorView, 2, { readonly: !this.inputsWritable }));
-	private readonly inputResultView = this._register(this.instantiation.createInstance(ResultCodeEditorView, { readonly: false }));
+	private readonly input1View = this._register(this.instantiation.createInstance(InputCodeEditorView, 1));
+	private readonly input2View = this._register(this.instantiation.createInstance(InputCodeEditorView, 2));
+	private readonly inputResultView = this._register(this.instantiation.createInstance(ResultCodeEditorView));
 
 	private readonly _layoutMode: MergeEditorLayout;
 	private readonly _ctxIsMergeEditor: IContextKey<boolean>;
@@ -140,6 +135,10 @@ export class MergeEditor extends AbstractTextEditor<any> {
 						synchronizeScrolling(this.input1View.editor, this.inputResultView.editor, mapping, MappingDirection.input);
 						this.input2View.editor.setScrollTop(c.scrollTop, ScrollType.Immediate);
 					}
+					if (c.scrollLeftChanged) {
+						this.input2View.editor.setScrollLeft(c.scrollLeft, ScrollType.Immediate);
+						this.inputResultView.editor.setScrollLeft(c.scrollLeft, ScrollType.Immediate);
+					}
 				})
 			)
 		);
@@ -150,6 +149,10 @@ export class MergeEditor extends AbstractTextEditor<any> {
 						const mapping = this.model?.input2ResultMapping.get();
 						synchronizeScrolling(this.input2View.editor, this.inputResultView.editor, mapping, MappingDirection.input);
 						this.input1View.editor.setScrollTop(c.scrollTop, ScrollType.Immediate);
+					}
+					if (c.scrollLeftChanged) {
+						this.input1View.editor.setScrollLeft(c.scrollLeft, ScrollType.Immediate);
+						this.inputResultView.editor.setScrollLeft(c.scrollLeft, ScrollType.Immediate);
 					}
 				})
 			)
@@ -162,6 +165,10 @@ export class MergeEditor extends AbstractTextEditor<any> {
 						synchronizeScrolling(this.inputResultView.editor, this.input1View.editor, mapping1, MappingDirection.output);
 						const mapping2 = this.model?.input2ResultMapping.get();
 						synchronizeScrolling(this.inputResultView.editor, this.input2View.editor, mapping2, MappingDirection.output);
+					}
+					if (c.scrollLeftChanged) {
+						this.input1View.editor.setScrollLeft(c.scrollLeft, ScrollType.Immediate);
+						this.input2View.editor.setScrollLeft(c.scrollLeft, ScrollType.Immediate);
 					}
 				})
 			)
@@ -248,9 +255,16 @@ export class MergeEditor extends AbstractTextEditor<any> {
 	}
 
 	private applyOptions(options: ICodeEditorOptions): void {
-		this.input1View.editor.updateOptions({ ...options, readOnly: !this.inputsWritable });
-		this.input2View.editor.updateOptions({ ...options, readOnly: !this.inputsWritable });
-		this.inputResultView.editor.updateOptions(options);
+		const inputOptions: ICodeEditorOptions = deepMerge<ICodeEditorOptions>(options, {
+			minimap: { enabled: false },
+			glyphMargin: false,
+			lineNumbersMinChars: 2,
+			readOnly: !this.inputsWritable
+		});
+
+		this.input1View.updateOptions(inputOptions);
+		this.input2View.updateOptions(inputOptions);
+		this.inputResultView.updateOptions(options);
 	}
 
 	protected getMainControl(): ICodeEditor | undefined {
@@ -279,6 +293,9 @@ export class MergeEditor extends AbstractTextEditor<any> {
 		this.input2View.setModel(viewModel, model.input2, model.input2Title || localize('input2', 'Input 2',), model.input2Detail, model.input2Description);
 		this.inputResultView.setModel(viewModel, model.result, localize('result', 'Result',), this._labelService.getUriLabel(model.result.uri, { relative: true }), undefined);
 		this._ctxBaseResourceScheme.set(model.base.uri.scheme);
+
+		const viewState = this.loadEditorViewState(input, context);
+		this._applyViewState(viewState);
 
 		this._sessionDisposables.add(thenIfNotDisposed(model.onInitialized, () => {
 			const firstConflict = model.modifiedBaseRanges.get().find(r => r.isConflicting);
@@ -437,16 +454,49 @@ export class MergeEditor extends AbstractTextEditor<any> {
 		this._ctxUsesColumnLayout.set(newValue);
 	}
 
-	// --- view state (TODO@bpasero revisit with https://github.com/microsoft/vscode/issues/150804)
-
-	protected computeEditorViewState(resource: URI): undefined {
-		return undefined;
+	private _applyViewState(state: IMergeEditorViewState | undefined) {
+		if (!state) {
+			return;
+		}
+		this.inputResultView.editor.restoreViewState(state);
+		if (state.input1State) {
+			this.input1View.editor.restoreViewState(state.input1State);
+		}
+		if (state.input2State) {
+			this.input2View.editor.restoreViewState(state.input2State);
+		}
+		if (state.focusIndex >= 0) {
+			[this.input1View.editor, this.input2View.editor, this.inputResultView.editor][state.focusIndex].focus();
+		}
 	}
+
+	protected computeEditorViewState(resource: URI): IMergeEditorViewState | undefined {
+		if (!isEqual(this.model?.result.uri, resource)) {
+			// TODO@bpasero Why not check `input#resource` and don't ask me for "forgein" resources?
+			return undefined;
+		}
+		const result = this.inputResultView.editor.saveViewState();
+		if (!result) {
+			return undefined;
+		}
+		const input1State = this.input1View.editor.saveViewState() ?? undefined;
+		const input2State = this.input2View.editor.saveViewState() ?? undefined;
+		const focusIndex = [this.input1View.editor, this.input2View.editor, this.inputResultView.editor].findIndex(editor => editor.hasWidgetFocus());
+		return { ...result, input1State, input2State, focusIndex };
+	}
+
 
 	protected tracksEditorViewState(input: EditorInput): boolean {
-		return false;
+		return input instanceof MergeEditorInput;
 	}
 }
+
+type IMergeEditorViewState = ICodeEditorViewState & {
+	readonly input1State?: ICodeEditorViewState;
+	readonly input2State?: ICodeEditorViewState;
+	readonly focusIndex: number;
+};
+
 
 function synchronizeScrolling(scrollingEditor: CodeEditorWidget, targetEditor: CodeEditorWidget, mapping: DocumentMapping | undefined, source: MappingDirection) {
 	if (!mapping) {

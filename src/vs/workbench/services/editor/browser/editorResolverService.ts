@@ -514,7 +514,7 @@ export class EditorResolverService extends Disposable implements IEditorResolver
 	}
 
 	/**
-	 * Given a resource and an editorId, returns all editors open for that resouce and editorId.
+	 * Given a resource and an editorId, returns all editors open for that resource and editorId.
 	 * @param resource The resource specified
 	 * @param editorId The editorID
 	 * @returns A list of editors
@@ -668,7 +668,7 @@ export class EditorResolverService extends Disposable implements IEditorResolver
 		// Create the editor picker
 		const editorPicker = this.quickInputService.createQuickPick<IQuickPickItem>();
 		const placeHolderMessage = showDefaultPicker ?
-			localize('prompOpenWith.updateDefaultPlaceHolder', "Select new default editor for '{0}'", `*${extname(resource)}`) :
+			localize('promptOpenWith.updateDefaultPlaceHolder', "Select new default editor for '{0}'", `*${extname(resource)}`) :
 			localize('promptOpenWith.placeHolder', "Select editor for '{0}'", basename(resource));
 		editorPicker.placeholder = placeHolderMessage;
 		editorPicker.canAcceptInBackground = true;
