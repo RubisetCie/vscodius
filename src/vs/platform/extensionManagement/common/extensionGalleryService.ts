@@ -509,7 +509,13 @@ abstract class AbstractExtensionGalleryService implements IExtensionGalleryServi
 		const config = productService.extensionsGallery;
 		this.extensionsGalleryUrl = config && config.serviceUrl;
 		this.extensionsControlUrl = config && config.controlUrl;
-		this.commonHeadersPromise = resolveMarketplaceHeaders(productService.version, productService, this.environmentService, this.configurationService, this.fileService, storageService);
+		this.commonHeadersPromise = resolveMarketplaceHeaders(
+			productService.version,
+			productService,
+			this.environmentService,
+			this.configurationService,
+			this.fileService,
+			storageService);
 	}
 
 	private api(path = ''): string {
@@ -844,7 +850,7 @@ abstract class AbstractExtensionGalleryService implements IExtensionGalleryServi
 			'Content-Type': 'application/json',
 			'Accept': 'application/json;api-version=3.0-preview.1',
 			'Accept-Encoding': 'gzip',
-			'Content-Length': String(data.length)
+			'Content-Length': String(data.length),
 		};
 
 		let context: IRequestContext | undefined, total: number = 0;

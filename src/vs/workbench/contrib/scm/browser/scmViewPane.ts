@@ -107,6 +107,8 @@ class ActionButtonRenderer implements ICompressibleTreeRenderer<ISCMActionButton
 	static readonly TEMPLATE_ID = 'actionButton';
 	get templateId(): string { return ActionButtonRenderer.TEMPLATE_ID; }
 
+	private actionButtons = new Map<ISCMActionButton, SCMActionButton>();
+
 	constructor(
 		@ICommandService private commandService: ICommandService,
 		@IContextMenuService private contextMenuService: IContextMenuService,
@@ -130,11 +132,23 @@ class ActionButtonRenderer implements ICompressibleTreeRenderer<ISCMActionButton
 	renderElement(node: ITreeNode<ISCMActionButton, FuzzyScore>, index: number, templateData: ActionButtonTemplate, height: number | undefined): void {
 		templateData.disposable.dispose();
 
+		const disposables = new DisposableStore();
+		const actionButton = node.element;
 		templateData.actionButton.setButton(node.element.button);
+
+		// Remember action button
+		this.actionButtons.set(actionButton, templateData.actionButton);
+		disposables.add({ dispose: () => this.actionButtons.delete(actionButton) });
+
+		templateData.disposable = disposables;
 	}
 
 	renderCompressedElements(): void {
 		throw new Error('Should never happen since node is incompressible');
+	}
+
+	focusActionButton(actionButton: ISCMActionButton): void {
+		this.actionButtons.get(actionButton)?.focus();
 	}
 
 	disposeElement(node: ITreeNode<ISCMActionButton, FuzzyScore>, index: number, template: ActionButtonTemplate): void {
@@ -2199,6 +2213,7 @@ export class SCMViewPane extends ViewPane {
 	get viewModel(): ViewModel { return this._viewModel; }
 	private listLabels!: ResourceLabels;
 	private inputRenderer!: InputRenderer;
+	private actionButtonRenderer!: ActionButtonRenderer;
 	private readonly disposables = new DisposableStore();
 
 	constructor(
@@ -2252,6 +2267,8 @@ export class SCMViewPane extends ViewPane {
 		this.inputRenderer = this.instantiationService.createInstance(InputRenderer, this.layoutCache, overflowWidgetsDomNode, (input, height) => this.tree.updateElementHeight(input, height));
 		const delegate = new ListDelegate(this.inputRenderer);
 
+		this.actionButtonRenderer = this.instantiationService.createInstance(ActionButtonRenderer);
+
 		this.listLabels = this.instantiationService.createInstance(ResourceLabels, { onDidChangeVisibility: this.onDidChangeBodyVisibility });
 		this._register(this.listLabels);
 
@@ -2262,7 +2279,7 @@ export class SCMViewPane extends ViewPane {
 		const renderers: ICompressibleTreeRenderer<any, any, any>[] = [
 			this.instantiationService.createInstance(RepositoryRenderer, getActionViewItemProvider(this.instantiationService)),
 			this.inputRenderer,
-			this.instantiationService.createInstance(ActionButtonRenderer),
+			this.actionButtonRenderer,
 			this.instantiationService.createInstance(ResourceGroupRenderer, getActionViewItemProvider(this.instantiationService)),
 			this._register(this.instantiationService.createInstance(ResourceRenderer, () => this._viewModel, this.listLabels, getActionViewItemProvider(this.instantiationService), actionRunner))
 		];
@@ -2392,6 +2409,12 @@ export class SCMViewPane extends ViewPane {
 			return;
 		} else if (isSCMActionButton(e.element)) {
 			this.scmViewService.focus(e.element.repository);
+
+			// Focus the action button
+			const target = e.browserEvent?.target as HTMLElement;
+			if (target.classList.contains('monaco-tl-row') || target.classList.contains('button-container')) {
+				this.actionButtonRenderer.focusActionButton(e.element);
+			}
 
 			return;
 		}
@@ -2627,11 +2650,13 @@ export class SCMActionButton implements IDisposable {
 
 		if (button.secondaryCommands?.length) {
 			const actions: IAction[] = [];
-			for (const commandGroup of button.secondaryCommands) {
-				for (const command of commandGroup) {
+			for (let index = 0; index < button.secondaryCommands.length; index++) {
+				for (const command of button.secondaryCommands[index]) {
 					actions.push(new Action(command.id, command.title, undefined, true, async () => await executeButtonAction(command.id, ...(command.arguments || []))));
 				}
-				actions.push(new Separator());
+				if (index !== button.secondaryCommands.length - 1) {
+					actions.push(new Separator());
+				}
 			}
 
 			// ButtonWithDropdown
@@ -2657,6 +2682,10 @@ export class SCMActionButton implements IDisposable {
 
 		this.disposables.value!.add(this.button);
 		this.disposables.value!.add(attachButtonStyler(this.button, this.themeService));
+	}
+
+	focus(): void {
+		this.button?.focus();
 	}
 
 	private clear(): void {
