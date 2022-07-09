@@ -84,7 +84,6 @@ export interface NativeParsedArgs {
 	'force-user-env'?: boolean;
 	'force-disable-user-env'?: boolean;
 	'sync'?: 'on' | 'off';
-	'__sandbox'?: boolean;
 	'logsPath'?: string;
 	'__enable-file-policy'?: boolean;
 	editSessionId?: string;
