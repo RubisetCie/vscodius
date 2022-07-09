@@ -95,7 +95,6 @@ export interface SerializedError {
 	readonly name: string;
 	readonly message: string;
 	readonly stack: string;
-	readonly noTelemetry: boolean;
 }
 
 export function transformErrorForSerialization(error: Error): SerializedError;
