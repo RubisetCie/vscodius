@@ -44,11 +44,11 @@ jobs:
       - name: Patch resources
         if: ${{github.event.inputs.patch_resources == 'true'}}
         run: node build\win32-resources-patch ..\VSCode-win32-${{github.event.inputs.pkg_arch}}/VSCodius.exe
-      - name: Move artifact
-        run: tree /F ..
+      - name: Current directory
+        run: cd ..
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: VSCodius-Win32-${{github.event.inputs.pkg_arch}}-${{github.event.inputs.pkg_version}}-Release.zip
-          path: 'artifact'
+          path: 'VSCode-win32-${{github.event.inputs.pkg_arch}}'
           if-no-files-found: error
