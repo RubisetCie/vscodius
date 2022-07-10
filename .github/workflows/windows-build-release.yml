@@ -45,7 +45,7 @@ jobs:
         if: ${{github.event.inputs.patch_resources == 'true'}}
         run: node build\win32-resources-patch ..\VSCode-win32-${{github.event.inputs.pkg_arch}}/VSCodius.exe
       - name: Move artifact
-        run: move /Y ..\VSCode-win32-${{github.event.inputs.pkg_arch}} artifact
+        run: Move-Item -Path ..\VSCode-win32-${{github.event.inputs.pkg_arch}} -Destination artifact -Force -Confirm
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
