@@ -45,5 +45,5 @@ jobs:
         with:
           name: VSCodius-Win32-${{github.event.inputs.pkg_arch}}-Debug.zip
           path: 'VSCode-win32-${{github.event.inputs.pkg_arch}}'
-          cwd: '..'
+          cwd: '..\'
           if-no-files-found: error
