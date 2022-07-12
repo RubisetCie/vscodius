@@ -22,9 +22,6 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    defaults:
-      run:
-        working-directory: ..
     steps:
       - name: Set up Yarn
         uses: mskelton/setup-yarn@v1
@@ -37,18 +34,15 @@ jobs:
           spectre: false
           uwp: false
       - name: Compilation
-        working-directory: ${{env.GITHUB_WORKSPACE}}
         run: yarn compile
       - name: Packaging
-        working-directory: ${{env.GITHUB_WORKSPACE}}
         run: yarn gulp vscode-win32-${{github.event.inputs.pkg_arch}}
       - name: Patch resources
         if: ${{github.event.inputs.patch_resources == 'true'}}
-        working-directory: ${{env.GITHUB_WORKSPACE}}
         run: node build\win32-resources-patch ..\VSCode-win32-${{github.event.inputs.pkg_arch}}/VSCodius.exe
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: VSCodius-Win32-${{github.event.inputs.pkg_arch}}-Debug.zip
-          path: 'VSCode-win32-${{github.event.inputs.pkg_arch}}'
+          path: 'D:\a\VSCode-win32-${{github.event.inputs.pkg_arch}}'
           if-no-files-found: error
