@@ -11,7 +11,7 @@ on:
         required: true
         default: '16.x'
 jobs:
-  build:
+  test:
     runs-on: windows-latest
     steps:
       - name: Set up Yarn

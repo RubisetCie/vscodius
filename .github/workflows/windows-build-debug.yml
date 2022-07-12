@@ -44,5 +44,5 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: VSCodius-Win32-${{github.event.inputs.pkg_arch}}-Debug.zip
-          path: 'D:\a\vscodius\VSCode-win32-${{github.event.inputs.pkg_arch}}'
+          path: 'D:\a\${{github.event.repository.name}}\VSCode-win32-${{github.event.inputs.pkg_arch}}'
           if-no-files-found: error
