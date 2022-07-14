@@ -27,12 +27,6 @@ jobs:
         uses: mskelton/setup-yarn@v1
         with:
           node-version: '${{github.event.inputs.node_version}}'
-      - name: Set up MSVC
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: '${{github.event.inputs.vs_arch}}'
-          spectre: false
-          uwp: false
       - name: Packaging
         run: yarn gulp vscode-win32-${{github.event.inputs.pkg_arch}}
       - name: Patch resources
