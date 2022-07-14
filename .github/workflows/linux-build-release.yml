@@ -46,7 +46,7 @@ jobs:
         if: ${{github.event.inputs.pack_deb == 'true'}}
         uses: actions/upload-artifact@v3
         with:
-          name: VSCodius-Linux-${{github.event.inputs.pkg_arch}}-Release
+          name: VSCodius-Linux-${{github.event.inputs.pkg_arch}}-Release-DEB
           path: '.build/linux/deb/**/*.deb'
           if-no-files-found: error
       - name: Creating RPM package
@@ -56,6 +56,6 @@ jobs:
         if: ${{github.event.inputs.pack_rpm == 'true'}}
         uses: actions/upload-artifact@v3
         with:
-          name: VSCodius-Linux-${{github.event.inputs.pkg_arch}}-Release
+          name: VSCodius-Linux-${{github.event.inputs.pkg_arch}}-Release-RPM
           path: '.build/linux/rpm/**/*.rpm'
           if-no-files-found: error
