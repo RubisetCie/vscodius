@@ -6,8 +6,12 @@ on:
         description: 'Arbitrary release version'
         required: false
         default: '1.0.0'
+      target_arch:
+        description: 'Target architecture (x64, ia32 or arm)'
+        required: true
+        default: 'x64'
       pkg_arch:
-        description: 'Target package architecture (x64, ia32 or arm)'
+        description: 'Target package architecture (x64, armhf or arm64)'
         required: true
         default: 'x64'
       node_version:
@@ -38,7 +42,7 @@ jobs:
       - name: Set up Yarn
         run: yarn
       - name: Packaging
-        run: yarn gulp vscode-linux-${{github.event.inputs.pkg_arch}}-min
+        run: yarn gulp vscode-linux-${{github.event.inputs.target_arch}}-min
       - name: Creating DEB package
         if: ${{github.event.inputs.pack_deb == 'true'}}
         run: yarn gulp vscode-linux-${{github.event.inputs.pkg_arch}}-build-deb
