@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { IShellIntegration } from 'vs/platform/terminal/common/terminal';
+import { IShellIntegration, ShellIntegrationStatus } from 'vs/platform/terminal/common/terminal';
 import { Disposable, dispose, IDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { TerminalCapabilityStore } from 'vs/platform/terminal/common/capabilities/terminalCapabilityStore';
 import { CommandDetectionCapability } from 'vs/platform/terminal/common/capabilities/commandDetectionCapability';
@@ -15,6 +15,7 @@ import { ILogService } from 'vs/platform/log/common/log';
 // eslint-disable-next-line code-import-patterns
 import type { ITerminalAddon, Terminal } from 'xterm-headless';
 import { ISerializedCommandDetectionCapability } from 'vs/platform/terminal/common/terminalProcess';
+import { Emitter } from 'vs/base/common/event';
 
 /**
  * Shell integration is a feature that enhances the terminal's understanding of what's happening
@@ -125,6 +126,12 @@ export class ShellIntegrationAddon extends Disposable implements IShellIntegrati
 	readonly capabilities = new TerminalCapabilityStore();
 	private _activationTimeout: any;
 	private _commonProtocolDisposables: IDisposable[] = [];
+	private _status: ShellIntegrationStatus = ShellIntegrationStatus.Off;
+
+	get status(): ShellIntegrationStatus { return this._status; }
+
+	private readonly _onDidChangeStatus = new Emitter<ShellIntegrationStatus>();
+	readonly onDidChangeStatus = this._onDidChangeStatus.event;
 
 	constructor(
 		@ILogService private readonly _logService: ILogService

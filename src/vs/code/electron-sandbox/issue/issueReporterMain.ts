@@ -139,6 +139,7 @@ export class IssueReporter extends Disposable {
 		this.applyStyles(configuration.data.styles);
 		this.handleExtensionData(configuration.data.enabledExtensions);
 		this.updateRestrictedMode(configuration.data.restrictedMode);
+		this.updateUnsupportedMode(configuration.data.isUnsupported);
 	}
 
 	render(): void {
@@ -1151,6 +1152,10 @@ export class IssueReporter extends Disposable {
 
 	private updateRestrictedMode(restrictedMode: boolean) {
 		this.issueReporterModel.update({ restrictedMode });
+	}
+
+	private updateUnsupportedMode(isUnsupported: boolean) {
+		this.issueReporterModel.update({ isUnsupported });
 	}
 
 	private getExtensionTableHtml(extensions: IssueReporterExtensionData[]): HTMLTableElement {

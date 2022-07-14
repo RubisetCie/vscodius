@@ -19,6 +19,7 @@ import { IProductService } from 'vs/platform/product/common/productService';
 import { IAuthenticationService } from 'vs/workbench/services/authentication/common/authentication';
 import { registerMainProcessRemoteService } from 'vs/platform/ipc/electron-sandbox/services';
 import { IWorkspaceTrustManagementService } from 'vs/platform/workspace/common/workspaceTrust';
+import { IIntegrityService } from 'vs/workbench/services/integrity/common/integrity';
 
 export class WorkbenchIssueService implements IWorkbenchIssueService {
 	declare readonly _serviceBrand: undefined;
@@ -31,7 +32,8 @@ export class WorkbenchIssueService implements IWorkbenchIssueService {
 		@INativeWorkbenchEnvironmentService private readonly environmentService: INativeWorkbenchEnvironmentService,
 		@IWorkspaceTrustManagementService private readonly workspaceTrustManagementService: IWorkspaceTrustManagementService,
 		@IProductService private readonly productService: IProductService,
-		@IAuthenticationService private readonly authenticationService: IAuthenticationService
+		@IAuthenticationService private readonly authenticationService: IAuthenticationService,
+		@IIntegrityService private readonly integrityService: IIntegrityService
 	) { }
 
 	async openReporter(dataOverrides: Partial<IssueReporterData> = {}): Promise<void> {
@@ -79,12 +81,21 @@ export class WorkbenchIssueService implements IWorkbenchIssueService {
 			// Ignore
 		}
 
+		// air on the side of caution and have false be the default
+		let isUnsupported = false;
+		try {
+			isUnsupported = !(await this.integrityService.isPure()).isPure;
+		} catch (e) {
+			// Ignore
+		}
+
 		const theme = this.themeService.getColorTheme();
 		const issueReporterData: IssueReporterData = Object.assign({
 			styles: getIssueReporterStyles(theme),
 			zoomLevel: getZoomLevel(),
 			enabledExtensions: extensionData,
 			restrictedMode: !this.workspaceTrustManagementService.isWorkspaceTrusted(),
+			isUnsupported,
 			githubAccessToken,
 		}, dataOverrides);
 		return this.issueService.openReporter(issueReporterData);

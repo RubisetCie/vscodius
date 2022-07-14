@@ -240,7 +240,8 @@ import { ModifierKeyEmitter } from 'vs/base/browser/dom';
 			'window.experimental.useSandbox': {
 				type: 'boolean',
 				description: localize('experimentalUseSandbox', "Experimental: When enabled, the window will have sandbox mode enabled via Electron API."),
-				default: false
+				default: false,
+				ignoreSync: true
 			},
 		}
 	});
