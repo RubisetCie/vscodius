@@ -30,7 +30,7 @@ import { INativeEnvironmentService } from 'vs/platform/environment/common/enviro
 import { SharedProcessEnvironmentService } from 'vs/platform/sharedProcess/node/sharedProcessEnvironmentService';
 import { GlobalExtensionEnablementService } from 'vs/platform/extensionManagement/common/extensionEnablementService';
 import { ExtensionGalleryService } from 'vs/platform/extensionManagement/common/extensionGalleryService';
-import { IExtensionGalleryService, IExtensionManagementService, IExtensionTipsService, IGlobalExtensionEnablementService } from 'vs/platform/extensionManagement/common/extensionManagement';
+import { IDefaultExtensionsProfileInitService, IExtensionGalleryService, IExtensionManagementService, IExtensionTipsService, IGlobalExtensionEnablementService } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { ExtensionManagementChannel, ExtensionTipsChannel } from 'vs/platform/extensionManagement/common/extensionManagementIpc';
 import { ExtensionTipsService } from 'vs/platform/extensionManagement/electron-sandbox/extensionTipsService';
 import { ExtensionManagementService, INativeServerExtensionManagementService } from 'vs/platform/extensionManagement/node/extensionManagementService';
@@ -96,6 +96,7 @@ import { ExtensionsProfileScannerService, IExtensionsProfileScannerService } fro
 import { PolicyChannelClient } from 'vs/platform/policy/common/policyIpc';
 import { IPolicyService, NullPolicyService } from 'vs/platform/policy/common/policy';
 import { UserDataProfilesNativeService } from 'vs/platform/userDataProfile/electron-sandbox/userDataProfile';
+import { DefaultExtensionsProfileInitService } from 'vs/platform/extensionManagement/electron-sandbox/defaultExtensionsProfileInit';
 
 class SharedProcessMain extends Disposable {
 
@@ -222,7 +223,7 @@ class SharedProcessMain extends Disposable {
 		fileService.registerProvider(Schemas.vscodeUserData, userDataFileSystemProvider);
 
 		// User Data Profiles
-		const userDataProfilesService = this._register(new UserDataProfilesNativeService(this.configuration.profiles, mainProcessService, environmentService, fileService, logService));
+		const userDataProfilesService = this._register(new UserDataProfilesNativeService(this.configuration.profiles, mainProcessService, environmentService));
 		services.set(IUserDataProfilesService, userDataProfilesService);
 
 		// Configuration
@@ -268,6 +269,7 @@ class SharedProcessMain extends Disposable {
 		services.set(IExtensionsProfileScannerService, new SyncDescriptor(ExtensionsProfileScannerService));
 		services.set(IExtensionsScannerService, new SyncDescriptor(ExtensionsScannerService));
 		services.set(INativeServerExtensionManagementService, new SyncDescriptor(ExtensionManagementService));
+		services.set(IDefaultExtensionsProfileInitService, new SyncDescriptor(DefaultExtensionsProfileInitService));
 
 		// Extension Gallery
 		services.set(IExtensionGalleryService, new SyncDescriptor(ExtensionGalleryService));
@@ -374,6 +376,9 @@ class SharedProcessMain extends Disposable {
 		// Worker
 		const sharedProcessWorkerChannel = ProxyChannel.fromService(accessor.get(ISharedProcessWorkerService));
 		this.server.registerChannel(ipcSharedProcessWorkerChannelName, sharedProcessWorkerChannel);
+
+		// Default Extensions Profile Init
+		this.server.registerChannel('IDefaultExtensionsProfileInitService', ProxyChannel.fromService(accessor.get(IDefaultExtensionsProfileInitService)));
 	}
 
 	private registerErrorHandler(logService: ILogService): void {
