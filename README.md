@@ -30,6 +30,8 @@ In order to build *VSCodius*, you'll need the necessary tools:
       - `pkg-config`
       - `gcc` (or another compile toolchain)
 
+Building deb and rpm packages requires `fakeroot` and `rpm`; run: `sudo apt-get install fakeroot rpm`.
+
 ## Build
 
 Install and build all of the dependencies using `yarn`:
@@ -86,6 +88,13 @@ Note on Windows: sometimes the default `ElectronJS` resources will remain on the
 
 ```
 node build\win32-resources-patch.js [exe path]
+```
+
+On Linux, to create a `.deb` or a `.rpm` package (for easier installation on the target device), run:
+
+```
+yarn gulp vscode-[platform]-build-deb
+yarn gulp vscode-[platform]-build-rpm
 ```
 
 ## Code of Conduct
