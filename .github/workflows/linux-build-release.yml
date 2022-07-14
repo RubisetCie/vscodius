@@ -1,0 +1,61 @@
+name: Linux Build Release
+on:
+  workflow_dispatch:
+    inputs:
+      pkg_version:
+        description: 'Arbitrary release version'
+        required: false
+        default: '1.0.0'
+      pkg_arch:
+        description: 'Target package architecture (x64, ia32 or arm)'
+        required: true
+        default: 'x64'
+      node_version:
+        description: 'Node.js version'
+        required: true
+        default: '16.x'
+      pack_deb:
+        description: 'Create a Debian package'
+        type: boolean
+        required: true
+        default: true
+      pack_rpm:
+        description: 'Create a Red-Hat package'
+        type: boolean
+        required: true
+        default: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '${{github.event.inputs.node_version}}'
+      - name: Set up Yarn
+        run: yarn
+      - name: Packaging
+        run: yarn gulp vscode-linux-${{github.event.inputs.pkg_arch}}-min
+      - name: Creating DEB package
+        if: ${{github.event.inputs.pack_deb == 'true'}}
+        run: yarn gulp vscode-linux-${{github.event.inputs.pkg_arch}}-build-deb
+      - name: Upload DEB package
+        if: ${{github.event.inputs.pack_deb == 'true'}}
+        uses: actions/upload-artifact@v3
+        with:
+          name: VSCodius-Linux-${{github.event.inputs.pkg_arch}}-Release
+          path: '~/work/${{github.event.repository.name}}/VSCode-linux-${{github.event.inputs.pkg_arch}}'
+          if-no-files-found: error
+      - name: Creating RPM package
+        if: ${{github.event.inputs.pack_rpm == 'true'}}
+        run: yarn gulp vscode-linux-${{github.event.inputs.pkg_arch}}-build-rpm
+      - name: Upload RPM package
+        if: ${{github.event.inputs.pack_rpm == 'true'}}
+        uses: actions/upload-artifact@v3
+        with:
+          name: VSCodius-Linux-${{github.event.inputs.pkg_arch}}-Release
+          path: '.build/linux/${{github.event.repository.name}}/VSCode-linux-${{github.event.inputs.pkg_arch}}'
+          if-no-files-found: error
