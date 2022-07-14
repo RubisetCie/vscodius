@@ -37,8 +37,6 @@ jobs:
           arch: '${{github.event.inputs.vs_arch}}'
           spectre: false
           uwp: false
-      - name: Compilation
-        run: yarn compile
       - name: Packaging
         run: yarn gulp vscode-win32-${{github.event.inputs.pkg_arch}}-min
       - name: Patch resources
