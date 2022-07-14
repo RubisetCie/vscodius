@@ -1,0 +1,25 @@
+name: Linux Unit Tests
+on:
+  workflow_dispatch:
+    inputs:
+      node_version:
+        description: 'Node.js version'
+        required: true
+        default: '16.x'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Yarn
+        uses: mskelton/setup-yarn@v1
+        with:
+          node-version: '${{github.event.inputs.node_version}}'
+      - name: Compilation
+        run: yarn compile
+      - name: Testing
+        run: ./scripts/test.sh > output.txt
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: VSCodius-Linux-Testing-Logs.zip
+          path: 'output.txt'
