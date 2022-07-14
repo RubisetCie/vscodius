@@ -1,13 +1,17 @@
-name: Linux Unit Tests
+name: Linux Build Debug
 on:
   workflow_dispatch:
     inputs:
+      pkg_arch:
+        description: 'Target package architecture (x64, ia32 or arm)'
+        required: true
+        default: 'x64'
       node_version:
         description: 'Node.js version'
         required: true
         default: '16.x'
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -18,12 +22,11 @@ jobs:
           node-version: '${{github.event.inputs.node_version}}'
       - name: Set up Yarn
         run: yarn
-      - name: Compilation
-        run: yarn compile
-      - name: Testing
-        run: ./scripts/test.sh > output.txt
+      - name: Packaging
+        run: yarn gulp vscode-linux-${{github.event.inputs.pkg_arch}}
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: VSCodius-Linux-Testing-Logs.zip
-          path: 'output.txt'
+          name: VSCodius-Linux-${{github.event.inputs.pkg_arch}}-Debug
+          path: '~/work/${{github.event.repository.name}}/VSCode-linux-${{github.event.inputs.pkg_arch}}'
+          if-no-files-found: error
