@@ -2415,7 +2415,6 @@ export class SCMViewPane extends ViewPane {
 			const target = e.browserEvent?.target as HTMLElement;
 			if (target.classList.contains('monaco-tl-row') || target.classList.contains('button-container')) {
 				this.actionButtonRenderer.focusActionButton(e.element);
-				this.tree.setFocus([], e.browserEvent);
 			}
 
 			return;
