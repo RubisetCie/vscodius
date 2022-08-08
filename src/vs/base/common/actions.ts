@@ -9,8 +9,8 @@ import * as nls from 'vs/nls';
 
 export type WorkbenchActionExecutedClassification = {
 	owner: 'bpasero';
-	id: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
-	from: { classification: 'SystemMetaData'; purpose: 'FeatureInsight' };
+	id: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The identifier of the action that was run.' };
+	from: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The name of the component the action was run from.' };
 };
 
 export type WorkbenchActionExecutedEvent = {

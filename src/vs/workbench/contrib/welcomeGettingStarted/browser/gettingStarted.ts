@@ -67,6 +67,7 @@ import { Codicon } from 'vs/base/common/codicons';
 import { restoreWalkthroughsConfigurationKey, RestoreWalkthroughsConfigurationValue } from 'vs/workbench/contrib/welcomeGettingStarted/browser/startupPage';
 import { GettingStartedDetailsRenderer } from 'vs/workbench/contrib/welcomeGettingStarted/browser/gettingStartedDetailsRenderer';
 import { IAccessibilityService } from 'vs/platform/accessibility/common/accessibility';
+import { renderLabelWithIcons } from 'vs/base/browser/ui/iconLabel/iconLabels';
 
 const SLIDE_TRANSITION_TIME_MS = 250;
 const configurationKey = 'workbench.startupEditor';
@@ -940,7 +941,7 @@ export class GettingStartedPage extends EditorPane {
 
 			if (category.isFeatured) {
 				reset(featuredBadge, $('.featured', {}, $('span.featured-icon.codicon.codicon-star-empty')));
-				reset(descriptionContent, category.description);
+				reset(descriptionContent, ...renderLabelWithIcons(category.description));
 			}
 
 			return $('button.getting-started-category' + (category.isFeatured ? '.featured' : ''),
@@ -1162,7 +1163,7 @@ export class GettingStartedPage extends EditorPane {
 				if (isCommand) {
 					const keybindingLabel = this.getKeybindingLabel(command);
 					if (keybindingLabel) {
-						container.appendChild($('span.shortcut-message', {}, 'Tip: Use keyboard shortcut ', $('span.keybinding', {}, keybindingLabel)));
+						container.appendChild($('span.shortcut-message', {}, localize('gettingStarted.keyboardTip', 'Tip: Use keyboard shortcut '), $('span.keybinding', {}, keybindingLabel)));
 					}
 				}
 
@@ -1207,7 +1208,7 @@ export class GettingStartedPage extends EditorPane {
 				this.iconWidgetFor(category),
 				$('.category-description-container', {},
 					$('h2.category-title.max-lines-3', { 'x-category-title-for': category.id }, category.title),
-					$('.category-description.description.max-lines-3', { 'x-category-description-for': category.id }, category.description)));
+					$('.category-description.description.max-lines-3', { 'x-category-description-for': category.id }, ...renderLabelWithIcons(category.description))));
 
 		const stepListContainer = $('.step-list-container');
 

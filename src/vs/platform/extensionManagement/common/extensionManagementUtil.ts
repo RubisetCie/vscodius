@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { compareIgnoreCase } from 'vs/base/common/strings';
-import { IExtensionIdentifier, IGalleryExtension, IExtensionsControlManifest, getTargetPlatform } from 'vs/platform/extensionManagement/common/extensionManagement';
+import { IExtensionIdentifier, IGalleryExtension, getTargetPlatform } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { ExtensionIdentifier, IExtension, TargetPlatform } from 'vs/platform/extensions/common/extensions';
 import { IFileService } from 'vs/platform/files/common/files';
 import { isLinux, platform } from 'vs/base/common/platform';
@@ -103,18 +103,6 @@ export function groupByExtension<T>(extensions: T[], getExtensionIdentifier: (t:
 }
 
 export const BetterMergeId = new ExtensionIdentifier('pprice.better-merge');
-
-export function getMaliciousExtensionsSet(manifest: IExtensionsControlManifest): Set<string> {
-	const result = new Set<string>();
-
-	if (manifest.malicious) {
-		for (const extension of manifest.malicious) {
-			result.add(extension.id);
-		}
-	}
-
-	return result;
-}
 
 export function getExtensionDependencies(installedExtensions: ReadonlyArray<IExtension>, extension: IExtension): IExtension[] {
 	const dependencies: IExtension[] = [];
