@@ -79,6 +79,7 @@ export const serverOptions: OptionDescriptions<ServerParsedArgs> = {
 
 	'help': OPTIONS['help'],
 	'version': OPTIONS['version'],
+	'locate-shell-integration-path': OPTIONS['locate-shell-integration-path'],
 
 	'compatibility': { type: 'string' },
 
@@ -188,6 +189,7 @@ export interface ServerParsedArgs {
 	/* ----- server cli ----- */
 	help: boolean;
 	version: boolean;
+	'locate-shell-integration-path'?: string;
 
 	compatibility: string;
 

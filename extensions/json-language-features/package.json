@@ -85,6 +85,12 @@
           "default": true,
           "description": "%json.format.enable.desc%"
         },
+        "json.format.keepLines": {
+          "type": "boolean",
+          "scope": "window",
+          "default": false,
+          "description": "%json.format.keepLines.desc%"
+        },
         "json.trace.server": {
           "type": "string",
           "scope": "window",
@@ -148,7 +154,7 @@
   },
   "dependencies": {
     "request-light": "^0.5.8",
-    "vscode-languageclient": "^8.0.2-next.4",
+    "vscode-languageclient": "^8.0.2-next.5",
     "vscode-nls": "^5.0.1"
   },
   "devDependencies": {

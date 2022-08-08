@@ -52,7 +52,6 @@ import { FollowerLogService, LoggerChannelClient, LogLevelChannelClient } from '
 import { INativeHostService } from 'vs/platform/native/electron-sandbox/native';
 import product from 'vs/platform/product/common/product';
 import { IProductService } from 'vs/platform/product/common/productService';
-import { RequestService } from 'vs/platform/request/browser/requestService';
 import { IRequestService } from 'vs/platform/request/common/request';
 import { ISharedProcessConfiguration } from 'vs/platform/sharedProcess/node/sharedProcess';
 import { IStorageService } from 'vs/platform/storage/common/storage';
@@ -97,6 +96,7 @@ import { PolicyChannelClient } from 'vs/platform/policy/common/policyIpc';
 import { IPolicyService, NullPolicyService } from 'vs/platform/policy/common/policy';
 import { UserDataProfilesNativeService } from 'vs/platform/userDataProfile/electron-sandbox/userDataProfile';
 import { DefaultExtensionsProfileInitService } from 'vs/platform/extensionManagement/electron-sandbox/defaultExtensionsProfileInit';
+import { SharedProcessRequestService } from 'vs/platform/request/electron-browser/sharedProcessRequestService';
 
 class SharedProcessMain extends Disposable {
 
@@ -245,7 +245,7 @@ class SharedProcessMain extends Disposable {
 		services.set(IUriIdentityService, new UriIdentityService(fileService));
 
 		// Request
-		services.set(IRequestService, new SyncDescriptor(RequestService));
+		services.set(IRequestService, new SharedProcessRequestService(mainProcessService, configurationService, logService));
 
 		// Checksum
 		services.set(IChecksumService, new SyncDescriptor(ChecksumService));

@@ -38,6 +38,7 @@ import { IViewDescriptorService } from 'vs/workbench/common/views';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IPathService } from 'vs/workbench/services/path/common/pathService';
+import { TreeFindMode } from 'vs/base/browser/ui/tree/abstractTree';
 
 const NEW_STYLE_COMPRESS = true;
 
@@ -583,8 +584,8 @@ export class LoadedScriptsView extends ViewPane {
 
 		// feature: expand all nodes when filtering (not when finding)
 		let viewState: IViewState | undefined;
-		this._register(this.tree.onDidChangeTypeFilterPattern(pattern => {
-			if (!this.tree.options.filterOnType) {
+		this._register(this.tree.onDidChangeFindPattern(pattern => {
+			if (this.tree.findMode === TreeFindMode.Highlight) {
 				return;
 			}
 

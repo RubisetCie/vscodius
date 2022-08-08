@@ -17,7 +17,7 @@ import { Command } from 'vs/editor/common/languages';
 import { StandardKeyboardEvent } from 'vs/base/browser/keyboardEvent';
 import { KeyCode } from 'vs/base/common/keyCodes';
 import { renderIcon, renderLabelWithIcons } from 'vs/base/browser/ui/iconLabel/iconLabels';
-import { syncing } from 'vs/platform/theme/common/iconRegistry';
+import { spinningLoading, syncing } from 'vs/platform/theme/common/iconRegistry';
 import { ICustomHover, setupCustomHover } from 'vs/base/browser/ui/iconLabel/iconLabelHover';
 import { isMarkdownString, markdownStringEqual } from 'vs/base/common/htmlContent';
 import { IHoverDelegate } from 'vs/base/browser/ui/iconLabel/iconHoverDelegate';
@@ -39,6 +39,7 @@ export class StatusbarEntryItem extends Disposable {
 	private hover: ICustomHover | undefined = undefined;
 
 	readonly labelContainer: HTMLElement;
+	readonly beakContainer: HTMLElement;
 
 	get name(): string {
 		return assertIsDefined(this.entry).name;
@@ -66,9 +67,12 @@ export class StatusbarEntryItem extends Disposable {
 
 		// Label (with support for progress)
 		this.label = new StatusBarCodiconLabel(this.labelContainer);
-
-		// Add to parent
 		this.container.appendChild(this.labelContainer);
+
+		// Beak Container
+		this.beakContainer = document.createElement('div');
+		this.beakContainer.className = 'status-bar-item-beak-container';
+		this.container.appendChild(this.beakContainer);
 
 		this.update(entry);
 	}
@@ -76,7 +80,7 @@ export class StatusbarEntryItem extends Disposable {
 	update(entry: IStatusbarEntry): void {
 
 		// Update: Progress
-		this.label.showProgress = !!entry.showProgress;
+		this.label.showProgress = entry.showProgress ?? false;
 
 		// Update: Text
 		if (!this.entry || entry.text !== this.entry.text) {
@@ -237,7 +241,7 @@ export class StatusbarEntryItem extends Disposable {
 
 class StatusBarCodiconLabel extends SimpleIconLabel {
 
-	private readonly progressCodicon = renderIcon(syncing);
+	private progressCodicon = renderIcon(syncing);
 
 	private currentText = '';
 	private currentShowProgress = false;
@@ -248,9 +252,10 @@ class StatusBarCodiconLabel extends SimpleIconLabel {
 		super(container);
 	}
 
-	set showProgress(showProgress: boolean) {
+	set showProgress(showProgress: boolean | 'syncing' | 'loading') {
 		if (this.currentShowProgress !== showProgress) {
-			this.currentShowProgress = showProgress;
+			this.currentShowProgress = !!showProgress;
+			this.progressCodicon = renderIcon(showProgress === 'loading' ? spinningLoading : syncing);
 			this.text = this.currentText;
 		}
 	}

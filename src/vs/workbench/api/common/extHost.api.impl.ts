@@ -558,8 +558,7 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 			createLanguageStatusItem(id: string, selector: vscode.DocumentSelector): vscode.LanguageStatusItem {
 				return extHostLanguages.createLanguageStatusItem(extension, id, selector);
 			},
-			registerDocumentOnDropEditProvider(selector: vscode.DocumentSelector, provider: vscode.DocumentOnDropEditProvider): vscode.Disposable {
-				checkProposedApiEnabled(extension, 'textEditorDrop');
+			registerDocumentDropEditProvider(selector: vscode.DocumentSelector, provider: vscode.DocumentDropEditProvider): vscode.Disposable {
 				return extHostLanguageFeatures.registerDocumentOnDropEditProvider(extension, selector, provider);
 			}
 		};
@@ -767,7 +766,7 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 			showNotebookDocument(uriOrDocument, options?) {
 				if (URI.isUri(uriOrDocument)) {
 					extHostApiDeprecation.report('window.showNotebookDocument(uri)', extension,
-						`Please use 'window.openNotebookDocument' and 'window.showTextDocument'`);
+						`Please use 'workspace.openNotebookDocument' and 'window.showNotebookDocument'`);
 				}
 				return extHostNotebook.showNotebookDocument(uriOrDocument, options);
 			},
@@ -1325,11 +1324,13 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 			InputBoxValidationSeverity: extHostTypes.InputBoxValidationSeverity,
 			TabInputText: extHostTypes.TextTabInput,
 			TabInputTextDiff: extHostTypes.TextDiffTabInput,
+			TabInputTextMerge: extHostTypes.TextMergeTabInput,
 			TabInputCustom: extHostTypes.CustomEditorTabInput,
 			TabInputNotebook: extHostTypes.NotebookEditorTabInput,
 			TabInputNotebookDiff: extHostTypes.NotebookDiffEditorTabInput,
 			TabInputWebview: extHostTypes.WebviewEditorTabInput,
 			TabInputTerminal: extHostTypes.TerminalEditorTabInput,
+			TabInputInteractiveWindow: extHostTypes.InteractiveWindowInput,
 			TerminalExitReason: extHostTypes.TerminalExitReason
 		};
 	};

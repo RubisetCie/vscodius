@@ -167,7 +167,15 @@ export interface IPtyHostAttachTarget {
 	icon: TerminalIcon | undefined;
 	fixedDimensions: IFixedTerminalDimensions | undefined;
 	environmentVariableCollections: ISerializableEnvironmentVariableCollections | undefined;
+	reconnectionOwner?: string;
+	task?: { label: string; id: string; lastTask: string; group?: string };
+	waitOnExit?: WaitOnExitValue;
+	hideFromUser?: boolean;
+	isFeatureTerminal?: boolean;
+	type?: TerminalType;
 }
+
+export type TerminalType = 'Task' | 'Local' | undefined;
 
 export enum TitleEventSource {
 	/** From the API or the rename command that overrides any other type */
@@ -438,8 +446,13 @@ export interface IShellLaunchConfig {
 	 */
 	ignoreConfigurationCwd?: boolean;
 
+	/**
+	 * The owner of this terminal for reconnection.
+	 */
+	reconnectionOwner?: string;
+
 	/** Whether to wait for a key press before closing the terminal. */
-	waitOnExit?: boolean | string | ((exitCode: number) => string);
+	waitOnExit?: WaitOnExitValue;
 
 	/**
 	 * A string including ANSI escape sequences that will be written to the terminal emulator
@@ -462,7 +475,9 @@ export interface IShellLaunchConfig {
 	/**
 	 * This is a terminal that attaches to an already running terminal.
 	 */
-	attachPersistentProcess?: { id: number; findRevivedId?: boolean; pid: number; title: string; titleSource: TitleEventSource; cwd: string; icon?: TerminalIcon; color?: string; hasChildProcesses?: boolean; fixedDimensions?: IFixedTerminalDimensions; environmentVariableCollections?: ISerializableEnvironmentVariableCollections };
+	attachPersistentProcess?: {
+		id: number; findRevivedId?: boolean; pid: number; title: string; titleSource: TitleEventSource; cwd: string; icon?: TerminalIcon; color?: string; hasChildProcesses?: boolean; fixedDimensions?: IFixedTerminalDimensions; environmentVariableCollections?: ISerializableEnvironmentVariableCollections; reconnectionOwner?: string; task?: { label: string; id: string; lastTask: string; group?: string }; type?: TerminalType; waitOnExit?: WaitOnExitValue; hideFromUser?: boolean; isFeatureTerminal?: boolean;
+	};
 
 	/**
 	 * Whether the terminal process environment should be exactly as provided in
@@ -533,7 +548,14 @@ export interface IShellLaunchConfig {
 	 * Create a terminal without shell integration even when it's enabled
 	 */
 	ignoreShellIntegration?: boolean;
+
+	/**
+	 * The task associated with this terminal
+	 */
+	task?: { label: string; id: string; lastTask: string; group?: string };
 }
+
+export type WaitOnExitValue = boolean | string | ((exitCode: number) => string);
 
 export interface ICreateContributedTerminalProfileOptions {
 	icon?: URI | string | { light: URI; dark: URI };

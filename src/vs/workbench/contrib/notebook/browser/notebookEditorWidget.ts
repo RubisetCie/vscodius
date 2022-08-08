@@ -76,7 +76,6 @@ import { INotebookExecutionService } from 'vs/workbench/contrib/notebook/common/
 import { INotebookExecutionStateService } from 'vs/workbench/contrib/notebook/common/notebookExecutionStateService';
 import { INotebookKernelService } from 'vs/workbench/contrib/notebook/common/notebookKernelService';
 import { NotebookOptions, OutputInnerContainerTopPadding } from 'vs/workbench/contrib/notebook/common/notebookOptions';
-import { mark } from 'vs/workbench/contrib/notebook/common/notebookPerformance';
 import { ICellRange } from 'vs/workbench/contrib/notebook/common/notebookRange';
 import { INotebookRendererMessagingService } from 'vs/workbench/contrib/notebook/common/notebookRendererMessagingService';
 import { INotebookService } from 'vs/workbench/contrib/notebook/common/notebookService';
@@ -84,6 +83,7 @@ import { editorGutterModifiedBackground } from 'vs/workbench/contrib/scm/browser
 import { IWebview } from 'vs/workbench/contrib/webview/browser/webview';
 import { EditorExtensionsRegistry } from 'vs/editor/browser/editorExtensions';
 import { IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
+import { NotebookPerfMarks } from 'vs/workbench/contrib/notebook/common/notebookPerformance';
 
 const $ = DOM.$;
 
@@ -189,6 +189,7 @@ export function getDefaultNotebookCreationOptions(): INotebookEditorCreationOpti
 		menuIds: {
 			notebookToolbar: MenuId.NotebookToolbar,
 			cellTitleToolbar: MenuId.NotebookCellTitle,
+			cellDeleteToolbar: MenuId.NotebookCellDelete,
 			cellInsertToolbar: MenuId.NotebookCellBetween,
 			cellTopInsertToolbar: MenuId.NotebookCellListTop,
 			cellExecuteToolbar: MenuId.NotebookCellExecute,
@@ -912,7 +913,7 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditorD
 				mouseSupport: true,
 				multipleSelectionSupport: true,
 				selectionNavigation: true,
-				enableKeyboardNavigation: true,
+				typeNavigationEnabled: true,
 				additionalScrollHeight: 0,
 				transformOptimization: false, //(isMacintosh && isNative) || getTitleBarStyle(this.configurationService, this.environmentService) === 'native',
 				styleController: (_suffix: string) => { return this._list; },
@@ -1077,12 +1078,12 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditorD
 		this.scopedContextKeyService.updateParent(parentContextKeyService);
 	}
 
-	async setModel(textModel: NotebookTextModel, viewState: INotebookEditorViewState | undefined): Promise<void> {
+	async setModel(textModel: NotebookTextModel, viewState: INotebookEditorViewState | undefined, perf?: NotebookPerfMarks): Promise<void> {
 		if (this.viewModel === undefined || !this.viewModel.equal(textModel)) {
 			const oldTopInsertToolbarHeight = this._notebookOptions.computeTopInsertToolbarHeight(this.viewModel?.viewType);
 			const oldBottomToolbarDimensions = this._notebookOptions.computeBottomToolbarDimensions(this.viewModel?.viewType);
 			this._detachModel();
-			await this._attachModel(textModel, viewState);
+			await this._attachModel(textModel, viewState, perf);
 			const newTopInsertToolbarHeight = this._notebookOptions.computeTopInsertToolbarHeight(this.viewModel?.viewType);
 			const newBottomToolbarDimensions = this._notebookOptions.computeBottomToolbarDimensions(this.viewModel?.viewType);
 
@@ -1367,7 +1368,7 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditorD
 		this._list.attachWebview(this._webview.element);
 	}
 
-	private async _attachModel(textModel: NotebookTextModel, viewState: INotebookEditorViewState | undefined) {
+	private async _attachModel(textModel: NotebookTextModel, viewState: INotebookEditorViewState | undefined, perf?: NotebookPerfMarks) {
 		await this._createWebview(this.getId(), textModel.uri);
 		this.viewModel = this.instantiationService.createInstance(NotebookViewModel, textModel.viewType, textModel, this._viewContext, this.getLayoutInfo(), { isReadOnly: this._readOnly });
 		this._viewContext.eventDispatcher.emit([new NotebookLayoutChangedEvent({ width: true, fontInfo: true }, this.getLayoutInfo())]);
@@ -1450,7 +1451,7 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditorD
 		// init rendering
 		await this._warmupWithMarkdownRenderer(this.viewModel, viewState);
 
-		mark(textModel.uri, 'customMarkdownLoaded');
+		perf?.mark('customMarkdownLoaded');
 
 		// model attached
 		this._localCellStateListeners = this.viewModel.viewCells.map(cell => this._bindCellListener(cell));
@@ -1628,6 +1629,7 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditorD
 			content: model.getText(),
 			offset: offset,
 			visible: false,
+			metadata: model.metadata,
 		});
 	}
 
@@ -1672,8 +1674,11 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditorD
 
 	private _restoreSelectedKernel(viewState: INotebookEditorViewState | undefined): void {
 		if (viewState?.selectedKernelId && this.textModel) {
-			const kernel = this.notebookKernelService.getMatchingKernel(this.textModel).all.find(k => k.id === viewState.selectedKernelId);
-			if (kernel) {
+			const matching = this.notebookKernelService.getMatchingKernel(this.textModel);
+			const kernel = matching.all.find(k => k.id === viewState.selectedKernelId);
+			// Selected kernel may have already been picked prior to the view state loading
+			// If so, don't overwrite it with the saved kernel.
+			if (kernel && !matching.selected) {
 				this.notebookKernelService.selectKernelForNotebook(kernel, this.textModel);
 			}
 		}
@@ -2562,6 +2567,7 @@ export class NotebookEditorWidget extends Disposable implements INotebookEditorD
 			content: cell.getText(),
 			offset: cellTop + top,
 			visible: true,
+			metadata: cell.metadata,
 		});
 	}
 
