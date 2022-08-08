@@ -28,6 +28,11 @@ on:
         type: boolean
         required: true
         default: true
+      ignore_new_dependencies:
+        description: 'Ignore new dependencies assertion during packaging'
+        type: boolean
+        required: true
+        default: false
 
 jobs:
   build:
@@ -43,6 +48,9 @@ jobs:
         run: yarn
       - name: Packaging
         run: yarn gulp vscode-linux-${{github.event.inputs.target_arch}}-min
+      - name: Setting environment
+        if: ${{github.event.inputs.ignore_new_dependencies == 'true'}}
+        run: echo 'IGNORE_NEW_DEPENDENCIES=true' >> $GITHUB_ENV
       - name: Creating DEB package
         if: ${{github.event.inputs.pack_deb == 'true'}}
         run: yarn gulp vscode-linux-${{github.event.inputs.pkg_arch}}-build-deb
