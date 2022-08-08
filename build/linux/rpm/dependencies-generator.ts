@@ -9,14 +9,14 @@ import path = require('path');
 import { additionalDeps, bundledDeps, referenceGeneratedDepsByArch } from './dep-lists';
 import { ArchString } from './types';
 
-// A flag that can easily be toggled.
+// A flag that can easily be toggled through environment variable.
 // Make sure to compile the build directory after toggling the value.
 // If false, we warn about new dependencies if they show up
 // while running the rpm prepare package task for a release.
 // If true, we fail the build if there are new dependencies found during that task.
 // The reference dependencies, which one has to update when the new dependencies
 // are valid, are in dep-lists.ts
-const FAIL_BUILD_FOR_NEW_DEPENDENCIES: boolean = false;
+const FAIL_BUILD_FOR_NEW_DEPENDENCIES: boolean = process.env['IGNORE_NEW_DEPENDENCIES'] == false;
 
 export function getDependencies(buildDir: string, applicationName: string, arch: ArchString): string[] {
 	// Get the files for which we want to find dependencies.
