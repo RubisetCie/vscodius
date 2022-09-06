@@ -23,7 +23,7 @@ import { getSimpleEditorOptions } from 'vs/workbench/contrib/codeEditor/browser/
 import { InteractiveEditorInput } from 'vs/workbench/contrib/interactive/browser/interactiveEditorInput';
 import { ICellViewModel, INotebookEditorOptions, INotebookEditorViewState } from 'vs/workbench/contrib/notebook/browser/notebookBrowser';
 import { NotebookEditorExtensionsRegistry } from 'vs/workbench/contrib/notebook/browser/notebookEditorExtensions';
-import { IBorrowValue, INotebookEditorService } from 'vs/workbench/contrib/notebook/browser/notebookEditorService';
+import { IBorrowValue, INotebookEditorService } from 'vs/workbench/contrib/notebook/browser/services/notebookEditorService';
 import { cellEditorBackground, NotebookEditorWidget } from 'vs/workbench/contrib/notebook/browser/notebookEditorWidget';
 import { GroupsOrder, IEditorGroup, IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { ExecutionStateCellStatusBarContrib, TimerCellStatusBarContrib } from 'vs/workbench/contrib/notebook/browser/contrib/cellStatusBar/executionStatusBarItemController';
@@ -103,6 +103,7 @@ export class InteractiveEditor extends EditorPane {
 	#notebookOptions: NotebookOptions;
 	#editorMemento: IEditorMemento<InteractiveEditorViewState>;
 	#groupListener = this._register(new DisposableStore());
+	#runbuttonToolbar: ToolBar | undefined;
 
 	#onDidFocusWidget = this._register(new Emitter<void>());
 	override get onDidFocus(): Event<void> { return this.#onDidFocusWidget.event; }
@@ -183,7 +184,7 @@ export class InteractiveEditor extends EditorPane {
 
 	#setupRunButtonToolbar(runButtonContainer: HTMLElement) {
 		const menu = this._register(this.#menuService.createMenu(MenuId.InteractiveInputExecute, this.#contextKeyService));
-		const toolbar = this._register(new ToolBar(runButtonContainer, this.#contextMenuService, {
+		this.#runbuttonToolbar = this._register(new ToolBar(runButtonContainer, this.#contextMenuService, {
 			getKeyBinding: action => this.#keybindingService.lookupKeybinding(action.id),
 			actionViewItemProvider: action => {
 				return createActionViewItem(this.#instantiationService, action);
@@ -196,7 +197,7 @@ export class InteractiveEditor extends EditorPane {
 		const result = { primary, secondary };
 
 		createAndFillInActionBarActions(menu, { shouldForwardArgs: true }, result);
-		toolbar.setActions([...primary, ...secondary]);
+		this.#runbuttonToolbar.setActions([...primary, ...secondary]);
 	}
 
 	#createLayoutStyles(): void {
@@ -313,13 +314,9 @@ export class InteractiveEditor extends EditorPane {
 
 		// there currently is a widget which we still own so
 		// we need to hide it before getting a new widget
-		if (this.#notebookWidget.value) {
-			this.#notebookWidget.value.onWillHide();
-		}
+		this.#notebookWidget.value?.onWillHide();
 
-		if (this.#codeEditorWidget) {
-			this.#codeEditorWidget.dispose();
-		}
+		this.#codeEditorWidget?.dispose();
 
 		this.#widgetDisposableStore.clear();
 
@@ -393,6 +390,9 @@ export class InteractiveEditor extends EditorPane {
 
 		await super.setInput(input, options, context, token);
 		const model = await input.resolve();
+		if (this.#runbuttonToolbar) {
+			this.#runbuttonToolbar.context = input.resource;
+		}
 
 		if (model === null) {
 			throw new Error('?');
@@ -662,9 +662,7 @@ export class InteractiveEditor extends EditorPane {
 			this.#notebookWidget.value.onWillHide();
 		}
 
-		if (this.#codeEditorWidget) {
-			this.#codeEditorWidget.dispose();
-		}
+		this.#codeEditorWidget?.dispose();
 
 		this.#notebookWidget = { value: undefined };
 		this.#widgetDisposableStore.clear();

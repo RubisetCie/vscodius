@@ -36,7 +36,7 @@
   "dependencies": {
     "jsonc-parser": "^2.2.1",
     "semver": "5.5.1",
-    "vscode-nls": "^5.0.0",
+    "vscode-nls": "^5.1.0",
     "vscode-uri": "^3.0.3"
   },
   "devDependencies": {

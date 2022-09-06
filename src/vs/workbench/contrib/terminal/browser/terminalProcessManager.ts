@@ -19,7 +19,7 @@ import { getRemoteAuthority } from 'vs/platform/remote/common/remoteHosts';
 import { TerminalCapability } from 'vs/platform/terminal/common/capabilities/capabilities';
 import { NaiveCwdDetectionCapability } from 'vs/platform/terminal/common/capabilities/naiveCwdDetectionCapability';
 import { TerminalCapabilityStore } from 'vs/platform/terminal/common/capabilities/terminalCapabilityStore';
-import { FlowControlConstants, IProcessDataEvent, IProcessProperty, IProcessPropertyMap, IProcessReadyEvent, IShellLaunchConfig, ITerminalChildProcess, ITerminalDimensions, ITerminalEnvironment, ITerminalLaunchError, ITerminalProcessOptions, ProcessPropertyType, TerminalSettingId } from 'vs/platform/terminal/common/terminal';
+import { FlowControlConstants, IProcessDataEvent, IProcessProperty, IProcessPropertyMap, IProcessReadyEvent, IReconnectionProperties, IShellLaunchConfig, ITerminalChildProcess, ITerminalDimensions, ITerminalEnvironment, ITerminalLaunchError, ITerminalProcessOptions, ProcessPropertyType, TerminalSettingId } from 'vs/platform/terminal/common/terminal';
 import { ISerializedCommandDetectionCapability } from 'vs/platform/terminal/common/terminalProcess';
 import { TerminalRecorder } from 'vs/platform/terminal/common/terminalRecorder';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
@@ -113,10 +113,10 @@ export class TerminalProcessManager extends Disposable implements ITerminalProce
 	readonly onRestoreCommands = this._onRestoreCommands.event;
 
 	get persistentProcessId(): number | undefined { return this._process?.id; }
-	get shouldPersist(): boolean { return !!this.reconnectionOwner || (this._process ? this._process.shouldPersist : false); }
+	get shouldPersist(): boolean { return !!this.reconnectionProperties || (this._process ? this._process.shouldPersist : false); }
 	get hasWrittenData(): boolean { return this._hasWrittenData; }
 	get hasChildProcesses(): boolean { return this._hasChildProcesses; }
-	get reconnectionOwner(): string | undefined { return this._shellLaunchConfig?.attachPersistentProcess?.reconnectionOwner || this._shellLaunchConfig?.reconnectionOwner || undefined; }
+	get reconnectionProperties(): IReconnectionProperties | undefined { return this._shellLaunchConfig?.attachPersistentProcess?.reconnectionProperties || this._shellLaunchConfig?.reconnectionProperties || undefined; }
 
 	constructor(
 		private readonly _instanceId: number,
@@ -193,8 +193,8 @@ export class TerminalProcessManager extends Disposable implements ITerminalProce
 		});
 	}
 
-	async detachFromProcess(): Promise<void> {
-		await this._process?.detach?.();
+	async detachFromProcess(forcePersist?: boolean): Promise<void> {
+		await this._process?.detach?.(forcePersist);
 		this._process = null;
 	}
 
@@ -244,7 +244,7 @@ export class TerminalProcessManager extends Disposable implements ITerminalProce
 
 				// this is a copy of what the merged environment collection is on the remote side
 				const env = await this._resolveEnvironment(backend, variableResolver, shellLaunchConfig);
-				const shouldPersist = ((this._configurationService.getValue(TaskSettingId.Reconnection) && shellLaunchConfig.reconnectionOwner) || !shellLaunchConfig.isFeatureTerminal) && this._configHelper.config.enablePersistentSessions && !shellLaunchConfig.isTransient;
+				const shouldPersist = ((this._configurationService.getValue(TaskSettingId.Reconnection) && shellLaunchConfig.reconnectionProperties) || !shellLaunchConfig.isFeatureTerminal) && this._configHelper.config.enablePersistentSessions && !shellLaunchConfig.isTransient;
 				if (shellLaunchConfig.attachPersistentProcess) {
 					const result = await backend.attachToProcess(shellLaunchConfig.attachPersistentProcess.id);
 					if (result) {
@@ -455,7 +455,7 @@ export class TerminalProcessManager extends Disposable implements ITerminalProce
 			windowsEnableConpty: this._configHelper.config.windowsEnableConpty && !isScreenReaderModeEnabled,
 			environmentVariableCollections: this._extEnvironmentVariableCollection ? serializeEnvironmentVariableCollections(this._extEnvironmentVariableCollection.collections) : undefined
 		};
-		const shouldPersist = ((this._configurationService.getValue(TaskSettingId.Reconnection) && shellLaunchConfig.reconnectionOwner) || !shellLaunchConfig.isFeatureTerminal) && this._configHelper.config.enablePersistentSessions && !shellLaunchConfig.isTransient;
+		const shouldPersist = ((this._configurationService.getValue(TaskSettingId.Reconnection) && shellLaunchConfig.reconnectionProperties) || !shellLaunchConfig.isFeatureTerminal) && this._configHelper.config.enablePersistentSessions && !shellLaunchConfig.isTransient;
 		return await backend.createProcess(shellLaunchConfig, initialCwd, cols, rows, this._configHelper.config.unicodeVersion, env, options, shouldPersist);
 	}
 
@@ -488,7 +488,7 @@ export class TerminalProcessManager extends Disposable implements ITerminalProce
 			this._ptyResponsiveListener?.dispose();
 			this._ptyResponsiveListener = undefined;
 			if (this._shellLaunchConfig) {
-				if (this._shellLaunchConfig.isFeatureTerminal && !this.reconnectionOwner) {
+				if (this._shellLaunchConfig.isFeatureTerminal && !this.reconnectionProperties) {
 					// Indicate the process is exited (and gone forever) only for feature terminals
 					// so they can react to the exit, this is particularly important for tasks so
 					// that it knows that the process is not still active. Note that this is not

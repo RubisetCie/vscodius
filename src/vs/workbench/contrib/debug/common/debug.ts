@@ -665,6 +665,7 @@ export interface IEnvConfig {
 	postDebugTask?: string | ITaskIdentifier;
 	debugServer?: number;
 	noDebug?: boolean;
+	suppressMultipleSessionWarning?: boolean;
 }
 
 export interface IConfigPresentation {

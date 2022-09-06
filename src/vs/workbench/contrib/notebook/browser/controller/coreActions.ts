@@ -13,7 +13,7 @@ import { getNotebookEditorFromEditorPane, IActiveNotebookEditor, ICellViewModel,
 import { NOTEBOOK_EDITOR_EDITABLE, NOTEBOOK_EDITOR_FOCUSED, NOTEBOOK_IS_ACTIVE_EDITOR, NOTEBOOK_KERNEL_COUNT, NOTEBOOK_KERNEL_SOURCE_COUNT } from 'vs/workbench/contrib/notebook/common/notebookContextKeys';
 import { ICellRange, isICellRange } from 'vs/workbench/contrib/notebook/common/notebookRange';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { INotebookEditorService } from 'vs/workbench/contrib/notebook/browser/notebookEditorService';
+import { INotebookEditorService } from 'vs/workbench/contrib/notebook/browser/services/notebookEditorService';
 import { TypeConstraint } from 'vs/base/common/types';
 import { IJSONSchema } from 'vs/base/common/jsonSchema';
 import { MarshalledId } from 'vs/base/common/marshallingIds';

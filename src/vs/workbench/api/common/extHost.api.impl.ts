@@ -78,7 +78,7 @@ import { ExtHostBulkEdits } from 'vs/workbench/api/common/extHostBulkEdits';
 import { IExtHostFileSystemInfo } from 'vs/workbench/api/common/extHostFileSystemInfo';
 import { ExtHostTesting } from 'vs/workbench/api/common/extHostTesting';
 import { ExtHostUriOpeners } from 'vs/workbench/api/common/extHostUriOpener';
-import { IExtHostSecretState } from 'vs/workbench/api/common/exHostSecretState';
+import { IExtHostSecretState } from 'vs/workbench/api/common/extHostSecretState';
 import { IExtHostEditorTabs } from 'vs/workbench/api/common/extHostEditorTabs';
 import { ExtHostNotebookKernels } from 'vs/workbench/api/common/extHostNotebookKernels';
 import { TextSearchCompleteMessageType } from 'vs/workbench/services/search/common/searchExtTypes';
@@ -1019,6 +1019,10 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 			},
 			onDidGrantWorkspaceTrust: (listener, thisArgs?, disposables?) => {
 				return extHostWorkspace.onDidGrantWorkspaceTrust(listener, thisArgs, disposables);
+			},
+			registerEditSessionIdentityProvider: (scheme: string, provider: vscode.EditSessionIdentityProvider) => {
+				checkProposedApiEnabled(extension, 'editSessionIdentityProvider');
+				return extHostWorkspace.registerEditSessionIdentityProvider(scheme, provider);
 			}
 		};
 

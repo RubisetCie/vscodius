@@ -20,7 +20,7 @@ import { IExtHostApiDeprecationService, ExtHostApiDeprecationService, } from 'vs
 import { IExtHostWindow, ExtHostWindow } from 'vs/workbench/api/common/extHostWindow';
 import { IExtHostConsumerFileSystem, ExtHostConsumerFileSystem } from 'vs/workbench/api/common/extHostFileSystemConsumer';
 import { IExtHostFileSystemInfo, ExtHostFileSystemInfo } from 'vs/workbench/api/common/extHostFileSystemInfo';
-import { IExtHostSecretState, ExtHostSecretState } from 'vs/workbench/api/common/exHostSecretState';
+import { IExtHostSecretState, ExtHostSecretState } from 'vs/workbench/api/common/extHostSecretState';
 import { ExtHostEditorTabs, IExtHostEditorTabs } from 'vs/workbench/api/common/extHostEditorTabs';
 import { ExtHostLoggerService } from 'vs/workbench/api/common/extHostLoggerService';
 import { ILoggerService, ILogService } from 'vs/platform/log/common/log';

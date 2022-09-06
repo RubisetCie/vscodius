@@ -255,9 +255,7 @@ suite('ExtensionRecommendationsService Test', () => {
 	});
 
 	suiteTeardown(() => {
-		if (experimentService) {
-			experimentService.dispose();
-		}
+		experimentService?.dispose();
 	});
 
 	setup(() => {

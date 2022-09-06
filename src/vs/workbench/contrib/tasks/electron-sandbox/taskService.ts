@@ -85,7 +85,8 @@ export class TaskService extends AbstractTaskService {
 		@IWorkspaceTrustManagementService workspaceTrustManagementService: IWorkspaceTrustManagementService,
 		@ILogService logService: ILogService,
 		@IThemeService themeService: IThemeService,
-		@IInstantiationService instantiationService: IInstantiationService) {
+		@IInstantiationService instantiationService: IInstantiationService,
+	) {
 		super(configurationService,
 			markerService,
 			outputService,
@@ -118,6 +119,7 @@ export class TaskService extends AbstractTaskService {
 			workspaceTrustManagementService,
 			logService,
 			themeService,
+			lifecycleService
 		);
 		this._register(lifecycleService.onBeforeShutdown(event => event.veto(this.beforeShutdown(), 'veto.tasks')));
 	}
@@ -126,13 +128,15 @@ export class TaskService extends AbstractTaskService {
 		if (this._taskSystem) {
 			return this._taskSystem;
 		}
-		this._taskSystem = this._createTerminalTaskSystem();
-		this._taskSystemListener = this._taskSystem!.onDidStateChange((event) => {
-			if (this._taskSystem) {
-				this._taskRunningState.set(this._taskSystem.isActiveSync());
-			}
-			this._onDidStateChange.fire(event);
-		});
+		const taskSystem = this._createTerminalTaskSystem();
+		this._taskSystem = taskSystem;
+		this._taskSystemListeners =
+			[
+				this._taskSystem.onDidStateChange((event) => {
+					this._taskRunningState.set(this._taskSystem!.isActiveSync());
+					this._onDidStateChange.fire(event);
+				})
+			];
 		return this._taskSystem;
 	}
 

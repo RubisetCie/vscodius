@@ -197,7 +197,7 @@ export function isURLDomainTrusted(url: URI, trustedDomains: string[]) {
 			return true;
 		}
 
-		if (testUrlMatchesGlob(url.toString(), trustedDomains[i])) {
+		if (testUrlMatchesGlob(url, trustedDomains[i])) {
 			return true;
 		}
 	}
