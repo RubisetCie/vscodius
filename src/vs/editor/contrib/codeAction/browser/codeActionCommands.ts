@@ -12,7 +12,7 @@ import { Disposable } from 'vs/base/common/lifecycle';
 import { escapeRegExpCharacters } from 'vs/base/common/strings';
 import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
 import { EditorAction, EditorCommand, registerEditorCommand, ServicesAccessor } from 'vs/editor/browser/editorExtensions';
-import { IBulkEditService, ResourceEdit } from 'vs/editor/browser/services/bulkEditService';
+import { IBulkEditService } from 'vs/editor/browser/services/bulkEditService';
 import { IPosition } from 'vs/editor/common/core/position';
 import { IEditorContribution } from 'vs/editor/common/editorCommon';
 import { EditorContextKeys } from 'vs/editor/common/editorContextKeys';
@@ -31,7 +31,7 @@ import { IEditorProgressService } from 'vs/platform/progress/common/progress';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { CodeActionModel, CodeActionsState, SUPPORTED_CODE_ACTIONS } from './codeActionModel';
 import { CodeActionAutoApply, CodeActionCommandArgs, CodeActionFilter, CodeActionKind, CodeActionTrigger, CodeActionTriggerSource } from './types';
-import { Context } from 'vs/editor/contrib/codeAction/browser/codeActionMenu';
+import { acceptSelectedCodeActionCommand, Context, previewSelectedCodeActionCommand } from 'vs/editor/contrib/codeAction/browser/codeActionMenu';
 
 function contextKeyForSupportedActions(kind: CodeActionKind) {
 	return ContextKeyExpr.regex(
@@ -207,7 +207,7 @@ export async function applyCodeAction(
 	await item.resolve(CancellationToken.None);
 
 	if (item.action.edit) {
-		await bulkEditService.apply(ResourceEdit.convert(item.action.edit), {
+		await bulkEditService.apply(item.action.edit, {
 			editor: options?.editor,
 			label: item.action.title,
 			quotableLabel: item.action.title,
@@ -498,7 +498,7 @@ const CodeActionContribution = EditorCommand.bindToContribution<QuickFixControll
 const weight = KeybindingWeight.EditorContrib + 90;
 
 registerEditorCommand(new CodeActionContribution({
-	id: 'hideCodeActionMenuWidget',
+	id: 'hideCodeActionWidget',
 	precondition: Context.Visible,
 	handler(x) {
 		x.hideCodeActionMenu();
@@ -511,7 +511,7 @@ registerEditorCommand(new CodeActionContribution({
 }));
 
 registerEditorCommand(new CodeActionContribution({
-	id: 'focusPreviousCodeAction',
+	id: 'selectPrevCodeAction',
 	precondition: Context.Visible,
 	handler(x) {
 		x.navigateCodeActionList(true);
@@ -524,7 +524,7 @@ registerEditorCommand(new CodeActionContribution({
 }));
 
 registerEditorCommand(new CodeActionContribution({
-	id: 'focusNextCodeAction',
+	id: 'selectNextCodeAction',
 	precondition: Context.Visible,
 	handler(x) {
 		x.navigateCodeActionList(false);
@@ -537,7 +537,7 @@ registerEditorCommand(new CodeActionContribution({
 }));
 
 registerEditorCommand(new CodeActionContribution({
-	id: 'onEnterSelectCodeAction',
+	id: acceptSelectedCodeActionCommand,
 	precondition: Context.Visible,
 	handler(x) {
 		x.selectedOption();
@@ -545,12 +545,12 @@ registerEditorCommand(new CodeActionContribution({
 	kbOpts: {
 		weight: weight + 100000,
 		primary: KeyCode.Enter,
-		secondary: [KeyMod.Shift | KeyCode.Tab],
+		secondary: [KeyMod.CtrlCmd | KeyCode.Period],
 	}
 }));
 
 registerEditorCommand(new CodeActionContribution({
-	id: 'onEnterSelectCodeActionWithPreview',
+	id: previewSelectedCodeActionCommand,
 	precondition: Context.Visible,
 	handler(x) {
 		x.selectedOptionWithPreview();

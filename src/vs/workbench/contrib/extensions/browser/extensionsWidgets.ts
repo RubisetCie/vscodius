@@ -377,9 +377,7 @@ export class ExtensionPackCountWidget extends ExtensionWidget {
 	}
 
 	private clear(): void {
-		if (this.element) {
-			this.element.remove();
-		}
+		this.element?.remove();
 	}
 
 	render(): void {

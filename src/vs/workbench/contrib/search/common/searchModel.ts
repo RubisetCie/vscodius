@@ -8,7 +8,7 @@ import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import { compareFileExtensions, compareFileNames, comparePaths } from 'vs/base/common/comparers';
 import { memoize } from 'vs/base/common/decorators';
 import * as errors from 'vs/base/common/errors';
-import { Emitter, Event } from 'vs/base/common/event';
+import { Emitter, Event, PauseableEmitter } from 'vs/base/common/event';
 import { Disposable, DisposableStore, IDisposable } from 'vs/base/common/lifecycle';
 import { ResourceMap, TernarySearchTree } from 'vs/base/common/map';
 import { lcut } from 'vs/base/common/strings';
@@ -366,9 +366,16 @@ export class FileMatch extends Disposable implements IFileMatch {
 		return Array.from(this._matches.values());
 	}
 
-	remove(match: Match): void {
-		this.removeMatch(match);
-		this._removedMatches.add(match.id());
+	remove(matches: Match | Match[]): void {
+		if (!Array.isArray(matches)) {
+			matches = [matches];
+		}
+
+		for (const match of matches) {
+			this.removeMatch(match);
+			this._removedMatches.add(match.id());
+		}
+
 		this._onChange.fire({ didRemove: true });
 	}
 
@@ -578,7 +585,7 @@ export class FolderMatch extends Disposable {
 
 	replaceAll(): Promise<any> {
 		const matches = this.matches();
-		return this.replaceService.replace(matches).then(() => this.doRemove(matches));
+		return this.batchReplace(matches);
 	}
 
 	matches(): FileMatch[] {
@@ -595,6 +602,11 @@ export class FolderMatch extends Disposable {
 
 	count(): number {
 		return this.matches().reduce<number>((prev, match) => prev + match.count(), 0);
+	}
+
+	private async batchReplace(matches: FileMatch[]): Promise<any> {
+		await this.replaceService.replace(matches);
+		this.doRemove(matches, true, true);
 	}
 
 	private onFileChange(fileMatch: FileMatch, removed = false): void {
@@ -747,9 +759,10 @@ function createParentList(element: RenderableMatch): RenderableMatch[] {
 }
 export class SearchResult extends Disposable {
 
-	private _onChange = this._register(new Emitter<IChangeEvent>());
+	private _onChange = this._register(new PauseableEmitter<IChangeEvent>({
+		merge: this.mergeEvents
+	}));
 	readonly onChange: Event<IChangeEvent> = this._onChange.event;
-
 	private _folderMatches: FolderMatchWithResource[] = [];
 	private _otherFilesMatch: FolderMatch | null = null;
 	private _folderMatchesMap: TernarySearchTree<URI, FolderMatchWithResource> = TernarySearchTree.forUris<FolderMatchWithResource>(key => this.uriIdentityService.extUri.ignorePathCasing(key));
@@ -778,6 +791,41 @@ export class SearchResult extends Disposable {
 				this._isDirty = !this.isEmpty();
 			}
 		}));
+	}
+
+	async batchReplace(elementsToReplace: RenderableMatch[]) {
+		try {
+			this._onChange.pause();
+			await Promise.all(elementsToReplace.map(async (elem) => {
+				const parent = elem.parent();
+
+				if ((parent instanceof FolderMatch || parent instanceof FileMatch) && arrayContainsElementOrParent(parent, elementsToReplace)) {
+					// skip any children who have parents in the array
+					return;
+				}
+
+				if (elem instanceof FileMatch) {
+					await elem.parent().replace(elem);
+				} else if (elem instanceof Match) {
+					await elem.parent().replace(elem);
+				} else if (elem instanceof FolderMatch) {
+					await elem.replaceAll();
+				}
+			}));
+		} finally {
+			this._onChange.resume();
+		}
+	}
+
+	batchRemove(elementsToRemove: RenderableMatch[]) {
+		try {
+			this._onChange.pause();
+			elementsToRemove.forEach((currentElement) =>
+				currentElement.parent().remove(<(FolderMatch | FileMatch)[] & Match & FileMatch[]>currentElement)
+			);
+		} finally {
+			this._onChange.resume();
+		}
 	}
 
 	get isDirty(): boolean {
@@ -813,6 +861,26 @@ export class SearchResult extends Disposable {
 		this._query = query;
 	}
 
+	private mergeEvents(events: IChangeEvent[]): IChangeEvent {
+		const retEvent: IChangeEvent = {
+			elements: [],
+			added: false,
+			removed: false,
+		};
+		events.forEach((e) => {
+			if (e.added) {
+				retEvent.added = true;
+			}
+
+			if (e.removed) {
+				retEvent.removed = true;
+			}
+
+			retEvent.elements = retEvent.elements.concat(e.elements);
+		});
+
+		return retEvent;
+	}
 	private onModelAdded(model: ITextModel): void {
 		const folderMatch = this._folderMatchesMap.findSubstr(model.uri);
 		folderMatch?.bindModel(model);
@@ -1311,4 +1379,14 @@ function textSearchResultToMatches(rawMatch: ITextSearchMatch, fileMatch: FileMa
 		const match = new Match(fileMatch, previewLines, previewRange, rawMatch.ranges);
 		return [match];
 	}
+}
+
+export function arrayContainsElementOrParent(element: RenderableMatch, testArray: RenderableMatch[]): boolean {
+	do {
+		if (testArray.includes(element)) {
+			return true;
+		}
+	} while (!(element.parent() instanceof SearchResult) && (element = <RenderableMatch>element.parent()));
+
+	return false;
 }

@@ -86,6 +86,7 @@ import { IStorageService, InMemoryStorageService } from 'vs/platform/storage/com
 
 import 'vs/editor/common/services/languageFeaturesService';
 import { DefaultConfigurationModel } from 'vs/platform/configuration/common/configurations';
+import { WorkspaceEdit } from 'vs/editor/common/languages';
 
 class SimpleModel implements IResolvedTextEditorModel {
 
@@ -744,8 +745,8 @@ class StandaloneBulkEditService implements IBulkEditService {
 		return Disposable.None;
 	}
 
-	async apply(edits: ResourceEdit[], _options?: IBulkEditOptions): Promise<IBulkEditResult> {
-
+	async apply(editsIn: ResourceEdit[] | WorkspaceEdit, _options?: IBulkEditOptions): Promise<IBulkEditResult> {
+		const edits = Array.isArray(editsIn) ? editsIn : ResourceEdit.convert(editsIn);
 		const textEdits = new Map<ITextModel, ISingleEditOperation[]>();
 
 		for (const edit of edits) {

@@ -26,7 +26,7 @@ import { IEditorProgressService } from 'vs/platform/progress/common/progress';
 import { EditorProgressIndicator } from 'vs/workbench/services/progress/browser/progressIndicator';
 import { localize } from 'vs/nls';
 import { coalesce, firstOrDefault } from 'vs/base/common/arrays';
-import { combinedDisposable, dispose, MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
+import { MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
 import { DeferredPromise, Promises, RunOnceWorker } from 'vs/base/common/async';
 import { EventType as TouchEventType, GestureEvent } from 'vs/base/browser/touch';
 import { TitleControl } from 'vs/workbench/browser/parts/editor/titleControl';
@@ -337,18 +337,15 @@ export class EditorGroupView extends Themable implements IEditorGroupView {
 		const updateContainerToolbar = () => {
 			const actions: { primary: IAction[]; secondary: IAction[] } = { primary: [], secondary: [] };
 
-			this.containerToolBarMenuDisposable.value = combinedDisposable(
+			// Clear old actions
+			this.containerToolBarMenuDisposable.value = toDisposable(() => containerToolbar.clear());
 
-				// Clear old actions
-				toDisposable(() => containerToolbar.clear()),
-
-				// Create new actions
-				createAndFillInActionBarActions(
-					containerToolbarMenu,
-					{ arg: { groupId: this.id }, shouldForwardArgs: true },
-					actions,
-					'navigation'
-				)
+			// Create new actions
+			createAndFillInActionBarActions(
+				containerToolbarMenu,
+				{ arg: { groupId: this.id }, shouldForwardArgs: true },
+				actions,
+				'navigation'
 			);
 
 			for (const action of [...actions.primary, ...actions.secondary]) {
@@ -381,7 +378,7 @@ export class EditorGroupView extends Themable implements IEditorGroupView {
 
 		// Fill in contributed actions
 		const actions: IAction[] = [];
-		const actionsDisposable = createAndFillInContextMenuActions(menu, undefined, actions);
+		createAndFillInContextMenuActions(menu, undefined, actions);
 
 		// Show it
 		this.contextMenuService.showContextMenu({
@@ -389,7 +386,6 @@ export class EditorGroupView extends Themable implements IEditorGroupView {
 			getActions: () => actions,
 			onHide: () => {
 				this.focus();
-				dispose(actionsDisposable);
 			}
 		});
 	}

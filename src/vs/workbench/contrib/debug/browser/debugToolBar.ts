@@ -47,7 +47,6 @@ export class DebugToolBar extends Themable implements IWorkbenchContribution {
 	private activeActions: IAction[];
 	private updateScheduler: RunOnceScheduler;
 	private debugToolBarMenu: IMenu;
-	private disposeOnUpdate: IDisposable | undefined;
 	private yCoordinate = 0;
 
 	private isVisible = false;
@@ -103,16 +102,12 @@ export class DebugToolBar extends Themable implements IWorkbenchContribution {
 			}
 
 			const actions: IAction[] = [];
-			const disposable = createAndFillInActionBarActions(this.debugToolBarMenu, { shouldForwardArgs: true }, actions);
+			createAndFillInActionBarActions(this.debugToolBarMenu, { shouldForwardArgs: true }, actions);
 			if (!arrays.equals(actions, this.activeActions, (first, second) => first.id === second.id && first.enabled === second.enabled)) {
 				this.actionBar.clear();
 				this.actionBar.push(actions, { icon: true, label: false });
 				this.activeActions = actions;
 			}
-			if (this.disposeOnUpdate) {
-				dispose(this.disposeOnUpdate);
-			}
-			this.disposeOnUpdate = disposable;
 
 			this.show();
 		}, 20));
@@ -254,12 +249,7 @@ export class DebugToolBar extends Themable implements IWorkbenchContribution {
 	override dispose(): void {
 		super.dispose();
 
-		if (this.$el) {
-			this.$el.remove();
-		}
-		if (this.disposeOnUpdate) {
-			dispose(this.disposeOnUpdate);
-		}
+		this.$el?.remove();
 	}
 }
 
@@ -271,7 +261,7 @@ export function createDisconnectMenuItemAction(action: MenuItemAction, disposabl
 
 	const menu = menuService.createMenu(MenuId.DebugToolBarStop, contextKeyService);
 	const secondary: IAction[] = [];
-	disposables.add(createAndFillInActionBarActions(menu, { shouldForwardArgs: true }, secondary));
+	createAndFillInActionBarActions(menu, { shouldForwardArgs: true }, secondary);
 
 	if (!secondary.length) {
 		return undefined;

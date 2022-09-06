@@ -124,9 +124,7 @@ export function registerNotificationCommands(center: INotificationsCenterControl
 		primary: KeyCode.RightArrow,
 		handler: (accessor, args?) => {
 			const notification = getNotificationFromContext(accessor.get(IListService), args);
-			if (notification) {
-				notification.expand();
-			}
+			notification?.expand();
 		}
 	});
 
@@ -138,9 +136,7 @@ export function registerNotificationCommands(center: INotificationsCenterControl
 		primary: KeyCode.LeftArrow,
 		handler: (accessor, args?) => {
 			const notification = getNotificationFromContext(accessor.get(IListService), args);
-			if (notification) {
-				notification.collapse();
-			}
+			notification?.collapse();
 		}
 	});
 
@@ -153,9 +149,7 @@ export function registerNotificationCommands(center: INotificationsCenterControl
 		secondary: [KeyCode.Enter],
 		handler: accessor => {
 			const notification = getNotificationFromContext(accessor.get(IListService));
-			if (notification) {
-				notification.toggle();
-			}
+			notification?.toggle();
 		}
 	});
 

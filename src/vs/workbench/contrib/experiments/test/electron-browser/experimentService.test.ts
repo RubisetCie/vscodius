@@ -104,9 +104,7 @@ suite('Experiment Service', () => {
 		});
 
 		teardown(() => {
-			if (testObject) {
-				testObject.dispose();
-			}
+			testObject?.dispose();
 		});
 	});
 

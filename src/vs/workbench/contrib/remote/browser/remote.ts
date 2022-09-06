@@ -545,7 +545,7 @@ registerAction2(SwitchRemoteAction);
 Registry.as<IViewContainersRegistry>(Extensions.ViewContainersRegistry).registerViewContainer(
 	{
 		id: VIEWLET_ID,
-		title: nls.localize('remote.explorer', "Remote Explorer"),
+		title: { value: nls.localize('remote.explorer', "Remote Explorer"), original: 'Remote Explorer' },
 		ctorDescriptor: new SyncDescriptor(RemoteViewPaneContainer),
 		hideIfEmpty: true,
 		viewOrderDelegate: {
@@ -757,9 +757,7 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 			const reconnectButton = {
 				label: nls.localize('reconnectNow', "Reconnect Now"),
 				callback: () => {
-					if (reconnectWaitEvent) {
-						reconnectWaitEvent.skipWait();
-					}
+					reconnectWaitEvent?.skipWait();
 				}
 			};
 
@@ -777,9 +775,7 @@ export class RemoteAgentConnectionStatusListener extends Disposable implements I
 			// ReconnectionRunning -> ConnectionGain, ReconnectionPermanentFailure
 
 			connection.onDidStateChange((e) => {
-				if (visibleProgress) {
-					visibleProgress.stopTimer();
-				}
+				visibleProgress?.stopTimer();
 
 				if (disposableListener) {
 					disposableListener.dispose();
