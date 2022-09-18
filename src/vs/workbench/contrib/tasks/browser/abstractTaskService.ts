@@ -57,7 +57,6 @@ import { TerminalTaskSystem } from './terminalTaskSystem';
 import { IQuickInputService, IQuickPick, IQuickPickItem, IQuickPickSeparator, QuickPickInput } from 'vs/platform/quickinput/common/quickInput';
 
 import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
-import { RunAutomaticTasks } from 'vs/workbench/contrib/tasks/browser/runAutomaticTasks';
 import { TaskDefinitionRegistry } from 'vs/workbench/contrib/tasks/common/taskDefinitionRegistry';
 
 import { CancellationToken, CancellationTokenSource } from 'vs/base/common/cancellation';
@@ -1223,10 +1222,6 @@ export abstract class AbstractTaskService extends Disposable implements ITaskSer
 				}
 			} else {
 				executeTaskResult = await this._executeTask(task, resolver, runSource);
-			}
-			if (runSource === TaskRunSource.User) {
-				const workspaceTasks = await this.getWorkspaceTasks();
-				RunAutomaticTasks.runWithPermission(this, this._storageService, this._notificationService, this._workspaceTrustManagementService, this._openerService, this._configurationService, workspaceTasks);
 			}
 			return executeTaskResult;
 		} catch (error) {
