@@ -732,7 +732,7 @@ export class RawDebugSession implements IDisposable {
 	private handleErrorResponse(errorResponse: DebugProtocol.Response, showErrors: boolean): Error {
 
 		if (errorResponse.command === 'canceled' && errorResponse.message === 'canceled') {
-			return errors.canceled();
+			return new errors.CancellationError();
 		}
 
 		const error: DebugProtocol.Message | undefined = errorResponse?.body?.error;

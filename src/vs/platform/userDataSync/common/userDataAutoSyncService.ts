@@ -16,7 +16,7 @@ import { URI } from 'vs/base/common/uri';
 import { localize } from 'vs/nls';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { ISyncTask, IUserDataAutoSyncService, IUserDataManifest, IUserDataSyncLogService, IUserDataSyncEnablementService, IUserDataSyncService, IUserDataSyncStoreManagementService, IUserDataSyncStoreService, UserDataAutoSyncError, UserDataSyncError, UserDataSyncErrorCode } from 'vs/platform/userDataSync/common/userDataSync';
+import { IUserDataSyncTask, IUserDataAutoSyncService, IUserDataManifest, IUserDataSyncLogService, IUserDataSyncEnablementService, IUserDataSyncService, IUserDataSyncStoreManagementService, IUserDataSyncStoreService, UserDataAutoSyncError, UserDataSyncError, UserDataSyncErrorCode } from 'vs/platform/userDataSync/common/userDataSync';
 import { IUserDataSyncAccountService } from 'vs/platform/userDataSync/common/userDataSyncAccount';
 import { IUserDataSyncMachinesService } from 'vs/platform/userDataSync/common/userDataSyncMachines';
 
@@ -188,8 +188,8 @@ export class UserDataAutoSyncService extends Disposable implements IUserDataAuto
 				await this.userDataSyncService.resetLocal();
 			}
 		} catch (error) {
+			this.logService.error(error);
 			if (softTurnOffOnError) {
-				this.logService.error(error);
 				this.updateEnablement(false);
 			} else {
 				throw error;
@@ -362,7 +362,7 @@ class AutoSync extends Disposable {
 	readonly onDidFinishSync = this._onDidFinishSync.event;
 
 	private manifest: IUserDataManifest | null = null;
-	private syncTask: ISyncTask | undefined;
+	private syncTask: IUserDataSyncTask | undefined;
 	private syncPromise: CancelablePromise<void> | undefined;
 
 	constructor(
@@ -389,7 +389,6 @@ class AutoSync extends Disposable {
 			this.syncTask?.stop();
 			this.logService.info('Auto Sync: Stopped');
 		}));
-		this.logService.info('Auto Sync: Started');
 		this.sync(AutoSync.INTERVAL_SYNCING, false);
 	}
 

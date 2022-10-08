@@ -154,8 +154,8 @@
   },
   "dependencies": {
     "request-light": "^0.5.8",
-    "vscode-languageclient": "^8.0.2-next.5",
-    "vscode-nls": "^5.1.0"
+    "vscode-languageclient": "^8.1.0-next.1",
+    "vscode-nls": "^5.2.0"
   },
   "devDependencies": {
     "@types/node": "16.x"

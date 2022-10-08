@@ -70,8 +70,8 @@ class SideBySideEditorLanguageSupport implements ILanguageSupport {
 
 	constructor(private primary: ILanguageSupport, private secondary: ILanguageSupport) { }
 
-	setLanguageId(languageId: string): void {
-		[this.primary, this.secondary].forEach(editor => editor.setLanguageId(languageId));
+	setLanguageId(languageId: string, source?: string): void {
+		[this.primary, this.secondary].forEach(editor => editor.setLanguageId(languageId, source));
 	}
 }
 
@@ -1216,7 +1216,7 @@ export class ChangeLanguageAction extends Action {
 
 				// Change language
 				if (typeof languageSelection !== 'undefined') {
-					languageSupport.setLanguageId(languageSelection.languageId);
+					languageSupport.setLanguageId(languageSelection.languageId, ChangeLanguageAction.ID);
 				}
 			}
 

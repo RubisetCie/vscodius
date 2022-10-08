@@ -380,7 +380,7 @@ class CellInfoContentProvider {
 			return existing;
 		}
 
-		const data = CellUri.parseCellUri(resource, Schemas.vscodeNotebookCellMetadata);
+		const data = CellUri.parseCellPropertyUri(resource, Schemas.vscodeNotebookCellMetadata);
 		if (!data) {
 			return null;
 		}
@@ -697,8 +697,8 @@ workbenchContributionsRegistry.registerWorkbenchContribution(NotebookLanguageSel
 workbenchContributionsRegistry.registerWorkbenchContribution(SimpleNotebookWorkingCopyEditorHandler, LifecyclePhase.Ready);
 workbenchContributionsRegistry.registerWorkbenchContribution(ComplexNotebookWorkingCopyEditorHandler, LifecyclePhase.Ready);
 
-registerSingleton(INotebookService, NotebookService);
-registerSingleton(INotebookEditorWorkerService, NotebookEditorWorkerServiceImpl);
+registerSingleton(INotebookService, NotebookService, false);
+registerSingleton(INotebookEditorWorkerService, NotebookEditorWorkerServiceImpl, false);
 registerSingleton(INotebookEditorModelResolverService, NotebookModelResolverServiceImpl, true);
 registerSingleton(INotebookCellStatusBarService, NotebookCellStatusBarService, true);
 registerSingleton(INotebookEditorService, NotebookEditorWidgetService, true);

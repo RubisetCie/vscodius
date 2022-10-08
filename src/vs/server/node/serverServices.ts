@@ -23,8 +23,8 @@ import { IEncryptionMainService } from 'vs/platform/encryption/common/encryption
 import { EncryptionMainService } from 'vs/platform/encryption/node/encryptionMainService';
 import { IEnvironmentService, INativeEnvironmentService } from 'vs/platform/environment/common/environment';
 import { ExtensionGalleryServiceWithNoStorageService } from 'vs/platform/extensionManagement/common/extensionGalleryService';
-import { IExtensionGalleryService, IExtensionManagementCLIService } from 'vs/platform/extensionManagement/common/extensionManagement';
-import { ExtensionManagementCLIService } from 'vs/platform/extensionManagement/common/extensionManagementCLIService';
+import { IExtensionGalleryService } from 'vs/platform/extensionManagement/common/extensionManagement';
+import { ExtensionManagementCLI } from 'vs/platform/extensionManagement/common/extensionManagementCLI';
 import { ExtensionManagementChannel } from 'vs/platform/extensionManagement/common/extensionManagementIpc';
 import { ExtensionManagementService, INativeServerExtensionManagementService } from 'vs/platform/extensionManagement/node/extensionManagementService';
 import { IFileService } from 'vs/platform/files/common/files';
@@ -131,9 +131,6 @@ export async function setupServerServices(connectionToken: ServerConnectionToken
 	const instantiationService: IInstantiationService = new InstantiationService(services);
 	services.set(ILanguagePackService, instantiationService.createInstance(NativeLanguagePackService));
 
-	const extensionManagementCLIService = instantiationService.createInstance(ExtensionManagementCLIService);
-	services.set(IExtensionManagementCLIService, extensionManagementCLIService);
-
 	const ptyService = instantiationService.createInstance(
 		PtyHostService,
 		{
@@ -151,7 +148,7 @@ export async function setupServerServices(connectionToken: ServerConnectionToken
 	instantiationService.invokeFunction(accessor => {
 		const extensionManagementService = accessor.get(INativeServerExtensionManagementService);
 		const extensionsScannerService = accessor.get(IExtensionsScannerService);
-		const remoteExtensionEnvironmentChannel = new RemoteAgentEnvironmentChannel(connectionToken, environmentService, userDataProfilesService, extensionManagementCLIService, logService, extensionHostStatusService, extensionsScannerService);
+		const remoteExtensionEnvironmentChannel = new RemoteAgentEnvironmentChannel(connectionToken, environmentService, userDataProfilesService, instantiationService.createInstance(ExtensionManagementCLI), logService, extensionHostStatusService, extensionsScannerService);
 		socketServer.registerChannel('remoteextensionsenvironment', remoteExtensionEnvironmentChannel);
 		socketServer.registerChannel(REMOTE_TERMINAL_CHANNEL_NAME, new RemoteTerminalChannel(environmentService, logService, ptyService, productService, extensionManagementService));
 
