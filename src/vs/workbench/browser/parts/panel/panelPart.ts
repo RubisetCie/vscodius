@@ -36,7 +36,6 @@ import { Before2D, CompositeDragAndDropObserver, ICompositeDragAndDrop, toggleDr
 import { IActivity } from 'vs/workbench/common/activity';
 import { HoverPosition } from 'vs/base/browser/ui/hover/hoverWidget';
 import { Extensions as PaneCompositeExtensions, PaneComposite, PaneCompositeDescriptor, PaneCompositeRegistry } from 'vs/workbench/browser/panecomposite';
-import { ToolBar } from 'vs/base/browser/ui/toolbar/toolbar';
 import { CompositeMenuActions } from 'vs/workbench/browser/actions';
 import { MenuId } from 'vs/platform/actions/common/actions';
 import { IComposite } from 'vs/workbench/common/composite';
@@ -45,6 +44,7 @@ import { IPartOptions } from 'vs/workbench/browser/part';
 import { StringSHA1 } from 'vs/base/common/hash';
 import { URI } from 'vs/base/common/uri';
 import { Extensions, IProfileStorageRegistry } from 'vs/workbench/services/userDataProfile/common/userDataProfileStorageRegistry';
+import { ToolBar } from 'vs/base/browser/ui/toolbar/toolbar';
 
 interface ICachedPanel {
 	id: string;
@@ -423,18 +423,20 @@ export abstract class BasePanelPart extends CompositePart<PaneComposite> impleme
 
 	private onDidRegisterExtensions(): void {
 		this.extensionsRegistered = true;
-		this.removeNotExistingComposites();
 
-		this.saveCachedPanels();
-	}
-
-	private removeNotExistingComposites(): void {
+		// hide/remove composites
 		const panels = this.getPaneComposites();
-		for (const { id } of this.getCachedPanels()) { // should this value match viewlet (load on ctor)
+		for (const { id } of this.getCachedPanels()) {
 			if (panels.every(panel => panel.id !== id)) {
-				this.hideComposite(id);
+				if (this.viewDescriptorService.isViewContainerRemovedPermanently(id)) {
+					this.removeComposite(id);
+				} else {
+					this.hideComposite(id);
+				}
 			}
 		}
+
+		this.saveCachedPanels();
 	}
 
 	private hideComposite(compositeId: string): void {

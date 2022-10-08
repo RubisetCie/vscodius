@@ -114,7 +114,6 @@ async function createModel(context: ExtensionContext, outputChannelLogger: Outpu
 		cc,
 		new GitFileSystemProvider(model),
 		new GitDecorations(model),
-		new GitProtocolHandler(),
 		new GitTimelineProvider(model, cc),
 		new GitEditSessionIdentityProvider(model)
 	);
@@ -214,6 +213,8 @@ export async function _activate(context: ExtensionContext): Promise<GitExtension
 		warnAboutMissingGit();
 
 		return new GitExtensionImpl();
+	} finally {
+		disposables.push(new GitProtocolHandler(outputChannelLogger));
 	}
 }
 

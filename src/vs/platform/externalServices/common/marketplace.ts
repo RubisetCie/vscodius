@@ -17,10 +17,12 @@ export async function resolveMarketplaceHeaders(version: string,
 	configurationService: IConfigurationService,
 	fileService: IFileService,
 	storageService: IStorageService | undefined): Promise<IHeaders> {
+
 	const headers: IHeaders = {
 		'X-Market-Client-Id': `VSCode ${version}`,
 		'X-Market-User-Id': await getServiceMachineId(environmentService, fileService, storageService),
 		'User-Agent': `VSCode ${version} (${productService.nameShort})`
 	};
+
 	return headers;
 }

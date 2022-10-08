@@ -14,9 +14,17 @@ import { ContextMenuHandler, IContextMenuHandlerOptions } from './contextMenuHan
 import { IContextMenuService, IContextViewService } from './contextView';
 
 export class ContextMenuService extends Disposable implements IContextMenuService {
+
 	declare readonly _serviceBrand: undefined;
 
-	private contextMenuHandler: ContextMenuHandler;
+	private _contextMenuHandler: ContextMenuHandler | undefined = undefined;
+	private get contextMenuHandler(): ContextMenuHandler {
+		if (!this._contextMenuHandler) {
+			this._contextMenuHandler = new ContextMenuHandler(this.contextViewService, this.notificationService, this.keybindingService, this.themeService);
+		}
+
+		return this._contextMenuHandler;
+	}
 
 	private readonly _onDidShowContextMenu = new Emitter<void>();
 	readonly onDidShowContextMenu = this._onDidShowContextMenu.event;
@@ -25,14 +33,12 @@ export class ContextMenuService extends Disposable implements IContextMenuServic
 	readonly onDidHideContextMenu = this._onDidHideContextMenu.event;
 
 	constructor(
-		@INotificationService notificationService: INotificationService,
-		@IContextViewService contextViewService: IContextViewService,
-		@IKeybindingService keybindingService: IKeybindingService,
-		@IThemeService themeService: IThemeService
+		@INotificationService private readonly notificationService: INotificationService,
+		@IContextViewService private readonly contextViewService: IContextViewService,
+		@IKeybindingService private readonly keybindingService: IKeybindingService,
+		@IThemeService private readonly themeService: IThemeService
 	) {
 		super();
-
-		this.contextMenuHandler = new ContextMenuHandler(contextViewService, notificationService, keybindingService, themeService);
 	}
 
 	configure(options: IContextMenuHandlerOptions): void {

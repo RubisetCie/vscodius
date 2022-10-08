@@ -9,7 +9,6 @@ import { applyDragImage, DataTransfers } from 'vs/base/browser/dnd';
 import { addDisposableListener, Dimension, EventType } from 'vs/base/browser/dom';
 import { StandardMouseEvent } from 'vs/base/browser/mouseEvent';
 import { ActionsOrientation, IActionViewItem, prepareActions } from 'vs/base/browser/ui/actionbar/actionbar';
-import { ToolBar } from 'vs/base/browser/ui/toolbar/toolbar';
 import { IAction, SubmenuAction, ActionRunner } from 'vs/base/common/actions';
 import { ResolvedKeybinding } from 'vs/base/common/keybindings';
 import { dispose, DisposableStore } from 'vs/base/common/lifecycle';
@@ -38,6 +37,7 @@ import { withNullAsUndefined, withUndefinedAsNull, assertIsDefined } from 'vs/ba
 import { isFirefox } from 'vs/base/browser/browser';
 import { isCancellationError } from 'vs/base/common/errors';
 import { SideBySideEditorInput } from 'vs/workbench/common/editor/sideBySideEditorInput';
+import { WorkbenchToolBar } from 'vs/platform/actions/browser/toolbar';
 
 export interface IToolbarActions {
 	primary: IAction[];
@@ -92,7 +92,7 @@ export abstract class TitleControl extends Themable {
 
 	protected breadcrumbsControl: BreadcrumbsControl | undefined = undefined;
 
-	private editorActionsToolbar: ToolBar | undefined;
+	private editorActionsToolbar: WorkbenchToolBar | undefined;
 
 	private resourceContext: ResourceContextKey;
 
@@ -180,14 +180,16 @@ export abstract class TitleControl extends Themable {
 		const context: IEditorCommandsContext = { groupId: this.group.id };
 
 		// Toolbar Widget
-		this.editorActionsToolbar = this._register(new ToolBar(container, this.contextMenuService, {
+
+		this.editorActionsToolbar = this._register(this.instantiationService.createInstance(WorkbenchToolBar, container, {
 			actionViewItemProvider: action => this.actionViewItemProvider(action),
 			orientation: ActionsOrientation.HORIZONTAL,
 			ariaLabel: localize('ariaLabelEditorActions', "Editor actions"),
 			getKeyBinding: action => this.getKeybinding(action),
 			actionRunner: this._register(new EditorCommandsContextActionRunner(context)),
 			anchorAlignmentProvider: () => AnchorAlignment.RIGHT,
-			renderDropdownAsChildElement: this.renderDropdownAsChildElement
+			renderDropdownAsChildElement: this.renderDropdownAsChildElement,
+			resetMenu: MenuId.EditorTitle
 		}));
 
 		// Context

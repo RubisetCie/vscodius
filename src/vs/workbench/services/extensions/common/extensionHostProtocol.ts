@@ -27,6 +27,7 @@ export interface IExtensionHostInitData {
 	workspace?: IStaticWorkspaceData | null;
 	allExtensions: IExtensionDescription[];
 	myExtensions: ExtensionIdentifier[];
+	nlsBaseUrl?: URI;
 	logLevel: LogLevel;
 	logsLocation: URI;
 	logFile: URI;

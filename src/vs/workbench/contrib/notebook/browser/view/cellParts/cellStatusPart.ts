@@ -310,7 +310,9 @@ class CellStatusBarItem extends Disposable {
 		const id = typeof command === 'string' ? command : command.id;
 		const args = typeof command === 'string' ? [] : command.arguments ?? [];
 
-		args.unshift(this._context);
+		if (typeof command === 'string' || !command.arguments || !Array.isArray(command.arguments) || command.arguments.length === 0) {
+			args.unshift(this._context);
+		}
 
 		try {
 			await this._commandService.executeCommand(id, ...args);
