@@ -52,11 +52,11 @@ import { IHoverService } from 'vs/workbench/services/hover/browser/hover';
 
 const $ = dom.$;
 
-function createCheckbox(): HTMLInputElement {
+function createCheckbox(disposables: IDisposable[]): HTMLInputElement {
 	const checkbox = <HTMLInputElement>$('input');
 	checkbox.type = 'checkbox';
 	checkbox.tabIndex = -1;
-	Gesture.ignoreTarget(checkbox);
+	disposables.push(Gesture.ignoreTarget(checkbox));
 
 	return checkbox;
 }
@@ -479,11 +479,13 @@ class BreakpointsRenderer implements IListRenderer<IBreakpoint, IBreakpointTempl
 
 	renderTemplate(container: HTMLElement): IBreakpointTemplateData {
 		const data: IBreakpointTemplateData = Object.create(null);
+		data.toDispose = [];
+
 		data.breakpoint = dom.append(container, $('.breakpoint'));
 
 		data.icon = $('.icon');
-		data.checkbox = createCheckbox();
-		data.toDispose = [];
+		data.checkbox = createCheckbox(data.toDispose);
+
 		data.toDispose.push(dom.addStandardDisposableListener(data.checkbox, 'change', (e) => {
 			this.debugService.enableOrDisableBreakpoints(!data.context.enabled, data.context);
 		}));
@@ -557,10 +559,10 @@ class ExceptionBreakpointsRenderer implements IListRenderer<IExceptionBreakpoint
 
 	renderTemplate(container: HTMLElement): IExceptionBreakpointTemplateData {
 		const data: IExceptionBreakpointTemplateData = Object.create(null);
+		data.toDispose = [];
 		data.breakpoint = dom.append(container, $('.breakpoint'));
 
-		data.checkbox = createCheckbox();
-		data.toDispose = [];
+		data.checkbox = createCheckbox(data.toDispose);
 		data.toDispose.push(dom.addStandardDisposableListener(data.checkbox, 'change', (e) => {
 			this.debugService.enableOrDisableBreakpoints(!data.context.enabled, data.context);
 		}));
@@ -619,11 +621,11 @@ class FunctionBreakpointsRenderer implements IListRenderer<FunctionBreakpoint, I
 
 	renderTemplate(container: HTMLElement): IFunctionBreakpointTemplateData {
 		const data: IFunctionBreakpointTemplateData = Object.create(null);
+		data.toDispose = [];
 		data.breakpoint = dom.append(container, $('.breakpoint'));
 
 		data.icon = $('.icon');
-		data.checkbox = createCheckbox();
-		data.toDispose = [];
+		data.checkbox = createCheckbox(data.toDispose);
 		data.toDispose.push(dom.addStandardDisposableListener(data.checkbox, 'change', (e) => {
 			this.debugService.enableOrDisableBreakpoints(!data.context.enabled, data.context);
 		}));
@@ -693,10 +695,10 @@ class DataBreakpointsRenderer implements IListRenderer<DataBreakpoint, IDataBrea
 	renderTemplate(container: HTMLElement): IDataBreakpointTemplateData {
 		const data: IDataBreakpointTemplateData = Object.create(null);
 		data.breakpoint = dom.append(container, $('.breakpoint'));
+		data.toDispose = [];
 
 		data.icon = $('.icon');
-		data.checkbox = createCheckbox();
-		data.toDispose = [];
+		data.checkbox = createCheckbox(data.toDispose);
 		data.toDispose.push(dom.addStandardDisposableListener(data.checkbox, 'change', (e) => {
 			this.debugService.enableOrDisableBreakpoints(!data.context.enabled, data.context);
 		}));
@@ -755,11 +757,11 @@ class InstructionBreakpointsRenderer implements IListRenderer<IInstructionBreakp
 
 	renderTemplate(container: HTMLElement): IInstructionBreakpointTemplateData {
 		const data: IInstructionBreakpointTemplateData = Object.create(null);
+		data.toDispose = [];
 		data.breakpoint = dom.append(container, $('.breakpoint'));
 
 		data.icon = $('.icon');
-		data.checkbox = createCheckbox();
-		data.toDispose = [];
+		data.checkbox = createCheckbox(data.toDispose);
 		data.toDispose.push(dom.addStandardDisposableListener(data.checkbox, 'change', (e) => {
 			this.debugService.enableOrDisableBreakpoints(!data.context.enabled, data.context);
 		}));
@@ -816,10 +818,11 @@ class FunctionBreakpointInputRenderer implements IListRenderer<IFunctionBreakpoi
 
 	renderTemplate(container: HTMLElement): IFunctionBreakpointInputTemplateData {
 		const template: IFunctionBreakpointInputTemplateData = Object.create(null);
+		const toDispose: IDisposable[] = [];
 
 		const breakpoint = dom.append(container, $('.breakpoint'));
 		template.icon = $('.icon');
-		template.checkbox = createCheckbox();
+		template.checkbox = createCheckbox(toDispose);
 
 		dom.append(breakpoint, template.icon);
 		dom.append(breakpoint, template.checkbox);
@@ -829,7 +832,7 @@ class FunctionBreakpointInputRenderer implements IListRenderer<IFunctionBreakpoi
 
 		const inputBox = new InputBox(inputBoxContainer, this.contextViewService);
 		const styler = attachInputBoxStyler(inputBox, this.themeService);
-		const toDispose: IDisposable[] = [inputBox, styler];
+		toDispose.push(inputBox, styler);
 
 		const wrapUp = (success: boolean) => {
 			template.updating = true;
@@ -934,10 +937,11 @@ class ExceptionBreakpointInputRenderer implements IListRenderer<IExceptionBreakp
 
 	renderTemplate(container: HTMLElement): IExceptionBreakpointInputTemplateData {
 		const template: IExceptionBreakpointInputTemplateData = Object.create(null);
+		const toDispose: IDisposable[] = [];
 
 		const breakpoint = dom.append(container, $('.breakpoint'));
 		breakpoint.classList.add('exception');
-		template.checkbox = createCheckbox();
+		template.checkbox = createCheckbox(toDispose);
 
 		dom.append(breakpoint, template.checkbox);
 		this.view.breakpointInputFocused.set(true);
@@ -946,7 +950,7 @@ class ExceptionBreakpointInputRenderer implements IListRenderer<IExceptionBreakp
 			ariaLabel: localize('exceptionBreakpointAriaLabel', "Type exception breakpoint condition")
 		});
 		const styler = attachInputBoxStyler(inputBox, this.themeService);
-		const toDispose: IDisposable[] = [inputBox, styler];
+		toDispose.push(inputBox, styler);
 
 		const wrapUp = (success: boolean) => {
 			this.view.breakpointInputFocused.set(false);

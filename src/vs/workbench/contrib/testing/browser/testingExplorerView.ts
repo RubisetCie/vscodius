@@ -45,6 +45,7 @@ import { IThemeService, registerThemingParticipant, ThemeIcon } from 'vs/platfor
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { ViewPane } from 'vs/workbench/browser/parts/views/viewPane';
 import { IViewletViewOptions } from 'vs/workbench/browser/parts/views/viewsViewlet';
+import { DiffEditorInput } from 'vs/workbench/common/editor/diffEditorInput';
 import { IViewDescriptorService } from 'vs/workbench/common/views';
 import { HierarchicalByLocationProjection } from 'vs/workbench/contrib/testing/browser/explorerProjections/hierarchalByLocation';
 import { ByNameTestItemElement, HierarchicalByNameProjection } from 'vs/workbench/contrib/testing/browser/explorerProjections/hierarchalByName';
@@ -68,14 +69,21 @@ import { IMainThreadTestCollection, ITestService, testCollectionIsEmpty } from '
 import { InternalTestItem, ITestRunProfile, TestItemExpandState, TestResultState, TestRunProfileBitset } from 'vs/workbench/contrib/testing/common/testTypes';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 
+const enum LastFocusState {
+	Input,
+	Tree,
+}
+
 export class TestingExplorerView extends ViewPane {
 	public viewModel!: TestingExplorerViewModel;
 	private filterActionBar = this._register(new MutableDisposable());
 	private container!: HTMLElement;
 	private treeHeader!: HTMLElement;
 	private discoveryProgress = this._register(new MutableDisposable<UnmanagedProgress>());
-	private filter?: TestingExplorerFilter;
+	private readonly filter = this._register(new MutableDisposable<TestingExplorerFilter>());
+	private readonly filterFocusListener = this._register(new MutableDisposable());
 	private readonly dimensions = { width: 0, height: 0 };
+	private lastFocusState = LastFocusState.Input;
 
 	constructor(
 		options: IViewletViewOptions,
@@ -108,11 +116,17 @@ export class TestingExplorerView extends ViewPane {
 		this._register(testProfileService.onDidChange(() => this.updateActions()));
 	}
 
-	/**
-	 * @override
-	 */
 	public override shouldShowWelcome() {
 		return this.viewModel?.welcomeExperience === WelcomeExperience.ForWorkspace ?? true;
+	}
+
+	public override focus() {
+		super.focus();
+		if (this.lastFocusState === LastFocusState.Tree) {
+			this.viewModel.tree.domFocus();
+		} else {
+			this.filter.value?.focus();
+		}
 	}
 
 	public getSelectedOrVisibleItems(profile?: ITestRunProfile) {
@@ -224,6 +238,7 @@ export class TestingExplorerView extends ViewPane {
 
 		const listContainer = dom.append(this.container, dom.$('.test-explorer-tree'));
 		this.viewModel = this.instantiationService.createInstance(TestingExplorerViewModel, listContainer, this.onDidChangeBodyVisibility);
+		this._register(this.viewModel.tree.onDidFocus(() => this.lastFocusState = LastFocusState.Tree));
 		this._register(this.viewModel.onChangeWelcomeVisibility(() => this._onDidChangeViewWelcomeState.fire()));
 		this._register(this.viewModel);
 		this._onDidChangeViewWelcomeState.fire();
@@ -233,7 +248,9 @@ export class TestingExplorerView extends ViewPane {
 	public override getActionViewItem(action: IAction): IActionViewItem | undefined {
 		switch (action.id) {
 			case TestCommandId.FilterAction:
-				return this.filter = this.instantiationService.createInstance(TestingExplorerFilter, action);
+				this.filter.value = this.instantiationService.createInstance(TestingExplorerFilter, action);
+				this.filterFocusListener.value = this.filter.value.onDidFocus(() => this.lastFocusState = LastFocusState.Input);
+				return this.filter.value;
 			case TestCommandId.RunSelectedAction:
 				return this.getRunGroupDropdown(TestRunProfileBitset.Run, action);
 			case TestCommandId.DebugSelectedAction:
@@ -319,7 +336,7 @@ export class TestingExplorerView extends ViewPane {
 	 * @override
 	 */
 	public override saveState() {
-		this.filter?.saveState();
+		this.filter.value?.saveState();
 		super.saveState();
 	}
 
@@ -375,7 +392,7 @@ export class TestingExplorerView extends ViewPane {
 		this.dimensions.width = width;
 		this.container.style.height = `${height}px`;
 		this.viewModel.layout(height - this.treeHeader.clientHeight, width);
-		this.filter?.layout(width);
+		this.filter.value?.layout(width);
 	}
 }
 
@@ -584,7 +601,12 @@ export class TestingExplorerViewModel extends Disposable {
 		}));
 
 		const onEditorChange = () => {
-			this.filter.filterToDocumentUri(editorService.activeEditor?.resource);
+			if (editorService.activeEditor instanceof DiffEditorInput) {
+				this.filter.filterToDocumentUri(editorService.activeEditor.primary.resource);
+			} else {
+				this.filter.filterToDocumentUri(editorService.activeEditor?.resource);
+			}
+
 			if (this.filterState.isFilteringFor(TestFilterTerm.CurrentDoc)) {
 				this.tree.refilter();
 			}
@@ -780,6 +802,8 @@ export class TestingExplorerViewModel extends Disposable {
 	private applyProjectionChanges() {
 		this.reevaluateWelcomeState();
 		this.projection.value?.applyTo(this.tree);
+
+		this.tree.refilter();
 
 		if (this.hasPendingReveal) {
 			this.revealById(this.filterState.reveal.value);

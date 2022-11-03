@@ -21,6 +21,7 @@ import { NullLogService } from 'vs/platform/log/common/log';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { UriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentityService';
 import { isWindows } from 'vs/base/common/platform';
+import { ILabelService } from 'vs/platform/label/common/label';
 
 const lineOneRange = new OneLineRange(1, 0, 1);
 
@@ -36,6 +37,7 @@ suite('SearchModel', () => {
 	setup(() => {
 		restoreStubs = [];
 		instantiationService = new TestInstantiationService();
+		instantiationService.stub(ILabelService, { getUriBasenameLabel: (uri: URI) => '' });
 		instantiationService.stub(IModelService, stubModelService(instantiationService));
 		instantiationService.stub(ISearchService, {});
 		instantiationService.stub(ISearchService, 'textSearch', Promise.resolve({ results: [] }));

@@ -63,6 +63,10 @@ export enum RemoteAuthorityResolverErrorCode {
 
 export class RemoteAuthorityResolverError extends Error {
 
+	public static isNotAvailable(err: any): boolean {
+		return (err instanceof RemoteAuthorityResolverError) && err._code === RemoteAuthorityResolverErrorCode.NotAvailable;
+	}
+
 	public static isTemporarilyNotAvailable(err: any): boolean {
 		return (err instanceof RemoteAuthorityResolverError) && err._code === RemoteAuthorityResolverErrorCode.TemporarilyNotAvailable;
 	}

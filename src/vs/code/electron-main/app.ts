@@ -794,7 +794,7 @@ export class CodeApplication extends Disposable {
 		mainProcessElectronServer.registerChannel('externalTerminal', externalTerminalChannel);
 
 		// Log Level (main & shared process)
-		const logLevelChannel = new LogLevelChannel(accessor.get(ILogService));
+		const logLevelChannel = new LogLevelChannel(accessor.get(ILogService), accessor.get(ILoggerService));
 		mainProcessElectronServer.registerChannel('logLevel', logLevelChannel);
 		sharedProcessClient.then(client => client.registerChannel('logLevel', logLevelChannel));
 

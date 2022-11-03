@@ -13,7 +13,7 @@ import { IEditorService } from 'vs/workbench/services/editor/common/editorServic
 import { IAccessibilityService } from 'vs/platform/accessibility/common/accessibility';
 import { IStartupMetrics, AbstractTimerService, Writeable, ITimerService } from 'vs/workbench/services/timer/browser/timerService';
 import { process } from 'vs/base/parts/sandbox/electron-sandbox/globals';
-import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IWorkbenchLayoutService } from 'vs/workbench/services/layout/browser/layoutService';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
@@ -83,7 +83,7 @@ export class TimerService extends AbstractTimerService {
 	}
 }
 
-registerSingleton(ITimerService, TimerService, true);
+registerSingleton(ITimerService, TimerService, InstantiationType.Delayed);
 
 //#region cached data logic
 

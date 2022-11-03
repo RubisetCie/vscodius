@@ -91,7 +91,7 @@ export class WebExtensionManagementService extends AbstractExtensionManagementSe
 			const userExtensions = await this.webExtensionsScannerService.scanUserExtensions(profileLocation ?? this.userDataProfileService.currentProfile.extensionsResource);
 			extensions.push(...userExtensions);
 		}
-		return Promise.all(extensions.map(e => toLocalExtension(e)));
+		return extensions.map(e => toLocalExtension(e));
 	}
 
 	async install(location: URI, options: InstallOptions = {}): Promise<ILocalExtension> {
@@ -145,6 +145,7 @@ export class WebExtensionManagementService extends AbstractExtensionManagementSe
 	unzip(zipLocation: URI): Promise<IExtensionIdentifier> { throw new Error('unsupported'); }
 	getManifest(vsix: URI): Promise<IExtensionManifest> { throw new Error('unsupported'); }
 	updateExtensionScope(): Promise<ILocalExtension> { throw new Error('unsupported'); }
+	download(): Promise<URI> { throw new Error('unsupported'); }
 
 	private async whenProfileChanged(e: DidChangeUserDataProfileEvent): Promise<void> {
 		const previousProfileLocation = e.previous.extensionsResource;

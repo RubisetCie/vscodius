@@ -10,7 +10,7 @@ import { OPTIONS, OptionDescriptions } from 'vs/platform/environment/node/argv';
 import { refineServiceDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { IEnvironmentService, INativeEnvironmentService } from 'vs/platform/environment/common/environment';
 
-export const serverOptions: OptionDescriptions<ServerParsedArgs> = {
+export const serverOptions: OptionDescriptions<Required<ServerParsedArgs>> = {
 
 	/* ----- server setup ----- */
 
@@ -142,7 +142,7 @@ export interface ServerParsedArgs {
 
 	'file-watcher-polling'?: string;
 
-	'log'?: string;
+	'log'?: string[];
 	'logsPath'?: string;
 
 	'force-disable-user-env'?: boolean;

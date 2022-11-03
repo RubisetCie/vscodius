@@ -46,7 +46,6 @@ import 'vs/workbench/services/lifecycle/electron-sandbox/lifecycleService';
 import 'vs/workbench/services/title/electron-sandbox/titleService';
 import 'vs/workbench/services/host/electron-sandbox/nativeHostService';
 import 'vs/workbench/services/request/electron-sandbox/requestService';
-import 'vs/workbench/services/extensionResourceLoader/electron-sandbox/extensionResourceLoaderService';
 import 'vs/workbench/services/clipboard/electron-sandbox/clipboardService';
 import 'vs/workbench/services/contextmenu/electron-sandbox/contextmenuService';
 import 'vs/workbench/services/workspaces/electron-sandbox/workspaceEditingService';
@@ -60,6 +59,7 @@ import 'vs/workbench/services/credentials/electron-sandbox/credentialsService';
 import 'vs/workbench/services/encryption/electron-sandbox/encryptionService';
 import 'vs/workbench/services/localization/electron-sandbox/languagePackService';
 import 'vs/workbench/services/extensions/electron-sandbox/extensionHostStarter';
+import 'vs/platform/extensionResourceLoader/electron-sandbox/extensionResourceLoaderService';
 import 'vs/platform/extensionManagement/electron-sandbox/extensionsScannerService';
 import 'vs/workbench/services/extensionManagement/electron-sandbox/extensionManagementServerService';
 import 'vs/workbench/services/extensionManagement/electron-sandbox/extensionTipsService';
@@ -77,16 +77,17 @@ import 'vs/platform/remote/electron-sandbox/sharedProcessTunnelService';
 import 'vs/workbench/services/tunnel/electron-sandbox/tunnelService';
 import 'vs/platform/diagnostics/electron-sandbox/diagnosticsService';
 import 'vs/platform/profiling/electron-sandbox/profilingService';
+import 'vs/platform/remoteTunnel/electron-sandbox/remoteTunnelService';
 import 'vs/workbench/services/files/electron-sandbox/elevatedFileService';
 import 'vs/workbench/services/search/electron-sandbox/searchService';
 import 'vs/workbench/services/workingCopy/electron-sandbox/workingCopyHistoryService';
 import 'vs/workbench/services/userDataSync/browser/userDataSyncEnablementService';
 import 'vs/workbench/services/extensions/electron-sandbox/sandboxExtensionService';
 
-import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IUserDataInitializationService, UserDataInitializationService } from 'vs/workbench/services/userData/browser/userDataInit';
 
-registerSingleton(IUserDataInitializationService, UserDataInitializationService, true);
+registerSingleton(IUserDataInitializationService, UserDataInitializationService, InstantiationType.Delayed);
 
 //#endregion
 
@@ -130,9 +131,6 @@ import 'vs/workbench/contrib/themes/browser/themes.test.contribution';
 // User Data Sync
 import 'vs/workbench/contrib/userDataSync/electron-sandbox/userDataSync.contribution';
 
-// Output
-import 'vs/workbench/contrib/output/electron-sandbox/outputChannelModelService';
-
 // Tags
 import 'vs/workbench/contrib/tags/electron-sandbox/workspaceTagsService';
 
@@ -156,5 +154,8 @@ import 'vs/workbench/contrib/localHistory/electron-sandbox/localHistory.contribu
 
 // Merge Editor
 import 'vs/workbench/contrib/mergeEditor/electron-sandbox/mergeEditor.contribution';
+
+// Remote Tunnel
+import 'vs/workbench/contrib/remoteTunnel/electron-sandbox/remoteTunnel.contribution';
 
 //#endregion

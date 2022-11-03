@@ -11,8 +11,8 @@ variables:
     value: true
   - name: skipComponentGovernanceDetection
     value: true
-  - name: ENABLE_TERRAPIN
-    value: false
+  - name: NPM_REGISTRY
+    value: 'none'
   - name: VSCODE_CIBUILD
     value: ${{ in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI') }}
   - name: VSCODE_PUBLISH
@@ -54,6 +54,7 @@ jobs:
           parameters:
             VSCODE_PUBLISH: ${{ variables.VSCODE_PUBLISH }}
             VSCODE_QUALITY: ${{ variables.VSCODE_QUALITY }}
+            VSCODE_BUILD_TUNNEL_CLI: false
             VSCODE_RUN_UNIT_TESTS: true
             VSCODE_RUN_INTEGRATION_TESTS: false
             VSCODE_RUN_SMOKE_TESTS: false
@@ -74,6 +75,7 @@ jobs:
           parameters:
             VSCODE_PUBLISH: ${{ variables.VSCODE_PUBLISH }}
             VSCODE_QUALITY: ${{ variables.VSCODE_QUALITY }}
+            VSCODE_BUILD_TUNNEL_CLI: false
             VSCODE_RUN_UNIT_TESTS: false
             VSCODE_RUN_INTEGRATION_TESTS: true
             VSCODE_RUN_SMOKE_TESTS: false
@@ -94,9 +96,17 @@ jobs:
           parameters:
             VSCODE_PUBLISH: ${{ variables.VSCODE_PUBLISH }}
             VSCODE_QUALITY: ${{ variables.VSCODE_QUALITY }}
+            VSCODE_BUILD_TUNNEL_CLI: false
             VSCODE_RUN_UNIT_TESTS: false
             VSCODE_RUN_INTEGRATION_TESTS: false
             VSCODE_RUN_SMOKE_TESTS: true
+
+    - job: LinuxCLI
+      displayName: Linux (CLI)
+      pool: vscode-1es-vscode-linux-20.04
+      timeoutInMinutes: 30
+      steps:
+        - template: cli/test.yml
 
   - ${{ if eq(variables['VSCODE_CIBUILD'], true) }}:
     - job: Linuxx64MaintainNodeModulesCache
@@ -114,7 +124,7 @@ jobs:
   # - job: macOSUnitTest
   #   displayName: macOS (Unit Tests)
   #   pool:
-  #     vmImage: macOS-latest
+  #     vmImage: macOS-11
   #   timeoutInMinutes: 60
   #   variables:
   #     BUILDSECMON_OPT_IN: true
@@ -130,7 +140,7 @@ jobs:
   # - job: macOSIntegrationTest
   #   displayName: macOS (Integration Tests)
   #   pool:
-  #     vmImage: macOS-latest
+  #     vmImage: macOS-11
   #   timeoutInMinutes: 60
   #   variables:
   #     BUILDSECMON_OPT_IN: true
@@ -146,7 +156,7 @@ jobs:
   # - job: macOSSmokeTest
   #   displayName: macOS (Smoke Tests)
   #   pool:
-  #     vmImage: macOS-latest
+  #     vmImage: macOS-11
   #   timeoutInMinutes: 60
   #   variables:
   #     BUILDSECMON_OPT_IN: true

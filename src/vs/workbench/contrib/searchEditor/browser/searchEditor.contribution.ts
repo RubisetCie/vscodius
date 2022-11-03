@@ -71,12 +71,10 @@ Registry.as<IEditorPaneRegistry>(EditorExtensions.EditorPane).registerEditorPane
 //#region Startup Contribution
 class SearchEditorContribution implements IWorkbenchContribution {
 	constructor(
-		@IEditorResolverService private readonly editorResolverService: IEditorResolverService,
-		@IInstantiationService protected readonly instantiationService: IInstantiationService,
-		@IContextKeyService protected readonly contextKeyService: IContextKeyService
+		@IEditorResolverService editorResolverService: IEditorResolverService,
+		@IInstantiationService instantiationService: IInstantiationService,
 	) {
-
-		this.editorResolverService.registerEditor(
+		editorResolverService.registerEditor(
 			'*' + SEARCH_EDITOR_EXT,
 			{
 				id: SearchEditorInput.ID,

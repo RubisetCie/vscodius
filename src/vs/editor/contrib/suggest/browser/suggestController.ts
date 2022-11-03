@@ -44,8 +44,9 @@ import { OvertypingCapturer } from './suggestOvertypingCapturer';
 import { ISelectedSuggestion, SuggestWidget } from './suggestWidget';
 
 // sticky suggest widget which doesn't disappear on focus out and such
-const _sticky = false;
-// _sticky = Boolean("true"); // done "weirdly" so that a lint warning prevents you from pushing this
+const _sticky = false
+	// || Boolean("true") // done "weirdly" so that a lint warning prevents you from pushing this
+	;
 
 class LineSuffix {
 
@@ -138,13 +139,9 @@ export class SuggestController implements IEditorContribution {
 			this._toDispose.add(widget.onDidSelect(item => this._insertSuggestion(item, 0), this));
 
 			// Wire up logic to accept a suggestion on certain characters
-			const commitCharacterController = new CommitCharacterController(this.editor, widget, item => this._insertSuggestion(item, InsertFlags.NoAfterUndoStop));
+			const commitCharacterController = new CommitCharacterController(this.editor, widget, this.model, item => this._insertSuggestion(item, InsertFlags.NoAfterUndoStop));
 			this._toDispose.add(commitCharacterController);
-			this._toDispose.add(this.model.onDidSuggest(e => {
-				if (e.completionModel.items.length === 0) {
-					commitCharacterController.reset();
-				}
-			}));
+
 
 			// Wire up makes text edit context key
 			const ctxMakesTextEdit = SuggestContext.MakesTextEdit.bindTo(this._contextKeyService);
@@ -379,6 +376,9 @@ export class SuggestController implements IEditorContribution {
 			insertText = SnippetParser.escape(insertText);
 		}
 
+		// cancel -> stops all listening and closes widget
+		this.model.cancel();
+
 		snippetController.insert(insertText, {
 			overwriteBefore: info.overwriteBefore,
 			overwriteAfter: info.overwriteAfter,
@@ -393,18 +393,14 @@ export class SuggestController implements IEditorContribution {
 			this.editor.pushUndoStop();
 		}
 
-		if (!item.completion.command) {
-			// done
-			this.model.cancel();
-
-		} else if (item.completion.command.id === TriggerSuggestAction.id) {
-			// retigger
-			this.model.trigger({ auto: true, shy: false, noSelect: false }, true);
-
-		} else {
-			// exec command, done
-			tasks.push(this._commandService.executeCommand(item.completion.command.id, ...(item.completion.command.arguments ? [...item.completion.command.arguments] : [])).catch(onUnexpectedError));
-			this.model.cancel();
+		if (item.completion.command) {
+			if (item.completion.command.id === TriggerSuggestAction.id) {
+				// retigger
+				this.model.trigger({ auto: true, shy: false, noSelect: false }, true);
+			} else {
+				// exec command, done
+				tasks.push(this._commandService.executeCommand(item.completion.command.id, ...(item.completion.command.arguments ? [...item.completion.command.arguments] : [])).catch(onUnexpectedError));
+			}
 		}
 
 		if (flags & InsertFlags.KeepAlternativeSuggestions) {
