@@ -238,7 +238,7 @@ export class GitHubAuthenticationProvider implements vscode.AuthenticationProvid
 			/* __GDPR__
 				"loginFailed" : { "owner": "TylerLeonhardt", "comment": "Used to determine how often users run into an error login flow." }
 			*/
-			vscode.window.showErrorMessage(`Sign in failed: ${e}`);
+			vscode.window.showErrorMessage(vscode.l10n.t('Sign in failed: {0}', `${e}`));
 			this._logger.error(e);
 			throw e;
 		}
@@ -277,7 +277,7 @@ export class GitHubAuthenticationProvider implements vscode.AuthenticationProvid
 			/* __GDPR__
 				"logoutFailed" : { "owner": "TylerLeonhardt", "comment": "Used to determine how often logging out of an account fails." }
 			*/
-			vscode.window.showErrorMessage(`Sign out failed: ${e}`);
+			vscode.window.showErrorMessage(vscode.l10n.t('Sign out failed: {0}', `${e}`));
 			this._logger.error(e);
 			throw e;
 		}

@@ -168,9 +168,18 @@ export class DebugSession implements IDebugSession {
 		return this._options.compoundRoot;
 	}
 
-	get isSimpleUI(): boolean {
-		return this._options.debugUI?.simple ?? false;
+	get suppressDebugStatusbar(): boolean {
+		return this._options.suppressDebugStatusbar ?? false;
 	}
+
+	get suppressDebugToolbar(): boolean {
+		return this._options.suppressDebugToolbar ?? false;
+	}
+
+	get suppressDebugView(): boolean {
+		return this._options.suppressDebugView ?? false;
+	}
+
 
 	get autoExpandLazyVariables(): boolean {
 		// This tiny helper avoids converting the entire debug model to use service injection
@@ -275,7 +284,7 @@ export class DebugSession implements IDebugSession {
 
 		try {
 			const debugAdapter = await dbgr.createDebugAdapter(this);
-			this.raw = this.instantiationService.createInstance(RawDebugSession, debugAdapter, dbgr, this.id);
+			this.raw = this.instantiationService.createInstance(RawDebugSession, debugAdapter, dbgr, this.id, this.configuration.name);
 
 			await this.raw.start();
 			this.registerListeners();
@@ -967,7 +976,7 @@ export class DebugSession implements IDebugSession {
 						}
 
 						if (thread.stoppedDetails) {
-							if (thread.stoppedDetails.reason === 'breakpoint' && this.configurationService.getValue<IDebugConfiguration>('debug').openDebug === 'openOnDebugBreak' && !this.isSimpleUI) {
+							if (thread.stoppedDetails.reason === 'breakpoint' && this.configurationService.getValue<IDebugConfiguration>('debug').openDebug === 'openOnDebugBreak' && !this.suppressDebugView) {
 								await this.paneCompositeService.openPaneComposite(VIEWLET_ID, ViewContainerLocation.Sidebar);
 							}
 

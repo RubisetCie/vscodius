@@ -38,7 +38,6 @@ import { IPreferencesService } from 'vs/workbench/services/preferences/common/pr
 import { IUserDataSyncAccountService } from 'vs/platform/userDataSync/common/userDataSyncAccount';
 import { fromNow } from 'vs/base/common/date';
 import { IProductService } from 'vs/platform/product/common/productService';
-import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IAuthenticationService } from 'vs/workbench/services/authentication/common/authentication';
 import { Registry } from 'vs/platform/registry/common/platform';
@@ -48,9 +47,7 @@ import { UserDataSyncDataViews } from 'vs/workbench/contrib/userDataSync/browser
 import { IUserDataSyncWorkbenchService, getSyncAreaLabel, AccountStatus, CONTEXT_SYNC_STATE, CONTEXT_SYNC_ENABLEMENT, CONTEXT_ACCOUNT_STATE, CONFIGURE_SYNC_COMMAND_ID, SHOW_SYNC_LOG_COMMAND_ID, SYNC_VIEW_CONTAINER_ID, SYNC_TITLE, SYNC_VIEW_ICON, CONTEXT_HAS_CONFLICTS } from 'vs/workbench/services/userDataSync/common/userDataSync';
 import { Codicon } from 'vs/base/common/codicons';
 import { ViewPaneContainer } from 'vs/workbench/browser/parts/views/viewPaneContainer';
-import { CATEGORIES } from 'vs/workbench/common/actions';
-import { IUserDataInitializationService } from 'vs/workbench/services/userData/browser/userDataInit';
-import { MarkdownString } from 'vs/base/common/htmlContent';
+import { Categories } from 'vs/platform/action/common/actionCommonCategories';
 import { IHostService } from 'vs/workbench/services/host/browser/host';
 import { IUserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
 import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
@@ -79,12 +76,10 @@ const syncNowCommand = {
 const showSyncSettingsCommand = { id: 'workbench.userDataSync.actions.settings', title: localize('sync settings', "{0}: Show Settings", SYNC_TITLE), };
 const showSyncedDataCommand = { id: 'workbench.userDataSync.actions.showSyncedData', title: localize('show synced data', "{0}: Show Synced Data", SYNC_TITLE), };
 
-const CONTEXT_SYNC_AFTER_INITIALIZATION = new RawContextKey<false>('syncAfterInitialization', false);
 const CONTEXT_TURNING_ON_STATE = new RawContextKey<false>('userDataSyncTurningOn', false);
 
 export class UserDataSyncWorkbenchContribution extends Disposable implements IWorkbenchContribution {
 
-	private readonly syncAfterInitializationContext: IContextKey<boolean>;
 	private readonly turningOnSyncContext: IContextKey<boolean>;
 
 	private readonly globalActivityBadgeDisposable = this._register(new MutableDisposable());
@@ -108,24 +103,20 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 		@ITextModelService textModelResolverService: ITextModelService,
 		@IPreferencesService private readonly preferencesService: IPreferencesService,
 		@IProductService private readonly productService: IProductService,
-		@IStorageService private readonly storageService: IStorageService,
 		@IOpenerService private readonly openerService: IOpenerService,
 		@IAuthenticationService private readonly authenticationService: IAuthenticationService,
 		@IUserDataSyncStoreManagementService private readonly userDataSyncStoreManagementService: IUserDataSyncStoreManagementService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IEnvironmentService private readonly environmentService: IEnvironmentService,
-		@IUserDataInitializationService private readonly userDataInitializationService: IUserDataInitializationService,
 		@IHostService private readonly hostService: IHostService
 	) {
 		super();
 
-		this.syncAfterInitializationContext = CONTEXT_SYNC_AFTER_INITIALIZATION.bindTo(contextKeyService);
 		this.turningOnSyncContext = CONTEXT_TURNING_ON_STATE.bindTo(contextKeyService);
 
 		if (userDataSyncWorkbenchService.enabled) {
 			registerConfiguration();
 
-			this.initializeSyncAfterInitializationContext();
 			this.updateAccountBadge();
 			this.updateGlobalActivityBadge();
 			this.onDidChangeConflicts(this.userDataSyncService.conflicts);
@@ -159,27 +150,6 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 
 	private set turningOnSync(turningOn: boolean) {
 		this.turningOnSyncContext.set(turningOn);
-		this.updateGlobalActivityBadge();
-	}
-
-	private async initializeSyncAfterInitializationContext(): Promise<void> {
-		const requiresInitialization = await this.userDataInitializationService.requiresInitialization();
-		if (requiresInitialization && !this.userDataSyncEnablementService.isEnabled()) {
-			this.updateSyncAfterInitializationContext(true);
-		} else {
-			this.updateSyncAfterInitializationContext(this.storageService.getBoolean(CONTEXT_SYNC_AFTER_INITIALIZATION.key, StorageScope.APPLICATION, false));
-		}
-		const disposable = this._register(this.userDataSyncEnablementService.onDidChangeEnablement(() => {
-			if (this.userDataSyncEnablementService.isEnabled()) {
-				this.updateSyncAfterInitializationContext(false);
-				disposable.dispose();
-			}
-		}));
-	}
-
-	private async updateSyncAfterInitializationContext(value: boolean): Promise<void> {
-		this.storageService.store(CONTEXT_SYNC_AFTER_INITIALIZATION.key, value, StorageScope.APPLICATION, StorageTarget.MACHINE);
-		this.syncAfterInitializationContext.set(value);
 		this.updateGlobalActivityBadge();
 	}
 
@@ -430,8 +400,6 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 			badge = new ProgressBadge(() => localize('turning on syncing', "Turning on Settings Sync..."));
 			clazz = 'progress-badge';
 			priority = 1;
-		} else if (this.userDataSyncWorkbenchService.accountStatus === AccountStatus.Available && this.syncAfterInitializationContext.get() && !this.userDataSyncEnablementService.isEnabled()) {
-			badge = new NumberBadge(1, () => localize('settings sync is off', "Settings Sync is Off", SYNC_TITLE));
 		}
 
 		if (badge) {
@@ -450,31 +418,6 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 
 		if (badge) {
 			this.accountBadgeDisposable.value = this.activityService.showAccountsActivity({ badge, clazz: undefined, priority: undefined });
-		}
-	}
-
-	private async turnOnSyncAfterInitialization(): Promise<void> {
-		this.updateSyncAfterInitializationContext(false);
-		const result = await this.dialogService.show(
-			Severity.Info,
-			localize('settings sync is off', "Settings Sync is Off"),
-			[
-				localize('turn on settings sync', "Turn On Settings Sync"),
-				localize('cancel', "Cancel"),
-			],
-			{
-				cancelId: 1,
-				custom: {
-					markdownDetails: [{
-						markdown: new MarkdownString(`${localize('turnon sync after initialization message', "Your settings, keybindings, extensions, snippets and UI State were initialized but are not getting synced. Do you want to turn on Settings Sync?")}`, { isTrusted: true })
-					}, {
-						markdown: new MarkdownString(`${localize({ key: 'change later', comment: ['Context here is that user can change (turn on/off) settings sync later.'] }, "You can always change this later.")} [${localize('learn more', "Learn More")}](https://aka.ms/vscode-settings-sync-help).`, { isTrusted: true })
-					}]
-				}
-			}
-		);
-		if (result.choice === 0) {
-			await this.userDataSyncWorkbenchService.turnOnUsingCurrentAccount();
 		}
 	}
 
@@ -597,7 +540,7 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 			id: SyncResource.GlobalState,
 			label: getSyncAreaLabel(SyncResource.GlobalState),
 		}];
-		if (!this.environmentService.isBuilt || this.productService.enableSyncingProfiles) {
+		if (this.userDataProfilesService.isEnabled() && (!this.environmentService.isBuilt || this.productService.enableSyncingProfiles)) {
 			result.push({
 				id: SyncResource.Profiles,
 				label: getSyncAreaLabel(SyncResource.Profiles),
@@ -719,7 +662,6 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 		if (this.userDataSyncEnablementService.canToggleEnablement()) {
 			this.registerTurnOnSyncAction();
 			this.registerTurnOffSyncAction();
-			this.registerTurnOnSyncAfterInitializationAction();
 		}
 		this.registerTurningOnSyncAction();
 		this.registerCancelTurnOnSyncAction();
@@ -746,7 +688,7 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 				id: turnOnSyncCommand.id,
 				title: localize('global activity turn on sync', "Turn on Settings Sync...")
 			},
-			when: ContextKeyExpr.and(turnOnSyncWhenContext, CONTEXT_SYNC_AFTER_INITIALIZATION.negate()),
+			when: ContextKeyExpr.and(turnOnSyncWhenContext),
 			order: 3
 		});
 		MenuRegistry.appendMenuItem(MenuId.CommandPalette, {
@@ -771,33 +713,6 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 			when: turnOnSyncWhenContext,
 			order: 2
 		});
-	}
-
-	private registerTurnOnSyncAfterInitializationAction(): void {
-		const that = this;
-		const id = 'workbench.userData.actions.askToTunrOnAfterInit';
-		const when = ContextKeyExpr.and(CONTEXT_SYNC_STATE.notEqualsTo(SyncStatus.Uninitialized), CONTEXT_SYNC_ENABLEMENT.toNegated(), CONTEXT_ACCOUNT_STATE.isEqualTo(AccountStatus.Available), CONTEXT_TURNING_ON_STATE.negate(), CONTEXT_SYNC_AFTER_INITIALIZATION);
-		this._register(registerAction2(class AskToTurnOnSync extends Action2 {
-			constructor() {
-				super({
-					id,
-					title: localize('ask to turn on in global', "Settings Sync is Off (1)"),
-					menu: {
-						group: '5_settings',
-						id: MenuId.GlobalActivity,
-						when,
-						order: 3
-					}
-				});
-			}
-			async run(): Promise<any> {
-				try {
-					await that.turnOnSyncAfterInitialization();
-				} catch (e) {
-					that.notificationService.error(e);
-				}
-			}
-		}));
 	}
 
 	private registerTurningOnSyncAction(): void {
@@ -1115,7 +1030,7 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 				super({
 					id: 'workbench.userDataSync.actions.help',
 					title: { value: SYNC_TITLE, original: 'Settings Sync' },
-					category: CATEGORIES.Help,
+					category: Categories.Help,
 					menu: [{
 						id: MenuId.CommandPalette,
 						when: ContextKeyExpr.and(CONTEXT_SYNC_STATE.notEqualsTo(SyncStatus.Uninitialized)),
@@ -1127,7 +1042,7 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 		MenuRegistry.appendMenuItem(MenuId.ViewContainerTitle, {
 			command: {
 				id: 'workbench.userDataSync.actions.help',
-				title: CATEGORIES.Help.value
+				title: Categories.Help.value
 			},
 			when: ContextKeyExpr.equals('viewContainer', SYNC_VIEW_CONTAINER_ID),
 			group: '1_help',

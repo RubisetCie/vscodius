@@ -5,32 +5,34 @@
 
 import { IAction, IActionRunner, ActionRunner, Separator, SubmenuAction } from 'vs/base/common/actions';
 import * as dom from 'vs/base/browser/dom';
-import { IContextMenuService, IContextViewService } from 'vs/platform/contextview/browser/contextView';
+import { IContextMenuMenuDelegate, IContextMenuService, IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { getZoomFactor } from 'vs/base/browser/browser';
 import { unmnemonicLabel } from 'vs/base/common/labels';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { IContextMenuDelegate, IContextMenuEvent } from 'vs/base/browser/contextmenu';
 import { once } from 'vs/base/common/functional';
-import { Disposable } from 'vs/base/common/lifecycle';
 import { IContextMenuItem } from 'vs/base/parts/contextmenu/common/contextmenu';
 import { popup } from 'vs/base/parts/contextmenu/electron-sandbox/contextmenu';
 import { getTitleBarStyle } from 'vs/platform/window/common/window';
 import { isMacintosh, isWindows } from 'vs/base/common/platform';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { ContextMenuService as HTMLContextMenuService } from 'vs/platform/contextview/browser/contextMenuService';
+import { ContextMenuMenuDelegate, ContextMenuService as HTMLContextMenuService } from 'vs/platform/contextview/browser/contextMenuService';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
-import { registerSingleton } from 'vs/platform/instantiation/common/extensions';
+import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { stripIcons } from 'vs/base/common/iconLabels';
 import { coalesce } from 'vs/base/common/arrays';
 import { Event, Emitter } from 'vs/base/common/event';
 import { AnchorAlignment, AnchorAxisAlignment } from 'vs/base/browser/ui/contextview/contextview';
+import { IMenuService } from 'vs/platform/actions/common/actions';
+import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
+import { Disposable } from 'vs/base/common/lifecycle';
 
-export class ContextMenuService extends Disposable implements IContextMenuService {
+export class ContextMenuService implements IContextMenuService {
 
 	declare readonly _serviceBrand: undefined;
 
-	private impl: IContextMenuService;
+	private impl: HTMLContextMenuService | NativeContextMenuService;
 
 	get onDidShowContextMenu(): Event<void> { return this.impl.onDidShowContextMenu; }
 	get onDidHideContextMenu(): Event<void> { return this.impl.onDidHideContextMenu; }
@@ -40,22 +42,27 @@ export class ContextMenuService extends Disposable implements IContextMenuServic
 		@IKeybindingService keybindingService: IKeybindingService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@IContextViewService contextViewService: IContextViewService,
-		@IThemeService themeService: IThemeService
+		@IThemeService themeService: IThemeService,
+		@IMenuService menuService: IMenuService,
+		@IContextKeyService contextKeyService: IContextKeyService,
 	) {
-		super();
 
 		// Custom context menu: Linux/Windows if custom title is enabled
 		if (!isMacintosh && getTitleBarStyle(configurationService) === 'custom') {
-			this.impl = new HTMLContextMenuService(notificationService, contextViewService, keybindingService, themeService);
+			this.impl = new HTMLContextMenuService(notificationService, contextViewService, keybindingService, themeService, menuService, contextKeyService);
 		}
 
 		// Native context menu: otherwise
 		else {
-			this.impl = new NativeContextMenuService(notificationService, keybindingService);
+			this.impl = new NativeContextMenuService(notificationService, keybindingService, menuService, contextKeyService);
 		}
 	}
 
-	showContextMenu(delegate: IContextMenuDelegate): void {
+	dispose(): void {
+		this.impl.dispose();
+	}
+
+	showContextMenu(delegate: IContextMenuDelegate | IContextMenuMenuDelegate): void {
 		this.impl.showContextMenu(delegate);
 	}
 }
@@ -64,20 +71,25 @@ class NativeContextMenuService extends Disposable implements IContextMenuService
 
 	declare readonly _serviceBrand: undefined;
 
-	private readonly _onDidShowContextMenu = new Emitter<void>();
+	private readonly _onDidShowContextMenu = this._store.add(new Emitter<void>());
 	readonly onDidShowContextMenu = this._onDidShowContextMenu.event;
 
-	private readonly _onDidHideContextMenu = new Emitter<void>();
+	private readonly _onDidHideContextMenu = this._store.add(new Emitter<void>());
 	readonly onDidHideContextMenu = this._onDidHideContextMenu.event;
 
 	constructor(
 		@INotificationService private readonly notificationService: INotificationService,
-		@IKeybindingService private readonly keybindingService: IKeybindingService
+		@IKeybindingService private readonly keybindingService: IKeybindingService,
+		@IMenuService private readonly menuService: IMenuService,
+		@IContextKeyService private readonly contextKeyService: IContextKeyService,
 	) {
 		super();
 	}
 
-	showContextMenu(delegate: IContextMenuDelegate): void {
+	showContextMenu(delegate: IContextMenuDelegate | IContextMenuMenuDelegate): void {
+
+		delegate = ContextMenuMenuDelegate.transform(delegate, this.menuService, this.contextKeyService);
+
 		const actions = delegate.getActions();
 		if (actions.length) {
 			const onHide = once(() => {
@@ -241,4 +253,4 @@ class NativeContextMenuService extends Disposable implements IContextMenuService
 	}
 }
 
-registerSingleton(IContextMenuService, ContextMenuService, true);
+registerSingleton(IContextMenuService, ContextMenuService, InstantiationType.Delayed);

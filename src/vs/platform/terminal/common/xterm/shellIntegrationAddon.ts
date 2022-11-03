@@ -19,6 +19,7 @@ import { BufferMarkCapability } from 'vs/platform/terminal/common/capabilities/b
 // eslint-disable-next-line local/code-import-patterns
 import type { ITerminalAddon, Terminal } from 'xterm-headless';
 import { URI } from 'vs/base/common/uri';
+import { sanitizeCwd } from 'vs/platform/terminal/common/terminalEnvironment';
 
 
 /**
@@ -355,6 +356,7 @@ export class ShellIntegrationAddon extends Disposable implements IShellIntegrati
 	}
 
 	private _updateCwd(value: string) {
+		value = sanitizeCwd(value);
 		this._createOrGetCwdDetection().updateCwd(value);
 		const commandDetection = this.capabilities.get(TerminalCapability.CommandDetection);
 		commandDetection?.setCwd(value);

@@ -116,13 +116,9 @@ class MyCompletionItem extends vscode.CompletionItem {
 		if (tsEntry.kindModifiers) {
 			const kindModifiers = parseKindModifier(tsEntry.kindModifiers);
 			if (kindModifiers.has(PConst.KindModifiers.optional)) {
-				if (!this.insertText) {
-					this.insertText = this.textLabel;
-				}
+				this.insertText ??= this.textLabel;
+				this.filterText ??= this.textLabel;
 
-				if (!this.filterText) {
-					this.filterText = this.textLabel;
-				}
 				if (typeof this.label === 'string') {
 					this.label += '?';
 				} else {
@@ -520,7 +516,7 @@ class MyCompletionItem extends vscode.CompletionItem {
 	}
 }
 
-function getScriptKindDetails(tsEntry: protocol.CompletionEntry,): string | undefined {
+function getScriptKindDetails(tsEntry: Proto.CompletionEntry,): string | undefined {
 	if (!tsEntry.kindModifiers || tsEntry.kind !== PConst.Kind.script) {
 		return;
 	}
