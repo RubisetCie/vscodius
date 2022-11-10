@@ -603,7 +603,8 @@ function findContextAttr(domNode: IContextKeyServiceTarget | null): number {
 }
 
 export function setContext(accessor: ServicesAccessor, contextKey: any, contextValue: any) {
-	accessor.get(IContextKeyService).createKey(String(contextKey), stringifyURIs(contextValue));
+	const contextKeyService = accessor.get(IContextKeyService);
+	contextKeyService.createKey(String(contextKey), stringifyURIs(contextValue));
 }
 
 function stringifyURIs(contextValue: any): any {

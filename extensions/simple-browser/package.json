@@ -3,6 +3,7 @@
   "displayName": "%displayName%",
   "description": "%description%",
   "enabledApiProposals": [
+    "telemetryLogger",
     "externalUriOpener"
   ],
   "version": "1.0.0",

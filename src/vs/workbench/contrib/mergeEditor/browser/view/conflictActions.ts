@@ -127,7 +127,7 @@ export class ActionsSource {
 								model.setState(
 									modifiedBaseRange,
 									state.withInputValue(inputNumber, true, false),
-									true,
+									inputNumber,
 									tx
 								);
 							});
@@ -157,7 +157,7 @@ export class ActionsSource {
 								model.setState(
 									modifiedBaseRange,
 									state.withInputValue(inputNumber, true, false),
-									true,
+									inputNumber,
 									tx
 								);
 							});
@@ -171,7 +171,7 @@ export class ActionsSource {
 									model.setState(
 										modifiedBaseRange,
 										state.withInputValue(inputNumber, true, true),
-										true,
+										inputNumber,
 										tx
 									);
 								});
@@ -180,6 +180,19 @@ export class ActionsSource {
 					}
 				}
 
+				if (!model.isInputHandled(modifiedBaseRange, inputNumber).read(reader)) {
+					result.push(
+						command(
+							localize('ignore', 'Ignore'),
+							async () => {
+								transaction((tx) => {
+									model.setInputHandled(modifiedBaseRange, inputNumber, true, tx);
+								});
+							},
+							localize('markAsHandledTooltip', "Don't take this side of the conflict.")
+						)
+					);
+				}
 
 			}
 			return result;
@@ -288,20 +301,6 @@ export class ActionsSource {
 						});
 					},
 					localize('resetToBaseTooltip', 'Reset this conflict to the common ancestor of both the right and left changes.')
-				)
-			);
-		}
-
-		if (state.kind === ModifiedBaseRangeStateKind.base && !model.isHandled(modifiedBaseRange).read(reader)) {
-			result.push(
-				command(
-					localize('markAsHandled', 'Mark As Handled'),
-					async () => {
-						transaction((tx) => {
-							model.setHandled(modifiedBaseRange, true, tx);
-						});
-					},
-					localize('markAsHandledTooltip', 'Marks this conflict as handled.')
 				)
 			);
 		}

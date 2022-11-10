@@ -261,7 +261,7 @@ class WatchExpressionsDataSource implements IAsyncDataSource<IDebugService, IExp
 }
 
 
-export class WatchExpressionsRenderer extends AbstractExpressionsRenderer {
+class WatchExpressionsRenderer extends AbstractExpressionsRenderer {
 
 	static readonly ID = 'watchexpression';
 

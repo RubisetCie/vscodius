@@ -66,6 +66,7 @@ import { ITreeViewsService } from 'vs/workbench/services/views/browser/treeViews
 import { CodeDataTransfers } from 'vs/platform/dnd/browser/dnd';
 import { addExternalEditorsDropData, toVSDataTransfer } from 'vs/editor/browser/dnd';
 import { CheckboxStateHandler, TreeItemCheckbox } from 'vs/workbench/browser/parts/views/checkbox';
+import { setTimeout0 } from 'vs/base/common/platform';
 
 export class TreeViewPane extends ViewPane {
 
@@ -422,7 +423,7 @@ abstract class AbstractTreeView extends Disposable implements ITreeView {
 		if (badge) {
 			const activity = {
 				badge: new NumberBadge(badge.value, () => badge.tooltip),
-				priority: 150
+				priority: 50
 			};
 			this._badgeActivity = this.activityService.showViewActivity(this.id, activity);
 		}
@@ -532,6 +533,10 @@ abstract class AbstractTreeView extends Disposable implements ITreeView {
 	}
 
 	setVisibility(isVisible: boolean): void {
+		// Throughout setVisibility we need to check if the tree view's data provider still exists.
+		// This can happen because the `getChildren` call to the extension can return
+		// after the tree has been disposed.
+
 		this.initialize();
 		isVisible = !!isVisible;
 		if (this.isVisible === isVisible) {
@@ -547,13 +552,17 @@ abstract class AbstractTreeView extends Disposable implements ITreeView {
 				DOM.hide(this.tree.getHTMLElement()); // make sure the tree goes out of the tabindex world by hiding it
 			}
 
-			if (this.isVisible && this.elementsToRefresh.length) {
+			if (this.isVisible && this.elementsToRefresh.length && this.dataProvider) {
 				this.doRefresh(this.elementsToRefresh);
 				this.elementsToRefresh = [];
 			}
 		}
 
-		this._onDidChangeVisibility.fire(this.isVisible);
+		setTimeout0(() => {
+			if (this.dataProvider) {
+				this._onDidChangeVisibility.fire(this.isVisible);
+			}
+		});
 
 		if (this.visible) {
 			this.activate();
@@ -1436,6 +1445,11 @@ class TreeMenus extends Disposable implements IDisposable {
 			menu.dispose();
 		}
 		return result;
+	}
+
+	override dispose() {
+		this.contextKeyService = undefined;
+		super.dispose();
 	}
 }
 

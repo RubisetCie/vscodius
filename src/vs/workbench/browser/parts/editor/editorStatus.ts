@@ -1269,7 +1269,7 @@ export class ChangeLanguageAction extends Action {
 	}
 }
 
-export interface IChangeEOLEntry extends IQuickPickItem {
+interface IChangeEOLEntry extends IQuickPickItem {
 	eol: EndOfLineSequence;
 }
 

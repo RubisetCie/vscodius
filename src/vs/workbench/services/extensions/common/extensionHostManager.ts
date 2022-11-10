@@ -62,26 +62,6 @@ export function createExtensionHostManager(instantiationService: IInstantiationS
 	return instantiationService.createInstance(ExtensionHostManager, extensionHostId, extensionHost, initialActivationEvents, internalExtensionService);
 }
 
-export type ExtensionHostStartupClassification = {
-	owner: 'alexdima';
-	comment: 'The startup state of the extension host';
-	time: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The time reported by Date.now().' };
-	action: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The action: starting, success or error.' };
-	kind: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The extension host kind: LocalProcess, LocalWebWorker or Remote.' };
-	errorName?: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The error name.' };
-	errorMessage?: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The error message.' };
-	errorStack?: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The error stack.' };
-};
-
-export type ExtensionHostStartupEvent = {
-	time: number;
-	action: 'starting' | 'success' | 'error';
-	kind: string;
-	errorName?: string;
-	errorMessage?: string;
-	errorStack?: string;
-};
-
 class ExtensionHostManager extends Disposable implements IExtensionHostManager {
 
 	public readonly onDidExit: Event<[number, string | null]>;
@@ -261,8 +241,8 @@ class ExtensionHostManager extends Disposable implements IExtensionHostManager {
 				this._customers.push(instance);
 				this._rpcProtocol.set(id, instance);
 			} catch (err) {
-				this._logService.critical(`Cannot instantiate named customer: '${id.sid}'`);
-				this._logService.critical(err);
+				this._logService.error(`Cannot instantiate named customer: '${id.sid}'`);
+				this._logService.error(err);
 				errors.onUnexpectedError(err);
 			}
 		}
@@ -274,7 +254,7 @@ class ExtensionHostManager extends Disposable implements IExtensionHostManager {
 				const instance = this._instantiationService.createInstance(ctor, extHostContext);
 				this._customers.push(instance);
 			} catch (err) {
-				this._logService.critical(err);
+				this._logService.error(err);
 				errors.onUnexpectedError(err);
 			}
 		}
