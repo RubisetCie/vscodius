@@ -494,7 +494,6 @@ export abstract class AbstractTimerService implements ITimerService {
 			return this._computeStartupMetrics();
 		}).then(metrics => {
 			this._startupMetrics = metrics;
-			this._reportStartupTimes(metrics);
 			this._barrier.open();
 		});
 
@@ -545,22 +544,12 @@ export abstract class AbstractTimerService implements ITimerService {
 	setPerformanceMarks(source: string, marks: perf.PerformanceMark[]): void {
 		// Perf marks are a shared resource because anyone can generate them
 		// and because of that we only accept marks that start with 'code/'
-		this._marks.setMarks(source, marks.filter(mark => mark.name.startsWith('code/')));
+		const codeMarks = marks.filter(mark => mark.name.startsWith('code/'));
+		this._marks.setMarks(source, codeMarks);
 	}
 
 	getPerformanceMarks(): [source: string, marks: readonly perf.PerformanceMark[]][] {
 		return this._marks.getEntries();
-	}
-
-	private _reportStartupTimes(metrics: IStartupMetrics): void {
-		/* __GDPR__
-			"startupTimeVaried" : {
-				"owner": "jrieken",
-				"${include}": [
-					"${IStartupMetrics}"
-				]
-			}
-		*/
 	}
 
 	private async _computeStartupMetrics(): Promise<IStartupMetrics> {

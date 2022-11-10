@@ -250,7 +250,7 @@ suite('SuggestModel - TriggerAndCancelOracle', function () {
 			return Promise.all([
 
 				assertEvent(model.onDidTrigger, function () {
-					model.trigger({ auto: true, shy: false, noSelect: false });
+					model.trigger({ auto: true, shy: false });
 				}, function (event) {
 					assert.strictEqual(event.auto, true);
 
@@ -262,13 +262,13 @@ suite('SuggestModel - TriggerAndCancelOracle', function () {
 				}),
 
 				assertEvent(model.onDidTrigger, function () {
-					model.trigger({ auto: true, shy: false, noSelect: false });
+					model.trigger({ auto: true, shy: false });
 				}, function (event) {
 					assert.strictEqual(event.auto, true);
 				}),
 
 				assertEvent(model.onDidTrigger, function () {
-					model.trigger({ auto: false, shy: false, noSelect: false });
+					model.trigger({ auto: false, shy: false });
 				}, function (event) {
 					assert.strictEqual(event.auto, false);
 				})
@@ -284,12 +284,12 @@ suite('SuggestModel - TriggerAndCancelOracle', function () {
 		return withOracle(model => {
 			return Promise.all([
 				assertEvent(model.onDidCancel, function () {
-					model.trigger({ auto: true, shy: false, noSelect: false });
+					model.trigger({ auto: true, shy: false });
 				}, function (event) {
 					assert.strictEqual(event.retrigger, false);
 				}),
 				assertEvent(model.onDidSuggest, function () {
-					model.trigger({ auto: false, shy: false, noSelect: false });
+					model.trigger({ auto: false, shy: false });
 				}, function (event) {
 					assert.strictEqual(event.auto, false);
 					assert.strictEqual(event.isFrozen, false);
@@ -340,7 +340,7 @@ suite('SuggestModel - TriggerAndCancelOracle', function () {
 
 			return assertEvent(model.onDidSuggest, () => {
 				// make sure completionModel starts here!
-				model.trigger({ auto: true, shy: false, noSelect: false });
+				model.trigger({ auto: true, shy: false });
 			}, event => {
 
 				return assertEvent(model.onDidSuggest, () => {
@@ -453,7 +453,7 @@ suite('SuggestModel - TriggerAndCancelOracle', function () {
 			editor.setPosition({ lineNumber: 1, column: 3 });
 
 			return assertEvent(model.onDidSuggest, () => {
-				model.trigger({ auto: false, shy: false, noSelect: false });
+				model.trigger({ auto: false, shy: false });
 			}, event => {
 				assert.strictEqual(event.auto, false);
 				assert.strictEqual(event.isFrozen, false);
@@ -478,7 +478,7 @@ suite('SuggestModel - TriggerAndCancelOracle', function () {
 			editor.setPosition({ lineNumber: 1, column: 3 });
 
 			return assertEvent(model.onDidSuggest, () => {
-				model.trigger({ auto: false, shy: false, noSelect: false });
+				model.trigger({ auto: false, shy: false });
 			}, event => {
 				assert.strictEqual(event.auto, false);
 				assert.strictEqual(event.isFrozen, false);
@@ -515,7 +515,7 @@ suite('SuggestModel - TriggerAndCancelOracle', function () {
 			editor.setPosition({ lineNumber: 1, column: 4 });
 
 			return assertEvent(model.onDidSuggest, () => {
-				model.trigger({ auto: false, shy: false, noSelect: false });
+				model.trigger({ auto: false, shy: false });
 			}, event => {
 				assert.strictEqual(event.auto, false);
 				assert.strictEqual(event.completionModel.incomplete.size, 1);
@@ -552,7 +552,7 @@ suite('SuggestModel - TriggerAndCancelOracle', function () {
 			editor.setPosition({ lineNumber: 1, column: 4 });
 
 			return assertEvent(model.onDidSuggest, () => {
-				model.trigger({ auto: false, shy: false, noSelect: false });
+				model.trigger({ auto: false, shy: false });
 			}, event => {
 				assert.strictEqual(event.auto, false);
 				assert.strictEqual(event.completionModel.incomplete.size, 1);
@@ -711,7 +711,7 @@ suite('SuggestModel - TriggerAndCancelOracle', function () {
 
 			await assertEvent(sugget.onDidSuggest, () => {
 				editor.setPosition({ lineNumber: 1, column: 3 });
-				sugget.trigger({ auto: false, shy: false, noSelect: false });
+				sugget.trigger({ auto: false, shy: false });
 			}, event => {
 
 				assert.strictEqual(event.completionModel.items.length, 1);
@@ -935,21 +935,6 @@ suite('SuggestModel - TriggerAndCancelOracle', function () {
 			}, event => {
 				assert.strictEqual(event.auto, true);
 				assert.strictEqual(event.completionModel.items.length, 2);
-			});
-		});
-	});
-
-	test('noSelect-flag makes it from request to suggest event', function () {
-
-		disposables.add(registry.register({ scheme: 'test' }, alwaysSomethingSupport));
-
-		return withOracle((model, editor) => {
-			return assertEvent(model.onDidSuggest, () => {
-				model.trigger({ auto: false, noSelect: true, shy: false });
-			}, event => {
-				assert.strictEqual(event.noSelect, true);
-				assert.strictEqual(event.auto, false);
-				assert.strictEqual(event.shy, false);
 			});
 		});
 	});

@@ -16,6 +16,7 @@
     "Programming Languages"
   ],
   "enabledApiProposals": [
+    "telemetryLogger",
     "documentPaste"
   ],
   "activationEvents": [
@@ -182,13 +183,13 @@
         "command": "markdown.editor.insertLinkFromWorkspace",
         "title": "%markdown.editor.insertLinkFromWorkspace%",
         "category": "Markdown",
-        "enablement": "editorLangId == markdown"
+        "enablement": "editorLangId == markdown && !activeEditorIsReadonly"
       },
       {
         "command": "markdown.editor.insertImageFromWorkspace",
         "title": "%markdown.editor.insertImageFromWorkspace%",
         "category": "Markdown",
-        "enablement": "editorLangId == markdown"
+        "enablement": "editorLangId == markdown && !activeEditorIsReadonly"
       }
     ],
     "menus": {
@@ -627,7 +628,6 @@
     "morphdom": "^2.6.1",
     "picomatch": "^2.3.1",
     "vscode-languageclient": "^8.0.2",
-    "vscode-nls": "^5.2.0",
     "vscode-uri": "^3.0.3"
   },
   "devDependencies": {

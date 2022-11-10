@@ -300,7 +300,7 @@ export const IExtHostCommands = createDecorator<IExtHostCommands>('IExtHostComma
 export class CommandsConverter implements extHostTypeConverter.Command.ICommandsConverter {
 
 	readonly delegatingCommandId: string = `__vsc${Date.now().toString(36)}`;
-	private readonly _cache = new Map<number, vscode.Command>();
+	private readonly _cache = new Map<string, vscode.Command>();
 	private _cachIdPool = 0;
 
 	// --- conversion between internal and api commands
@@ -344,7 +344,7 @@ export class CommandsConverter implements extHostTypeConverter.Command.ICommands
 			// we have a contributed command with arguments. that
 			// means we don't want to send the arguments around
 
-			const id = ++this._cachIdPool;
+			const id = `${command.command}/${++this._cachIdPool}`;
 			this._cache.set(id, command);
 			disposables.add(toDisposable(() => {
 				this._cache.delete(id);
@@ -363,7 +363,7 @@ export class CommandsConverter implements extHostTypeConverter.Command.ICommands
 
 	fromInternal(command: ICommandDto): vscode.Command | undefined {
 
-		if (typeof command.$ident === 'number') {
+		if (typeof command.$ident === 'string') {
 			return this._cache.get(command.$ident);
 
 		} else {
@@ -385,7 +385,7 @@ export class CommandsConverter implements extHostTypeConverter.Command.ICommands
 		this._logService.trace('CommandsConverter#EXECUTE', args[0], actualCmd ? actualCmd.command : 'MISSING');
 
 		if (!actualCmd) {
-			return Promise.reject('actual command NOT FOUND');
+			return Promise.reject(`Actual command not found, wanted to execute ${args[0]}`);
 		}
 		return this._commands.executeCommand(actualCmd.command, ...(actualCmd.arguments || []));
 	}

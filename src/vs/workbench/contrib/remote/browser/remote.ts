@@ -51,7 +51,7 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { ITimerService } from 'vs/workbench/services/timer/browser/timerService';
 import { IActionViewItem } from 'vs/base/browser/ui/actionbar/actionbar';
 
-export interface HelpInformation {
+interface HelpInformation {
 	extensionDescription: IExtensionDescription;
 	getStarted?: string;
 	documentation?: string;
@@ -454,7 +454,7 @@ class HelpPanelDescriptor implements IViewDescriptor {
 	}
 }
 
-export class RemoteViewPaneContainer extends FilterViewPaneContainer implements IViewModel {
+class RemoteViewPaneContainer extends FilterViewPaneContainer implements IViewModel {
 	private helpPanelDescriptor = new HelpPanelDescriptor(this);
 	helpInformation: HelpInformation[] = [];
 	private hasSetSwitchForConnection: boolean = false;

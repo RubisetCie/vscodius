@@ -8,18 +8,14 @@ import { ITerminalCapabilityStore, ITerminalCommand, TerminalCapability } from '
 import * as dom from 'vs/base/browser/dom';
 import { IAction } from 'vs/base/common/actions';
 import { asArray } from 'vs/base/common/arrays';
-import { Color } from 'vs/base/common/color';
 import { localize } from 'vs/nls';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
-import { IColorTheme, ICssStyleCollector, registerThemingParticipant } from 'vs/platform/theme/common/themeService';
-import { PANEL_BACKGROUND } from 'vs/workbench/common/theme';
 import { AudioCue, IAudioCueService } from 'vs/workbench/contrib/audioCues/browser/audioCueService';
 import { ITerminalQuickFixOpenerAction, ITerminalQuickFixOptions, TerminalQuickFixAction, TerminalQuickFixMatchResult } from 'vs/workbench/contrib/terminal/browser/terminal';
 import { DecorationSelector, TerminalDecorationHoverManager, updateLayout } from 'vs/workbench/contrib/terminal/browser/xterm/decorationStyles';
 import { TerminalCommandId } from 'vs/workbench/contrib/terminal/common/terminal';
-import { TERMINAL_BACKGROUND_COLOR } from 'vs/workbench/contrib/terminal/common/terminalColorRegistry';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { IDecoration, Terminal } from 'xterm';
@@ -62,6 +58,7 @@ export class TerminalQuickFixAddon extends Disposable implements ITerminalAddon,
 
 	private _fixesShown: boolean = false;
 	private _expectedCommands: string[] | undefined;
+	private _fixId: string | undefined;
 
 	constructor(private readonly _capabilities: ITerminalCapabilityStore,
 		@IContextMenuService private readonly _contextMenuService: IContextMenuService,
@@ -117,13 +114,15 @@ export class TerminalQuickFixAddon extends Disposable implements ITerminalAddon,
 		}
 		this._register(commandDetection.onCommandFinished(command => {
 			if (this._expectedCommands) {
+				const quickFixId = this._fixId || '';
 				const ranQuickFixCommand = this._expectedCommands.includes(command.command);
 				this._logService.debug(quickFixTelemetryTitle, {
-					id: this._expectedCommands.join(' '),
+					quickFixId,
 					fixesShown: this._fixesShown,
 					ranQuickFixCommand
 				});
 				this._expectedCommands = undefined;
+				this._fixId = undefined;
 			}
 			this._resolveQuickFixes(command);
 			this._fixesShown = false;
@@ -151,11 +150,12 @@ export class TerminalQuickFixAddon extends Disposable implements ITerminalAddon,
 		}
 		const { fixes, onDidRunQuickFix, expectedCommands } = result;
 		this._expectedCommands = expectedCommands;
+		this._fixId = fixes.map(f => f.id).join('');
 		this._quickFixes = fixes;
-		this._register(onDidRunQuickFix((id) => {
+		this._register(onDidRunQuickFix((quickFixId) => {
 			const ranQuickFixCommand = (this._expectedCommands?.includes(command.command) || false);
 			this._logService.debug(quickFixTelemetryTitle, {
-				id,
+				quickFixId,
 				fixesShown: this._fixesShown,
 				ranQuickFixCommand
 			});
@@ -246,7 +246,7 @@ export function getQuickFixesForCommand(
 							case 'command': {
 								const label = localize('quickFix.command', 'Run: {0}', quickFix.command);
 								action = {
-									id: `quickFix.command`,
+									id: quickFix.id,
 									label,
 									class: undefined,
 									enabled: true,
@@ -304,21 +304,6 @@ export function getQuickFixesForCommand(
 	return fixes.length > 0 ? { fixes, onDidRunQuickFix, expectedCommands } : undefined;
 }
 
-
-
-let foregroundColor: string | Color | undefined;
-let backgroundColor: string | Color | undefined;
-registerThemingParticipant((theme: IColorTheme, collector: ICssStyleCollector) => {
-	foregroundColor = theme.getColor('editorLightBulb.foreground');
-	backgroundColor = theme.getColor(TERMINAL_BACKGROUND_COLOR) || theme.getColor(PANEL_BACKGROUND);
-	if (foregroundColor) {
-		collector.addRule(`.${DecorationSelector.CommandDecoration}.${DecorationSelector.QuickFix} { color: ${foregroundColor.toString()} !important; } `);
-	}
-	if (backgroundColor) {
-		collector.addRule(`.${DecorationSelector.CommandDecoration}.${DecorationSelector.QuickFix} { background-color: ${backgroundColor.toString()}; } `);
-	}
-});
-
 export function convertToQuickFixOptions(quickFix: IExtensionTerminalQuickFix): ITerminalQuickFixOptions {
 	const type = quickFix.commandToRun ? 'command' : quickFix.linkToOpen ? 'opener' : undefined;
 	const options = {
@@ -348,6 +333,7 @@ export function convertToQuickFixOptions(quickFix: IExtensionTerminalQuickFix): 
 			if (fixedCommand) {
 				actions.push({
 					type: 'command',
+					id: quickFix.id,
 					command: fixedCommand,
 					addNewLine: true
 				});

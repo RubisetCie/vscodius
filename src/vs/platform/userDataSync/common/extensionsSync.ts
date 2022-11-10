@@ -112,7 +112,7 @@ export class ExtensionsSynchroniser extends AbstractSynchroniser implements IUse
 
 	constructor(
 		// profileLocation changes for default profile
-		public profile: IUserDataProfile,
+		profile: IUserDataProfile,
 		collection: string | undefined,
 		@IEnvironmentService environmentService: IEnvironmentService,
 		@IFileService fileService: IFileService,
@@ -145,7 +145,7 @@ export class ExtensionsSynchroniser extends AbstractSynchroniser implements IUse
 		const builtinExtensions: IExtensionIdentifier[] = lastSyncUserData?.builtinExtensions || [];
 		const lastSyncExtensions: ISyncExtension[] | null = lastSyncUserData?.syncData ? await parseAndMigrateExtensions(lastSyncUserData.syncData, this.extensionManagementService) : null;
 
-		const { localExtensions, ignoredExtensions } = await this.localExtensionsProvider.getLocalExtensions(this.profile);
+		const { localExtensions, ignoredExtensions } = await this.localExtensionsProvider.getLocalExtensions(this.syncResource.profile);
 
 		if (remoteExtensions) {
 			this.logService.trace(`${this.syncResourceLogLabel}: Merging remote extensions with local extensions...`);
@@ -183,7 +183,7 @@ export class ExtensionsSynchroniser extends AbstractSynchroniser implements IUse
 
 	protected async hasRemoteChanged(lastSyncUserData: ILastSyncUserData): Promise<boolean> {
 		const lastSyncExtensions: ISyncExtension[] | null = lastSyncUserData.syncData ? await parseAndMigrateExtensions(lastSyncUserData.syncData, this.extensionManagementService) : null;
-		const { localExtensions, ignoredExtensions } = await this.localExtensionsProvider.getLocalExtensions(this.profile);
+		const { localExtensions, ignoredExtensions } = await this.localExtensionsProvider.getLocalExtensions(this.syncResource.profile);
 		const { remote } = merge(localExtensions, lastSyncExtensions, lastSyncExtensions, lastSyncUserData.skippedExtensions || [], ignoredExtensions, lastSyncUserData.builtinExtensions || []);
 		return remote !== null;
 	}
@@ -237,7 +237,7 @@ export class ExtensionsSynchroniser extends AbstractSynchroniser implements IUse
 	}
 
 	private async acceptLocal(resourcePreview: IExtensionResourcePreview): Promise<IExtensionResourceMergeResult> {
-		const installedExtensions = await this.extensionManagementService.getInstalled(undefined, this.profile.location);
+		const installedExtensions = await this.extensionManagementService.getInstalled(undefined, this.syncResource.profile.extensionsResource);
 		const ignoredExtensions = this.ignoredExtensionsManagementService.getIgnoredExtensions(installedExtensions);
 		const mergeResult = merge(resourcePreview.localExtensions, null, null, resourcePreview.skippedExtensions, ignoredExtensions, resourcePreview.builtinExtensions);
 		const { local, remote } = mergeResult;
@@ -251,7 +251,7 @@ export class ExtensionsSynchroniser extends AbstractSynchroniser implements IUse
 	}
 
 	private async acceptRemote(resourcePreview: IExtensionResourcePreview): Promise<IExtensionResourceMergeResult> {
-		const installedExtensions = await this.extensionManagementService.getInstalled(undefined, this.profile.location);
+		const installedExtensions = await this.extensionManagementService.getInstalled(undefined, this.syncResource.profile.extensionsResource);
 		const ignoredExtensions = this.ignoredExtensionsManagementService.getIgnoredExtensions(installedExtensions);
 		const remoteExtensions = resourcePreview.remoteContent ? JSON.parse(resourcePreview.remoteContent) : null;
 		if (remoteExtensions !== null) {
@@ -285,7 +285,7 @@ export class ExtensionsSynchroniser extends AbstractSynchroniser implements IUse
 
 		if (localChange !== Change.None) {
 			await this.backupLocal(JSON.stringify(localExtensions));
-			skippedExtensions = await this.localExtensionsProvider.updateLocalExtensions(local.added, local.removed, local.updated, skippedExtensions, this.profile);
+			skippedExtensions = await this.localExtensionsProvider.updateLocalExtensions(local.added, local.removed, local.updated, skippedExtensions, this.syncResource.profile);
 		}
 
 		if (remote) {
@@ -323,7 +323,7 @@ export class ExtensionsSynchroniser extends AbstractSynchroniser implements IUse
 
 	async hasLocalData(): Promise<boolean> {
 		try {
-			const { localExtensions } = await this.localExtensionsProvider.getLocalExtensions(this.profile);
+			const { localExtensions } = await this.localExtensionsProvider.getLocalExtensions(this.syncResource.profile);
 			if (localExtensions.some(e => e.installed || e.disabled)) {
 				return true;
 			}

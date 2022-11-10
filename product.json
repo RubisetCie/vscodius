@@ -15,7 +15,16 @@
 	"serverApplicationName": "code-server-oss",
 	"serverDataFolderName": ".vscode-server-oss",
 	"tunnelApplicationName": "code-tunnel-oss",
-	"quality": "stable",
+	"tunnelApplicationConfig": {
+		"authenticationProviders": {
+			"github": {
+				"scopes": [
+					"user:email",
+					"read:org"
+				]
+			}
+		}
+	},	"quality": "stable",
 	"checksumFailMoreInfoUrl": "https://go.microsoft.com/fwlink/?LinkId=828886",
 	"tipsAndTricksUrl": "https://go.microsoft.com/fwlink/?linkid=852118",
 	"twitterUrl": "https://go.microsoft.com/fwlink/?LinkID=533687",
@@ -77,7 +86,7 @@
 		},
 		{
 			"name": "ms-vscode.js-debug",
-			"version": "1.72.0",
+			"version": "1.72.1",
 			"repo": "https://github.com/microsoft/vscode-js-debug",
 			"metadata": {
 				"id": "25629058-ddac-4e17-abba-74678e126c5d",

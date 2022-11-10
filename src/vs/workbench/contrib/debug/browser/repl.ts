@@ -49,6 +49,7 @@ import { ServiceCollection } from 'vs/platform/instantiation/common/serviceColle
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
 import { WorkbenchAsyncDataTree } from 'vs/platform/list/browser/listService';
+import { ILogService } from 'vs/platform/log/common/log';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
 import { editorForeground, resolveColorValue } from 'vs/platform/theme/common/colorRegistry';
@@ -126,7 +127,8 @@ export class Repl extends FilterViewPane implements IHistoryNavigationWidget {
 		@IKeybindingService keybindingService: IKeybindingService,
 		@IOpenerService openerService: IOpenerService,
 		@IMenuService menuService: IMenuService,
-		@ILanguageFeaturesService private readonly languageFeaturesService: ILanguageFeaturesService
+		@ILanguageFeaturesService private readonly languageFeaturesService: ILanguageFeaturesService,
+		@ILogService private readonly logService: ILogService,
 	) {
 		const filterText = storageService.get(FILTER_VALUE_STORAGE_KEY, StorageScope.WORKSPACE, '');
 		super({
@@ -266,12 +268,13 @@ export class Repl extends FilterViewPane implements IHistoryNavigationWidget {
 
 							if (this.configurationService.getValue<IDebugConfiguration>('debug').console.historySuggestions) {
 								const history = this.history.getHistory();
-								history.forEach(h => suggestions.push({
+								const idxLength = String(history.length).length;
+								history.forEach((h, i) => suggestions.push({
 									label: h,
 									insertText: h,
 									kind: CompletionItemKind.Text,
 									range: computeRange(h.length),
-									sortText: 'ZZZ'
+									sortText: 'ZZZ' + String(history.length - i).padStart(idxLength, '0')
 								}));
 							}
 
@@ -399,7 +402,13 @@ export class Repl extends FilterViewPane implements IHistoryNavigationWidget {
 			});
 
 			if (this.tree && treeInput !== session) {
-				await this.tree.setInput(session);
+				try {
+					await this.tree.setInput(session);
+				} catch (err) {
+					// Ignore error because this may happen multiple times while refreshing,
+					// then changing the root may fail. Log to help with debugging if needed.
+					this.logService.error(err);
+				}
 				revealLastElement(this.tree);
 			}
 		}

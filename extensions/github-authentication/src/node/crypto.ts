@@ -3,10 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-declare module 'vscode' {
+import { webcrypto } from 'crypto';
 
-	// https://github.com/microsoft/vscode/issues/149271
-
-	// ❗️ Important: The main NotebookEditor api has been finalized.
-	// This file only tracks the `notebook/cell/executePrimary` contribution, which will be removed
-}
+export const crypto = webcrypto as any as Crypto;
