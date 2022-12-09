@@ -83,7 +83,7 @@ export class WalkThroughPart extends EditorPane {
 		this.editorMemento = this.getEditorMemento<IWalkThroughEditorViewState>(editorGroupService, textResourceConfigurationService, WALK_THROUGH_EDITOR_VIEW_STATE_PREFERENCE_KEY);
 	}
 
-	createEditor(container: HTMLElement): void {
+	protected createEditor(container: HTMLElement): void {
 		this.content = document.createElement('div');
 		this.content.classList.add('welcomePageFocusElement');
 		this.content.tabIndex = 0;

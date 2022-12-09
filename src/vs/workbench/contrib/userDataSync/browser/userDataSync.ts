@@ -52,7 +52,6 @@ import { IHostService } from 'vs/workbench/services/host/browser/host';
 import { IUserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
 import { ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
 import { ctxIsMergeResultEditor, ctxMergeBaseUri } from 'vs/workbench/contrib/mergeEditor/common/mergeEditor';
-import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 
 type ConfigureSyncQuickPickItem = { id: SyncResource; label: string; description?: string };
 
@@ -107,7 +106,6 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 		@IAuthenticationService private readonly authenticationService: IAuthenticationService,
 		@IUserDataSyncStoreManagementService private readonly userDataSyncStoreManagementService: IUserDataSyncStoreManagementService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
-		@IEnvironmentService private readonly environmentService: IEnvironmentService,
 		@IHostService private readonly hostService: IHostService
 	) {
 		super();
@@ -540,7 +538,7 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 			id: SyncResource.GlobalState,
 			label: getSyncAreaLabel(SyncResource.GlobalState),
 		}];
-		if (this.userDataProfilesService.isEnabled() && (!this.environmentService.isBuilt || this.productService.enableSyncingProfiles)) {
+		if (this.userDataProfilesService.isEnabled()) {
 			result.push({
 				id: SyncResource.Profiles,
 				label: getSyncAreaLabel(SyncResource.Profiles),

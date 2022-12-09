@@ -2,9 +2,6 @@
   "name": "media-preview",
   "displayName": "%displayName%",
   "description": "%description%",
-  "enabledApiProposals": [
-    "telemetryLogger"
-  ],
   "extensionKind": [
     "ui",
     "workspace"
@@ -102,9 +99,6 @@
     "build-ext": "node ../../node_modules/gulp/bin/gulp.js --gulpfile ../../build/gulpfile.extensions.js compile-extension:media-preview ./tsconfig.json",
     "compile-web": "npx webpack-cli --config extension-browser.webpack.config --mode none",
     "watch-web": "npx webpack-cli --config extension-browser.webpack.config --mode none --watch --info-verbosity verbose"
-  },
-  "dependencies": {
-    "vscode-nls": "^5.2.0"
   },
   "repository": {
     "type": "git",

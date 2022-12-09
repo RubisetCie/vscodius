@@ -17,6 +17,7 @@ import { IResolveResult, KeybindingResolver } from 'vs/platform/keybinding/commo
 import { ResolvedKeybindingItem } from 'vs/platform/keybinding/common/resolvedKeybindingItem';
 import { ILogService } from 'vs/platform/log/common/log';
 import { INotificationService } from 'vs/platform/notification/common/notification';
+import { IME } from 'vs/base/common/ime';
 
 interface CurrentChord {
 	keypress: string;
@@ -159,6 +160,7 @@ export abstract class AbstractKeybindingService extends Disposable implements IK
 			}
 
 		}, 500);
+		IME.disable();
 	}
 
 	private _leaveChordMode(): void {
@@ -168,6 +170,7 @@ export abstract class AbstractKeybindingService extends Disposable implements IK
 		}
 		this._currentChordChecker.cancel();
 		this._currentChord = null;
+		IME.enable();
 	}
 
 	public dispatchByUserSettingsLabel(userSettingsLabel: string, target: IContextKeyServiceTarget): void {

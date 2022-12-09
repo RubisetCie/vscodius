@@ -155,7 +155,7 @@ export async function setupServerServices(connectionToken: ServerConnectionToken
 	instantiationService.invokeFunction(accessor => {
 		const extensionManagementService = accessor.get(INativeServerExtensionManagementService);
 		const extensionsScannerService = accessor.get(IExtensionsScannerService);
-		const remoteExtensionEnvironmentChannel = new RemoteAgentEnvironmentChannel(connectionToken, environmentService, userDataProfilesService, instantiationService.createInstance(ExtensionManagementCLI), logService, extensionHostStatusService, extensionsScannerService, extensionManagementService);
+		const remoteExtensionEnvironmentChannel = new RemoteAgentEnvironmentChannel(connectionToken, environmentService, userDataProfilesService, instantiationService.createInstance(ExtensionManagementCLI), logService, extensionHostStatusService, extensionsScannerService);
 		socketServer.registerChannel('remoteextensionsenvironment', remoteExtensionEnvironmentChannel);
 		socketServer.registerChannel(REMOTE_TERMINAL_CHANNEL_NAME, new RemoteTerminalChannel(environmentService, logService, ptyService, productService, extensionManagementService));
 
@@ -215,7 +215,7 @@ class ServerLogService extends AbstractLogger implements ILogService {
 	}
 
 	trace(message: string, ...args: any[]): void {
-		if (this.getLevel() <= LogLevel.Trace) {
+		if (this.checkLogLevel(LogLevel.Trace)) {
 			if (this.useColors) {
 				console.log(`\x1b[90m[${now()}]\x1b[0m`, message, ...args);
 			} else {
@@ -225,7 +225,7 @@ class ServerLogService extends AbstractLogger implements ILogService {
 	}
 
 	debug(message: string, ...args: any[]): void {
-		if (this.getLevel() <= LogLevel.Debug) {
+		if (this.checkLogLevel(LogLevel.Debug)) {
 			if (this.useColors) {
 				console.log(`\x1b[90m[${now()}]\x1b[0m`, message, ...args);
 			} else {
@@ -235,7 +235,7 @@ class ServerLogService extends AbstractLogger implements ILogService {
 	}
 
 	info(message: string, ...args: any[]): void {
-		if (this.getLevel() <= LogLevel.Info) {
+		if (this.checkLogLevel(LogLevel.Info)) {
 			if (this.useColors) {
 				console.log(`\x1b[90m[${now()}]\x1b[0m`, message, ...args);
 			} else {
@@ -245,7 +245,7 @@ class ServerLogService extends AbstractLogger implements ILogService {
 	}
 
 	warn(message: string | Error, ...args: any[]): void {
-		if (this.getLevel() <= LogLevel.Warning) {
+		if (this.checkLogLevel(LogLevel.Warning)) {
 			if (this.useColors) {
 				console.warn(`\x1b[93m[${now()}]\x1b[0m`, message, ...args);
 			} else {
@@ -255,7 +255,7 @@ class ServerLogService extends AbstractLogger implements ILogService {
 	}
 
 	error(message: string, ...args: any[]): void {
-		if (this.getLevel() <= LogLevel.Error) {
+		if (this.checkLogLevel(LogLevel.Error)) {
 			if (this.useColors) {
 				console.error(`\x1b[91m[${now()}]\x1b[0m`, message, ...args);
 			} else {

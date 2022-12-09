@@ -45,8 +45,6 @@
 		"watch": "node ./esbuild --watch",
 		"build-notebook": "node ./esbuild"
 	},
-	"dependencies": {
-	},
 	"devDependencies": {
 		"@types/vscode-notebook-renderer": "^1.60.0"
 	},

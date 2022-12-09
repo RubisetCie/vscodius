@@ -3,7 +3,6 @@
   "displayName": "%displayName%",
   "description": "%description%",
   "enabledApiProposals": [
-    "telemetryLogger",
     "externalUriOpener"
   ],
   "version": "1.0.0",
@@ -66,9 +65,6 @@
     "build-preview": "node ./esbuild-preview",
     "compile-web": "npx webpack-cli --config extension-browser.webpack.config --mode none",
     "watch-web": "npx webpack-cli --config extension-browser.webpack.config --mode none --watch --info-verbosity verbose"
-  },
-  "dependencies": {
-    "vscode-nls": "^5.2.0"
   },
   "devDependencies": {
     "@types/vscode-webview": "^1.57.0",

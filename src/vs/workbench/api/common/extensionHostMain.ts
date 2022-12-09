@@ -11,7 +11,7 @@ import { IMessagePassingProtocol } from 'vs/base/parts/ipc/common/ipc';
 import { MainContext, MainThreadConsoleShape } from 'vs/workbench/api/common/extHost.protocol';
 import { IExtensionHostInitData } from 'vs/workbench/services/extensions/common/extensionHostProtocol';
 import { RPCProtocol } from 'vs/workbench/services/extensions/common/rpcProtocol';
-import { ExtensionIdentifier, IExtensionDescription } from 'vs/platform/extensions/common/extensions';
+import { ExtensionIdentifier, IExtensionDescription, IRelaxedExtensionDescription } from 'vs/platform/extensions/common/extensions';
 import { ILogService } from 'vs/platform/log/common/log';
 import { getSingletonServiceDescriptors } from 'vs/platform/instantiation/common/extensions';
 import { ServiceCollection } from 'vs/platform/instantiation/common/serviceCollection';
@@ -21,6 +21,7 @@ import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiati
 import { IExtHostRpcService, ExtHostRpcService } from 'vs/workbench/api/common/extHostRpcService';
 import { IURITransformerService, URITransformerService } from 'vs/workbench/api/common/extHostUriTransformerService';
 import { IExtHostExtensionService, IHostUtils } from 'vs/workbench/api/common/extHostExtensionService';
+import { Mutable } from 'vs/base/common/types';
 
 export interface IExitFn {
 	(code?: number): any;
@@ -160,11 +161,11 @@ export class ExtensionHostMain {
 
 	private static _transform(initData: IExtensionHostInitData, rpcProtocol: RPCProtocol): IExtensionHostInitData {
 		initData.allExtensions.forEach((ext) => {
-			(<any>ext).extensionLocation = URI.revive(rpcProtocol.transformIncomingURIs(ext.extensionLocation));
+			(<Mutable<IRelaxedExtensionDescription>>ext).extensionLocation = URI.revive(rpcProtocol.transformIncomingURIs(ext.extensionLocation));
 			const browserNlsBundleUris: { [language: string]: URI } = {};
 			if (ext.browserNlsBundleUris) {
 				Object.keys(ext.browserNlsBundleUris).forEach(lang => browserNlsBundleUris[lang] = URI.revive(rpcProtocol.transformIncomingURIs(ext.browserNlsBundleUris![lang])));
-				(<any>ext).browserNlsBundleUris = browserNlsBundleUris;
+				(<Mutable<IRelaxedExtensionDescription>>ext).browserNlsBundleUris = browserNlsBundleUris;
 			}
 		});
 		initData.environment.appRoot = URI.revive(rpcProtocol.transformIncomingURIs(initData.environment.appRoot));

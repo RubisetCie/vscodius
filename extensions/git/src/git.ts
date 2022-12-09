@@ -198,7 +198,7 @@ async function exec(child: cp.ChildProcess, cancellationToken?: CancellationToke
 	}
 
 	if (cancellationToken && cancellationToken.isCancellationRequested) {
-		throw new GitError({ message: 'Cancelled' });
+		throw new CancellationError();
 	}
 
 	const disposables: IDisposable[] = [];
@@ -239,7 +239,7 @@ async function exec(child: cp.ChildProcess, cancellationToken?: CancellationToke
 					// noop
 				}
 
-				e(new GitError({ message: 'Cancelled' }));
+				e(new CancellationError());
 			});
 		});
 
@@ -568,12 +568,21 @@ export class Git {
 		}
 
 		const startExec = Date.now();
-		const bufferResult = await exec(child, options.cancellationToken);
-		const durExec = Date.now() - startExec;
+		let bufferResult: IExecutionResult<Buffer>;
+
+		try {
+			bufferResult = await exec(child, options.cancellationToken);
+		} catch (ex) {
+			if (ex instanceof CancellationError) {
+				this.log(`> git ${args.join(' ')} [${Date.now() - startExec}ms] (cancelled)\n`);
+			}
+
+			throw ex;
+		}
 
 		if (options.log !== false) {
 			// command
-			this.log(`> git ${args.join(' ')} [${durExec}ms]\n`);
+			this.log(`> git ${args.join(' ')} [${Date.now() - startExec}ms]\n`);
 
 			// stdout
 			if (bufferResult.stdout.length > 0 && args.find(a => this.commandsToLog.includes(a))) {
@@ -675,6 +684,14 @@ export class Git {
 			}
 		}
 	}
+
+	async addSafeDirectory(repositoryPath: string): Promise<void> {
+		// safe.directory only supports paths with `/` as separator
+		repositoryPath = repositoryPath.replaceAll('\\', '/');
+
+		await this.exec(repositoryPath, ['config', '--global', '--add', 'safe.directory', repositoryPath]);
+		return;
+	}
 }
 
 export interface Commit {
@@ -695,7 +712,7 @@ interface GitConfigSection {
 }
 
 class GitConfigParser {
-	private static readonly _lineSeparator = /\r?\n/g;
+	private static readonly _lineSeparator = /\r?\n/;
 
 	private static readonly _propertyRegex = /^\s*(\w+)\s*=\s*(.*)$/;
 	private static readonly _sectionRegex = /^\s*\[\s*([^\]]+?)\s*(\"[^"]+\")*\]\s*$/;
@@ -709,13 +726,8 @@ class GitConfigParser {
 			config.sections.push(section);
 		};
 
-		let position = 0;
-		let match: RegExpExecArray | null = null;
-
-		while (match = GitConfigParser._lineSeparator.exec(raw)) {
-			const line = raw.substring(position, match.index);
-			position = match.index + match[0].length;
-
+		for (const line of raw.split(GitConfigParser._lineSeparator)) {
+			// Section
 			const sectionMatch = line.match(GitConfigParser._sectionRegex);
 			if (sectionMatch?.length === 3) {
 				addSection(section);
@@ -724,7 +736,7 @@ class GitConfigParser {
 				continue;
 			}
 
-			// Properties
+			// Property
 			const propertyMatch = line.match(GitConfigParser._propertyRegex);
 			if (propertyMatch?.length === 3 && !Object.keys(section.properties).includes(propertyMatch[1])) {
 				section.properties[propertyMatch[1]] = propertyMatch[2];
@@ -1750,6 +1762,25 @@ export class Repository {
 		}
 	}
 
+	async fetchTags(options: { remote: string; tags: string[]; force?: boolean }): Promise<void> {
+		const args = ['fetch'];
+		const spawnOptions: SpawnOptions = {
+			env: { 'GIT_HTTP_USER_AGENT': this.git.userAgent }
+		};
+
+		args.push(options.remote);
+
+		for (const tag of options.tags) {
+			args.push(`refs/tags/${tag}:refs/tags/${tag}`);
+		}
+
+		if (options.force) {
+			args.push('--force');
+		}
+
+		await this.exec(args, spawnOptions);
+	}
+
 	async pull(rebase?: boolean, remote?: string, branch?: string, options: PullOptions = {}): Promise<void> {
 		const args = ['pull'];
 
@@ -1789,6 +1820,8 @@ export class Repository {
 				err.gitErrorCode = GitErrorCodes.CantLockRef;
 			} else if (/cannot rebase onto multiple branches/i.test(err.stderr || '')) {
 				err.gitErrorCode = GitErrorCodes.CantRebaseMultipleBranches;
+			} else if (/! \[rejected\].*\(would clobber existing tag\)/m.test(err.stderr || '')) {
+				err.gitErrorCode = GitErrorCodes.TagConflict;
 			}
 
 			throw err;
@@ -2119,7 +2152,11 @@ export class Repository {
 			.map(([ref]) => ({ name: ref, type: RefType.Head } as Branch));
 	}
 
-	async getRefs(opts?: { sort?: 'alphabetically' | 'committerdate'; contains?: string; pattern?: string; count?: number }): Promise<Ref[]> {
+	async getRefs(opts?: { sort?: 'alphabetically' | 'committerdate'; contains?: string; pattern?: string; count?: number; cancellationToken?: CancellationToken }): Promise<Ref[]> {
+		if (opts?.cancellationToken && opts?.cancellationToken.isCancellationRequested) {
+			throw new CancellationError();
+		}
+
 		const args = ['for-each-ref'];
 
 		if (opts?.count) {
@@ -2140,7 +2177,7 @@ export class Repository {
 			args.push('--contains', opts.contains);
 		}
 
-		const result = await this.exec(args);
+		const result = await this.exec(args, { cancellationToken: opts?.cancellationToken });
 
 		const fn = (line: string): Ref | null => {
 			let match: RegExpExecArray | null;

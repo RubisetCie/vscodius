@@ -181,7 +181,7 @@ export class MarkersView extends FilterViewPane implements IMarkersView {
 		}));
 	}
 
-	public override renderBody(parent: HTMLElement): void {
+	protected override renderBody(parent: HTMLElement): void {
 		super.renderBody(parent);
 
 		parent.classList.add('markers-panel');
@@ -208,7 +208,7 @@ export class MarkersView extends FilterViewPane implements IMarkersView {
 		return Messages.MARKERS_PANEL_TITLE_PROBLEMS;
 	}
 
-	public override layoutBodyContent(height: number = this.currentHeight, width: number = this.currentWidth): void {
+	protected layoutBodyContent(height: number = this.currentHeight, width: number = this.currentWidth): void {
 		if (this.messageBoxContainer) {
 			this.messageBoxContainer.style.height = `${height}px`;
 		}
@@ -788,6 +788,7 @@ export class MarkersView extends FilterViewPane implements IMarkersView {
 		this.contextMenuService.showContextMenu({
 			getAnchor: () => e.anchor!,
 			menuId: MenuId.ProblemsPanelContext,
+			contextKeyService: this.widget.contextKeyService,
 			getActions: () => this.getMenuActions(element),
 			getActionViewItem: (action) => {
 				const keybinding = this.keybindingService.lookupKeybinding(action.id);

@@ -11,6 +11,7 @@ import { IExtensionDescription, ExtensionIdentifier } from 'vs/platform/extensio
 import { IRemoteAgentEnvironment } from 'vs/platform/remote/common/remoteAgentEnvironment';
 import { IDiagnosticInfoOptions, IDiagnosticInfo } from 'vs/platform/diagnostics/common/diagnostics';
 import { IExtensionHostExitInfo } from 'vs/workbench/services/remote/common/remoteAgentService';
+import { Mutable } from 'vs/base/common/types';
 
 export interface IGetEnvironmentDataArguments {
 	remoteAuthority: string;
@@ -117,7 +118,7 @@ export class RemoteExtensionEnvironmentChannelClient {
 
 		const extension = await channel.call<IExtensionDescription | null>('scanSingleExtension', args);
 		if (extension) {
-			(<any>extension).extensionLocation = URI.revive(extension.extensionLocation);
+			(<Mutable<IExtensionDescription>>extension).extensionLocation = URI.revive(extension.extensionLocation);
 		}
 		return extension;
 	}

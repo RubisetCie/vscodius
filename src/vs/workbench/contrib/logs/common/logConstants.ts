@@ -8,7 +8,6 @@ export const sharedLogChannelId = 'sharedLog';
 export const rendererLogChannelId = 'rendererLog';
 export const userDataSyncLogChannelId = 'userDataSyncLog';
 export const editSessionsLogChannelId = 'editSessionsSyncLog';
-export const remoteTunnelLogChannelId = 'remoteTunnelLog';
 export const remoteServerLog = 'remoteServerLog';
 export const remotePtyHostLog = 'remotePtyHostLog';
 export const showWindowLogActionId = 'workbench.action.showWindowLog';

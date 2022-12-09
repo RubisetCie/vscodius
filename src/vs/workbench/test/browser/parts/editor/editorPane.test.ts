@@ -41,7 +41,7 @@ class TestEditor extends EditorPane {
 
 	override getId(): string { return 'testEditor'; }
 	layout(): void { }
-	createEditor(): any { }
+	protected createEditor(): any { }
 }
 
 export class OtherTestEditor extends EditorPane {
@@ -53,7 +53,7 @@ export class OtherTestEditor extends EditorPane {
 	override getId(): string { return 'testOtherEditor'; }
 
 	layout(): void { }
-	createEditor(): any { }
+	protected createEditor(): any { }
 }
 
 class TestInputSerializer implements IEditorSerializer {
@@ -462,7 +462,7 @@ suite('EditorPane', () => {
 
 			override getId(): string { return 'trustRequiredTestEditor'; }
 			layout(): void { }
-			createEditor(): any { }
+			protected createEditor(): any { }
 		}
 
 		class TrustRequiredTestInput extends EditorInput {

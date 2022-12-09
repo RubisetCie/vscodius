@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { ChildProcess, spawn, SpawnOptions } from 'child_process';
+import { ChildProcess, ChildProcessWithoutNullStreams, spawn, SpawnOptions } from 'child_process';
 import { chmodSync, existsSync, readFileSync, statSync, truncateSync, unlinkSync } from 'fs';
 import { homedir, release, tmpdir } from 'os';
 import type { ProfilingSession, Target } from 'v8-inspect-profiler';
@@ -54,7 +54,7 @@ export async function main(argv: string[]): Promise<any> {
 			return;
 		}
 		return new Promise((resolve, reject) => {
-			let tunnelProcess;
+			let tunnelProcess: ChildProcessWithoutNullStreams;
 			if (process.env['VSCODE_DEV']) {
 				tunnelProcess = spawn('cargo', ['run', '--', 'tunnel', ...argv.slice(5)], { cwd: join(getAppRoot(), 'cli') });
 			} else {
@@ -66,12 +66,9 @@ export async function main(argv: string[]): Promise<any> {
 				const tunnelArgs = argv.slice(3);
 				tunnelProcess = spawn(tunnelCommand, ['tunnel', ...tunnelArgs]);
 			}
-			tunnelProcess.stdout.on('data', data => {
-				console.log(data.toString());
-			});
-			tunnelProcess.stderr.on('data', data => {
-				console.error(data.toString());
-			});
+
+			tunnelProcess.stdout.pipe(process.stdout);
+			tunnelProcess.stderr.pipe(process.stderr);
 			tunnelProcess.on('exit', resolve);
 			tunnelProcess.on('error', reject);
 		});
@@ -495,7 +492,7 @@ export async function main(argv: string[]): Promise<any> {
 }
 
 function getAppRoot() {
-	return dirname(FileAccess.asFileUri('', require).fsPath);
+	return dirname(FileAccess.asFileUri('').fsPath);
 }
 
 function eventuallyExit(code: number): void {

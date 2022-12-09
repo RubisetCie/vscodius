@@ -53,6 +53,7 @@ suite('StorageMainService', function () {
 	}
 
 	async function testStorage(storage: IStorageMain, scope: StorageScope): Promise<void> {
+		strictEqual(storage.isInMemory(), true);
 
 		if (scope === StorageScope.APPLICATION) {
 			strictEqual(storage.items.size, 0);

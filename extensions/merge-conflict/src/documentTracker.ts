@@ -109,6 +109,8 @@ export default class DocumentMergeConflictTracker implements vscode.Disposable, 
 		this.cache.clear();
 	}
 
+	private readonly seenDocumentsWithConflicts = new Set<string>();
+
 	private getConflictsOrEmpty(document: vscode.TextDocument, _origins: string[]): interfaces.IDocumentMergeConflict[] {
 		const containsConflict = MergeConflictParser.containsConflict(document);
 
@@ -117,6 +119,12 @@ export default class DocumentMergeConflictTracker implements vscode.Disposable, 
 		}
 
 		const conflicts = MergeConflictParser.scanDocument(document);
+		const key = document.uri.toString();
+
+		if (!this.seenDocumentsWithConflicts.has(key)) {
+			this.seenDocumentsWithConflicts.add(key);
+		}
+
 		return conflicts;
 	}
 
