@@ -19,6 +19,7 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { ExtensionIdentifier, IExtensionDescription } from 'vs/platform/extensions/common/extensions';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { URI } from 'vs/base/common/uri';
+import { ImplicitActivationEvents } from 'vs/platform/extensionManagement/common/implicitActivationEvents';
 
 export abstract class AbstractRemoteAgentService extends Disposable implements IRemoteAgentService {
 
@@ -84,14 +85,24 @@ export abstract class AbstractRemoteAgentService extends Disposable implements I
 
 	scanExtensions(skipExtensions: ExtensionIdentifier[] = []): Promise<IExtensionDescription[]> {
 		return this._withChannel(
-			(channel, connection) => RemoteExtensionEnvironmentChannelClient.scanExtensions(channel, connection.remoteAuthority, this._environmentService.extensionDevelopmentLocationURI, skipExtensions),
+			async (channel, connection) => {
+				const scannedExtensions = await RemoteExtensionEnvironmentChannelClient.scanExtensions(channel, connection.remoteAuthority, this._environmentService.extensionDevelopmentLocationURI, skipExtensions);
+				scannedExtensions.forEach((extension) => ImplicitActivationEvents.updateManifest(extension));
+				return scannedExtensions;
+			},
 			[]
 		).then(undefined, () => []);
 	}
 
 	scanSingleExtension(extensionLocation: URI, isBuiltin: boolean): Promise<IExtensionDescription | null> {
 		return this._withChannel(
-			(channel, connection) => RemoteExtensionEnvironmentChannelClient.scanSingleExtension(channel, connection.remoteAuthority, isBuiltin, extensionLocation),
+			async (channel, connection) => {
+				const scannedExtension = await RemoteExtensionEnvironmentChannelClient.scanSingleExtension(channel, connection.remoteAuthority, isBuiltin, extensionLocation);
+				if (scannedExtension !== null) {
+					ImplicitActivationEvents.updateManifest(scannedExtension);
+				}
+				return scannedExtension;
+			},
 			null
 		).then(undefined, () => null);
 	}

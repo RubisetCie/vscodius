@@ -165,7 +165,6 @@
       }
     }
   },
-  "dependencies": {},
   "devDependencies": {
     "@types/node": "16.x"
   },

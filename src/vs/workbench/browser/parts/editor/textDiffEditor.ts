@@ -77,7 +77,7 @@ export class TextDiffEditor extends AbstractTextEditor<IDiffEditorViewState> imp
 		return localize('textDiffEditor', "Text Diff Editor");
 	}
 
-	override createEditorControl(parent: HTMLElement, configuration: ICodeEditorOptions): void {
+	protected override createEditorControl(parent: HTMLElement, configuration: ICodeEditorOptions): void {
 		this.diffEditorControl = this._register(this.instantiationService.createInstance(DiffEditorWidget, parent, configuration, {}));
 	}
 

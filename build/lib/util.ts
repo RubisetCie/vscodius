@@ -408,8 +408,8 @@ export function acquireWebNodePaths() {
 	// Not sure why given the 1DS entrypoint then requires these modules
 	// they are not fetched from the right location and instead are fetched from out/
 	nodePaths['@microsoft/dynamicproto-js'] = 'lib/dist/umd/dynamicproto-js.min.js';
-	nodePaths['@microsoft/applicationinsights-shims'] = 'dist/umd/applicationinsights-shims.min.js';
-	nodePaths['@microsoft/applicationinsights-core-js'] = 'browser/applicationinsights-core-js.min.js';
+	//nodePaths['@microsoft/applicationinsights-shims'] = 'dist/umd/applicationinsights-shims.min.js';
+	//nodePaths['@microsoft/applicationinsights-core-js'] = 'browser/applicationinsights-core-js.min.js';
 	return nodePaths;
 }
 

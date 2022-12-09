@@ -8,7 +8,7 @@ const getVersion_1 = require("../../lib/getVersion");
 const fs = require("fs");
 const path = require("path");
 const packageJson = require("../../../package.json");
-const root = path.dirname(path.dirname(path.dirname(__dirname)));
+const root = process.env.VSCODE_CLI_PREPARE_ROOT || path.dirname(path.dirname(path.dirname(__dirname)));
 const readJSON = (path) => JSON.parse(fs.readFileSync(path, 'utf8'));
 let productJsonPath;
 const isOSS = process.env.VSCODE_QUALITY === 'oss' || !process.env.VSCODE_QUALITY;
@@ -18,7 +18,7 @@ if (isOSS) {
 else {
     productJsonPath = path.join(root, 'quality', process.env.VSCODE_QUALITY, 'product.json');
 }
-console.log('Loading product.json from', productJsonPath);
+console.error('Loading product.json from', productJsonPath);
 const product = readJSON(productJsonPath);
 const allProductsAndQualities = isOSS ? [product] : fs.readdirSync(path.join(root, 'quality'))
     .map(quality => ({ quality, json: readJSON(path.join(root, 'quality', quality, 'product.json')) }));
@@ -42,6 +42,12 @@ const setLauncherEnvironmentVars = () => {
         ['VSCODE_CLI_VERSION', packageJson.version],
         ['VSCODE_CLI_UPDATE_ENDPOINT', product.updateUrl],
         ['VSCODE_CLI_QUALITY', product.quality],
+        ['VSCODE_CLI_NAME_SHORT', product.nameShort],
+        ['VSCODE_CLI_NAME_LONG', product.nameLong],
+        ['VSCODE_CLI_QUALITYLESS_PRODUCT_NAME', product.nameLong.replace(/ - [a-z]+$/i, '')],
+        ['VSCODE_CLI_DOCUMENTATION_URL', product.documentationUrl],
+        ['VSCODE_CLI_APPLICATION_NAME', product.applicationName],
+        ['VSCODE_CLI_EDITOR_WEB_URL', product.tunnelApplicationConfig?.editorWebUrl],
         ['VSCODE_CLI_COMMIT', commit],
         [
             'VSCODE_CLI_WIN32_APP_IDS',
@@ -50,14 +56,30 @@ const setLauncherEnvironmentVars = () => {
                 .map(([, value]) => String(value).replace(/[{}]/g, '')))),
         ],
         [
+            'VSCODE_CLI_NAME_LONG_MAP',
+            !isOSS && JSON.stringify(makeQualityMap(json => json.nameLong)),
+        ],
+        [
+            'VSCODE_CLI_APPLICATION_NAME_MAP',
+            !isOSS && JSON.stringify(makeQualityMap(json => json.applicationName)),
+        ],
+        [
+            'VSCODE_CLI_SERVER_NAME_MAP',
+            !isOSS && JSON.stringify(makeQualityMap(json => json.serverApplicationName)),
+        ],
+        [
             'VSCODE_CLI_QUALITY_DOWNLOAD_URIS',
             !isOSS && JSON.stringify(makeQualityMap(json => json.downloadUrl)),
         ],
     ]);
-    console.log(JSON.stringify([...vars].reduce((obj, kv) => ({ ...obj, [kv[0]]: kv[1] }), {})));
-    for (const [key, value] of vars) {
-        if (value) {
-            console.log(`##vso[task.setvariable variable=${key}]${value}`);
+    if (process.env.VSCODE_CLI_PREPARE_OUTPUT === 'json') {
+        console.log(JSON.stringify([...vars].filter(([, v]) => !!v)));
+    }
+    else {
+        for (const [key, value] of vars) {
+            if (value) {
+                console.log(`##vso[task.setvariable variable=${key}]${value}`);
+            }
         }
     }
 };

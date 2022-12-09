@@ -14,10 +14,8 @@ import { isBoolean, isUndefined } from 'vs/base/common/types';
 import { URI } from 'vs/base/common/uri';
 import { generateUuid } from 'vs/base/common/uuid';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { IExtensionGalleryService } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { IProductService } from 'vs/platform/product/common/productService';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
 import { IUserDataProfile, IUserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
 import { ExtensionsSynchroniser } from 'vs/platform/userDataSync/common/extensionsSync';
@@ -78,8 +76,6 @@ export class UserDataSyncService extends Disposable implements IUserDataSyncServ
 		@IStorageService private readonly storageService: IStorageService,
 		@IUserDataSyncEnablementService private readonly userDataSyncEnablementService: IUserDataSyncEnablementService,
 		@IUserDataProfilesService private readonly userDataProfilesService: IUserDataProfilesService,
-		@IProductService private readonly productService: IProductService,
-		@IEnvironmentService private readonly environmentService: IEnvironmentService,
 		@IUserDataSyncResourceProviderService private readonly userDataSyncResourceProviderService: IUserDataSyncResourceProviderService,
 	) {
 		super();
@@ -158,13 +154,10 @@ export class UserDataSyncService extends Disposable implements IUserDataSyncServ
 				that.logService.info(`Sync done. Took ${new Date().getTime() - startTime}ms`);
 				that.updateLastSyncTime();
 			},
-			stop(): Promise<void> {
+			async stop(): Promise<void> {
 				cancellableToken.cancel();
-				return that.stop();
-			},
-			dispose(): void {
-				cancellableToken.cancel();
-				that.stop();
+				await that.stop();
+				await that.resetLocal();
 			}
 		};
 	}
@@ -201,7 +194,7 @@ export class UserDataSyncService extends Disposable implements IUserDataSyncServ
 			}
 			const profile = this.userDataProfilesService.profiles.find(p => p.id === syncProfile.id);
 			if (!profile) {
-				this.logService.error(`Settings Profile with id:${syncProfile.id} and name: ${syncProfile.name} does not exist locally to sync.`);
+				this.logService.error(`Profile with id:${syncProfile.id} and name: ${syncProfile.name} does not exist locally to sync.`);
 				continue;
 			}
 			this.logService.info('Syncing profile.', syncProfile.name);
@@ -371,6 +364,7 @@ export class UserDataSyncService extends Disposable implements IUserDataSyncServ
 
 	async resetLocal(): Promise<void> {
 		this.checkEnablement();
+		this._lastSyncTime = undefined;
 		this.storageService.remove(LAST_SYNC_TIME_KEY, StorageScope.APPLICATION);
 		for (const [synchronizer] of this.activeProfileSynchronizers.values()) {
 			try {
@@ -400,10 +394,6 @@ export class UserDataSyncService extends Disposable implements IUserDataSyncServ
 			}
 
 			if (this.userDataProfilesService.isEnabled()) {
-				return null;
-			}
-
-			if (this.environmentService.isBuilt && (!this.productService.enableSyncingProfiles || isEqual(this.userDataSyncStoreManagementService.userDataSyncStore?.url, this.userDataSyncStoreManagementService.userDataSyncStore?.stableUrl))) {
 				return null;
 			}
 
@@ -528,12 +518,9 @@ class ProfileSynchronizer extends Disposable {
 		@IUserDataSyncEnablementService private readonly userDataSyncEnablementService: IUserDataSyncEnablementService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IExtensionGalleryService private readonly extensionGalleryService: IExtensionGalleryService,
-		@IUserDataSyncStoreManagementService private readonly userDataSyncStoreManagementService: IUserDataSyncStoreManagementService,
 		@IUserDataSyncLogService private readonly logService: IUserDataSyncLogService,
-		@IProductService private readonly productService: IProductService,
 		@IUserDataProfilesService private readonly userDataProfilesService: IUserDataProfilesService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
-		@IEnvironmentService private readonly environmentService: IEnvironmentService,
 	) {
 		super();
 		this._register(userDataSyncEnablementService.onDidChangeResourceEnablement(([syncResource, enablement]) => this.onDidChangeResourceEnablement(syncResource, enablement)));
@@ -568,10 +555,6 @@ class ProfileSynchronizer extends Disposable {
 			if (!this.userDataProfilesService.isEnabled()) {
 				return;
 			}
-			if (this.environmentService.isBuilt && (!this.productService.enableSyncingProfiles || isEqual(this.userDataSyncStoreManagementService.userDataSyncStore?.url, this.userDataSyncStoreManagementService.userDataSyncStore?.stableUrl))) {
-				this.logService.debug('Skipping profiles sync');
-				return;
-			}
 		}
 		const disposables = new DisposableStore();
 		const synchronizer = disposables.add(this.createSynchronizer(syncResource));
@@ -582,21 +565,14 @@ class ProfileSynchronizer extends Disposable {
 		this._enabled.push([synchronizer, order, disposables]);
 	}
 
-	protected deRegisterSynchronizer(syncResource: SyncResource): void {
+	private deRegisterSynchronizer(syncResource: SyncResource): void {
 		const index = this._enabled.findIndex(([synchronizer]) => synchronizer.resource === syncResource);
 		if (index !== -1) {
-			const removed = this._enabled.splice(index, 1);
-			for (const [synchronizer, , disposable] of removed) {
-				if (synchronizer.status !== SyncStatus.Idle) {
-					const hasConflicts = synchronizer.conflicts.conflicts.length > 0;
-					synchronizer.stop();
-					if (hasConflicts) {
-						this.updateConflicts();
-					}
-					this.updateStatus();
-				}
-				disposable.dispose();
-			}
+			const [[synchronizer, , disposable]] = this._enabled.splice(index, 1);
+			disposable.dispose();
+			this.updateStatus();
+			Promise.allSettled([synchronizer.stop(), synchronizer.resetLocal()])
+				.then(null, error => this.logService.error(error));
 		}
 	}
 

@@ -9,9 +9,6 @@
   "engines": {
     "vscode": "0.10.x"
   },
-  "enabledApiProposals": [
-    "telemetryLogger"
-  ],
   "icon": "icons/json.png",
   "activationEvents": [
     "onLanguage:json",
@@ -156,8 +153,8 @@
     ]
   },
   "dependencies": {
-    "request-light": "^0.5.8",
-    "vscode-languageclient": "^8.1.0-next.1"
+    "request-light": "^0.6.0",
+    "vscode-languageclient": "^8.1.0-next.2"
   },
   "devDependencies": {
     "@types/node": "16.x"

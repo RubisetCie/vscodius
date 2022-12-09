@@ -70,7 +70,7 @@ function fromLocal(extensionPath, forWeb) {
             delete data.dependencies;
             delete data.devDependencies;
             if (data.main) {
-                data.main = data.main.replace('/out/', /dist/);
+                data.main = data.main.replace('/out/', '/dist/');
             }
             return data;
         });
@@ -104,7 +104,7 @@ function fromLocalWebpack(extensionPath, webpackConfigFileName) {
         // check for a webpack configuration files, then invoke webpack
         // and merge its output with the files stream.
         const webpackConfigLocations = glob.sync(path.join(extensionPath, '**', webpackConfigFileName), { ignore: ['**/node_modules'] });
-        const webpackStreams = webpackConfigLocations.map(webpackConfigPath => {
+        const webpackStreams = webpackConfigLocations.flatMap(webpackConfigPath => {
             const webpackDone = (err, stats) => {
                 fancyLog(`Bundled extension: ${ansiColors.yellow(path.join(path.basename(extensionPath), path.relative(extensionPath, webpackConfigPath)))}...`);
                 if (err) {
@@ -118,27 +118,30 @@ function fromLocalWebpack(extensionPath, webpackConfigFileName) {
                     result.emit('error', compilation.warnings.join('\n'));
                 }
             };
-            const webpackConfig = {
-                ...require(webpackConfigPath),
-                ...{ mode: 'production' }
-            };
-            const relativeOutputPath = path.relative(extensionPath, webpackConfig.output.path);
-            return webpackGulp(webpackConfig, webpack, webpackDone)
-                .pipe(es.through(function (data) {
-                data.stat = data.stat || {};
-                data.base = extensionPath;
-                this.emit('data', data);
-            }))
-                .pipe(es.through(function (data) {
-                // source map handling:
-                // * rewrite sourceMappingURL
-                // * save to disk so that upload-task picks this up
-                const contents = data.contents.toString('utf8');
-                data.contents = Buffer.from(contents.replace(/\n\/\/# sourceMappingURL=(.*)$/gm, function (_m, g1) {
-                    return `\n//# sourceMappingURL=${sourceMappingURLBase}/extensions/${path.basename(extensionPath)}/${relativeOutputPath}/${g1}`;
-                }), 'utf8');
-                this.emit('data', data);
-            }));
+            const exportedConfig = require(webpackConfigPath);
+            return (Array.isArray(exportedConfig) ? exportedConfig : [exportedConfig]).map(config => {
+                const webpackConfig = {
+                    ...config,
+                    ...{ mode: 'production' }
+                };
+                const relativeOutputPath = path.relative(extensionPath, webpackConfig.output.path);
+                return webpackGulp(webpackConfig, webpack, webpackDone)
+                    .pipe(es.through(function (data) {
+                    data.stat = data.stat || {};
+                    data.base = extensionPath;
+                    this.emit('data', data);
+                }))
+                    .pipe(es.through(function (data) {
+                    // source map handling:
+                    // * rewrite sourceMappingURL
+                    // * save to disk so that upload-task picks this up
+                    const contents = data.contents.toString('utf8');
+                    data.contents = Buffer.from(contents.replace(/\n\/\/# sourceMappingURL=(.*)$/gm, function (_m, g1) {
+                        return `\n//# sourceMappingURL=${sourceMappingURLBase}/extensions/${path.basename(extensionPath)}/${relativeOutputPath}/${g1}`;
+                    }), 'utf8');
+                    this.emit('data', data);
+                }));
+            });
         });
         es.merge(...webpackStreams, es.readArray(files))
             // .pipe(es.through(function (data) {
@@ -306,7 +309,8 @@ function packageLocalExtensionsStream(forWeb) {
         // also include shared production node modules
         const productionDependencies = (0, dependencies_1.getProductionDependencies)('extensions/');
         const dependenciesSrc = _.flatten(productionDependencies.map(d => path.relative(root, d.path)).map(d => [`${d}/**`, `!${d}/**/{test,tests}/**`]));
-        result = es.merge(localExtensionsStream, gulp.src(dependenciesSrc, { base: '.' }));
+        result = es.merge(localExtensionsStream, gulp.src(dependenciesSrc, { base: '.' })
+            .pipe(util2.cleanNodeModules(path.join(root, 'build', '.moduleignore'))));
     }
     return (result
         .pipe(util2.setExecutableBit(['**/*.sh'])));
@@ -414,19 +418,14 @@ async function webpackExtensions(taskName, isWatch, webpackConfigLocations) {
     const webpackConfigs = [];
     for (const { configPath, outputRoot } of webpackConfigLocations) {
         const configOrFnOrArray = require(configPath);
-        function addConfig(configOrFn) {
-            let config;
-            if (typeof configOrFn === 'function') {
-                config = configOrFn({}, {});
+        function addConfig(configOrFnOrArray) {
+            for (const configOrFn of Array.isArray(configOrFnOrArray) ? configOrFnOrArray : [configOrFnOrArray]) {
+                const config = typeof configOrFn === 'function' ? configOrFn({}, {}) : configOrFn;
+                if (outputRoot) {
+                    config.output.path = path.join(outputRoot, path.relative(path.dirname(configPath), config.output.path));
+                }
                 webpackConfigs.push(config);
             }
-            else {
-                config = configOrFn;
-            }
-            if (outputRoot) {
-                config.output.path = path.join(outputRoot, path.relative(path.dirname(configPath), config.output.path));
-            }
-            webpackConfigs.push(configOrFn);
         }
         addConfig(configOrFnOrArray);
     }

@@ -206,7 +206,7 @@ import product from 'vs/platform/product/common/product';
 			},
 			'window.experimental.windowControlsOverlay.enabled': {
 				'type': 'boolean',
-				'default': false,
+				'default': true,
 				'scope': ConfigurationScope.APPLICATION,
 				'description': localize('windowControlsOverlay', "Use window controls provided by the platform instead of our HTML-based window controls. Changes require a full restart to apply."),
 				'included': isWindows
@@ -243,6 +243,7 @@ import product from 'vs/platform/product/common/product';
 				type: 'boolean',
 				description: localize('experimentalUseSandbox', "Experimental: When enabled, the window will have sandbox mode enabled via Electron API."),
 				default: typeof product.quality === 'string' && product.quality !== 'stable', // disabled by default in stable for now
+				tags: product.quality === 'stable' ? ['experimental'] : undefined,
 				'scope': ConfigurationScope.APPLICATION,
 				ignoreSync: true
 			},
@@ -316,7 +317,7 @@ import product from 'vs/platform/product/common/product';
 			},
 			'log-level': {
 				type: 'string',
-				description: localize('argv.logLevel', "Log level to use. Default is 'info'. Allowed values are 'critical', 'error', 'warn', 'info', 'debug', 'trace', 'off'.")
+				description: localize('argv.logLevel', "Log level to use. Default is 'info'. Allowed values are 'error', 'warn', 'info', 'debug', 'trace', 'off'.")
 			}
 		}
 	};

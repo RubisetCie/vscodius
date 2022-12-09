@@ -149,8 +149,12 @@ export class DebugService implements IDebugService {
 		this.disposables.add(this.viewModel.onDidFocusStackFrame(() => {
 			this.onStateChange();
 		}));
-		this.disposables.add(this.viewModel.onDidFocusSession(() => {
+		this.disposables.add(this.viewModel.onDidFocusSession((session: IDebugSession | undefined) => {
 			this.onStateChange();
+
+			if (session) {
+				this.setExceptionBreakpointFallbackSession(session.getId());
+			}
 		}));
 		this.disposables.add(Event.any(this.adapterManager.onDidRegisterDebugger, this.configurationManager.onDidSelectConfiguration)(() => {
 			const debugUxValue = (this.state !== State.Inactive || (this.configurationManager.getAllConfigurations().length > 0 && this.adapterManager.hasEnabledDebuggers())) ? 'default' : 'simple';
@@ -709,6 +713,8 @@ export class DebugService implements IDebugService {
 					}
 				}
 			}
+
+			this.model.removeExceptionBreakpointsForSession(session.getId());
 		}));
 	}
 
@@ -1040,8 +1046,13 @@ export class DebugService implements IDebugService {
 		await this.sendInstructionBreakpoints();
 	}
 
-	setExceptionBreakpoints(data: DebugProtocol.ExceptionBreakpointsFilter[]): void {
-		this.model.setExceptionBreakpoints(data);
+	setExceptionBreakpointFallbackSession(sessionId: string) {
+		this.model.setExceptionBreakpointFallbackSession(sessionId);
+		this.debugStorage.storeBreakpoints(this.model);
+	}
+
+	setExceptionBreakpointsForSession(session: IDebugSession, data: DebugProtocol.ExceptionBreakpointsFilter[]): void {
+		this.model.setExceptionBreakpointsForSession(session.getId(), data);
 		this.debugStorage.storeBreakpoints(this.model);
 	}
 
@@ -1115,9 +1126,8 @@ export class DebugService implements IDebugService {
 	}
 
 	private sendExceptionBreakpoints(session?: IDebugSession): Promise<void> {
-		const enabledExceptionBps = this.model.getExceptionBreakpoints().filter(exb => exb.enabled);
-
 		return sendToOneOrAllSessions(this.model, session, async s => {
+			const enabledExceptionBps = this.model.getExceptionBreakpointsForSession(s.getId()).filter(exb => exb.enabled);
 			if (s.capabilities.supportsConfigurationDoneRequest && (!s.capabilities.exceptionBreakpointFilters || s.capabilities.exceptionBreakpointFilters.length === 0)) {
 				// Only call `setExceptionBreakpoints` as specified in dap protocol #90001
 				return;

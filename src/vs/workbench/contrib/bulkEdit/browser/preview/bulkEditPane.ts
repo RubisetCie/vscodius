@@ -36,6 +36,8 @@ import { IViewDescriptorService } from 'vs/workbench/common/views';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { ResourceEdit } from 'vs/editor/browser/services/bulkEditService';
 import { ButtonBar } from 'vs/base/browser/ui/button/button';
+import { defaultButtonStyles } from 'vs/platform/theme/browser/defaultStyles';
+import { Mutable } from 'vs/base/common/types';
 
 const enum State {
 	Data = 'data',
@@ -148,11 +150,11 @@ export class BulkEditPane extends ViewPane {
 		const buttonBar = new ButtonBar(buttonsContainer);
 		this._disposables.add(buttonBar);
 
-		const btnConfirm = buttonBar.addButton({ supportIcons: true });
+		const btnConfirm = buttonBar.addButton({ supportIcons: true, ...defaultButtonStyles });
 		btnConfirm.label = localize('ok', 'Apply');
 		btnConfirm.onDidClick(() => this.accept(), this, this._disposables);
 
-		const btnCancel = buttonBar.addButton({ /* secondary: true */ });
+		const btnCancel = buttonBar.addButton(defaultButtonStyles /*{  secondary: true } */);
 		btnCancel.label = localize('cancel', 'Discard');
 		btnCancel.onDidClick(() => this.discard(), this, this._disposables);
 
@@ -311,9 +313,6 @@ export class BulkEditPane extends ViewPane {
 	}
 
 	private async _openElementAsEditor(e: IOpenEvent<BulkEditElement | undefined>): Promise<void> {
-		type Mutable<T> = {
-			-readonly [P in keyof T]: T[P]
-		};
 
 		const options: Mutable<ITextEditorOptions> = { ...e.editorOptions };
 		let fileElement: FileElement;

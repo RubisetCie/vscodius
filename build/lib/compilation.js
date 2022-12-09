@@ -18,6 +18,7 @@ const ansiColors = require("ansi-colors");
 const os = require("os");
 const File = require("vinyl");
 const task = require("./task");
+const mangleTypeScript_1 = require("./mangleTypeScript");
 const watch = require('./watch');
 // --- gulp-tsb: compile and transpile --------------------------------
 const reporter = (0, reporter_1.createReporter)();
@@ -76,6 +77,7 @@ function createCompile(src, build, emitError, transpileOnly) {
     pipeline.tsProjectSrc = () => {
         return compilation.src({ base: src });
     };
+    pipeline.projectPath = projectPath;
     return pipeline;
 }
 function transpileTask(src, out, swc) {
@@ -99,7 +101,26 @@ function compileTask(src, out, build) {
         if (src === 'src') {
             generator.execute();
         }
+        // mangle: TypeScript to TypeScript
+        let mangleStream = es.through();
+        if (build) {
+            let ts2tsMangler = new mangleTypeScript_1.Mangler(compile.projectPath);
+            const newContentsByFileName = ts2tsMangler.computeNewFileContents();
+            mangleStream = es.through(function write(data) {
+                const newContents = newContentsByFileName.get(data.path);
+                if (newContents !== undefined) {
+                    data.contents = Buffer.from(newContents);
+                }
+                this.push(data);
+            }, function end() {
+                this.push(null);
+                // free resources
+                newContentsByFileName.clear();
+                ts2tsMangler = undefined;
+            });
+        }
         return srcPipe
+            .pipe(mangleStream)
             .pipe(generator.stream)
             .pipe(compile())
             .pipe(gulp.dest(out));
