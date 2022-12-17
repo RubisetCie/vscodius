@@ -1203,11 +1203,6 @@ export abstract class AbstractTaskService extends Disposable implements ITaskSer
 		if (!task) {
 			throw new TaskError(Severity.Info, nls.localize('TaskServer.noTask', 'Task to execute is undefined'), TaskErrors.TaskNotFound);
 		}
-		if (this._inProgressTasks.has(task._label)) {
-			this._logService.info('Prevented duplicate task from running', task._label);
-			return;
-		}
-		this._inProgressTasks.add(task._label);
 		const resolver = this._createResolver();
 		let executeTaskResult: ITaskSummary | undefined;
 		try {
@@ -1223,8 +1218,6 @@ export abstract class AbstractTaskService extends Disposable implements ITaskSer
 		} catch (error) {
 			this._handleError(error);
 			return Promise.reject(error);
-		} finally {
-			this._inProgressTasks.delete(task._label);
 		}
 	}
 
@@ -1835,7 +1828,12 @@ export abstract class AbstractTaskService extends Disposable implements ITaskSer
 	}
 
 	private async _executeTask(task: Task, resolver: ITaskResolver, runSource: TaskRunSource): Promise<ITaskSummary> {
+		if (this._inProgressTasks.has(task._label)) {
+			this._logService.info('Prevented duplicate task from running', task._label);
+			return { exitCode: 0 };
+		}
 		let taskToRun: Task = task;
+		this._inProgressTasks.add(task._label);
 		if (await this._saveBeforeRun()) {
 			await this._configurationService.reloadConfiguration();
 			await this._updateWorkspaceTasks();
@@ -1850,8 +1848,10 @@ export abstract class AbstractTaskService extends Disposable implements ITaskSer
 		await ProblemMatcherRegistry.onReady();
 		const executeResult = runSource === TaskRunSource.Reconnect ? this._getTaskSystem().reconnect(taskToRun, resolver) : this._getTaskSystem().run(taskToRun, resolver);
 		if (executeResult) {
+			this._inProgressTasks.delete(task._label);
 			return this._handleExecuteResult(executeResult, runSource);
 		}
+		this._inProgressTasks.delete(task._label);
 		return { exitCode: 0 };
 	}
 
@@ -1911,6 +1911,7 @@ export abstract class AbstractTaskService extends Disposable implements ITaskSer
 		if (!this._taskSystem) {
 			return { success: true, task: undefined };
 		}
+		this._inProgressTasks.delete(task._label);
 		return this._taskSystem.terminate(task);
 	}
 
