@@ -415,7 +415,7 @@ appendEditorToolItem(
 		title: localize('splitEditorRight', "Split Editor Right"),
 		icon: Codicon.splitHorizontal
 	},
-	ContextKeyExpr.not('splitEditorsVertically'),
+	ContextKeyExpr.and(ContextKeyExpr.not('splitEditorsVertically'), ContextKeyExpr.has('showSplitEditorsButton')),
 	SPLIT_ORDER,
 	{
 		id: SPLIT_EDITOR_DOWN,
@@ -430,7 +430,7 @@ appendEditorToolItem(
 		title: localize('splitEditorDown', "Split Editor Down"),
 		icon: Codicon.splitVertical
 	},
-	ContextKeyExpr.has('splitEditorsVertically'),
+	ContextKeyExpr.and(ContextKeyExpr.has('splitEditorsVertically'), ContextKeyExpr.has('showSplitEditorsButton')),
 	SPLIT_ORDER,
 	{
 		id: SPLIT_EDITOR_RIGHT,
