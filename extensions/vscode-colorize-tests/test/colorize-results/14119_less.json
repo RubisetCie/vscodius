@@ -112,7 +112,7 @@
 		}
 	},
 	{
-		"c": "broken highlighting in VS Code",
+		"c": "broken highlighting in VSCodius",
 		"t": "source.css.less string.quoted.double.css",
 		"r": {
 			"dark_plus": "string: #CE9178",

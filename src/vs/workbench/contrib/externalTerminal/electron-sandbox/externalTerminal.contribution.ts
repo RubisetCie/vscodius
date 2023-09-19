@@ -105,7 +105,7 @@ export class ExternalTerminalContribution implements IWorkbenchContribution {
 						'both'
 					],
 					enumDescriptions: [
-						nls.localize('terminal.explorerKind.integrated', "Use VS Code's integrated terminal."),
+						nls.localize('terminal.explorerKind.integrated', "Use VSCodius's integrated terminal."),
 						nls.localize('terminal.explorerKind.external', "Use the configured external terminal."),
 						nls.localize('terminal.explorerKind.both', "Use the other two together.")
 					],
@@ -120,7 +120,7 @@ export class ExternalTerminalContribution implements IWorkbenchContribution {
 						'both'
 					],
 					enumDescriptions: [
-						nls.localize('terminal.sourceControlRepositoriesKind.integrated', "Use VS Code's integrated terminal."),
+						nls.localize('terminal.sourceControlRepositoriesKind.integrated', "Use VSCodius's integrated terminal."),
 						nls.localize('terminal.sourceControlRepositoriesKind.external', "Use the configured external terminal."),
 						nls.localize('terminal.sourceControlRepositoriesKind.both', "Use the other two together.")
 					],

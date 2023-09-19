@@ -341,7 +341,7 @@ import { applicationConfigurationNodeBase } from 'vs/workbench/common/configurat
 			},
 			'disable-chromium-sandbox': {
 				type: 'boolean',
-				description: localize('argv.disableChromiumSandbox', "Disables the Chromium sandbox. This is useful when running VS Code as elevated on Linux and running under Applocker on Windows.")
+				description: localize('argv.disableChromiumSandbox', "Disables the Chromium sandbox. This is useful when running VSCodius as elevated on Linux and running under Applocker on Windows.")
 			}
 		}
 	};

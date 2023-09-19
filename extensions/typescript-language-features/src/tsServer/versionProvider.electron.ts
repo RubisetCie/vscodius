@@ -68,7 +68,7 @@ export class DiskTypeScriptVersionProvider implements ITypeScriptVersionProvider
 			return version;
 		}
 
-		vscode.window.showErrorMessage(vscode.l10n.t("VS Code\'s tsserver was deleted by another application such as a misbehaving virus detection tool. Please reinstall VS Code."));
+		vscode.window.showErrorMessage(vscode.l10n.t("VSCodius\'s tsserver was deleted by another application such as a misbehaving virus detection tool. Please reinstall VSCodius."));
 		throw new Error('Could not find bundled tsserver.js');
 	}
 

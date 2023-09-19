@@ -80,7 +80,7 @@ class AudioPreview extends MediaPreview {
 	<div class="loading-indicator"></div>
 	<div class="loading-error">
 		<p>${vscode.l10n.t("An error occurred while loading the audio file.")}</p>
-		<a href="#" class="open-file-link">${vscode.l10n.t("Open file using VS Code's standard text/binary editor?")}</a>
+		<a href="#" class="open-file-link">${vscode.l10n.t("Open file using VSCodius's standard text/binary editor?")}</a>
 	</div>
 	<script src="${escapeAttribute(this.extensionResource('media', 'audioPreview.js'))}" nonce="${nonce}"></script>
 </body>

@@ -187,7 +187,7 @@ class ImagePreview extends MediaPreview {
 	<div class="loading-indicator"></div>
 	<div class="image-load-error">
 		<p>${vscode.l10n.t("An error occurred while loading the image.")}</p>
-		<a href="#" class="open-file-link">${vscode.l10n.t("Open file using VS Code's standard text/binary editor?")}</a>
+		<a href="#" class="open-file-link">${vscode.l10n.t("Open file using VSCodius's standard text/binary editor?")}</a>
 	</div>
 	<script src="${escapeAttribute(this.extensionResource('media', 'imagePreview.js'))}" nonce="${nonce}"></script>
 </body>

@@ -258,7 +258,7 @@
 		"builtin-properties": {
 			"patterns": [
 				{
-					"comment": "The simpler (?<=\\bProcess\\.|\\bCommandLine\\.) breaks VS Code / Atom, see https://github.com/textmate/swift.tmbundle/issues/29",
+					"comment": "The simpler (?<=\\bProcess\\.|\\bCommandLine\\.) breaks VSCodius / Atom, see https://github.com/textmate/swift.tmbundle/issues/29",
 					"match": "(?<=^Process\\.|\\WProcess\\.|^CommandLine\\.|\\WCommandLine\\.)(arguments|argc|unsafeArgv)",
 					"name": "support.variable.swift"
 				},

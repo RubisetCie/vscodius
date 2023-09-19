@@ -19,7 +19,7 @@
 	"markdown.styles.dec": "A list of URLs or local paths to CSS style sheets to use from the Markdown preview. Relative paths are interpreted relative to the folder open in the Explorer. If there is no open folder, they are interpreted relative to the location of the Markdown file. All '\\' need to be written as '\\\\'.",
 	"markdown.showPreviewSecuritySelector.title": "Change Preview Security Settings",
 	"markdown.trace.extension.desc": "Enable debug logging for the Markdown extension.",
-	"markdown.trace.server.desc": "Traces the communication between VS Code and the Markdown language server.",
+	"markdown.trace.server.desc": "Traces the communication between VSCodius and the Markdown language server.",
 	"markdown.server.log.desc": "Controls the logging level of the Markdown language server.",
 	"markdown.preview.refresh.title": "Refresh Preview",
 	"markdown.preview.toggleLock.title": "Toggle Preview Locking",

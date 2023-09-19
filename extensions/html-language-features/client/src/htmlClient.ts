@@ -106,7 +106,7 @@ export async function startClient(context: ExtensionContext, newLanguageClient: 
 					context.globalState.update(promptForLinkedEditingKey, false);
 					activeEditorListener.dispose();
 					const configure = l10n.t('Configure');
-					const res = await window.showInformationMessage(l10n.t('VS Code now has built-in support for auto-renaming tags. Do you want to enable it?'), configure);
+					const res = await window.showInformationMessage(l10n.t('VSCodius now has built-in support for auto-renaming tags. Do you want to enable it?'), configure);
 					if (res === configure) {
 						commands.executeCommand('workbench.action.openSettings', SettingIds.linkedEditing);
 					}

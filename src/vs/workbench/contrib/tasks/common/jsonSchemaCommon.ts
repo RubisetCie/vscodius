@@ -20,7 +20,7 @@ const schema: IJSONSchema = {
 			properties: {
 				cwd: {
 					type: 'string',
-					description: nls.localize('JsonSchema.options.cwd', 'The current working directory of the executed program or script. If omitted Code\'s current workspace root is used.')
+					description: nls.localize('JsonSchema.options.cwd', 'The current working directory of the executed program or script. If omitted VSCodius\'s current workspace root is used.')
 				},
 				env: {
 					type: 'object',
@@ -191,17 +191,17 @@ const schema: IJSONSchema = {
 				},
 				promptOnClose: {
 					type: 'boolean',
-					description: nls.localize('JsonSchema.tasks.promptOnClose', 'Whether the user is prompted when VS Code closes with a running task.'),
+					description: nls.localize('JsonSchema.tasks.promptOnClose', 'Whether the user is prompted when VSCodius closes with a running task.'),
 					default: false
 				},
 				isBuildCommand: {
 					type: 'boolean',
-					description: nls.localize('JsonSchema.tasks.build', 'Maps this task to Code\'s default build command.'),
+					description: nls.localize('JsonSchema.tasks.build', 'Maps this task to VSCodius\'s default build command.'),
 					default: true
 				},
 				isTestCommand: {
 					type: 'boolean',
-					description: nls.localize('JsonSchema.tasks.test', 'Maps this task to Code\'s default test command.'),
+					description: nls.localize('JsonSchema.tasks.test', 'Maps this task to VSCodius\'s default test command.'),
 					default: true
 				},
 				problemMatcher: {
@@ -245,7 +245,7 @@ const schema: IJSONSchema = {
 				},
 				promptOnClose: {
 					type: 'boolean',
-					description: nls.localize('JsonSchema.promptOnClose', 'Whether the user is prompted when VS Code closes with a running background task.'),
+					description: nls.localize('JsonSchema.promptOnClose', 'Whether the user is prompted when VSCodius closes with a running background task.'),
 					default: false
 				},
 				echoCommand: {

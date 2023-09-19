@@ -14,7 +14,7 @@ import * as nls from 'vs/nls';
 import { DEFAULT_TERMINAL_OSX, IExternalTerminalMainService, IExternalTerminalSettings, ITerminalForPlatform } from 'vs/platform/externalTerminal/common/externalTerminal';
 import { ITerminalEnvironment } from 'vs/platform/terminal/common/terminal';
 
-const TERMINAL_TITLE = nls.localize('console.title', "VS Code Console");
+const TERMINAL_TITLE = nls.localize('console.title', "VSCodius Console");
 
 abstract class ExternalTerminalService {
 	public _serviceBrand: undefined;

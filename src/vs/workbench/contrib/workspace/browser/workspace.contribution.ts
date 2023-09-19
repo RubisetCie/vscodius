@@ -729,7 +729,7 @@ Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration)
 			[WORKSPACE_TRUST_ENABLED]: {
 				type: 'boolean',
 				default: true,
-				description: localize('workspace.trust.description', "Controls whether or not Workspace Trust is enabled within VS Code."),
+				description: localize('workspace.trust.description', "Controls whether or not Workspace Trust is enabled within VSCodius."),
 				tags: [WORKSPACE_TRUST_SETTING_TAG],
 				scope: ConfigurationScope.APPLICATION,
 			},
@@ -775,7 +775,7 @@ Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration)
 			[WORKSPACE_TRUST_EMPTY_WINDOW]: {
 				type: 'boolean',
 				default: true,
-				markdownDescription: localize('workspace.trust.emptyWindow.description', "Controls whether or not the empty window is trusted by default within VS Code. When used with `#{0}#`, you can enable the full functionality of VS Code without prompting in an empty window.", WORKSPACE_TRUST_UNTRUSTED_FILES),
+				markdownDescription: localize('workspace.trust.emptyWindow.description', "Controls whether or not the empty window is trusted by default within VSCodius. When used with `#{0}#`, you can enable the full functionality of VSCodius without prompting in an empty window.", WORKSPACE_TRUST_UNTRUSTED_FILES),
 				tags: [WORKSPACE_TRUST_SETTING_TAG],
 				scope: ConfigurationScope.APPLICATION
 			}
