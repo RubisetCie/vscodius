@@ -19,3 +19,7 @@ vscode.db
 /cli/openssl
 product.overrides.json
 *.snap.actual
+/.vscode
+/.configurations
+/.devcontainer
+/.eslintplugin
