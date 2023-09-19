@@ -441,6 +441,8 @@ function configureCrashReporter() {
 					argv.splice(endOfArgsMarkerIndex, 0, '--crash-reporter-id', crashReporterId);
 				}
 			}
+		} else {
+			return;
 		}
 	}
 
