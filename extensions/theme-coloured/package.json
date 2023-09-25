@@ -1,0 +1,64 @@
+{
+  "name": "theme-coloured",
+  "displayName": "%displayName%",
+  "description": "%description%",
+  "categories": [
+    "Themes"
+  ],
+  "version": "1.0.0",
+  "publisher": "rubisetcie",
+  "license": "MIT",
+  "engines": {
+    "vscode": "*"
+  },
+  "contributes": {
+    "themes": [
+      {
+        "id": "Bluebell",
+        "label": "%bluebellColorThemeLabel%",
+        "uiTheme": "vs",
+        "path": "./themes/bluebell.json"
+      },
+      {
+        "id": "Marygold",
+        "label": "%marygoldColorThemeLabel%",
+        "uiTheme": "vs",
+        "path": "./themes/marygold.json"
+      },
+      {
+        "id": "Hibiscus",
+        "label": "%hibiscusColorThemeLabel%",
+        "uiTheme": "vs",
+        "path": "./themes/hibiscus.json"
+      },
+      {
+        "id": "Calendula",
+        "label": "%calendulaColorThemeLabel%",
+        "uiTheme": "vs",
+        "path": "./themes/calendula.json"
+      },
+      {
+        "id": "Daffodil",
+        "label": "%daffodilColorThemeLabel%",
+        "uiTheme": "vs",
+        "path": "./themes/daffodil.json"
+      },
+      {
+        "id": "Geranium",
+        "label": "%geraniumColorThemeLabel%",
+        "uiTheme": "vs-dark",
+        "path": "./themes/geranium.json"
+      },
+      {
+        "id": "Iris",
+        "label": "%irisColorThemeLabel%",
+        "uiTheme": "vs",
+        "path": "./themes/iris.json"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RubisetCie/vscodius.git"
+  }
+}
