@@ -232,7 +232,6 @@ export interface IGalleryExtension {
 	allTargetPlatforms: TargetPlatform[];
 	assets: IGalleryExtensionAssets;
 	properties: IGalleryExtensionProperties;
-	telemetryData?: any;
 	queryContext?: IStringDictionary<any>;
 }
 

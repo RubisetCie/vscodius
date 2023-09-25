@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { hostname, release } from 'os';
-import { raceTimeout } from 'vs/base/common/async';
 import { toErrorMessage } from 'vs/base/common/errorMessage';
 import { isSigPipeError, onUnexpectedError, setUnexpectedErrorHandler } from 'vs/base/common/errors';
 import { Disposable } from 'vs/base/common/lifecycle';
@@ -47,17 +45,10 @@ import { IProductService } from 'vs/platform/product/common/productService';
 import { IRequestService } from 'vs/platform/request/common/request';
 import { RequestService } from 'vs/platform/request/node/requestService';
 import { SaveStrategy, StateReadonlyService } from 'vs/platform/state/node/stateService';
-import { resolveCommonProperties } from 'vs/platform/telemetry/common/commonProperties';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { ITelemetryServiceConfig, TelemetryService } from 'vs/platform/telemetry/common/telemetryService';
-import { supportsTelemetry, NullTelemetryService, getPiiPathsFromEnvironment, isInternalTelemetry, ITelemetryAppender } from 'vs/platform/telemetry/common/telemetryUtils';
-import { OneDataSystemAppender } from 'vs/platform/telemetry/node/1dsAppender';
-import { buildTelemetryMessage } from 'vs/platform/telemetry/node/telemetry';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { UriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentityService';
 import { IUserDataProfile, IUserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
 import { UserDataProfilesReadonlyService } from 'vs/platform/userDataProfile/node/userDataProfile';
-import { resolveMachineId } from 'vs/platform/telemetry/node/telemetryUtils';
 import { ExtensionsProfileScannerService } from 'vs/platform/extensionManagement/node/extensionsProfileScannerService';
 import { LogService } from 'vs/platform/log/common/logService';
 import { LoggerService } from 'vs/platform/log/node/loggerService';
@@ -83,7 +74,7 @@ class CliMain extends Disposable {
 	async run(): Promise<void> {
 
 		// Services
-		const [instantiationService, appenders] = await this.initServices();
+		const instantiationService = await this.initServices();
 
 		return instantiationService.invokeFunction(async accessor => {
 			const logService = accessor.get(ILogService);
@@ -100,15 +91,11 @@ class CliMain extends Disposable {
 			// Run based on argv
 			await this.doRun(environmentService, fileService, userDataProfilesService, instantiationService);
 
-			// Flush the remaining data in AI adapter (with 1s timeout)
-			await Promise.all(appenders.map(a => {
-				raceTimeout(a.flush(), 1000);
-			}));
 			return;
 		});
 	}
 
-	private async initServices(): Promise<[IInstantiationService, ITelemetryAppender[]]> {
+	private async initServices(): Promise<IInstantiationService> {
 		const services = new ServiceCollection();
 
 		// Product
@@ -175,16 +162,6 @@ class CliMain extends Disposable {
 			configurationService.initialize()
 		]);
 
-		// Get machine ID
-		let machineId: string | undefined = undefined;
-		try {
-			machineId = await resolveMachineId(stateService, logService);
-		} catch (error) {
-			if (error.code !== 'ENOENT') {
-				logService.error(error);
-			}
-		}
-
 		// Initialize user data profiles after initializing the state
 		userDataProfilesService.init();
 
@@ -208,28 +185,7 @@ class CliMain extends Disposable {
 		// Localizations
 		services.set(ILanguagePackService, new SyncDescriptor(NativeLanguagePackService, undefined, false));
 
-		// Telemetry
-		const appenders: ITelemetryAppender[] = [];
-		const isInternal = isInternalTelemetry(productService, configurationService);
-		if (supportsTelemetry(productService, environmentService)) {
-			if (productService.aiConfig && productService.aiConfig.ariaKey) {
-				appenders.push(new OneDataSystemAppender(requestService, isInternal, 'monacoworkbench', null, productService.aiConfig.ariaKey));
-			}
-
-			const config: ITelemetryServiceConfig = {
-				appenders,
-				sendErrorTelemetry: false,
-				commonProperties: resolveCommonProperties(release(), hostname(), process.arch, productService.commit, productService.version, machineId, isInternal),
-				piiPaths: getPiiPathsFromEnvironment(environmentService)
-			};
-
-			services.set(ITelemetryService, new SyncDescriptor(TelemetryService, [config], false));
-
-		} else {
-			services.set(ITelemetryService, NullTelemetryService);
-		}
-
-		return [new InstantiationService(services), appenders];
+		return new InstantiationService(services);
 	}
 
 	private registerErrorHandler(logService: ILogService): void {
@@ -282,11 +238,6 @@ class CliMain extends Disposable {
 		// Locate Extension
 		else if (this.argv['locate-extension']) {
 			return instantiationService.createInstance(ExtensionManagementCLI, new ConsoleLogger(LogLevel.Info, false)).locateExtension(this.argv['locate-extension']);
-		}
-
-		// Telemetry
-		else if (this.argv['telemetry']) {
-			console.log(await buildTelemetryMessage(environmentService.appRoot, environmentService.extensionsPath));
 		}
 	}
 

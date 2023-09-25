@@ -322,7 +322,6 @@ export class InlineChatWidget {
 		// toolbars
 
 		const toolbar = this._instantiationService.createInstance(MenuWorkbenchToolBar, this._elements.editorToolbar, MENU_INLINE_CHAT_WIDGET, {
-			telemetrySource: 'interactiveEditorWidget-toolbar',
 			toolbarOptions: { primaryGroup: 'main' }
 		});
 		this._store.add(toolbar);
@@ -331,7 +330,6 @@ export class InlineChatWidget {
 		this._store.add(this._progressBar);
 
 		const workbenchMenubarOptions: IMenuWorkbenchButtonBarOptions = {
-			telemetrySource: 'interactiveEditorWidget-toolbar',
 			buttonConfigProvider: action => {
 				if (action.id === ACTION_REGENERATE_RESPONSE) {
 					return { showIcon: true, showLabel: false };

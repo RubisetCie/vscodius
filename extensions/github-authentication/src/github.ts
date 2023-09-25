@@ -4,11 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import TelemetryReporter from '@vscode/extension-telemetry';
 import { Keychain } from './common/keychain';
 import { GitHubServer, IGitHubServer } from './githubServer';
 import { PromiseAdapter, arrayEquals, promiseFromEvent } from './common/utils';
-import { ExperimentationTelemetry } from './common/experimentationService';
 import { Log } from './common/logger';
 import { crypto } from './node/crypto';
 import { TIMED_OUT_ERROR, USER_CANCELLATION_ERROR } from './common/errors';
@@ -93,7 +91,6 @@ export class GitHubAuthenticationProvider implements vscode.AuthenticationProvid
 	private readonly _sessionChangeEmitter = new vscode.EventEmitter<vscode.AuthenticationProviderAuthenticationSessionsChangeEvent>();
 	private readonly _logger: Log;
 	private readonly _githubServer: IGitHubServer;
-	private readonly _telemetryReporter: ExperimentationTelemetry;
 	private readonly _keychain: Keychain;
 	private readonly _accountsSeen = new Set<string>();
 	private readonly _disposable: vscode.Disposable | undefined;
@@ -105,9 +102,6 @@ export class GitHubAuthenticationProvider implements vscode.AuthenticationProvid
 		uriHandler: UriEventHandler,
 		ghesUri?: vscode.Uri
 	) {
-		const { aiKey } = context.extension.packageJSON as { name: string; version: string; aiKey: string };
-		this._telemetryReporter = new ExperimentationTelemetry(context, new TelemetryReporter(aiKey));
-
 		const type = ghesUri ? AuthProviderType.githubEnterprise : AuthProviderType.github;
 
 		this._logger = new Log(type);
@@ -121,7 +115,6 @@ export class GitHubAuthenticationProvider implements vscode.AuthenticationProvid
 
 		this._githubServer = new GitHubServer(
 			this._logger,
-			this._telemetryReporter,
 			uriHandler,
 			context.extension.extensionKind,
 			ghesUri);
@@ -134,7 +127,6 @@ export class GitHubAuthenticationProvider implements vscode.AuthenticationProvid
 		});
 
 		this._disposable = vscode.Disposable.from(
-			this._telemetryReporter,
 			vscode.authentication.registerAuthenticationProvider(type, this._githubServer.friendlyName, this, { supportsMultipleAccounts: false }),
 			this.context.secrets.onDidChange(() => this.checkForUpdates())
 		);
@@ -165,7 +157,6 @@ export class GitHubAuthenticationProvider implements vscode.AuthenticationProvid
 		// We only want to fire a telemetry if we haven't seen this account yet in this session.
 		if (!this._accountsSeen.has(session.account.id)) {
 			this._accountsSeen.add(session.account.id);
-			this._githubServer.sendAdditionalTelemetryInfo(session);
 		}
 	}
 
@@ -285,18 +276,6 @@ export class GitHubAuthenticationProvider implements vscode.AuthenticationProvid
 			// if we've got a session already.
 			const sortedScopes = [...scopes].sort();
 
-			/* __GDPR__
-				"login" : {
-					"owner": "TylerLeonhardt",
-					"comment": "Used to determine how much usage the GitHub Auth Provider gets.",
-					"scopes": { "classification": "PublicNonPersonalData", "purpose": "FeatureInsight", "comment": "Used to determine what scope combinations are being requested." }
-				}
-			*/
-			this._telemetryReporter?.sendTelemetryEvent('login', {
-				scopes: JSON.stringify(scopes),
-			});
-
-
 			const scopeString = sortedScopes.join(' ');
 			const token = await this._githubServer.login(scopeString);
 			const session = await this.tokenToSession(token, scopes);
@@ -319,17 +298,8 @@ export class GitHubAuthenticationProvider implements vscode.AuthenticationProvid
 		} catch (e) {
 			// If login was cancelled, do not notify user.
 			if (e === 'Cancelled' || e.message === 'Cancelled') {
-				/* __GDPR__
-					"loginCancelled" : { "owner": "TylerLeonhardt", "comment": "Used to determine how often users cancel the login flow." }
-				*/
-				this._telemetryReporter?.sendTelemetryEvent('loginCancelled');
 				throw e;
 			}
-
-			/* __GDPR__
-				"loginFailed" : { "owner": "TylerLeonhardt", "comment": "Used to determine how often users run into an error login flow." }
-			*/
-			this._telemetryReporter?.sendTelemetryEvent('loginFailed');
 
 			vscode.window.showErrorMessage(vscode.l10n.t('Sign in failed: {0}', `${e}`));
 			this._logger.error(e);
@@ -349,11 +319,6 @@ export class GitHubAuthenticationProvider implements vscode.AuthenticationProvid
 
 	public async removeSession(id: string) {
 		try {
-			/* __GDPR__
-				"logout" : { "owner": "TylerLeonhardt", "comment": "Used to determine how often users log out of an account." }
-			*/
-			this._telemetryReporter?.sendTelemetryEvent('logout');
-
 			this._logger.info(`Logging out of ${id}`);
 
 			const sessions = await this._sessionsPromise;
@@ -370,11 +335,6 @@ export class GitHubAuthenticationProvider implements vscode.AuthenticationProvid
 				this._logger.error('Session not found');
 			}
 		} catch (e) {
-			/* __GDPR__
-				"logoutFailed" : { "owner": "TylerLeonhardt", "comment": "Used to determine how often logging out of an account fails." }
-			*/
-			this._telemetryReporter?.sendTelemetryEvent('logoutFailed');
-
 			vscode.window.showErrorMessage(vscode.l10n.t('Sign out failed: {0}', `${e}`));
 			this._logger.error(e);
 			throw e;

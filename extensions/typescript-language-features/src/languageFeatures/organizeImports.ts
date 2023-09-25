@@ -6,7 +6,6 @@
 import * as vscode from 'vscode';
 import { Command, CommandManager } from '../commands/commandManager';
 import { DocumentSelector } from '../configuration/documentSelector';
-import { TelemetryReporter } from '../logging/telemetry';
 import { API } from '../tsServer/api';
 import type * as Proto from '../tsServer/protocol/protocol';
 import { OrganizeImportsMode } from '../tsServer/protocol/protocol.const';
@@ -54,19 +53,9 @@ class OrganizeImportsCommand implements Command {
 		public readonly id: string,
 		private readonly commandMetadata: OrganizeImportsCommandMetadata,
 		private readonly client: ITypeScriptServiceClient,
-		private readonly telemetryReporter: TelemetryReporter,
 	) { }
 
 	public async execute(file?: string): Promise<any> {
-		/* __GDPR__
-			"organizeImports.execute" : {
-				"owner": "mjbvz",
-				"${include}": [
-					"${TypeScriptCommonProperties}"
-				]
-			}
-		*/
-		this.telemetryReporter.logTelemetry('organizeImports.execute', {});
 		if (!file) {
 			const activeEditor = vscode.window.activeTextEditor;
 			if (!activeEditor) {
@@ -115,10 +104,9 @@ class ImportsCodeActionProvider implements vscode.CodeActionProvider {
 		private readonly commandMetadata: OrganizeImportsCommandMetadata,
 		commandManager: CommandManager,
 		private readonly fileConfigManager: FileConfigurationManager,
-		telemetryReporter: TelemetryReporter,
 	) {
 		for (const id of commandMetadata.ids) {
-			commandManager.register(new OrganizeImportsCommand(id, commandMetadata, client, telemetryReporter));
+			commandManager.register(new OrganizeImportsCommand(id, commandMetadata, client));
 		}
 	}
 
@@ -150,7 +138,6 @@ export function register(
 	client: ITypeScriptServiceClient,
 	commandManager: CommandManager,
 	fileConfigurationManager: FileConfigurationManager,
-	telemetryReporter: TelemetryReporter,
 ): vscode.Disposable {
 	const disposables: vscode.Disposable[] = [];
 
@@ -159,7 +146,7 @@ export function register(
 			requireMinVersion(client, command.minVersion ?? API.defaultVersion),
 			requireSomeCapability(client, ClientCapability.Semantic),
 		], () => {
-			const provider = new ImportsCodeActionProvider(client, command, commandManager, fileConfigurationManager, telemetryReporter);
+			const provider = new ImportsCodeActionProvider(client, command, commandManager, fileConfigurationManager);
 			return vscode.languages.registerCodeActionsProvider(selector.semantic, provider, {
 				providedCodeActionKinds: [command.kind]
 			});

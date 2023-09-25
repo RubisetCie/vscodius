@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { WorkbenchActionExecutedClassification, WorkbenchActionExecutedEvent } from 'vs/base/common/actions';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { toErrorMessage } from 'vs/base/common/errorMessage';
 import { isCancellationError } from 'vs/base/common/errors';
@@ -22,7 +21,6 @@ import { FastAndSlowPicks, IPickerQuickAccessItem, IPickerQuickAccessProviderOpt
 import { IQuickAccessProviderRunOptions } from 'vs/platform/quickinput/common/quickAccess';
 import { IQuickPickSeparator } from 'vs/platform/quickinput/common/quickInput';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 
 export interface ICommandQuickPick extends IPickerQuickAccessItem {
 	readonly commandId: string;
@@ -54,7 +52,6 @@ export abstract class AbstractCommandsQuickAccessProvider extends PickerQuickAcc
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IKeybindingService private readonly keybindingService: IKeybindingService,
 		@ICommandService private readonly commandService: ICommandService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IDialogService private readonly dialogService: IDialogService
 	) {
 		super(AbstractCommandsQuickAccessProvider.PREFIX, options);
@@ -260,12 +257,6 @@ export abstract class AbstractCommandsQuickAccessProvider extends PickerQuickAcc
 
 				// Add to history
 				this.commandsHistory.push(commandPick.commandId);
-
-				// Telementry
-				this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', {
-					id: commandPick.commandId,
-					from: runOptions?.from ?? 'quick open'
-				});
 
 				// Run
 				try {

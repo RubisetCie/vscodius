@@ -36,8 +36,6 @@ import { IWorkspaceTrustManagementService } from 'vs/platform/workspace/common/w
 import { delta, distinct } from 'vs/base/common/arrays';
 import { IStringDictionary } from 'vs/base/common/collections';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
-import { IWorkbenchAssignmentService } from 'vs/workbench/services/assignment/common/assignmentService';
-import { isUndefined } from 'vs/base/common/types';
 import { localize } from 'vs/nls';
 import { DidChangeUserDataProfileEvent, IUserDataProfileService } from 'vs/workbench/services/userDataProfile/common/userDataProfile';
 import { IPolicyService, NullPolicyService } from 'vs/platform/policy/common/policy';
@@ -1300,48 +1298,9 @@ class ResetConfigurationDefaultsOverridesCache extends Disposable implements IWo
 	}
 }
 
-class UpdateExperimentalSettingsDefaults extends Disposable implements IWorkbenchContribution {
-
-	private readonly processedExperimentalSettings = new Set<string>();
-	private readonly configurationRegistry = Registry.as<IConfigurationRegistry>(Extensions.Configuration);
-
-	constructor(
-		@IWorkbenchAssignmentService private readonly workbenchAssignmentService: IWorkbenchAssignmentService
-	) {
-		super();
-		this.processExperimentalSettings(Object.keys(this.configurationRegistry.getConfigurationProperties()));
-		this._register(this.configurationRegistry.onDidUpdateConfiguration(({ properties }) => this.processExperimentalSettings(properties)));
-	}
-
-	private async processExperimentalSettings(properties: Iterable<string>): Promise<void> {
-		const overrides: IStringDictionary<any> = {};
-		const allProperties = this.configurationRegistry.getConfigurationProperties();
-		for (const property of properties) {
-			const schema = allProperties[property];
-			if (!schema?.tags?.includes('experimental')) {
-				continue;
-			}
-			if (this.processedExperimentalSettings.has(property)) {
-				continue;
-			}
-			this.processedExperimentalSettings.add(property);
-			try {
-				const value = await this.workbenchAssignmentService.getTreatment(`config.${property}`);
-				if (!isUndefined(value) && !equals(value, schema.default)) {
-					overrides[property] = value;
-				}
-			} catch (error) {/*ignore */ }
-		}
-		if (Object.keys(overrides).length) {
-			this.configurationRegistry.registerDefaultConfigurations([{ overrides, source: localize('experimental', "Experiments") }]);
-		}
-	}
-}
-
 const workbenchContributionsRegistry = Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench);
 workbenchContributionsRegistry.registerWorkbenchContribution(RegisterConfigurationSchemasContribution, LifecyclePhase.Restored);
 workbenchContributionsRegistry.registerWorkbenchContribution(ResetConfigurationDefaultsOverridesCache, LifecyclePhase.Eventually);
-workbenchContributionsRegistry.registerWorkbenchContribution(UpdateExperimentalSettingsDefaults, LifecyclePhase.Restored);
 
 const configurationRegistry = Registry.as<IConfigurationRegistry>(Extensions.Configuration);
 configurationRegistry.registerConfiguration({

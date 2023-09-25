@@ -3,14 +3,11 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import VsCodeTelemetryReporter from '@vscode/extension-telemetry';
 import * as fs from 'fs';
 import * as vscode from 'vscode';
 import { Api, getExtensionApi } from './api';
 import { CommandManager } from './commands/commandManager';
 import { registerBaseCommands } from './commands/index';
-import { ExperimentationTelemetryReporter, IExperimentationTelemetryReporter } from './experimentTelemetryReporter';
-import { ExperimentationService } from './experimentationService';
 import { createLazyClientHost, lazilyActivateClient } from './lazyClientHost';
 import { nodeRequestCancellerFactory } from './tsServer/cancellation.electron';
 import { NodeLogDirectoryProvider } from './tsServer/logDirectoryProvider.electron';
@@ -20,7 +17,6 @@ import { ActiveJsTsEditorTracker } from './ui/activeJsTsEditorTracker';
 import { ElectronServiceConfigurationProvider } from './configuration/configuration.electron';
 import { onCaseInsensitiveFileSystem } from './utils/fs.electron';
 import { Logger } from './logging/logger';
-import { getPackageInfo } from './utils/packageInfo';
 import { PluginManager } from './tsServer/plugins';
 import * as temp from './utils/temp.electron';
 
@@ -42,19 +38,6 @@ export function activate(
 	const activeJsTsEditorTracker = new ActiveJsTsEditorTracker();
 	context.subscriptions.push(activeJsTsEditorTracker);
 
-	let experimentTelemetryReporter: IExperimentationTelemetryReporter | undefined;
-	const packageInfo = getPackageInfo(context);
-	if (packageInfo) {
-		const { name: id, version, aiKey } = packageInfo;
-		const vscTelemetryReporter = new VsCodeTelemetryReporter(aiKey);
-		experimentTelemetryReporter = new ExperimentationTelemetryReporter(vscTelemetryReporter);
-		context.subscriptions.push(experimentTelemetryReporter);
-
-		// Currently we have no experiments, but creating the service adds the appropriate
-		// shared properties to the ExperimentationTelemetryReporter we just created.
-		new ExperimentationService(experimentTelemetryReporter, id, version, context.globalState);
-	}
-
 	const logger = new Logger();
 
 	const lazyClientHost = createLazyClientHost(context, onCaseInsensitiveFileSystem(), {
@@ -66,7 +49,6 @@ export function activate(
 		processFactory: new ElectronServiceProcessFactory(),
 		activeJsTsEditorTracker,
 		serviceConfigurationProvider: new ElectronServiceConfigurationProvider(),
-		experimentTelemetryReporter,
 		logger,
 	}, item => {
 		onCompletionAccepted.fire(item);

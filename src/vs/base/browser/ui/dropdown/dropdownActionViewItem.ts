@@ -35,7 +35,6 @@ export interface IDropdownMenuActionViewItemOptions extends IBaseActionViewItemO
 	readonly classNames?: string[] | string;
 	readonly anchorAlignmentProvider?: IAnchorAlignmentProvider;
 	readonly menuAsChild?: boolean;
-	readonly skipTelemetry?: boolean;
 }
 
 export class DropdownMenuActionViewItem extends BaseActionViewItem {
@@ -103,7 +102,6 @@ export class DropdownMenuActionViewItem extends BaseActionViewItem {
 			menuAsChild: this.options.menuAsChild,
 			actions: isActionsArray ? this.menuActionsOrProvider as IAction[] : undefined,
 			actionProvider: isActionsArray ? undefined : this.menuActionsOrProvider as IActionProvider,
-			skipTelemetry: this.options.skipTelemetry
 		};
 
 		this.dropdownMenu = this._register(new DropdownMenu(container, options));

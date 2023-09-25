@@ -83,7 +83,6 @@ export abstract class CompositePart<T extends Composite> extends Part {
 		protected readonly registry: CompositeRegistry<T>,
 		private readonly activeCompositeSettingsKey: string,
 		private readonly defaultCompositeId: string,
-		private readonly nameForTelemetry: string,
 		private readonly compositeCSSClass: string,
 		private readonly titleForegroundColor: string | undefined,
 		id: string,
@@ -401,7 +400,6 @@ export abstract class CompositePart<T extends Composite> extends Part {
 			getKeyBinding: action => this.keybindingService.lookupKeybinding(action.id),
 			anchorAlignmentProvider: () => this.getTitleAreaDropDownAnchorAlignment(),
 			toggleMenuTitle: localize('viewsAndMoreActions', "Views and More Actions..."),
-			telemetrySource: this.nameForTelemetry
 		}));
 
 		this.collectCompositeActions()();

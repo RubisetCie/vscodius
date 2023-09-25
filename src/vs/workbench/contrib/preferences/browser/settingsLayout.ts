@@ -8,7 +8,6 @@ import { localize } from 'vs/nls';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { getExperimentalExtensionToggleData } from 'vs/workbench/contrib/preferences/common/preferences';
-import { IWorkbenchAssignmentService } from 'vs/workbench/services/assignment/common/assignmentService';
 export interface ITOCEntry<T> {
 	id: string;
 	label: string;
@@ -32,8 +31,8 @@ const defaultCommonlyUsedSettings: string[] = [
 	'workbench.editor.enablePreview'
 ];
 
-export async function getCommonlyUsedData(workbenchAssignmentService: IWorkbenchAssignmentService, environmentService: IEnvironmentService, productService: IProductService): Promise<ITOCEntry<string>> {
-	const toggleData = await getExperimentalExtensionToggleData(workbenchAssignmentService, environmentService, productService);
+export async function getCommonlyUsedData(environmentService: IEnvironmentService, productService: IProductService): Promise<ITOCEntry<string>> {
+	const toggleData = await getExperimentalExtensionToggleData(environmentService, productService);
 	return {
 		id: 'commonlyUsed',
 		label: localize('commonlyUsed', "Commonly Used"),
@@ -255,11 +254,6 @@ export const tocData: ITOCEntry<string> = {
 					id: 'application/update',
 					label: localize('update', "Update"),
 					settings: ['update.*']
-				},
-				{
-					id: 'application/telemetry',
-					label: localize('telemetry', "Telemetry"),
-					settings: ['telemetry.*']
 				},
 				{
 					id: 'application/settingsSync',

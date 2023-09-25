@@ -10,7 +10,7 @@ import { ILifecycleService, LifecyclePhase, ShutdownReason } from 'vs/workbench/
 import { Action2, IAction2Options, MenuId, MenuRegistry, registerAction2 } from 'vs/platform/actions/common/actions';
 import { ServicesAccessor } from 'vs/editor/browser/editorExtensions';
 import { localize } from 'vs/nls';
-import { IEditSessionsStorageService, Change, ChangeType, Folder, EditSession, FileType, EDIT_SESSION_SYNC_CATEGORY, EDIT_SESSIONS_CONTAINER_ID, EditSessionSchemaVersion, IEditSessionsLogService, EDIT_SESSIONS_VIEW_ICON, EDIT_SESSIONS_TITLE, EDIT_SESSIONS_ORIGINAL_TITLE, EDIT_SESSIONS_SHOW_VIEW, EDIT_SESSIONS_DATA_VIEW_ID, decodeEditSessionFileContent, hashedEditSessionId, editSessionsLogId, EDIT_SESSIONS_PENDING } from 'vs/workbench/contrib/editSessions/common/editSessions';
+import { IEditSessionsStorageService, Change, ChangeType, Folder, EditSession, FileType, EDIT_SESSION_SYNC_CATEGORY, EDIT_SESSIONS_CONTAINER_ID, EditSessionSchemaVersion, IEditSessionsLogService, EDIT_SESSIONS_VIEW_ICON, EDIT_SESSIONS_TITLE, EDIT_SESSIONS_ORIGINAL_TITLE, EDIT_SESSIONS_SHOW_VIEW, EDIT_SESSIONS_DATA_VIEW_ID, decodeEditSessionFileContent, editSessionsLogId, EDIT_SESSIONS_PENDING } from 'vs/workbench/contrib/editSessions/common/editSessions';
 import { ISCMRepository, ISCMService } from 'vs/workbench/contrib/scm/common/scm';
 import { IFileService } from 'vs/platform/files/common/files';
 import { IWorkspaceContextService, IWorkspaceFolder, WorkbenchState } from 'vs/platform/workspace/common/workspace';
@@ -22,7 +22,6 @@ import { IProgress, IProgressService, IProgressStep, ProgressLocation } from 'vs
 import { EditSessionsWorkbenchService } from 'vs/workbench/contrib/editSessions/browser/editSessionsStorageService';
 import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { UserDataSyncErrorCode, UserDataSyncStoreError, IUserDataSynchroniser } from 'vs/platform/userDataSync/common/userDataSync';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { getFileNamesMessage, IDialogService, IFileDialogService } from 'vs/platform/dialogs/common/dialogs';
 import { IProductService } from 'vs/platform/product/common/productService';
@@ -135,7 +134,6 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 		@IFileService private readonly fileService: IFileService,
 		@IProgressService private readonly progressService: IProgressService,
 		@IOpenerService private readonly openerService: IOpenerService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@ISCMService private readonly scmService: ISCMService,
 		@INotificationService private readonly notificationService: INotificationService,
 		@IDialogService private readonly dialogService: IDialogService,
@@ -171,9 +169,9 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 			return;
 		}
 
-		this.editSessionsStorageClient = new EditSessionsStoreClient(URI.parse(this.productService['editSessions.store'].url), this.productService, this.requestService, this.logService, this.environmentService, this.fileService, this.storageService);
+		this.editSessionsStorageClient = new EditSessionsStoreClient(URI.parse(this.productService['editSessions.store'].url), this.productService, this.requestService, this.logService, this.storageService);
 		this.editSessionsStorageService.storeClient = this.editSessionsStorageClient;
-		this.workspaceStateSynchronizer = new WorkspaceStateSynchroniser(this.userDataProfilesService.defaultProfile, undefined, this.editSessionsStorageClient, this.logService, this.fileService, this.environmentService, this.telemetryService, this.configurationService, this.storageService, this.uriIdentityService, this.workspaceIdentityService, this.editSessionsStorageService);
+		this.workspaceStateSynchronizer = new WorkspaceStateSynchroniser(this.userDataProfilesService.defaultProfile, undefined, this.editSessionsStorageClient, this.logService, this.fileService, this.environmentService, this.configurationService, this.storageService, this.uriIdentityService, this.workspaceIdentityService, this.editSessionsStorageService);
 
 		this.autoResumeEditSession();
 
@@ -339,19 +337,11 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 			}
 
 			async run(accessor: ServicesAccessor, workspaceUri: URI | undefined, destination: string | undefined): Promise<void> {
-				type ContinueOnEventOutcome = { outcome: string; hashedId?: string };
-				type ContinueOnClassificationOutcome = {
-					owner: 'joyceerhl'; comment: 'Reporting the outcome of invoking the Continue On action.';
-					outcome: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'The outcome of invoking continue edit session.' };
-					hashedId?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'The hash of the stored edit session id, for correlating success of stores and resumes.' };
-				};
-
 				// First ask the user to pick a destination, if necessary
 				let uri: URI | 'noDestinationUri' | undefined = workspaceUri;
 				if (!destination && !uri) {
 					destination = await that.pickContinueEditSessionDestination();
 					if (!destination) {
-						that.telemetryService.publicLog2<ContinueOnEventOutcome, ContinueOnClassificationOutcome>('continueOn.editSessions.pick.outcome', { outcome: 'noSelection' });
 						return;
 					}
 				}
@@ -362,12 +352,6 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 				// Run the store action to get back a ref
 				let ref: string | undefined;
 				if (shouldStoreEditSession) {
-					type ContinueWithEditSessionEvent = {};
-					type ContinueWithEditSessionClassification = {
-						owner: 'joyceerhl'; comment: 'Reporting when storing an edit session as part of the Continue On flow.';
-					};
-					that.telemetryService.publicLog2<ContinueWithEditSessionEvent, ContinueWithEditSessionClassification>('continueOn.editSessions.store');
-
 					const cancellationTokenSource = new CancellationTokenSource();
 					try {
 						ref = await that.progressService.withProgress({
@@ -377,19 +361,12 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 							title: localize('store your working changes', 'Storing your working changes...')
 						}, async () => {
 							const ref = await that.storeEditSession(false, cancellationTokenSource.token);
-							if (ref !== undefined) {
-								that.telemetryService.publicLog2<ContinueOnEventOutcome, ContinueOnClassificationOutcome>('continueOn.editSessions.store.outcome', { outcome: 'storeSucceeded', hashedId: hashedEditSessionId(ref) });
-							} else {
-								that.telemetryService.publicLog2<ContinueOnEventOutcome, ContinueOnClassificationOutcome>('continueOn.editSessions.store.outcome', { outcome: 'storeSkipped' });
-							}
 							return ref;
 						}, () => {
 							cancellationTokenSource.cancel();
 							cancellationTokenSource.dispose();
-							that.telemetryService.publicLog2<ContinueOnEventOutcome, ContinueOnClassificationOutcome>('continueOn.editSessions.store.outcome', { outcome: 'storeCancelledByUser' });
 						});
 					} catch (ex) {
-						that.telemetryService.publicLog2<ContinueOnEventOutcome, ContinueOnClassificationOutcome>('continueOn.editSessions.store.outcome', { outcome: 'storeFailed' });
 						throw ex;
 					}
 				}
@@ -474,12 +451,6 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 					location: ProgressLocation.Notification,
 					title: localize('storing working changes', 'Storing working changes...')
 				}, async () => {
-					type StoreEvent = {};
-					type StoreClassification = {
-						owner: 'joyceerhl'; comment: 'Reporting when the store edit session action is invoked.';
-					};
-					that.telemetryService.publicLog2<StoreEvent, StoreClassification>('editSessions.store');
-
 					await that.storeEditSession(true, cancellationTokenSource.token);
 				}, () => {
 					cancellationTokenSource.cancel();
@@ -505,14 +476,6 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 			return;
 		}
 
-		type ResumeEvent = { outcome: string; hashedId?: string };
-		type ResumeClassification = {
-			owner: 'joyceerhl'; comment: 'Reporting when an edit session is resumed from an edit session identifier.';
-			outcome: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'The outcome of resuming the edit session.' };
-			hashedId?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'The hash of the stored edit session id, for correlating success of stores and resumes.' };
-		};
-		this.telemetryService.publicLog2<ResumeEvent, ResumeClassification>('editSessions.resume');
-
 		performance.mark('code/willResumeEditSessionFromIdentifier');
 
 		progress?.report({ message: localize('checkingForWorkingChanges', 'Checking for pending cloud changes...') });
@@ -533,7 +496,6 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 
 		if (editSession.version > EditSessionSchemaVersion) {
 			this.notificationService.error(localize('client too old', "Please upgrade to a newer version of {0} to resume your working changes from the cloud.", this.productService.nameLong));
-			this.telemetryService.publicLog2<ResumeEvent, ResumeClassification>('editSessions.resume.outcome', { hashedId: hashedEditSessionId(ref), outcome: 'clientUpdateNeeded' });
 			return;
 		}
 
@@ -573,8 +535,6 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 			this.logService.info(`Deleting edit session with ref ${ref} after successfully applying it to current workspace...`);
 			await this.editSessionsStorageService.delete('editSessions', ref);
 			this.logService.info(`Deleted edit session with ref ${ref}.`);
-
-			this.telemetryService.publicLog2<ResumeEvent, ResumeClassification>('editSessions.resume.outcome', { hashedId: hashedEditSessionId(ref), outcome: 'resumeSucceeded' });
 		} catch (ex) {
 			this.logService.error('Failed to resume edit session, reason: ', (ex as Error).toString());
 			this.notificationService.error(localize('resume failed', "Failed to resume your working changes from the cloud."));
@@ -763,21 +723,13 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 		} catch (ex) {
 			this.logService.error(`Failed to store edit session, reason: `, (ex as Error).toString());
 
-			type UploadFailedEvent = { reason: string };
-			type UploadFailedClassification = {
-				owner: 'joyceerhl'; comment: 'Reporting when Continue On server request fails.';
-				reason?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'The reason that the server request failed.' };
-			};
-
 			if (ex instanceof UserDataSyncStoreError) {
 				switch (ex.code) {
 					case UserDataSyncErrorCode.TooLarge:
 						// Uploading a payload can fail due to server size limits
-						this.telemetryService.publicLog2<UploadFailedEvent, UploadFailedClassification>('editSessions.upload.failed', { reason: 'TooLarge' });
 						this.notificationService.error(localize('payload too large', 'Your working changes exceed the size limit and cannot be stored.'));
 						break;
 					default:
-						this.telemetryService.publicLog2<UploadFailedEvent, UploadFailedClassification>('editSessions.upload.failed', { reason: 'unknown' });
 						this.notificationService.error(localize('payload failed', 'Your working changes cannot be stored.'));
 						break;
 				}
@@ -804,12 +756,6 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 	}
 
 	private async shouldContinueOnWithEditSession(): Promise<boolean> {
-		type EditSessionsAuthCheckEvent = { outcome: string };
-		type EditSessionsAuthCheckClassification = {
-			owner: 'joyceerhl'; comment: 'Reporting whether we can and should store edit session as part of Continue On.';
-			outcome: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'The outcome of checking whether we can store an edit session as part of the Continue On flow.' };
-		};
-
 		// If the user is already signed in, we should store edit session
 		if (this.editSessionsStorageService.isSignedIn) {
 			return this.hasEditSession();
@@ -817,7 +763,6 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 
 		// If the user has been asked before and said no, don't use edit sessions
 		if (this.configurationService.getValue(useEditSessionsWithContinueOn) === 'off') {
-			this.telemetryService.publicLog2<EditSessionsAuthCheckEvent, EditSessionsAuthCheckClassification>('continueOn.editSessions.canStore.outcome', { outcome: 'disabledEditSessionsViaSetting' });
 			return false;
 		}
 
@@ -844,14 +789,10 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 			});
 
 			if (!continueWithCloudChanges) {
-				this.telemetryService.publicLog2<EditSessionsAuthCheckEvent, EditSessionsAuthCheckClassification>('continueOn.editSessions.canStore.outcome', { outcome: 'didNotEnableEditSessionsWhenPrompted' });
 				return continueWithCloudChanges;
 			}
 
 			const initialized = await this.editSessionsStorageService.initialize('write');
-			if (!initialized) {
-				this.telemetryService.publicLog2<EditSessionsAuthCheckEvent, EditSessionsAuthCheckClassification>('continueOn.editSessions.canStore.outcome', { outcome: 'didNotEnableEditSessionsWhenPrompted' });
-			}
 			return initialized;
 		}
 
@@ -1000,13 +941,6 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 	}
 
 	private async resolveDestination(command: string): Promise<URI | 'noDestinationUri' | undefined> {
-		type EvaluateContinueOnDestinationEvent = { outcome: string; selection: string };
-		type EvaluateContinueOnDestinationClassification = {
-			owner: 'joyceerhl'; comment: 'Reporting the outcome of evaluating a selected Continue On destination option.';
-			selection: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'The selected Continue On destination option.' };
-			outcome: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'The outcome of evaluating the selected Continue On destination option.' };
-		};
-
 		try {
 			const uri = await this.commandService.executeCommand(command);
 
@@ -1014,23 +948,15 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 			// to support extensions which want to be in control
 			// of how the destination is opened
 			if (uri === undefined) {
-				this.telemetryService.publicLog2<EvaluateContinueOnDestinationEvent, EvaluateContinueOnDestinationClassification>('continueOn.openDestination.outcome', { selection: command, outcome: 'noDestinationUri' });
 				return 'noDestinationUri';
 			}
 
 			if (URI.isUri(uri)) {
-				this.telemetryService.publicLog2<EvaluateContinueOnDestinationEvent, EvaluateContinueOnDestinationClassification>('continueOn.openDestination.outcome', { selection: command, outcome: 'resolvedUri' });
 				return uri;
 			}
 
-			this.telemetryService.publicLog2<EvaluateContinueOnDestinationEvent, EvaluateContinueOnDestinationClassification>('continueOn.openDestination.outcome', { selection: command, outcome: 'invalidDestination' });
 			return undefined;
 		} catch (ex) {
-			if (ex instanceof CancellationError) {
-				this.telemetryService.publicLog2<EvaluateContinueOnDestinationEvent, EvaluateContinueOnDestinationClassification>('continueOn.openDestination.outcome', { selection: command, outcome: 'cancelled' });
-			} else {
-				this.telemetryService.publicLog2<EvaluateContinueOnDestinationEvent, EvaluateContinueOnDestinationClassification>('continueOn.openDestination.outcome', { selection: command, outcome: 'unknownError' });
-			}
 			return undefined;
 		}
 	}

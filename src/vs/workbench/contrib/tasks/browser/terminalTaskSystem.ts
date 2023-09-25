@@ -139,8 +139,6 @@ class VerifiedTask {
 
 export class TerminalTaskSystem extends Disposable implements ITaskSystem {
 
-	public static TelemetryEventName: string = 'taskService';
-
 	private static readonly ProcessVarName = '__process__';
 
 	private static _shellQuotes: IStringDictionary<IShellQuotingOptions> = {

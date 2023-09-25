@@ -988,11 +988,6 @@ export interface ICodeEditor extends editorCommon.IEditor {
 	writeScreenReaderContent(reason: string): void;
 
 	/**
-	 * @internal
-	 */
-	getTelemetryData(): { [key: string]: any } | undefined;
-
-	/**
 	 * Returns the editor's container dom node
 	 */
 	getContainerDomNode(): HTMLElement;

@@ -16,7 +16,6 @@ import { ILogService, NullLogService } from 'vs/platform/log/common/log';
 import { MainThreadExtensionServiceShape } from 'vs/workbench/api/common/extHost.protocol';
 import { ExtensionPaths, IExtHostExtensionService } from 'vs/workbench/api/common/extHostExtensionService';
 import { IExtHostRpcService } from 'vs/workbench/api/common/extHostRpcService';
-import { IExtHostTelemetry } from 'vs/workbench/api/common/extHostTelemetry';
 import { ErrorHandler } from 'vs/workbench/api/common/extensionHostMain';
 import { nullExtensionDescription } from 'vs/workbench/services/extensions/common/extensions';
 import { ProxyIdentifier, Proxied } from 'vs/workbench/services/extensions/common/proxyIdentifier';
@@ -37,12 +36,6 @@ suite('ExtensionHostMain#ErrorHandler - Wrapping prepareStackTrace can cause slo
 
 	const collection = new ServiceCollection(
 		[ILogService, new NullLogService()],
-		[IExtHostTelemetry, new class extends mock<IExtHostTelemetry>() {
-			declare readonly _serviceBrand: undefined;
-			override onExtensionError(extension: ExtensionIdentifier, error: Error): boolean {
-				return true;
-			}
-		}],
 		[IExtHostExtensionService, new class extends mock<IExtHostExtensionService & any>() {
 			declare readonly _serviceBrand: undefined;
 			getExtensionPathIndex() {

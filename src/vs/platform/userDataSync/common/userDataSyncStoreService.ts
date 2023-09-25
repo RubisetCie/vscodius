@@ -17,8 +17,6 @@ import { URI } from 'vs/base/common/uri';
 import { generateUuid } from 'vs/base/common/uuid';
 import { IHeaders, IRequestContext, IRequestOptions } from 'vs/base/parts/request/common/request';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { IEnvironmentService } from 'vs/platform/environment/common/environment';
-import { IFileService } from 'vs/platform/files/common/files';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { asJson, asText, asTextOrError, hasNoContent, IRequestService, isSuccess, isSuccess as isSuccessContext } from 'vs/platform/request/common/request';
 import { getServiceMachineId } from 'vs/platform/externalServices/common/serviceMachineId';
@@ -167,13 +165,11 @@ export class UserDataSyncStoreClient extends Disposable {
 		@IProductService productService: IProductService,
 		@IRequestService private readonly requestService: IRequestService,
 		@IUserDataSyncLogService private readonly logService: IUserDataSyncLogService,
-		@IEnvironmentService environmentService: IEnvironmentService,
-		@IFileService fileService: IFileService,
 		@IStorageService private readonly storageService: IStorageService,
 	) {
 		super();
 		this.updateUserDataSyncStoreUrl(userDataSyncStoreUrl);
-		this.commonHeadersPromise = getServiceMachineId(environmentService, fileService, storageService)
+		this.commonHeadersPromise = getServiceMachineId(storageService)
 			.then(uuid => {
 				const headers: IHeaders = {
 					'X-Client-Name': `${productService.applicationName}${isWeb ? '-web' : ''}`,
@@ -645,11 +641,9 @@ export class UserDataSyncStoreService extends UserDataSyncStoreClient implements
 		@IProductService productService: IProductService,
 		@IRequestService requestService: IRequestService,
 		@IUserDataSyncLogService logService: IUserDataSyncLogService,
-		@IEnvironmentService environmentService: IEnvironmentService,
-		@IFileService fileService: IFileService,
 		@IStorageService storageService: IStorageService,
 	) {
-		super(userDataSyncStoreManagementService.userDataSyncStore?.url, productService, requestService, logService, environmentService, fileService, storageService);
+		super(userDataSyncStoreManagementService.userDataSyncStore?.url, productService, requestService, logService, storageService);
 		this._register(userDataSyncStoreManagementService.onDidChangeUserDataSyncStore(() => this.updateUserDataSyncStoreUrl(userDataSyncStoreManagementService.userDataSyncStore?.url)));
 	}
 

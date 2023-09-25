@@ -14,7 +14,6 @@ import { INativeWorkbenchEnvironmentService } from 'vs/workbench/services/enviro
 import { IAccessibilityService } from 'vs/platform/accessibility/common/accessibility';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { ILabelService } from 'vs/platform/label/common/label';
-import { IUpdateService } from 'vs/platform/update/common/update';
 import { IOpenRecentAction, MenubarControl } from 'vs/workbench/browser/parts/titlebar/menubarControl';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { IMenubarData, IMenubarMenu, IMenubarKeybinding, IMenubarMenuItemSubmenu, IMenubarMenuItemAction, MenubarMenuItem } from 'vs/platform/menubar/common/menubar';
@@ -36,7 +35,6 @@ export class NativeMenubarControl extends MenubarControl {
 		@IKeybindingService keybindingService: IKeybindingService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@ILabelService labelService: ILabelService,
-		@IUpdateService updateService: IUpdateService,
 		@IStorageService storageService: IStorageService,
 		@INotificationService notificationService: INotificationService,
 		@IPreferencesService preferencesService: IPreferencesService,
@@ -47,7 +45,7 @@ export class NativeMenubarControl extends MenubarControl {
 		@INativeHostService private readonly nativeHostService: INativeHostService,
 		@ICommandService commandService: ICommandService,
 	) {
-		super(menuService, workspacesService, contextKeyService, keybindingService, configurationService, labelService, updateService, storageService, notificationService, preferencesService, environmentService, accessibilityService, hostService, commandService);
+		super(menuService, workspacesService, contextKeyService, keybindingService, configurationService, labelService, storageService, notificationService, preferencesService, environmentService, accessibilityService, hostService, commandService);
 
 		(async () => {
 			this.recentlyOpened = await this.workspacesService.getRecentlyOpened();

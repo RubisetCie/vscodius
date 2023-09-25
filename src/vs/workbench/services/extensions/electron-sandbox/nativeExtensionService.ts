@@ -33,7 +33,6 @@ import { IRemoteAuthorityResolverService, RemoteConnectionType, RemoteAuthorityR
 import { IRemoteExtensionsScannerService } from 'vs/platform/remote/common/remoteExtensionsScanner';
 import { getRemoteName, parseAuthorityWithPort } from 'vs/platform/remote/common/remoteHosts';
 import { updateProxyConfigurationsScope } from 'vs/platform/request/common/request';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { IWorkspaceTrustManagementService } from 'vs/platform/workspace/common/workspaceTrust';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
@@ -67,7 +66,6 @@ export class NativeExtensionService extends AbstractExtensionService implements 
 		@IInstantiationService instantiationService: IInstantiationService,
 		@INotificationService notificationService: INotificationService,
 		@IWorkbenchEnvironmentService environmentService: IWorkbenchEnvironmentService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IWorkbenchExtensionEnablementService extensionEnablementService: IWorkbenchExtensionEnablementService,
 		@IFileService fileService: IFileService,
 		@IProductService productService: IProductService,
@@ -108,7 +106,6 @@ export class NativeExtensionService extends AbstractExtensionService implements 
 			instantiationService,
 			notificationService,
 			environmentService,
-			telemetryService,
 			extensionEnablementService,
 			fileService,
 			productService,
@@ -184,7 +181,6 @@ export class NativeExtensionService extends AbstractExtensionService implements 
 			}
 
 			this._logExtensionHostCrash(extensionHost);
-			this._sendExtensionHostCrashTelemetry(code, signal, activatedExtensions);
 
 			this._localCrashTracker.registerCrash();
 
@@ -230,46 +226,6 @@ export class NativeExtensionService extends AbstractExtensionService implements 
 
 				this._notificationService.prompt(Severity.Error, nls.localize('extensionService.crash', "Extension host terminated unexpectedly 3 times within the last 5 minutes."), choices);
 			}
-		}
-	}
-
-	private _sendExtensionHostCrashTelemetry(code: number, signal: string | null, activatedExtensions: ExtensionIdentifier[]): void {
-		type ExtensionHostCrashClassification = {
-			owner: 'alexdima';
-			comment: 'The extension host has terminated unexpectedly';
-			code: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The exit code of the extension host process.' };
-			signal: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The signal that caused the extension host process to exit.' };
-			extensionIds: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The list of loaded extensions.' };
-		};
-		type ExtensionHostCrashEvent = {
-			code: number;
-			signal: string | null;
-			extensionIds: string[];
-		};
-		this._telemetryService.publicLog2<ExtensionHostCrashEvent, ExtensionHostCrashClassification>('extensionHostCrash', {
-			code,
-			signal,
-			extensionIds: activatedExtensions.map(e => e.value)
-		});
-
-		for (const extensionId of activatedExtensions) {
-			type ExtensionHostCrashExtensionClassification = {
-				owner: 'alexdima';
-				comment: 'The extension host has terminated unexpectedly';
-				code: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The exit code of the extension host process.' };
-				signal: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The signal that caused the extension host process to exit.' };
-				extensionId: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The identifier of the extension.' };
-			};
-			type ExtensionHostCrashExtensionEvent = {
-				code: number;
-				signal: string | null;
-				extensionId: string;
-			};
-			this._telemetryService.publicLog2<ExtensionHostCrashExtensionEvent, ExtensionHostCrashExtensionClassification>('extensionHostCrashExtension', {
-				code,
-				signal,
-				extensionId: extensionId.value
-			});
 		}
 	}
 
@@ -453,16 +409,6 @@ export class NativeExtensionService extends AbstractExtensionService implements 
 		if (!recommendation) {
 			return false;
 		}
-		const sendTelemetry = (userReaction: 'install' | 'enable' | 'cancel') => {
-			/* __GDPR__
-			"remoteExtensionRecommendations:popup" : {
-				"owner": "sandy081",
-				"userReaction" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-				"extensionId": { "classification": "PublicNonPersonalData", "purpose": "FeatureInsight" }
-			}
-			*/
-			this._telemetryService.publicLog('remoteExtensionRecommendations:popup', { userReaction, extensionId: resolverExtensionId });
-		};
 
 		const resolverExtensionId = recommendation.extensionId;
 		const allExtensions = await this._scanAllLocalExtensions();
@@ -474,7 +420,6 @@ export class NativeExtensionService extends AbstractExtensionService implements 
 					[{
 						label: nls.localize('enable', 'Enable and Reload'),
 						run: async () => {
-							sendTelemetry('enable');
 							await this._extensionEnablementService.setEnablement([toExtension(extension)], EnablementState.EnabledGlobally);
 							await this._hostService.reload();
 						}
@@ -492,7 +437,6 @@ export class NativeExtensionService extends AbstractExtensionService implements 
 				[{
 					label: nls.localize('install', 'Install and Reload'),
 					run: async () => {
-						sendTelemetry('install');
 						const [galleryExtension] = await this._extensionGalleryService.getExtensions([{ id: resolverExtensionId }], CancellationToken.None);
 						if (galleryExtension) {
 							await this._extensionManagementService.installFromGallery(galleryExtension);
@@ -506,7 +450,6 @@ export class NativeExtensionService extends AbstractExtensionService implements 
 				{
 					sticky: true,
 					priority: NotificationPriority.URGENT,
-					onCancel: () => sendTelemetry('cancel')
 				}
 			);
 

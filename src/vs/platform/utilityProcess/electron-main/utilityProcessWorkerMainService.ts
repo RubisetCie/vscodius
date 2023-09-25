@@ -9,7 +9,6 @@ import { ILogService } from 'vs/platform/log/common/log';
 import { IUtilityProcessWorkerCreateConfiguration, IOnDidTerminateUtilityrocessWorkerProcess, IUtilityProcessWorkerConfiguration, IUtilityProcessWorkerProcessExit, IUtilityProcessWorkerService } from 'vs/platform/utilityProcess/common/utilityProcessWorkerService';
 import { IWindowsMainService } from 'vs/platform/windows/electron-main/windows';
 import { WindowUtilityProcess } from 'vs/platform/utilityProcess/electron-main/utilityProcess';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { hash } from 'vs/base/common/hash';
 import { Event, Emitter } from 'vs/base/common/event';
 import { DeferredPromise } from 'vs/base/common/async';
@@ -31,7 +30,6 @@ export class UtilityProcessWorkerMainService extends Disposable implements IUtil
 	constructor(
 		@ILogService private readonly logService: ILogService,
 		@IWindowsMainService private readonly windowsMainService: IWindowsMainService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@ILifecycleMainService private readonly lifecycleMainService: ILifecycleMainService
 	) {
 		super();
@@ -50,7 +48,7 @@ export class UtilityProcessWorkerMainService extends Disposable implements IUtil
 		}
 
 		// Create new worker
-		const worker = new UtilityProcessWorker(this.logService, this.windowsMainService, this.telemetryService, this.lifecycleMainService, configuration);
+		const worker = new UtilityProcessWorker(this.logService, this.windowsMainService, this.lifecycleMainService, configuration);
 		if (!worker.spawn()) {
 			return { reason: { code: 1, signal: 'EINVALID' } };
 		}
@@ -98,12 +96,11 @@ class UtilityProcessWorker extends Disposable {
 	private readonly _onDidTerminate = this._register(new Emitter<IUtilityProcessWorkerProcessExit>());
 	readonly onDidTerminate = this._onDidTerminate.event;
 
-	private readonly utilityProcess = new WindowUtilityProcess(this.logService, this.windowsMainService, this.telemetryService, this.lifecycleMainService);
+	private readonly utilityProcess = new WindowUtilityProcess(this.logService, this.windowsMainService, this.lifecycleMainService);
 
 	constructor(
 		@ILogService private readonly logService: ILogService,
 		@IWindowsMainService private readonly windowsMainService: IWindowsMainService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@ILifecycleMainService private readonly lifecycleMainService: ILifecycleMainService,
 		private readonly configuration: IUtilityProcessWorkerCreateConfiguration
 	) {

@@ -17,7 +17,6 @@ import { IMergeDiffComputer } from 'vs/workbench/contrib/mergeEditor/browser/mod
 import { LineRange } from 'vs/workbench/contrib/mergeEditor/browser/model/lineRange';
 import { DetailedLineRangeMapping, DocumentLineRangeMap, DocumentRangeMap, LineRangeMapping } from 'vs/workbench/contrib/mergeEditor/browser/model/mapping';
 import { TextModelDiffChangeReason, TextModelDiffs, TextModelDiffState } from 'vs/workbench/contrib/mergeEditor/browser/model/textModelDiffs';
-import { MergeEditorTelemetry } from 'vs/workbench/contrib/mergeEditor/browser/telemetry';
 import { leftJoin } from 'vs/workbench/contrib/mergeEditor/browser/utils';
 import { InputNumber, ModifiedBaseRange, ModifiedBaseRangeState, ModifiedBaseRangeStateKind } from './modifiedBaseRange';
 
@@ -56,7 +55,6 @@ export class MergeEditorModel extends EditorModel {
 		readonly resultTextModel: ITextModel,
 		private readonly diffComputer: IMergeDiffComputer,
 		private readonly options: { resetResult: boolean },
-		public readonly telemetry: MergeEditorTelemetry,
 		@ILanguageService private readonly languageService: ILanguageService,
 		@IUndoRedoService private readonly undoRedoService: IUndoRedoService,
 	) {

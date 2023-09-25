@@ -11,13 +11,10 @@ import { INotificationViewItem, isNotificationViewItem, NotificationsModel } fro
 import { MenuRegistry, MenuId } from 'vs/platform/actions/common/actions';
 import { localize } from 'vs/nls';
 import { IListService, WorkbenchList } from 'vs/platform/list/browser/listService';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { NotificationMetrics, NotificationMetricsClassification, notificationToMetrics } from 'vs/workbench/browser/parts/notifications/notificationsTelemetry';
 import { NotificationFocusedContext, NotificationsCenterVisibleContext, NotificationsToastsVisibleContext } from 'vs/workbench/common/contextkeys';
-import { INotificationService, NotificationPriority } from 'vs/platform/notification/common/notification';
+import { INotificationService } from 'vs/platform/notification/common/notification';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { ActionRunner, IAction, WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification } from 'vs/base/common/actions';
-import { hash } from 'vs/base/common/hash';
+import { ActionRunner, IAction } from 'vs/base/common/actions';
 import { firstOrDefault } from 'vs/base/common/arrays';
 
 // Center
@@ -108,13 +105,6 @@ export function registerNotificationCommands(center: INotificationsCenterControl
 		when: NotificationsCenterVisibleContext,
 		primary: KeyCode.Escape,
 		handler: accessor => {
-			const telemetryService = accessor.get(ITelemetryService);
-			for (const notification of model.notifications) {
-				if (notification.visible) {
-					telemetryService.publicLog2<NotificationMetrics, NotificationMetricsClassification>('notification:hide', notificationToMetrics(notification.message.original, notification.sourceId, notification.priority === NotificationPriority.SILENT));
-				}
-			}
-
 			center.hide();
 		}
 	});
@@ -206,12 +196,6 @@ export function registerNotificationCommands(center: INotificationsCenterControl
 
 	// Hide Toasts
 	CommandsRegistry.registerCommand(HIDE_NOTIFICATION_TOAST, accessor => {
-		const telemetryService = accessor.get(ITelemetryService);
-		for (const notification of model.notifications) {
-			if (notification.visible) {
-				telemetryService.publicLog2<NotificationMetrics, NotificationMetricsClassification>('notification:hide', notificationToMetrics(notification.message.original, notification.sourceId, notification.priority === NotificationPriority.SILENT));
-			}
-		}
 		toasts.hide();
 	});
 
@@ -299,45 +283,15 @@ export function registerNotificationCommands(center: INotificationsCenterControl
 }
 
 
-interface NotificationActionMetrics {
-	readonly id: string;
-	readonly actionLabel: string;
-	readonly source: string;
-	readonly silent: boolean;
-}
-
-type NotificationActionMetricsClassification = {
-	id: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The identifier of the action that was run from a notification.' };
-	actionLabel: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The label of the action that was run from a notification.' };
-	source: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The source of the notification where an action was run.' };
-	silent: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Whether the notification where an action was run is silent or not.' };
-	owner: 'bpasero';
-	comment: 'Tracks when actions are fired from notifcations and how they were fired.';
-};
-
 export class NotificationActionRunner extends ActionRunner {
 
 	constructor(
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@INotificationService private readonly notificationService: INotificationService
 	) {
 		super();
 	}
 
 	protected override async runAction(action: IAction, context: unknown): Promise<void> {
-		this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: action.id, from: 'message' });
-
-		if (isNotificationViewItem(context)) {
-			// Log some additional telemetry specifically for actions
-			// that are triggered from within notifications.
-			this.telemetryService.publicLog2<NotificationActionMetrics, NotificationActionMetricsClassification>('notification:actionExecuted', {
-				id: hash(context.message.original.toString()).toString(),
-				actionLabel: action.label,
-				source: context.sourceId || 'core',
-				silent: context.priority === NotificationPriority.SILENT
-			});
-		}
-
 		// Run and make sure to notify on any error again
 		try {
 			await super.runAction(action, context);

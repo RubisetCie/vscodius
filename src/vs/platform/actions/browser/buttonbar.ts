@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { ButtonBar, IButton } from 'vs/base/browser/ui/button/button';
-import { ActionRunner, IAction, WorkbenchActionExecutedClassification, WorkbenchActionExecutedEvent } from 'vs/base/common/actions';
+import { ActionRunner, IAction } from 'vs/base/common/actions';
 import { Emitter, Event } from 'vs/base/common/event';
 import { DisposableStore } from 'vs/base/common/lifecycle';
 import { ThemeIcon } from 'vs/base/common/themables';
@@ -13,7 +13,6 @@ import { MenuId, IMenuService, SubmenuItemAction, MenuItemAction } from 'vs/plat
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 
 export type IButtonConfigProvider = (action: IAction) => {
 	showIcon?: boolean;
@@ -22,7 +21,6 @@ export type IButtonConfigProvider = (action: IAction) => {
 } | undefined;
 
 export interface IMenuWorkbenchButtonBarOptions {
-	telemetrySource?: string;
 	buttonConfigProvider?: IButtonConfigProvider;
 }
 
@@ -41,7 +39,6 @@ export class MenuWorkbenchButtonBar extends ButtonBar {
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@IKeybindingService keybindingService: IKeybindingService,
-		@ITelemetryService telemetryService: ITelemetryService,
 	) {
 		super(container);
 
@@ -49,14 +46,6 @@ export class MenuWorkbenchButtonBar extends ButtonBar {
 		this._store.add(menu);
 
 		const actionRunner = this._store.add(new ActionRunner());
-		if (options?.telemetrySource) {
-			actionRunner.onDidRun(e => {
-				telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>(
-					'workbenchActionExecuted',
-					{ id: e.action.id, from: options.telemetrySource! }
-				);
-			}, undefined, this._store);
-		}
 
 		const conifgProvider: IButtonConfigProvider = options?.buttonConfigProvider ?? (() => ({ showLabel: true }));
 

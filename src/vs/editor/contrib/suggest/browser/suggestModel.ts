@@ -22,9 +22,8 @@ import { IClipboardService } from 'vs/platform/clipboard/common/clipboardService
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { ILogService } from 'vs/platform/log/common/log';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { CompletionModel } from './completionModel';
-import { CompletionDurations, CompletionItem, CompletionOptions, getSnippetSuggestSupport, provideSuggestionItems, QuickSuggestionsOptions, SnippetSortOrder } from './suggest';
+import { CompletionItem, CompletionOptions, getSnippetSuggestSupport, provideSuggestionItems, QuickSuggestionsOptions, SnippetSortOrder } from './suggest';
 import { IWordAtPosition } from 'vs/editor/common/core/wordHelper';
 import { ILanguageFeaturesService } from 'vs/editor/common/services/languageFeatures';
 import { FuzzyScoreOptions } from 'vs/base/common/filters';
@@ -154,7 +153,6 @@ export class SuggestModel implements IDisposable {
 		private readonly _editor: ICodeEditor,
 		@IEditorWorkerService private readonly _editorWorkerService: IEditorWorkerService,
 		@IClipboardService private readonly _clipboardService: IClipboardService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@ILogService private readonly _logService: ILogService,
 		@IContextKeyService private readonly _contextKeyService: IContextKeyService,
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
@@ -543,9 +541,6 @@ export class SuggestModel implements IDisposable {
 
 			this._onNewContext(ctx);
 
-			// finally report telemetry about durations
-			this._reportDurationsTelemetry(completions.durations);
-
 			// report invalid completions by source
 			if (!this._envService.isBuilt || this._envService.isExtensionDevelopment) {
 				for (const item of completions.items) {
@@ -556,26 +551,6 @@ export class SuggestModel implements IDisposable {
 			}
 
 		}).catch(onUnexpectedError);
-	}
-
-	private _telemetryGate: number = 0;
-
-	private _reportDurationsTelemetry(durations: CompletionDurations): void {
-
-		if (this._telemetryGate++ % 230 !== 0) {
-			return;
-		}
-
-		setTimeout(() => {
-			type Durations = { data: string };
-			type DurationsClassification = {
-				owner: 'jrieken';
-				comment: 'Completions performance numbers';
-				data: { comment: 'Durations per source and overall'; classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth' };
-			};
-			this._telemetryService.publicLog2<Durations, DurationsClassification>('suggest.durations.json', { data: JSON.stringify(durations) });
-			this._logService.debug('suggest.durations.json', durations);
-		});
 	}
 
 	private static _createSuggestFilter(editor: ICodeEditor): { itemKind: Set<CompletionItemKind>; showDeprecated: boolean } {

@@ -213,8 +213,6 @@ function loadTests(opts) {
 		'onWillShutdown - join with error is handled',
 		'onBeforeShutdown - veto with error is treated as veto',
 		'onBeforeShutdown - final veto with error is treated as veto',
-		// Search tests
-		'Search Model: Search reports timed telemetry on search when error is called'
 	]);
 
 	loader.require.config({

@@ -13,7 +13,6 @@ import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/
 import { dirname, basename, isEqual } from 'vs/base/common/resources';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IOutputService } from 'vs/workbench/services/output/common/output';
-import { extensionTelemetryLogChannelId, telemetryLogId } from 'vs/platform/telemetry/common/telemetryUtils';
 import { IDefaultLogLevelsService } from 'vs/workbench/contrib/logs/common/defaultLogLevels';
 import { Codicon } from 'vs/base/common/codicons';
 import { ThemeIcon } from 'vs/base/common/themables';
@@ -52,7 +51,7 @@ export class SetLogLevelAction extends Action {
 		const extensionLogs: LogChannelQuickPickItem[] = [], logs: LogChannelQuickPickItem[] = [];
 		const logLevel = this.loggerService.getLogLevel();
 		for (const channel of this.outputService.getChannelDescriptors()) {
-			if (!channel.log || !channel.file || channel.id === telemetryLogId || channel.id === extensionTelemetryLogChannelId) {
+			if (!channel.log || !channel.file) {
 				continue;
 			}
 			const channelLogLevel = this.loggerService.getLogLevel(channel.file) ?? logLevel;

@@ -15,7 +15,6 @@ import { IUserDataProfilesService } from 'vs/platform/userDataProfile/common/use
 import { IPolicyService } from 'vs/platform/policy/common/policy';
 import { ILoggerMainService } from 'vs/platform/log/electron-main/loggerService';
 import { UtilityProcess } from 'vs/platform/utilityProcess/electron-main/utilityProcess';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 import { parseSharedProcessDebugPort } from 'vs/platform/environment/node/environmentService';
 import { assertIsDefined } from 'vs/base/common/types';
 import { SharedProcessChannelConnection, SharedProcessRawConnection, SharedProcessLifecycle } from 'vs/platform/sharedProcess/common/sharedProcess';
@@ -147,7 +146,7 @@ export class SharedProcess extends Disposable {
 	}
 
 	private createUtilityProcess(): void {
-		this.utilityProcess = this._register(new UtilityProcess(this.logService, NullTelemetryService, this.lifecycleMainService));
+		this.utilityProcess = this._register(new UtilityProcess(this.logService, this.lifecycleMainService));
 
 		const inspectParams = parseSharedProcessDebugPort(this.environmentMainService.args, this.environmentMainService.isBuilt);
 		let execArgv: string[] | undefined = undefined;

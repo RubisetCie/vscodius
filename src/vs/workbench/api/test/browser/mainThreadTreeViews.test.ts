@@ -61,7 +61,7 @@ suite('MainThreadHostTreeView', function () {
 			id: testTreeViewId,
 			ctorDescriptor: null!,
 			name: 'Test View 1',
-			treeView: disposables.add(instantiationService.createInstance(CustomTreeView, 'testTree', 'Test Title', 'extension.id')),
+			treeView: disposables.add(instantiationService.createInstance(CustomTreeView, 'testTree', 'Test Title')),
 		};
 		ViewsRegistry.registerViews([viewDescriptor], container);
 

@@ -17,7 +17,6 @@ import { NullLogService } from 'vs/platform/log/common/log';
 import type { IDisposable } from 'vs/base/common/lifecycle';
 import { nullExtensionDescription as extensionsDescription } from 'vs/workbench/services/extensions/common/extensions';
 import { runWithFakedTimers } from 'vs/base/test/common/timeTravelScheduler';
-import { IExtHostTelemetry } from 'vs/workbench/api/common/extHostTelemetry';
 import { ensureNoDisposablesAreLeakedInTestSuite } from 'vs/base/test/common/utils';
 
 suite('ExtHostTreeView', function () {
@@ -78,11 +77,6 @@ suite('ExtHostTreeView', function () {
 		testObject = store.add(new ExtHostTreeViews(target, new ExtHostCommands(
 			rpcProtocol,
 			new NullLogService(),
-			new class extends mock<IExtHostTelemetry>() {
-				override onExtensionError(): boolean {
-					return true;
-				}
-			}
 		), new NullLogService()));
 		onDidChangeTreeNode = new Emitter<{ key: string } | undefined>();
 		onDidChangeTreeNodeWithId = new Emitter<{ key: string }>();

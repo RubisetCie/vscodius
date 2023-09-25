@@ -27,7 +27,7 @@ import * as Platform from 'vs/base/common/platform';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IExtHostApiDeprecationService } from 'vs/workbench/api/common/extHostApiDeprecationService';
 import { USER_TASKS_GROUP_KEY } from 'vs/workbench/contrib/tasks/common/tasks';
-import { ErrorNoTelemetry, NotSupportedError } from 'vs/base/common/errors';
+import { NotSupportedError } from 'vs/base/common/errors';
 
 export interface IExtHostTask extends ExtHostTaskShape {
 
@@ -624,7 +624,7 @@ export abstract class ExtHostTaskBase implements ExtHostTaskShape, IExtHostTask 
 		if (typeof execution === 'string') {
 			const taskExecution = this._taskExecutionPromises.get(execution);
 			if (!taskExecution) {
-				throw new ErrorNoTelemetry('Unexpected: The specified task is missing an execution');
+				throw new Error('Unexpected: The specified task is missing an execution');
 			}
 			return taskExecution;
 		}

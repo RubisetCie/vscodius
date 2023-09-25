@@ -130,7 +130,7 @@ suite('XtermTerminal', () => {
 		XTermBaseCtor = (await importAMDNodeModule<typeof import('xterm')>('xterm', 'lib/xterm.js')).Terminal;
 
 		const capabilityStore = store.add(new TerminalCapabilityStore());
-		xterm = store.add(instantiationService.createInstance(TestXtermTerminal, XTermBaseCtor, configHelper, 80, 30, { getBackgroundColor: () => undefined }, capabilityStore, '', new MockContextKeyService().createKey('', true)!, true));
+		xterm = store.add(instantiationService.createInstance(TestXtermTerminal, XTermBaseCtor, configHelper, 80, 30, { getBackgroundColor: () => undefined }, capabilityStore, '', new MockContextKeyService().createKey('', true)!));
 
 		TestWebglAddon.shouldThrow = false;
 		TestWebglAddon.isEnabled = false;
@@ -147,7 +147,7 @@ suite('XtermTerminal', () => {
 				[PANEL_BACKGROUND]: '#ff0000',
 				[SIDE_BAR_BACKGROUND]: '#00ff00'
 			}));
-			xterm = store.add(instantiationService.createInstance(XtermTerminal, XTermBaseCtor, configHelper, 80, 30, { getBackgroundColor: () => new Color(new RGBA(255, 0, 0)) }, store.add(new TerminalCapabilityStore()), '', new MockContextKeyService().createKey('', true)!, true));
+			xterm = store.add(instantiationService.createInstance(XtermTerminal, XTermBaseCtor, configHelper, 80, 30, { getBackgroundColor: () => new Color(new RGBA(255, 0, 0)) }, store.add(new TerminalCapabilityStore()), '', new MockContextKeyService().createKey('', true)!));
 			strictEqual(xterm.raw.options.theme?.background, '#ff0000');
 		});
 		test('should react to and apply theme changes', () => {
@@ -176,7 +176,7 @@ suite('XtermTerminal', () => {
 				'terminal.ansiBrightCyan': '#150000',
 				'terminal.ansiBrightWhite': '#160000',
 			}));
-			xterm = store.add(instantiationService.createInstance(XtermTerminal, XTermBaseCtor, configHelper, 80, 30, { getBackgroundColor: () => undefined }, store.add(new TerminalCapabilityStore()), '', new MockContextKeyService().createKey('', true)!, true));
+			xterm = store.add(instantiationService.createInstance(XtermTerminal, XTermBaseCtor, configHelper, 80, 30, { getBackgroundColor: () => undefined }, store.add(new TerminalCapabilityStore()), '', new MockContextKeyService().createKey('', true)!));
 			deepStrictEqual(xterm.raw.options.theme, {
 				background: undefined,
 				foreground: '#000200',

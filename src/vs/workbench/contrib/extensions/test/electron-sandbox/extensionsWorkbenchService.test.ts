@@ -21,8 +21,6 @@ import { IURLService } from 'vs/platform/url/common/url';
 import { TestInstantiationService } from 'vs/platform/instantiation/test/common/instantiationServiceMock';
 import { Event, Emitter } from 'vs/base/common/event';
 import { IPager } from 'vs/base/common/paging';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { TestExtensionTipsService, TestSharedProcessService } from 'vs/workbench/test/electron-sandbox/workbenchTestServices';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
@@ -70,7 +68,6 @@ suite('ExtensionsWorkbenchServiceTest', () => {
 		didUninstallEvent = disposableStore.add(new Emitter<DidUninstallExtensionEvent>());
 
 		instantiationService = disposableStore.add(new TestInstantiationService());
-		instantiationService.stub(ITelemetryService, NullTelemetryService);
 		instantiationService.stub(ILogService, NullLogService);
 		instantiationService.stub(IProgressService, ProgressService);
 		instantiationService.stub(IProductService, {});

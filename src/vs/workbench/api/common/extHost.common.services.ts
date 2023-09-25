@@ -21,7 +21,6 @@ import { IExtHostWindow, ExtHostWindow } from 'vs/workbench/api/common/extHostWi
 import { IExtHostConsumerFileSystem, ExtHostConsumerFileSystem } from 'vs/workbench/api/common/extHostFileSystemConsumer';
 import { IExtHostFileSystemInfo, ExtHostFileSystemInfo } from 'vs/workbench/api/common/extHostFileSystemInfo';
 import { IExtHostSecretState, ExtHostSecretState } from 'vs/workbench/api/common/extHostSecretState';
-import { ExtHostTelemetry, IExtHostTelemetry } from 'vs/workbench/api/common/extHostTelemetry';
 import { ExtHostEditorTabs, IExtHostEditorTabs } from 'vs/workbench/api/common/extHostEditorTabs';
 import { ExtHostLoggerService } from 'vs/workbench/api/common/extHostLoggerService';
 import { ILoggerService } from 'vs/platform/log/common/log';
@@ -49,6 +48,5 @@ registerSingleton(IExtHostTunnelService, ExtHostTunnelService, InstantiationType
 registerSingleton(IExtHostWindow, ExtHostWindow, InstantiationType.Eager);
 registerSingleton(IExtHostWorkspace, ExtHostWorkspace, InstantiationType.Eager);
 registerSingleton(IExtHostSecretState, ExtHostSecretState, InstantiationType.Eager);
-registerSingleton(IExtHostTelemetry, ExtHostTelemetry, InstantiationType.Eager);
 registerSingleton(IExtHostEditorTabs, ExtHostEditorTabs, InstantiationType.Eager);
 registerSingleton(IExtHostVariableResolverProvider, ExtHostVariableResolverProviderService, InstantiationType.Eager);

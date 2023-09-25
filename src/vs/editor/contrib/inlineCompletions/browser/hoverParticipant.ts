@@ -20,7 +20,6 @@ import * as nls from 'vs/nls';
 import { IAccessibilityService } from 'vs/platform/accessibility/common/accessibility';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 
 export class InlineCompletionsHover implements IHoverPart {
 	constructor(
@@ -48,7 +47,6 @@ export class InlineCompletionsHoverParticipant implements IEditorHoverParticipan
 		@IOpenerService private readonly _openerService: IOpenerService,
 		@IAccessibilityService private readonly accessibilityService: IAccessibilityService,
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 	) {
 	}
 
@@ -97,11 +95,6 @@ export class InlineCompletionsHoverParticipant implements IEditorHoverParticipan
 	renderHoverParts(context: IEditorHoverRenderContext, hoverParts: InlineCompletionsHover[]): IDisposable {
 		const disposableStore = new DisposableStore();
 		const part = hoverParts[0];
-
-		this._telemetryService.publicLog2<{}, {
-			owner: 'hediet';
-			comment: 'This event tracks whenever an inline completion hover is shown.';
-		}>('inlineCompletionHover.shown');
 
 		if (this.accessibilityService.isScreenReaderOptimized() && !this._editor.getOption(EditorOption.screenReaderAnnounceInlineSuggestion)) {
 			this.renderScreenReaderText(context, part, disposableStore);

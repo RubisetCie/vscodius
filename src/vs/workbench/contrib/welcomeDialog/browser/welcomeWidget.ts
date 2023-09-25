@@ -14,8 +14,7 @@ import { ButtonBar } from 'vs/base/browser/ui/button/button';
 import { mnemonicButtonLabel } from 'vs/base/common/labels';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { defaultButtonStyles } from 'vs/platform/theme/browser/defaultStyles';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { Action, WorkbenchActionExecutedClassification, WorkbenchActionExecutedEvent } from 'vs/base/common/actions';
+import { Action } from 'vs/base/common/actions';
 import { ActionBar } from 'vs/base/browser/ui/actionbar/actionbar';
 import { localize } from 'vs/nls';
 import { ThemeIcon } from 'vs/base/common/themables';
@@ -40,7 +39,6 @@ export class WelcomeWidget extends Disposable implements IOverlayWidget {
 		private readonly _editor: ICodeEditor,
 		private readonly instantiationService: IInstantiationService,
 		private readonly commandService: ICommandService,
-		private readonly telemetryService: ITelemetryService,
 		private readonly openerService: IOpenerService
 	) {
 		super();
@@ -58,10 +56,6 @@ export class WelcomeWidget extends Disposable implements IOverlayWidget {
 	async executeCommand(commandId: string, ...args: string[]) {
 		try {
 			await this.commandService.executeCommand(commandId, ...args);
-			this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', {
-				id: commandId,
-				from: 'welcomeWidget'
-			});
 		}
 		catch (ex) {
 		}
@@ -75,10 +69,6 @@ export class WelcomeWidget extends Disposable implements IOverlayWidget {
 		await this.buildWidgetContent(title, message, buttonText, buttonAction);
 		this._editor.addOverlayWidget(this);
 		this._show();
-		this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', {
-			id: 'welcomeWidgetRendered',
-			from: 'welcomeWidget'
-		});
 	}
 
 	private async buildWidgetContent(title: string, message: string, buttonText: string, buttonAction: string) {
@@ -133,10 +123,6 @@ export class WelcomeWidget extends Disposable implements IOverlayWidget {
 				} else {
 					const link = this.instantiationService.createInstance(Link, p, node, {
 						opener: (href: string) => {
-							this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', {
-								id: 'welcomeWidetLinkAction',
-								from: 'welcomeWidget'
-							});
 							this.openerService.open(href, { allowCommands: true });
 						}
 					});
@@ -179,10 +165,6 @@ export class WelcomeWidget extends Disposable implements IOverlayWidget {
 		this._isVisible = true;
 		this._rootDomNode.style.display = 'none';
 		this._editor.removeOverlayWidget(this);
-		this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', {
-			id: 'welcomeWidgetDismissed',
-			from: 'welcomeWidget'
-		});
 	}
 }
 

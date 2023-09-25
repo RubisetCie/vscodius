@@ -7,7 +7,6 @@ import * as nls from 'vs/nls';
 import * as DOM from 'vs/base/browser/dom';
 import { findLastIdx } from 'vs/base/common/arraysFind';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService, registerThemingParticipant } from 'vs/platform/theme/common/themeService';
 import { EditorPaneSelectionChangeReason, EditorPaneSelectionCompareResult, IEditorOpenContext, IEditorPaneSelection, IEditorPaneSelectionChangeEvent, IEditorPaneWithSelection } from 'vs/workbench/common/editor';
 import { getDefaultNotebookCreationOptions } from 'vs/workbench/contrib/notebook/browser/notebookEditorWidget';
@@ -146,11 +145,10 @@ export class NotebookTextDiffEditor extends EditorPane implements INotebookTextD
 		@IContextKeyService private readonly contextKeyService: IContextKeyService,
 		@INotebookEditorWorkerService private readonly notebookEditorWorkerService: INotebookEditorWorkerService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IStorageService storageService: IStorageService,
 		@INotebookExecutionStateService notebookExecutionStateService: INotebookExecutionStateService,
 	) {
-		super(NotebookTextDiffEditor.ID, telemetryService, themeService, storageService);
+		super(NotebookTextDiffEditor.ID, themeService, storageService);
 		this._notebookOptions = new NotebookOptions(this.configurationService, notebookExecutionStateService, false);
 		this._register(this._notebookOptions);
 		const editorOptions = this.configurationService.getValue<ICodeEditorOptions>('editor');

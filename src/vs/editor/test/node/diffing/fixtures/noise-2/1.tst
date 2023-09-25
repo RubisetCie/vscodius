@@ -32,16 +32,6 @@ export class ChatService extends Disposable implements IChatService {
 			const stopWatch = new StopWatch(false);
 			token.onCancellationRequested(() => {
 				this.trace('sendRequest', `Request for session ${model.sessionId} was cancelled`);
-				this.telemetryService.publicLog2<ChatProviderInvokedEvent, ChatProviderInvokedClassification>('interactiveSessionProviderInvoked', {
-					providerId: provider.id,
-					timeToFirstProgress: -1,
-					// Normally timings happen inside the EH around the actual provider. For cancellation we can measure how long the user waited before cancelling
-					totalTime: stopWatch.elapsed(),
-					result: 'cancelled',
-					requestType,
-					slashCommand: usedSlashCommand?.command
-				});
-
 				model.cancelRequest(request);
 			});
 			if (usedSlashCommand?.command) {
@@ -56,18 +46,6 @@ export class ChatService extends Disposable implements IChatService {
 					rawResponse = { session: model.session!, errorDetails: { message: localize('emptyResponse', "Provider returned null response") } };
 				}
 
-				const result = rawResponse.errorDetails?.responseIsFiltered ? 'filtered' :
-					rawResponse.errorDetails && gotProgress ? 'errorWithOutput' :
-						rawResponse.errorDetails ? 'error' :
-							'success';
-				this.telemetryService.publicLog2<ChatProviderInvokedEvent, ChatProviderInvokedClassification>('interactiveSessionProviderInvoked', {
-					providerId: provider.id,
-					timeToFirstProgress: rawResponse.timings?.firstProgress ?? 0,
-					totalTime: rawResponse.timings?.totalElapsed ?? 0,
-					result,
-					requestType,
-					slashCommand: usedSlashCommand?.command
-				});
 				model.setResponse(request, rawResponse);
 				this.trace('sendRequest', `Provider returned response for session ${model.sessionId}`);
 

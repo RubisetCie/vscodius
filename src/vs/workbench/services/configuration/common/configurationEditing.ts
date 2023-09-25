@@ -28,7 +28,6 @@ import { EditOperation } from 'vs/editor/common/core/editOperation';
 import { Selection } from 'vs/editor/common/core/selection';
 import { IUserDataProfileService } from 'vs/workbench/services/userDataProfile/common/userDataProfile';
 import { IUserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
-import { ErrorNoTelemetry } from 'vs/base/common/errors';
 
 export const enum ConfigurationEditingErrorCode {
 
@@ -103,7 +102,7 @@ export const enum ConfigurationEditingErrorCode {
 	ERROR_INTERNAL
 }
 
-export class ConfigurationEditingError extends ErrorNoTelemetry {
+export class ConfigurationEditingError extends Error {
 	constructor(message: string, public code: ConfigurationEditingErrorCode) {
 		super(message);
 	}

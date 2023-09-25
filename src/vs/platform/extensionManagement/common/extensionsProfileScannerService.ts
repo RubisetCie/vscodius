@@ -19,7 +19,6 @@ import { IUserDataProfilesService } from 'vs/platform/userDataProfile/common/use
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { Mutable, isObject, isString, isUndefined } from 'vs/base/common/types';
 import { getErrorMessage } from 'vs/base/common/errors';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 
 interface IStoredProfileExtension {
 	identifier: IExtensionIdentifier;
@@ -110,7 +109,6 @@ export abstract class AbstractExtensionsProfileScannerService extends Disposable
 		@IFileService private readonly fileService: IFileService,
 		@IUserDataProfilesService private readonly userDataProfilesService: IUserDataProfilesService,
 		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@ILogService private readonly logService: ILogService,
 	) {
 		super();
@@ -299,13 +297,7 @@ export abstract class AbstractExtensionsProfileScannerService extends Disposable
 	}
 
 	private reportAndThrowInvalidConentError(file: URI): void {
-		type ErrorClassification = {
-			owner: 'sandy081';
-			comment: 'Information about the error that occurred while scanning';
-			code: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'error code' };
-		};
 		const error = new ExtensionsProfileScanningError(`Invalid extensions content in ${file.toString()}`, ExtensionsProfileScanningErrorCode.ERROR_INVALID_CONTENT);
-		this.telemetryService.publicLogError2<{ code: string }, ErrorClassification>('extensionsProfileScanningError', { code: error.code });
 		throw error;
 	}
 

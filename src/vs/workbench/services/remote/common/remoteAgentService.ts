@@ -9,7 +9,6 @@ import { IChannel, IServerChannel } from 'vs/base/parts/ipc/common/ipc';
 import { IDiagnosticInfoOptions, IDiagnosticInfo } from 'vs/platform/diagnostics/common/diagnostics';
 import { Event } from 'vs/base/common/event';
 import { PersistentConnectionEvent } from 'vs/platform/remote/common/remoteAgentConnection';
-import { ITelemetryData, TelemetryLevel } from 'vs/platform/telemetry/common/telemetry';
 import { timeout } from 'vs/base/common/async';
 
 export const IRemoteAgentService = createDecorator<IRemoteAgentService>('remoteAgentService');
@@ -38,9 +37,6 @@ export interface IRemoteAgentService {
 	getRoundTripTime(): Promise<number | undefined>;
 
 	getDiagnosticInfo(options: IDiagnosticInfoOptions): Promise<IDiagnosticInfo | undefined>;
-	updateTelemetryLevel(telemetryLevel: TelemetryLevel): Promise<void>;
-	logTelemetry(eventName: string, data?: ITelemetryData): Promise<void>;
-	flushTelemetry(): Promise<void>;
 }
 
 export interface IExtensionHostExitInfo {

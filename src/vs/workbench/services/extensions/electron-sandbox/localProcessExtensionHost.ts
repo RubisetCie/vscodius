@@ -26,8 +26,6 @@ import { ILogService, ILoggerService } from 'vs/platform/log/common/log';
 import { INativeHostService } from 'vs/platform/native/common/native';
 import { INotificationService, NotificationPriority, Severity } from 'vs/platform/notification/common/notification';
 import { IProductService } from 'vs/platform/product/common/productService';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { isLoggingOnly } from 'vs/platform/telemetry/common/telemetryUtils';
 import { IUserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
 import { IWorkspaceContextService, WorkbenchState, isUntitledWorkspace } from 'vs/platform/workspace/common/workspace';
 import { INativeWorkbenchEnvironmentService } from 'vs/workbench/services/environment/electron-sandbox/environmentService';
@@ -123,7 +121,6 @@ export class NativeLocalProcessExtensionHost implements IExtensionHost {
 		@ILifecycleService private readonly _lifecycleService: ILifecycleService,
 		@INativeWorkbenchEnvironmentService private readonly _environmentService: INativeWorkbenchEnvironmentService,
 		@IUserDataProfilesService private readonly _userDataProfilesService: IUserDataProfilesService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@ILogService protected readonly _logService: ILogService,
 		@ILoggerService protected readonly _loggerService: ILoggerService,
 		@ILabelService private readonly _labelService: ILabelService,
@@ -427,8 +424,6 @@ export class NativeLocalProcessExtensionHost implements IExtensionHost {
 				appName: this._productService.nameLong,
 				appHost: this._productService.embedderIdentifier || 'desktop',
 				appUriScheme: this._productService.urlProtocol,
-				extensionTelemetryLogResource: this._environmentService.extHostTelemetryLogFile,
-				isExtensionTelemetryLoggingOnly: isLoggingOnly(this._productService, this._environmentService),
 				appLanguage: platform.language,
 				extensionDevelopmentLocationURI: this._environmentService.extensionDevelopmentLocationURI,
 				extensionTestsLocationURI: this._environmentService.extensionTestsLocationURI,
@@ -453,12 +448,6 @@ export class NativeLocalProcessExtensionHost implements IExtensionHost {
 				logNative: !this._isExtensionDevTestFromCli && this._isExtensionDevHost
 			},
 			extensions: this.extensions.toSnapshot(),
-			telemetryInfo: {
-				sessionId: this._telemetryService.sessionId,
-				machineId: this._telemetryService.machineId,
-				firstSessionDate: this._telemetryService.firstSessionDate,
-				msftInternal: this._telemetryService.msftInternal
-			},
 			logLevel: this._logService.getLevel(),
 			loggers: [...this._loggerService.getRegisteredLoggers()],
 			logsLocation: this._environmentService.extHostLogsPath,

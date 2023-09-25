@@ -27,7 +27,6 @@ import { ILabelService } from 'vs/platform/label/common/label';
 import { WorkbenchList } from 'vs/platform/list/browser/listService';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { editorBackground } from 'vs/platform/theme/common/colorRegistry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { EditorPane } from 'vs/workbench/browser/parts/editor/editorPane';
@@ -71,7 +70,6 @@ export abstract class AbstractRuntimeExtensionsEditor extends EditorPane {
 	private _updateSoon: RunOnceScheduler;
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IExtensionsWorkbenchService private readonly _extensionsWorkbenchService: IExtensionsWorkbenchService,
@@ -84,7 +82,7 @@ export abstract class AbstractRuntimeExtensionsEditor extends EditorPane {
 		@IWorkbenchEnvironmentService private readonly _environmentService: IWorkbenchEnvironmentService,
 		@IClipboardService private readonly _clipboardService: IClipboardService,
 	) {
-		super(AbstractRuntimeExtensionsEditor.ID, telemetryService, themeService, storageService);
+		super(AbstractRuntimeExtensionsEditor.ID, themeService, storageService);
 
 		this._list = null;
 		this._elements = null;

@@ -11,7 +11,6 @@ import { IEditorOptions } from 'vs/editor/common/config/editorOptions';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { ILabelService } from 'vs/platform/label/common/label';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { EditorsOrder } from 'vs/workbench/common/editor';
 import { IViewsService } from 'vs/workbench/common/views';
@@ -99,7 +98,6 @@ export const openNewSearchEditor =
 	async (accessor: ServicesAccessor, _args: OpenSearchEditorArgs = {}, toSide = false) => {
 		const editorService = accessor.get(IEditorService);
 		const editorGroupsService = accessor.get(IEditorGroupsService);
-		const telemetryService = accessor.get(ITelemetryService);
 		const instantiationService = accessor.get(IInstantiationService);
 		const configurationService = accessor.get(IConfigurationService);
 
@@ -138,13 +136,6 @@ export const openNewSearchEditor =
 				selected = active.getSelected();
 			}
 		}
-
-		telemetryService.publicLog2<{},
-			{
-				owner: 'roblourens';
-				comment: 'Fired when a search editor is opened';
-			}>
-			('searchEditor/openNewSearchEditor');
 
 		const seedSearchStringFromSelection = _args.location === 'new' || configurationService.getValue<IEditorOptions>('editor').find!.seedSearchStringFromSelection;
 		const args: OpenSearchEditorArgs = { query: seedSearchStringFromSelection ? selected : undefined };
@@ -192,19 +183,10 @@ export const createEditorFromSearchResult =
 		}
 
 		const editorService = accessor.get(IEditorService);
-		const telemetryService = accessor.get(ITelemetryService);
 		const instantiationService = accessor.get(IInstantiationService);
 		const labelService = accessor.get(ILabelService);
 		const configurationService = accessor.get(IConfigurationService);
 		const sortOrder = configurationService.getValue<ISearchConfigurationProperties>('search').sortOrder;
-
-		telemetryService.publicLog2<
-			{},
-			{
-				owner: 'roblourens';
-				comment: 'Fired when a search editor is opened from the search view';
-			}>
-			('searchEditor/createEditorFromSearchResult');
 
 		const labelFormatter = (uri: URI): string => labelService.getUriLabel(uri, { relative: true });
 

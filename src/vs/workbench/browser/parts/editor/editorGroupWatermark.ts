@@ -6,7 +6,6 @@
 import { Disposable, DisposableStore } from 'vs/base/common/lifecycle';
 import { isMacintosh, isWeb, OS } from 'vs/base/common/platform';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import * as nls from 'vs/nls';
 import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { ILifecycleService } from 'vs/workbench/services/lifecycle/common/lifecycle';
@@ -71,7 +70,6 @@ export class EditorGroupWatermark extends Disposable {
 		@IWorkspaceContextService private readonly contextService: IWorkspaceContextService,
 		@IContextKeyService private readonly contextKeyService: IContextKeyService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService
 	) {
 		super();
 
@@ -152,13 +150,6 @@ export class EditorGroupWatermark extends Disposable {
 
 		update();
 		this.transientDisposables.add(this.keybindingService.onDidUpdateKeybindings(update));
-
-		/* __GDPR__
-		"watermark:open" : {
-			"owner": "digitarald"
-		}
-		*/
-		this.telemetryService.publicLog('watermark:open');
 	}
 
 	private clear(): void {

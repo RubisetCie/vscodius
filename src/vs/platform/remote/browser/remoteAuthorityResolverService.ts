@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { DeferredPromise } from 'vs/base/common/async';
-import * as errors from 'vs/base/common/errors';
 import { Emitter } from 'vs/base/common/event';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { RemoteAuthorities } from 'vs/base/common/network';
@@ -121,7 +120,7 @@ export class RemoteAuthorityResolverService extends Disposable implements IRemot
 		if (this._resolveAuthorityRequests.has(authority)) {
 			const request = this._resolveAuthorityRequests.get(authority)!;
 			// Avoid that this error makes it to telemetry
-			request.error(errors.ErrorNoTelemetry.fromError(err));
+			request.error(err);
 		}
 	}
 

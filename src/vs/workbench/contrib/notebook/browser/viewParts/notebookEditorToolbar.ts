@@ -23,7 +23,6 @@ import { INotebookEditorDelegate } from 'vs/workbench/contrib/notebook/browser/n
 import { NotebooKernelActionViewItem } from 'vs/workbench/contrib/notebook/browser/viewParts/notebookKernelView';
 import { ActionViewWithLabel } from 'vs/workbench/contrib/notebook/browser/view/cellParts/cellActionView';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { IWorkbenchAssignmentService } from 'vs/workbench/services/assignment/common/assignmentService';
 import { NotebookOptions } from 'vs/workbench/contrib/notebook/browser/notebookOptions';
 import { IActionViewItemProvider } from 'vs/base/browser/ui/actionbar/actionbar';
 import { disposableTimeout } from 'vs/base/common/async';
@@ -203,7 +202,6 @@ export class NotebookEditorWorkbenchToolbar extends Disposable {
 		@IMenuService private readonly menuService: IMenuService,
 		@IEditorService private readonly editorService: IEditorService,
 		@IKeybindingService private readonly keybindingService: IKeybindingService,
-		@IWorkbenchAssignmentService private readonly experimentService: IWorkbenchAssignmentService,
 	) {
 		super();
 
@@ -362,18 +360,6 @@ export class NotebookEditorWorkbenchToolbar extends Disposable {
 				return;
 			}
 		}));
-
-		if (this.experimentService) {
-			this.experimentService.getTreatment<boolean>('nbtoolbarineditor').then(treatment => {
-				if (treatment === undefined) {
-					return;
-				}
-				if (this._useGlobalToolbar !== treatment) {
-					this._useGlobalToolbar = treatment;
-					this._showNotebookActionsinEditorToolbar();
-				}
-			});
-		}
 	}
 
 	private _updateStrategy() {

@@ -7,16 +7,13 @@ import * as perf from 'vs/base/common/performance';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
-import { IUpdateService } from 'vs/platform/update/common/update';
 import { ILifecycleService, LifecyclePhase } from 'vs/workbench/services/lifecycle/common/lifecycle';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IAccessibilityService } from 'vs/platform/accessibility/common/accessibility';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { Barrier, timeout } from 'vs/base/common/async';
 import { IWorkbenchLayoutService } from 'vs/workbench/services/layout/browser/layoutService';
 import { IPaneCompositePartService } from 'vs/workbench/services/panecomposite/browser/panecomposite';
 import { ViewContainerLocation } from 'vs/workbench/common/views';
-import { TelemetryTrustedValue } from 'vs/platform/telemetry/common/telemetryUtils';
 import { isWeb } from 'vs/base/common/platform';
 import { createBlobWorker } from 'vs/base/browser/defaultWorkerFactory';
 import { Registry } from 'vs/platform/registry/common/platform';
@@ -100,12 +97,6 @@ export interface IStartupMetrics {
 	 * No folder, no file, no workspace has been opened
 	 */
 	readonly emptyWorkbench: boolean;
-
-	/**
-	 * This is the latest (stable/insider) version. Iff not we should ignore this
-	 * measurement.
-	 */
-	readonly isLatestVersion: boolean;
 
 	/**
 	 * Whether we asked for and V8 accepted cached data.
@@ -483,7 +474,6 @@ export abstract class AbstractTimerService implements ITimerService {
 
 	private readonly _barrier = new Barrier();
 	private readonly _marks = new PerfMarks();
-	private readonly _rndValueShouldSendTelemetry = Math.random() < .05; // 5% of users
 
 	private _startupMetrics?: IStartupMetrics;
 
@@ -493,11 +483,9 @@ export abstract class AbstractTimerService implements ITimerService {
 		@ILifecycleService private readonly _lifecycleService: ILifecycleService,
 		@IWorkspaceContextService private readonly _contextService: IWorkspaceContextService,
 		@IExtensionService private readonly _extensionService: IExtensionService,
-		@IUpdateService private readonly _updateService: IUpdateService,
 		@IPaneCompositePartService private readonly _paneCompositeService: IPaneCompositePartService,
 		@IEditorService private readonly _editorService: IEditorService,
 		@IAccessibilityService private readonly _accessibilityService: IAccessibilityService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@IWorkbenchLayoutService layoutService: IWorkbenchLayoutService
 	) {
 		Promise.all([
@@ -511,7 +499,6 @@ export abstract class AbstractTimerService implements ITimerService {
 			return this._computeStartupMetrics();
 		}).then(metrics => {
 			this._startupMetrics = metrics;
-			this._reportStartupTimes(metrics);
 			this._barrier.open();
 		});
 
@@ -578,7 +565,6 @@ export abstract class AbstractTimerService implements ITimerService {
 		// and because of that we only accept marks that start with 'code/'
 		const codeMarks = marks.filter(mark => mark.name.startsWith('code/'));
 		this._marks.setMarks(source, codeMarks);
-		this._reportPerformanceMarks(source, codeMarks);
 	}
 
 	getPerformanceMarks(): [source: string, marks: readonly perf.PerformanceMark[]][] {
@@ -587,54 +573,6 @@ export abstract class AbstractTimerService implements ITimerService {
 
 	getDuration(from: string, to: string): number {
 		return this._marks.getDuration(from, to);
-	}
-
-	private _reportStartupTimes(metrics: IStartupMetrics): void {
-		// report IStartupMetrics as telemetry
-		/* __GDPR__
-			"startupTimeVaried" : {
-				"owner": "jrieken",
-				"${include}": [
-					"${IStartupMetrics}"
-				]
-			}
-		*/
-		this._telemetryService.publicLog('startupTimeVaried', metrics);
-	}
-
-	protected _shouldReportPerfMarks(): boolean {
-		return this._rndValueShouldSendTelemetry;
-	}
-
-	private _reportPerformanceMarks(source: string, marks: perf.PerformanceMark[]) {
-
-		if (!this._shouldReportPerfMarks()) {
-			// the `startup.timer.mark` event is send very often. In order to save resources
-			// we let some of our instances/sessions send this event
-			return;
-		}
-
-		// report raw timers as telemetry. each mark is send a separate telemetry
-		// event and it is "normalized" to a relative timestamp where the first mark
-		// defines the start
-
-		type Mark = { source: string; name: TelemetryTrustedValue<string>; startTime: number };
-		type MarkClassification = {
-			owner: 'jrieken';
-			comment: 'Information about a performance marker';
-			source: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'Where this marker was generated, e.g main, renderer, extension host' };
-			name: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The name of this marker (as defined in source code)' };
-			startTime: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; isMeasurement: true; comment: 'The absolute timestamp (unix time)' };
-		};
-
-		for (const mark of marks) {
-			this._telemetryService.publicLog2<Mark, MarkClassification>('startup.timer.mark', {
-				source,
-				name: new TelemetryTrustedValue(mark.name),
-				startTime: mark.startTime
-			});
-		}
-
 	}
 
 	private async _computeStartupMetrics(): Promise<IStartupMetrics> {
@@ -653,7 +591,6 @@ export abstract class AbstractTimerService implements ITimerService {
 			ellapsed: this._marks.getDuration(startMark, 'code/didStartWorkbench'),
 
 			// reflections
-			isLatestVersion: Boolean(await this._updateService.isLatestVersion()),
 			didUseCachedData: this._didUseCachedData(),
 			windowKind: this._lifecycleService.startupKind,
 			windowCount: await this._getWindowCount(),

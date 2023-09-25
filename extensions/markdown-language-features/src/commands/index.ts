@@ -8,7 +8,6 @@ import { CommandManager } from '../commandManager';
 import { MarkdownItEngine } from '../markdownEngine';
 import { MarkdownPreviewManager } from '../preview/previewManager';
 import { ContentSecurityPolicyArbiter, PreviewSecuritySelector } from '../preview/security';
-import { TelemetryReporter } from '../telemetryReporter';
 import { InsertLinkFromWorkspace, InsertImageFromWorkspace } from './insertResource';
 import { RefreshPreviewCommand } from './refreshPreview';
 import { ReloadPlugins } from './reloadPlugins';
@@ -22,16 +21,15 @@ import { ToggleLockCommand } from './toggleLock';
 export function registerMarkdownCommands(
 	commandManager: CommandManager,
 	previewManager: MarkdownPreviewManager,
-	telemetryReporter: TelemetryReporter,
 	cspArbiter: ContentSecurityPolicyArbiter,
 	engine: MarkdownItEngine,
 ): vscode.Disposable {
 	const previewSecuritySelector = new PreviewSecuritySelector(cspArbiter, previewManager);
 
 	commandManager.register(new CopyImageCommand(previewManager));
-	commandManager.register(new ShowPreviewCommand(previewManager, telemetryReporter));
-	commandManager.register(new ShowPreviewToSideCommand(previewManager, telemetryReporter));
-	commandManager.register(new ShowLockedPreviewToSideCommand(previewManager, telemetryReporter));
+	commandManager.register(new ShowPreviewCommand(previewManager));
+	commandManager.register(new ShowPreviewToSideCommand(previewManager));
+	commandManager.register(new ShowLockedPreviewToSideCommand(previewManager));
 	commandManager.register(new ShowSourceCommand(previewManager));
 	commandManager.register(new RefreshPreviewCommand(previewManager, engine));
 	commandManager.register(new ShowPreviewSecuritySelectorCommand(previewSecuritySelector, previewManager));

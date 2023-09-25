@@ -37,12 +37,6 @@ export interface IExtensionHostInitData {
 	workspace?: IStaticWorkspaceData | null;
 	extensions: IExtensionDescriptionSnapshot;
 	nlsBaseUrl?: URI;
-	telemetryInfo: {
-		readonly sessionId: string;
-		readonly machineId: string;
-		readonly firstSessionDate: string;
-		readonly msftInternal?: boolean;
-	};
 	logLevel: LogLevel;
 	loggers: UriDto<ILoggerResource>[];
 	logsLocation: URI;
@@ -59,8 +53,6 @@ export interface IEnvironment {
 	appHost: string;
 	appRoot?: URI;
 	appLanguage: string;
-	extensionTelemetryLogResource: URI;
-	isExtensionTelemetryLoggingOnly: boolean;
 	appUriScheme: string;
 	extensionDevelopmentLocationURI?: URI[];
 	extensionTestsLocationURI?: URI;

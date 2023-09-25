@@ -40,7 +40,6 @@ import 'vs/workbench/services/workspaces/electron-sandbox/workspacesService';
 import 'vs/workbench/services/menubar/electron-sandbox/menubarService';
 import 'vs/workbench/services/issue/electron-sandbox/issueMainService';
 import 'vs/workbench/services/issue/electron-sandbox/issueService';
-import 'vs/workbench/services/update/electron-sandbox/updateService';
 import 'vs/workbench/services/url/electron-sandbox/urlService';
 import 'vs/workbench/services/lifecycle/electron-sandbox/lifecycleService';
 import 'vs/workbench/services/title/electron-sandbox/titleService';
@@ -59,7 +58,6 @@ import 'vs/workbench/services/extensionManagement/electron-sandbox/extensionUrlT
 import 'vs/workbench/services/encryption/electron-sandbox/encryptionService';
 import 'vs/workbench/services/secrets/electron-sandbox/secretStorageService';
 import 'vs/workbench/services/localization/electron-sandbox/languagePackService';
-import 'vs/workbench/services/telemetry/electron-sandbox/telemetryService';
 import 'vs/workbench/services/extensions/electron-sandbox/extensionHostStarter';
 import 'vs/platform/extensionResourceLoader/common/extensionResourceLoaderService';
 import 'vs/workbench/services/localization/electron-sandbox/localeService';
@@ -81,7 +79,6 @@ import 'vs/platform/remote/electron-sandbox/sharedProcessTunnelService';
 import 'vs/workbench/services/tunnel/electron-sandbox/tunnelService';
 import 'vs/platform/diagnostics/electron-sandbox/diagnosticsService';
 import 'vs/platform/profiling/electron-sandbox/profilingService';
-import 'vs/platform/telemetry/electron-sandbox/customEndpointTelemetryService';
 import 'vs/platform/remoteTunnel/electron-sandbox/remoteTunnelService';
 import 'vs/workbench/services/files/electron-sandbox/elevatedFileService';
 import 'vs/workbench/services/search/electron-sandbox/searchService';
@@ -143,7 +140,6 @@ import 'vs/workbench/contrib/userDataSync/electron-sandbox/userDataSync.contribu
 
 // Tags
 import 'vs/workbench/contrib/tags/electron-sandbox/workspaceTagsService';
-import 'vs/workbench/contrib/tags/electron-sandbox/tags.contribution';
 
 // Performance
 import 'vs/workbench/contrib/performance/electron-sandbox/performance.contribution';

@@ -144,11 +144,6 @@ export class BrowserWorkbenchEnvironmentService implements IBrowserWorkbenchEnvi
 	@memoize
 	get extHostLogsPath(): URI { return joinPath(this.logsHome, 'exthost'); }
 
-	@memoize
-	get extHostTelemetryLogFile(): URI {
-		return joinPath(this.extHostLogsPath, 'extensionTelemetry.log');
-	}
-
 	private extensionHostDebugEnvironment: IExtensionHostDebugEnvironment | undefined = undefined;
 
 	@memoize
@@ -234,12 +229,6 @@ export class BrowserWorkbenchEnvironmentService implements IBrowserWorkbenchEnvi
 			.replace('{{commit}}', webviewExternalEndpointCommit ?? this.productService.commit ?? 'ef65ac1ba57f57f2a3961bfe94aa20481caca4c6')
 			.replace('{{quality}}', (webviewExternalEndpointCommit ? 'insider' : this.productService.quality) ?? 'insider');
 	}
-
-	@memoize
-	get extensionTelemetryLogResource(): URI { return joinPath(this.logsHome, 'extensionTelemetry.log'); }
-
-	@memoize
-	get disableTelemetry(): boolean { return false; }
 
 	@memoize
 	get verbose(): boolean { return this.payload?.get('verbose') === 'true'; }

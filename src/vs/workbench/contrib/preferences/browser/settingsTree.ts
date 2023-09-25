@@ -48,7 +48,6 @@ import { IListService, WorkbenchObjectTree } from 'vs/platform/list/browser/list
 import { ILogService } from 'vs/platform/log/common/log';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IProductService } from 'vs/platform/product/common/productService';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { defaultButtonStyles, getInputBoxStyle, getListStyles, getSelectBoxStyles } from 'vs/platform/theme/browser/defaultStyles';
 import { editorBackground, foreground } from 'vs/platform/theme/common/colorRegistry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
@@ -771,7 +770,6 @@ export abstract class AbstractSettingRenderer extends Disposable implements ITre
 		@IExtensionService protected readonly _extensionsService: IExtensionService,
 		@IExtensionsWorkbenchService protected readonly _extensionsWorkbenchService: IExtensionsWorkbenchService,
 		@IProductService protected readonly _productService: IProductService,
-		@ITelemetryService protected readonly _telemetryService: ITelemetryService,
 	) {
 		super();
 
@@ -1902,12 +1900,6 @@ export class SettingBoolRenderer extends AbstractSettingRenderer implements ITre
 	}
 }
 
-type ManageExtensionClickTelemetryClassification = {
-	extensionId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The extension the user went to manage.' };
-	owner: 'rzhao271';
-	comment: 'Event used to gain insights into when users are using an experimental extension management setting';
-};
-
 export class SettingsExtensionToggleRenderer extends AbstractSettingRenderer implements ITreeRenderer<SettingsTreeSettingElement, never, ISettingExtensionToggleItemTemplate> {
 	templateId = SETTINGS_EXTENSION_TOGGLE_TEMPLATE_ID;
 
@@ -1940,7 +1932,6 @@ export class SettingsExtensionToggleRenderer extends AbstractSettingRenderer imp
 
 		const extensionId = dataElement.setting.displayExtensionId!;
 		template.elementDisposables.add(template.actionButton.onDidClick(async () => {
-			this._telemetryService.publicLog2<{ extensionId: String }, ManageExtensionClickTelemetryClassification>('ManageExtensionClick', { extensionId });
 			this._commandService.executeCommand('extension.open', extensionId);
 		}));
 	}

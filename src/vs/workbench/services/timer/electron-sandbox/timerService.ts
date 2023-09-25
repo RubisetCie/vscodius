@@ -7,12 +7,10 @@ import { INativeHostService } from 'vs/platform/native/common/native';
 import { INativeWorkbenchEnvironmentService } from 'vs/workbench/services/environment/electron-sandbox/environmentService';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
-import { IUpdateService } from 'vs/platform/update/common/update';
 import { ILifecycleService } from 'vs/workbench/services/lifecycle/common/lifecycle';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IAccessibilityService } from 'vs/platform/accessibility/common/accessibility';
 import { IStartupMetrics, AbstractTimerService, Writeable, ITimerService } from 'vs/workbench/services/timer/browser/timerService';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { process } from 'vs/base/parts/sandbox/electron-sandbox/globals';
 import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IWorkbenchLayoutService } from 'vs/workbench/services/layout/browser/layoutService';
@@ -28,16 +26,14 @@ export class TimerService extends AbstractTimerService {
 		@ILifecycleService lifecycleService: ILifecycleService,
 		@IWorkspaceContextService contextService: IWorkspaceContextService,
 		@IExtensionService extensionService: IExtensionService,
-		@IUpdateService updateService: IUpdateService,
 		@IPaneCompositePartService paneCompositeService: IPaneCompositePartService,
 		@IEditorService editorService: IEditorService,
 		@IAccessibilityService accessibilityService: IAccessibilityService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IWorkbenchLayoutService layoutService: IWorkbenchLayoutService,
 		@IProductService private readonly _productService: IProductService,
 		@IStorageService private readonly _storageService: IStorageService
 	) {
-		super(lifecycleService, contextService, extensionService, updateService, paneCompositeService, editorService, accessibilityService, telemetryService, layoutService);
+		super(lifecycleService, contextService, extensionService, paneCompositeService, editorService, accessibilityService, layoutService);
 		this.setPerformanceMarks('main', _environmentService.window.perfMarks);
 	}
 
@@ -84,11 +80,6 @@ export class TimerService extends AbstractTimerService {
 		} catch (error) {
 			// ignore, be on the safe side with these hardware method calls
 		}
-	}
-
-	protected override _shouldReportPerfMarks(): boolean {
-		// always send when running with the prof-append-timers flag
-		return super._shouldReportPerfMarks() || Boolean(this._environmentService.args['prof-append-timers']);
 	}
 }
 

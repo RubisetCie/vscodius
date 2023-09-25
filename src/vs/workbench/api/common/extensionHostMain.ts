@@ -21,7 +21,6 @@ import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiati
 import { IExtHostRpcService, ExtHostRpcService } from 'vs/workbench/api/common/extHostRpcService';
 import { IURITransformerService, URITransformerService } from 'vs/workbench/api/common/extHostUriTransformerService';
 import { IExtHostExtensionService, IHostUtils } from 'vs/workbench/api/common/extHostExtensionService';
-import { IExtHostTelemetry } from 'vs/workbench/api/common/extHostTelemetry';
 import { Mutable } from 'vs/base/common/types';
 
 export interface IExitFn {
@@ -58,7 +57,6 @@ export abstract class ErrorHandler {
 		const logService = accessor.get(ILogService);
 		const rpcService = accessor.get(IExtHostRpcService);
 		const extensionService = accessor.get(IExtHostExtensionService);
-		const extensionTelemetry = accessor.get(IExtHostTelemetry);
 
 		const mainThreadExtensions = rpcService.getProxy(MainContext.MainThreadExtensionService);
 		const mainThreadErrors = rpcService.getProxy(MainContext.MainThreadErrors);
@@ -126,8 +124,7 @@ export abstract class ErrorHandler {
 			}
 
 			mainThreadExtensions.$onExtensionRuntimeError(stackData.extensionIdentifier, errorData);
-			const reported = extensionTelemetry.onExtensionError(stackData.extensionIdentifier, err);
-			logService.trace('forwarded error to extension?', reported, stackData);
+			logService.trace('forwarded error to extension?', stackData);
 		});
 	}
 }
@@ -205,7 +202,6 @@ export class ExtensionHostMain {
 		initData.environment.extensionTestsLocationURI = URI.revive(rpcProtocol.transformIncomingURIs(initData.environment.extensionTestsLocationURI));
 		initData.environment.globalStorageHome = URI.revive(rpcProtocol.transformIncomingURIs(initData.environment.globalStorageHome));
 		initData.environment.workspaceStorageHome = URI.revive(rpcProtocol.transformIncomingURIs(initData.environment.workspaceStorageHome));
-		initData.environment.extensionTelemetryLogResource = URI.revive(rpcProtocol.transformIncomingURIs(initData.environment.extensionTelemetryLogResource));
 		initData.nlsBaseUrl = URI.revive(rpcProtocol.transformIncomingURIs(initData.nlsBaseUrl));
 		initData.logsLocation = URI.revive(rpcProtocol.transformIncomingURIs(initData.logsLocation));
 		initData.workspace = rpcProtocol.transformIncomingURIs(initData.workspace);

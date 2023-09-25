@@ -20,7 +20,6 @@ import * as nls from 'vs/nls';
 import { ConfigurationTarget } from 'vs/platform/configuration/common/configuration';
 import { RawContextKey } from 'vs/platform/contextkey/common/contextkey';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
-import { ITelemetryEndpoint } from 'vs/platform/telemetry/common/telemetry';
 import { IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
 import { IEditorPane } from 'vs/workbench/common/editor';
 import { DebugCompoundRoot } from 'vs/workbench/contrib/debug/common/debugCompoundRoot';
@@ -164,7 +163,6 @@ export interface IDebugger {
 	createDebugAdapter(session: IDebugSession): Promise<IDebugAdapter>;
 	runInTerminal(args: DebugProtocol.RunInTerminalRequestArguments, sessionId: string): Promise<number | undefined>;
 	startDebugging(args: IConfig, parentSessionId: string): Promise<boolean>;
-	getCustomTelemetryEndpoint(): ITelemetryEndpoint | undefined;
 	getInitialConfigurationContent(initialConfigs?: IConfig[]): Promise<string>;
 }
 

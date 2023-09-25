@@ -215,10 +215,9 @@ declare module DebugProtocol {
 				'important': A hint for the client to show the output in the client's UI for important and highly visible information, e.g. as a popup notification. This category should only be used for important messages from the debugger (as opposed to the debuggee). Since this category value is a hint, clients might ignore the hint and assume the `console` category.
 				'stdout': Show the output as normal program output from the debuggee.
 				'stderr': Show the output as error program output from the debuggee.
-				'telemetry': Send the output to telemetry instead of showing it to the user.
 				etc.
 			*/
-			category?: 'console' | 'important' | 'stdout' | 'stderr' | 'telemetry' | string;
+			category?: 'console' | 'important' | 'stdout' | 'stderr' | string;
 			/** The output to report. */
 			output: string;
 			/** Support for keeping an output log organized by grouping related messages.
@@ -1775,8 +1774,6 @@ declare module DebugProtocol {
 		format: string;
 		/** An object used as a dictionary for looking up the variables in the format string. */
 		variables?: { [key: string]: string; };
-		/** If true send to telemetry. */
-		sendTelemetry?: boolean;
 		/** If true show user. */
 		showUser?: boolean;
 		/** A url where additional information about this message can be found. */

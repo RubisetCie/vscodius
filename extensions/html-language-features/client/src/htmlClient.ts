@@ -63,14 +63,6 @@ namespace SettingIds {
 
 }
 
-export interface TelemetryReporter {
-	sendTelemetryEvent(eventName: string, properties?: {
-		[key: string]: string;
-	}, measurements?: {
-		[key: string]: number;
-	}): void;
-}
-
 export type LanguageClientConstructor = (name: string, description: string, clientOptions: LanguageClientOptions) => BaseLanguageClient;
 
 export const languageServerDescription = l10n.t('HTML Language Server');
@@ -78,7 +70,6 @@ export const languageServerDescription = l10n.t('HTML Language Server');
 export interface Runtime {
 	TextDecoder: { new(encoding?: string): { decode(buffer: ArrayBuffer): string } };
 	fileFs?: FileSystemProvider;
-	telemetry?: TelemetryReporter;
 	readonly timer: {
 		setTimeout(callback: (...args: any[]) => void, ms: number, ...args: any[]): Disposable;
 	};
@@ -218,11 +209,6 @@ async function startClientWithParticipants(languageParticipants: LanguagePartici
 
 	const disposable = activateAutoInsertion(insertRequestor, languageParticipants, runtime);
 	toDispose.push(disposable);
-
-	const disposable2 = client.onTelemetry(e => {
-		runtime.telemetry?.sendTelemetryEvent(e.key, e.data);
-	});
-	toDispose.push(disposable2);
 
 	// manually register / deregister format provider based on the `html.format.enable` setting avoiding issues with late registration. See #71652.
 	updateFormatterRegistration();

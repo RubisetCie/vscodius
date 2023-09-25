@@ -15,7 +15,6 @@ import { INativeWorkbenchEnvironmentService } from 'vs/workbench/services/enviro
 import { ExtensionType } from 'vs/platform/extensions/common/extensions';
 import { platform } from 'vs/base/common/process';
 import { IProductService } from 'vs/platform/product/common/productService';
-import { IWorkbenchAssignmentService } from 'vs/workbench/services/assignment/common/assignmentService';
 import { IAuthenticationService } from 'vs/workbench/services/authentication/common/authentication';
 import { IWorkspaceTrustManagementService } from 'vs/platform/workspace/common/workspaceTrust';
 import { IIntegrityService } from 'vs/workbench/services/integrity/common/integrity';
@@ -38,7 +37,6 @@ export class NativeIssueService implements IWorkbenchIssueService {
 		@INativeWorkbenchEnvironmentService private readonly environmentService: INativeWorkbenchEnvironmentService,
 		@IWorkspaceTrustManagementService private readonly workspaceTrustManagementService: IWorkspaceTrustManagementService,
 		@IProductService private readonly productService: IProductService,
-		@IWorkbenchAssignmentService private readonly experimentService: IWorkbenchAssignmentService,
 		@IAuthenticationService private readonly authenticationService: IAuthenticationService,
 		@IIntegrityService private readonly integrityService: IIntegrityService,
 	) {
@@ -84,7 +82,6 @@ export class NativeIssueService implements IWorkbenchIssueService {
 				isBuiltin: true
 			});
 		}
-		const experiments = await this.experimentService.getCurrentExperiments();
 
 		let githubAccessToken = '';
 		try {
@@ -108,7 +105,6 @@ export class NativeIssueService implements IWorkbenchIssueService {
 			styles: getIssueReporterStyles(theme),
 			zoomLevel: getZoomLevel(),
 			enabledExtensions: extensionData,
-			experiments: experiments?.join('\n'),
 			restrictedMode: !this.workspaceTrustManagementService.isWorkspaceTrusted(),
 			isUnsupported,
 			githubAccessToken

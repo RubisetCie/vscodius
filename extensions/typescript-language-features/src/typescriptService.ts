@@ -11,7 +11,6 @@ import { TypeScriptVersion } from './tsServer/versionProvider';
 import { API } from './tsServer/api';
 import { TypeScriptServiceConfiguration } from './configuration/configuration';
 import { PluginManager } from './tsServer/plugins';
-import { TelemetryReporter } from './logging/telemetry';
 
 export enum ServerType {
 	Syntax = 'syntax',
@@ -176,7 +175,6 @@ export interface ITypeScriptServiceClient {
 	readonly pluginManager: PluginManager;
 	readonly configuration: TypeScriptServiceConfiguration;
 	readonly bufferSyncSupport: BufferSyncSupport;
-	readonly telemetryReporter: TelemetryReporter;
 
 	execute<K extends keyof StandardTsServerRequests>(
 		command: K,

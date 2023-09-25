@@ -20,10 +20,7 @@ import { IEditorOptions } from 'vs/platform/editor/common/editor';
 import { IWorkbenchLayoutService } from 'vs/workbench/services/layout/browser/layoutService';
 import { GettingStartedEditorOptions, GettingStartedInput, gettingStartedInputTypeId } from 'vs/workbench/contrib/welcomeGettingStarted/browser/gettingStartedInput';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
-import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { getTelemetryLevel } from 'vs/platform/telemetry/common/telemetryUtils';
-import { TelemetryLevel } from 'vs/platform/telemetry/common/telemetry';
-import { IProductService } from 'vs/platform/product/common/productService';
+import { IStorageService, StorageScope } from 'vs/platform/storage/common/storage';
 import { ILogService } from 'vs/platform/log/common/log';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { localize } from 'vs/nls';
@@ -34,7 +31,6 @@ export type RestoreWalkthroughsConfigurationValue = { folder: string; category?:
 
 const configurationKey = 'workbench.startupEditor';
 const oldConfigurationKey = 'workbench.welcome.enabled';
-const telemetryOptOutStorageKey = 'workbench.telemetryOptOutShown';
 
 export class StartupPageContribution implements IWorkbenchContribution {
 
@@ -47,7 +43,6 @@ export class StartupPageContribution implements IWorkbenchContribution {
 		@IWorkspaceContextService private readonly contextService: IWorkspaceContextService,
 		@ILifecycleService private readonly lifecycleService: ILifecycleService,
 		@IWorkbenchLayoutService private readonly layoutService: IWorkbenchLayoutService,
-		@IProductService private readonly productService: IProductService,
 		@ICommandService private readonly commandService: ICommandService,
 		@IWorkbenchEnvironmentService private readonly environmentService: IWorkbenchEnvironmentService,
 		@IStorageService private readonly storageService: IStorageService,
@@ -85,18 +80,6 @@ export class StartupPageContribution implements IWorkbenchContribution {
 	private async run() {
 
 		// Always open Welcome page for first-launch, no matter what is open or which startupEditor is set.
-		if (
-			this.productService.enableTelemetry
-			&& this.productService.showTelemetryOptOut
-			&& getTelemetryLevel(this.configurationService) !== TelemetryLevel.NONE
-			&& !this.environmentService.skipWelcome
-			&& !this.storageService.get(telemetryOptOutStorageKey, StorageScope.PROFILE)
-		) {
-			this.storageService.store(telemetryOptOutStorageKey, true, StorageScope.PROFILE, StorageTarget.USER);
-			await this.openGettingStarted(true);
-			return;
-		}
-
 		if (this.tryOpenWalkthroughForFolder()) {
 			return;
 		}
@@ -179,7 +162,7 @@ export class StartupPageContribution implements IWorkbenchContribution {
 		}
 	}
 
-	private async openGettingStarted(showTelemetryNotice?: boolean) {
+	private async openGettingStarted() {
 		const startupEditorTypeID = gettingStartedInputTypeId;
 		const editor = this.editorService.activeEditor;
 
@@ -192,7 +175,7 @@ export class StartupPageContribution implements IWorkbenchContribution {
 		if (startupEditorTypeID === gettingStartedInputTypeId) {
 			this.editorService.openEditor({
 				resource: GettingStartedInput.RESOURCE,
-				options: <GettingStartedEditorOptions>{ showTelemetryNotice, ...options },
+				options: <GettingStartedEditorOptions>{ ...options },
 			});
 		}
 	}

@@ -22,7 +22,6 @@ import * as platform from 'vs/base/common/platform';
 import { createRegExp, escapeRegExpCharacters } from 'vs/base/common/strings';
 import { URI } from 'vs/base/common/uri';
 import { generateUuid } from 'vs/base/common/uuid';
-import { getOSReleaseInfo } from 'vs/base/node/osReleaseInfo';
 import { findFreePort } from 'vs/base/node/ports';
 import { addUNCHostToAllowlist, disableUNCAccessRestrictions } from 'vs/base/node/unc';
 import { PersistentProtocol } from 'vs/base/parts/ipc/common/ipc.net';
@@ -34,7 +33,6 @@ import { IProductService } from 'vs/platform/product/common/productService';
 import { ConnectionType, ConnectionTypeRequest, ErrorMessage, HandshakeMessage, IRemoteExtensionHostStartParams, ITunnelConnectionStartParams, SignRequest } from 'vs/platform/remote/common/remoteAgentConnection';
 import { RemoteAgentConnectionContext } from 'vs/platform/remote/common/remoteAgentEnvironment';
 import { getRemoteServerRootPath } from 'vs/platform/remote/common/remoteHosts';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { ExtensionHostConnection } from 'vs/server/node/extensionHostConnection';
 import { ManagementConnection } from 'vs/server/node/remoteExtensionManagement';
 import { determineServerConnectionToken, requestHasValidConnectionToken as httpRequestHasValidConnectionToken, ServerConnectionToken, ServerConnectionTokenParseError, ServerConnectionTokenType } from 'vs/server/node/serverConnectionToken';
@@ -789,55 +787,6 @@ export async function createServer(address: string | net.AddressInfo | null, arg
 	const vscodeServerStartTime: number = (<any>global).vscodeServerStartTime;
 	const vscodeServerListenTime: number = (<any>global).vscodeServerListenTime;
 	const vscodeServerCodeLoadedTime: number = (<any>global).vscodeServerCodeLoadedTime;
-
-	instantiationService.invokeFunction(async (accessor) => {
-		const telemetryService = accessor.get(ITelemetryService);
-
-		type ServerStartClassification = {
-			owner: 'alexdima';
-			comment: 'The server has started up';
-			startTime: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The time the server started at.' };
-			startedTime: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The time the server began listening for connections.' };
-			codeLoadedTime: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The time which the code loaded on the server' };
-			readyTime: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'The time when the server was completely ready' };
-		};
-		type ServerStartEvent = {
-			startTime: number;
-			startedTime: number;
-			codeLoadedTime: number;
-			readyTime: number;
-		};
-		telemetryService.publicLog2<ServerStartEvent, ServerStartClassification>('serverStart', {
-			startTime: vscodeServerStartTime,
-			startedTime: vscodeServerListenTime,
-			codeLoadedTime: vscodeServerCodeLoadedTime,
-			readyTime: currentTime
-		});
-
-		if (platform.isLinux) {
-			const logService = accessor.get(ILogService);
-			const releaseInfo = await getOSReleaseInfo(logService.error.bind(logService));
-			if (releaseInfo) {
-				type ServerPlatformInfoClassification = {
-					platformId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'A string identifying the operating system without any version information.' };
-					platformVersionId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'A string identifying the operating system version excluding any name information or release code.' };
-					platformIdLike: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'A string identifying the operating system the current OS derivate is closely related to.' };
-					owner: 'deepak1556';
-					comment: 'Provides insight into the distro information on Linux.';
-				};
-				type ServerPlatformInfoEvent = {
-					platformId: string;
-					platformVersionId: string | undefined;
-					platformIdLike: string | undefined;
-				};
-				telemetryService.publicLog2<ServerPlatformInfoEvent, ServerPlatformInfoClassification>('serverPlatformInfo', {
-					platformId: releaseInfo.id,
-					platformVersionId: releaseInfo.version_id,
-					platformIdLike: releaseInfo.id_like
-				});
-			}
-		}
-	});
 
 	if (args['print-startup-performance']) {
 		const stats = LoaderStats.get();

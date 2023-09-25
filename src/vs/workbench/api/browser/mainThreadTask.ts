@@ -33,7 +33,6 @@ import {
 } from 'vs/workbench/api/common/shared/tasks';
 import { IConfigurationResolverService } from 'vs/workbench/services/configurationResolver/common/configurationResolver';
 import { ConfigurationTarget } from 'vs/platform/configuration/common/configuration';
-import { ErrorNoTelemetry } from 'vs/base/common/errors';
 
 namespace TaskExecutionDTO {
 	export function from(value: ITaskExecution): ITaskExecutionDTO {
@@ -654,7 +653,7 @@ export class MainThreadTask implements MainThreadTaskShape {
 						return;
 					}
 				}
-				reject(new ErrorNoTelemetry('Task to terminate not found'));
+				reject(new Error('Task to terminate not found'));
 			});
 		});
 	}

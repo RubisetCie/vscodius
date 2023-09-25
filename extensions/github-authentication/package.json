@@ -59,9 +59,7 @@
     "vscode:prepublish": "npm run compile"
   },
   "dependencies": {
-    "node-fetch": "2.6.7",
-    "@vscode/extension-telemetry": "^0.8.4",
-    "vscode-tas-client": "^0.1.47"
+    "node-fetch": "2.6.7"
   },
   "devDependencies": {
     "@types/node": "18.x",

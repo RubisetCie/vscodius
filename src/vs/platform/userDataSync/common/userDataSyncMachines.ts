@@ -8,8 +8,6 @@ import { Disposable } from 'vs/base/common/lifecycle';
 import { isAndroid, isChrome, isEdge, isFirefox, isSafari, isWeb, Platform, platform, PlatformToString } from 'vs/base/common/platform';
 import { escapeRegExpCharacters } from 'vs/base/common/strings';
 import { localize } from 'vs/nls';
-import { IEnvironmentService } from 'vs/platform/environment/common/environment';
-import { IFileService } from 'vs/platform/files/common/files';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { getServiceMachineId } from 'vs/platform/externalServices/common/serviceMachineId';
@@ -88,15 +86,13 @@ export class UserDataSyncMachinesService extends Disposable implements IUserData
 	private userData: IUserData | null = null;
 
 	constructor(
-		@IEnvironmentService environmentService: IEnvironmentService,
-		@IFileService fileService: IFileService,
 		@IStorageService private readonly storageService: IStorageService,
 		@IUserDataSyncStoreService private readonly userDataSyncStoreService: IUserDataSyncStoreService,
 		@IUserDataSyncLogService private readonly logService: IUserDataSyncLogService,
 		@IProductService private readonly productService: IProductService,
 	) {
 		super();
-		this.currentMachineIdPromise = getServiceMachineId(environmentService, fileService, storageService);
+		this.currentMachineIdPromise = getServiceMachineId(storageService);
 	}
 
 	async getMachines(manifest?: IUserDataManifest): Promise<IUserDataSyncMachine[]> {

@@ -41,7 +41,6 @@ export interface IContextMenuDelegate {
 	getMenuClassName?(): string;
 	onHide?(didCancel: boolean): void;
 	actionRunner?: IActionRunner;
-	skipTelemetry?: boolean;
 	autoSelectFirstItem?: boolean;
 	anchorAlignment?: AnchorAlignment;
 	anchorAxisAlignment?: AnchorAxisAlignment;

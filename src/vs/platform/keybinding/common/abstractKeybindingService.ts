@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { WorkbenchActionExecutedClassification, WorkbenchActionExecutedEvent } from 'vs/base/common/actions';
 import * as arrays from 'vs/base/common/arrays';
 import { IntervalTimer, TimeoutTimer } from 'vs/base/common/async';
 import { illegalState } from 'vs/base/common/errors';
@@ -21,14 +20,11 @@ import { ResolutionResult, KeybindingResolver, ResultKind, NoMatchingKb } from '
 import { ResolvedKeybindingItem } from 'vs/platform/keybinding/common/resolvedKeybindingItem';
 import { ILogService } from 'vs/platform/log/common/log';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 
 interface CurrentChord {
 	keypress: string;
 	label: string | null;
 }
-
-const HIGH_FREQ_COMMANDS = /^(cursor|delete|undo|redo|tab|editor\.action\.clipboard)/;
 
 export abstract class AbstractKeybindingService extends Disposable implements IKeybindingService {
 
@@ -63,7 +59,6 @@ export abstract class AbstractKeybindingService extends Disposable implements IK
 	constructor(
 		private _contextKeyService: IContextKeyService,
 		protected _commandService: ICommandService,
-		protected _telemetryService: ITelemetryService,
 		private _notificationService: INotificationService,
 		protected _logService: ILogService,
 	) {
@@ -366,10 +361,6 @@ export abstract class AbstractKeybindingService extends Disposable implements IK
 						this._commandService.executeCommand(resolveResult.commandId).then(undefined, err => this._notificationService.warn(err));
 					} else {
 						this._commandService.executeCommand(resolveResult.commandId, resolveResult.commandArgs).then(undefined, err => this._notificationService.warn(err));
-					}
-
-					if (!HIGH_FREQ_COMMANDS.test(resolveResult.commandId)) {
-						this._telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: resolveResult.commandId, from: 'keybinding', detail: userKeypress.getUserSettingsLabel() ?? undefined });
 					}
 				}
 

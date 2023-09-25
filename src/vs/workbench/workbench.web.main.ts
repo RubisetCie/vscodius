@@ -42,9 +42,7 @@ import 'vs/workbench/services/extensions/browser/extensionService';
 import 'vs/workbench/services/extensionManagement/browser/webExtensionsScannerService';
 import 'vs/workbench/services/extensionManagement/common/extensionManagementServerService';
 import 'vs/workbench/services/extensionManagement/browser/extensionUrlTrustService';
-import 'vs/workbench/services/telemetry/browser/telemetryService';
 import 'vs/workbench/services/url/browser/urlService';
-import 'vs/workbench/services/update/browser/updateService';
 import 'vs/workbench/services/workspaces/browser/workspacesService';
 import 'vs/workbench/services/workspaces/browser/workspaceEditingService';
 import 'vs/workbench/services/dialogs/browser/fileDialogService';
@@ -82,8 +80,6 @@ import { UserDataSyncService } from 'vs/platform/userDataSync/common/userDataSyn
 import { IUserDataSyncAccountService, UserDataSyncAccountService } from 'vs/platform/userDataSync/common/userDataSyncAccount';
 import { UserDataAutoSyncService } from 'vs/platform/userDataSync/common/userDataAutoSyncService';
 import { AccessibilityService } from 'vs/platform/accessibility/browser/accessibilityService';
-import { ICustomEndpointTelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { NullEndpointTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 import { ITitleService } from 'vs/workbench/services/title/common/titleService';
 import { TitlebarPart } from 'vs/workbench/browser/parts/titlebar/titlebarPart';
 import { ITimerService, TimerService } from 'vs/workbench/services/timer/browser/timerService';
@@ -104,7 +100,6 @@ registerSingleton(IUserDataAutoSyncService, UserDataAutoSyncService, Instantiati
 registerSingleton(ITitleService, TitlebarPart, InstantiationType.Eager);
 registerSingleton(IExtensionTipsService, ExtensionTipsService, InstantiationType.Delayed);
 registerSingleton(ITimerService, TimerService, InstantiationType.Delayed);
-registerSingleton(ICustomEndpointTelemetryService, NullEndpointTelemetryService, InstantiationType.Delayed);
 registerSingleton(IDiagnosticsService, NullDiagnosticsService, InstantiationType.Delayed);
 registerSingleton(ILanguagePackService, WebLanguagePacksService, InstantiationType.Delayed);
 

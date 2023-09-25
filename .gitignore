@@ -24,3 +24,13 @@ product.overrides.json
 /.devcontainer
 /.eslintplugin
 /extensions/microsoft-authentication
+/src/vs/platform/assignment
+/src/vs/platform/telemetry
+/src/vs/platform/update
+/src/vs/workbench/contrib/telemetry
+/src/vs/workbench/contrib/surveys
+/src/vs/workbench/contrib/update
+/src/vs/workbench/contrib/bracketPairColorizer2Telemetry
+/src/vs/workbench/services/assignment
+/src/vs/workbench/services/telemetry
+/src/vs/workbench/services/update

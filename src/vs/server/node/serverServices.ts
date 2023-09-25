@@ -3,9 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { hostname, release } from 'os';
 import { Emitter, Event } from 'vs/base/common/event';
-import { DisposableStore, toDisposable } from 'vs/base/common/lifecycle';
+import { DisposableStore } from 'vs/base/common/lifecycle';
 import { Schemas } from 'vs/base/common/network';
 import * as path from 'vs/base/common/path';
 import { IURITransformer } from 'vs/base/common/uriIpc';
@@ -41,19 +40,12 @@ import { RemoteAgentConnectionContext } from 'vs/platform/remote/common/remoteAg
 import { IRequestService } from 'vs/platform/request/common/request';
 import { RequestChannel } from 'vs/platform/request/common/requestIpc';
 import { RequestService } from 'vs/platform/request/node/requestService';
-import { resolveCommonProperties } from 'vs/platform/telemetry/common/commonProperties';
-import { ITelemetryService, TelemetryLevel } from 'vs/platform/telemetry/common/telemetry';
-import { ITelemetryServiceConfig } from 'vs/platform/telemetry/common/telemetryService';
-import { getPiiPathsFromEnvironment, isInternalTelemetry, ITelemetryAppender, NullAppender, supportsTelemetry } from 'vs/platform/telemetry/common/telemetryUtils';
-import ErrorTelemetry from 'vs/platform/telemetry/node/errorTelemetry';
 import { IPtyService, TerminalSettingId } from 'vs/platform/terminal/common/terminal';
 import { PtyHostService } from 'vs/platform/terminal/node/ptyHostService';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { UriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentityService';
 import { RemoteAgentEnvironmentChannel } from 'vs/server/node/remoteAgentEnvironmentImpl';
 import { RemoteAgentFileSystemProviderChannel } from 'vs/server/node/remoteFileSystemProviderServer';
-import { ServerTelemetryChannel } from 'vs/platform/telemetry/common/remoteTelemetryChannel';
-import { IServerTelemetryService, ServerNullTelemetryService, ServerTelemetryService } from 'vs/platform/telemetry/common/serverTelemetryService';
 import { RemoteTerminalChannel } from 'vs/server/node/remoteTerminalChannel';
 import { createURITransformer } from 'vs/workbench/api/node/uriTransformer';
 import { ServerConnectionToken } from 'vs/server/node/serverConnectionToken';
@@ -66,7 +58,6 @@ import { ExtensionsScannerService } from 'vs/server/node/extensionsScannerServic
 import { IExtensionsProfileScannerService } from 'vs/platform/extensionManagement/common/extensionsProfileScannerService';
 import { IUserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
 import { NullPolicyService } from 'vs/platform/policy/common/policy';
-import { OneDataSystemAppender } from 'vs/platform/telemetry/node/1dsAppender';
 import { LoggerService } from 'vs/platform/log/node/loggerService';
 import { ServerUserDataProfilesService } from 'vs/platform/userDataProfile/node/userDataProfile';
 import { ExtensionsProfileScannerService } from 'vs/platform/extensionManagement/node/extensionsProfileScannerService';
@@ -77,8 +68,6 @@ import { RemoteExtensionsScannerChannel, RemoteExtensionsScannerService } from '
 import { RemoteExtensionsScannerChannelName } from 'vs/platform/remote/common/remoteExtensionsScanner';
 import { RemoteUserDataProfilesServiceChannel } from 'vs/platform/userDataProfile/common/userDataProfileIpc';
 import { NodePtyHostStarter } from 'vs/platform/terminal/node/nodePtyHostStarter';
-
-const eventPrefix = 'monacoworkbench';
 
 export async function setupServerServices(connectionToken: ServerConnectionToken, args: ServerParsedArgs, REMOTE_DATA_FOLDER: string, disposables: DisposableStore) {
 	const services = new ServiceCollection();
@@ -132,7 +121,7 @@ export async function setupServerServices(connectionToken: ServerConnectionToken
 	socketServer.registerChannel('userDataProfiles', new RemoteUserDataProfilesServiceChannel(userDataProfilesService, (ctx: RemoteAgentConnectionContext) => getUriTransformer(ctx.remoteAuthority)));
 
 	// Initialize
-	const [, , machineId] = await Promise.all([
+	await Promise.all([
 		configurationService.initialize(),
 		userDataProfilesService.init(),
 		getMachineId(logService.error.bind(logService))
@@ -144,36 +133,6 @@ export async function setupServerServices(connectionToken: ServerConnectionToken
 	// Request
 	const requestService = new RequestService(configurationService, environmentService, logService, loggerService);
 	services.set(IRequestService, requestService);
-
-	let oneDsAppender: ITelemetryAppender = NullAppender;
-	const isInternal = isInternalTelemetry(productService, configurationService);
-	if (supportsTelemetry(productService, environmentService)) {
-		if (productService.aiConfig && productService.aiConfig.ariaKey) {
-			oneDsAppender = new OneDataSystemAppender(requestService, isInternal, eventPrefix, null, productService.aiConfig.ariaKey);
-			disposables.add(toDisposable(() => oneDsAppender?.flush())); // Ensure the AI appender is disposed so that it flushes remaining data
-		}
-
-		const config: ITelemetryServiceConfig = {
-			appenders: [oneDsAppender],
-			commonProperties: resolveCommonProperties(release(), hostname(), process.arch, productService.commit, productService.version + '-remote', machineId, isInternal, 'remoteAgent'),
-			piiPaths: getPiiPathsFromEnvironment(environmentService)
-		};
-		const initialTelemetryLevelArg = environmentService.args['telemetry-level'];
-		let injectedTelemetryLevel: TelemetryLevel = TelemetryLevel.USAGE;
-		// Convert the passed in CLI argument into a telemetry level for the telemetry service
-		if (initialTelemetryLevelArg === 'all') {
-			injectedTelemetryLevel = TelemetryLevel.USAGE;
-		} else if (initialTelemetryLevelArg === 'error') {
-			injectedTelemetryLevel = TelemetryLevel.ERROR;
-		} else if (initialTelemetryLevelArg === 'crash') {
-			injectedTelemetryLevel = TelemetryLevel.CRASH;
-		} else if (initialTelemetryLevelArg !== undefined) {
-			injectedTelemetryLevel = TelemetryLevel.NONE;
-		}
-		services.set(IServerTelemetryService, new SyncDescriptor(ServerTelemetryService, [config, injectedTelemetryLevel]));
-	} else {
-		services.set(IServerTelemetryService, ServerNullTelemetryService);
-	}
 
 	services.set(IExtensionGalleryService, new SyncDescriptor(ExtensionGalleryServiceWithNoStorageService));
 
@@ -207,9 +166,6 @@ export async function setupServerServices(connectionToken: ServerConnectionToken
 		const remoteExtensionEnvironmentChannel = new RemoteAgentEnvironmentChannel(connectionToken, environmentService, userDataProfilesService, extensionHostStatusService);
 		socketServer.registerChannel('remoteextensionsenvironment', remoteExtensionEnvironmentChannel);
 
-		const telemetryChannel = new ServerTelemetryChannel(accessor.get(IServerTelemetryService), oneDsAppender);
-		socketServer.registerChannel('telemetry', telemetryChannel);
-
 		socketServer.registerChannel(REMOTE_TERMINAL_CHANNEL_NAME, new RemoteTerminalChannel(environmentService, logService, ptyHostService, productService, extensionManagementService, configurationService));
 
 		const remoteExtensionsScanner = new RemoteExtensionsScannerService(instantiationService.createInstance(ExtensionManagementCLI, logService), environmentService, userDataProfilesService, extensionsScannerService, logService, extensionGalleryService, languagePackService);
@@ -225,12 +181,6 @@ export async function setupServerServices(connectionToken: ServerConnectionToken
 
 		// clean up extensions folder
 		remoteExtensionsScanner.whenExtensionsReady().then(() => extensionManagementService.cleanUp());
-
-		disposables.add(new ErrorTelemetry(accessor.get(ITelemetryService)));
-
-		return {
-			telemetryService: accessor.get(ITelemetryService)
-		};
 	});
 
 	return { socketServer, instantiationService };

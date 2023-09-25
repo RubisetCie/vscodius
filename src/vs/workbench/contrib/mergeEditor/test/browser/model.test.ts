@@ -12,11 +12,9 @@ import { linesDiffComputers } from 'vs/editor/common/diff/linesDiffComputers';
 import { EndOfLinePreference, ITextModel } from 'vs/editor/common/model';
 import { createModelServices, createTextModel } from 'vs/editor/test/common/testTextModel';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 import { IMergeDiffComputer, IMergeDiffComputerResult, toLineRange, toRangeMapping } from 'vs/workbench/contrib/mergeEditor/browser/model/diffComputer';
 import { DetailedLineRangeMapping } from 'vs/workbench/contrib/mergeEditor/browser/model/mapping';
 import { MergeEditorModel } from 'vs/workbench/contrib/mergeEditor/browser/model/mergeEditorModel';
-import { MergeEditorTelemetry } from 'vs/workbench/contrib/mergeEditor/browser/telemetry';
 
 suite('merge editor model', () => {
 	// todo: renable when failing case is found https://github.com/microsoft/vscode/pull/190444#issuecomment-1678151428
@@ -322,7 +320,6 @@ class MergeModelInterface extends Disposable {
 			{
 				resetResult: options.resetResult || false
 			},
-			new MergeEditorTelemetry(NullTelemetryService),
 		));
 	}
 

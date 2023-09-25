@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { ExperimentationTelemetry } from './common/experimentationService';
 import { AuthProviderType, UriEventHandler } from './github';
 import { Log } from './common/logger';
 import { isSupportedClient, isSupportedTarget } from './common/env';
@@ -26,7 +25,6 @@ export interface IGitHubServer {
 	login(scopes: string): Promise<string>;
 	logout(session: vscode.AuthenticationSession): Promise<void>;
 	getUserInfo(token: string): Promise<{ id: string; accountName: string }>;
-	sendAdditionalTelemetryInfo(session: vscode.AuthenticationSession): Promise<void>;
 	friendlyName: string;
 }
 
@@ -40,7 +38,6 @@ export class GitHubServer implements IGitHubServer {
 
 	constructor(
 		private readonly _logger: Log,
-		private readonly _telemetryReporter: ExperimentationTelemetry,
 		private readonly _uriHandler: UriEventHandler,
 		private readonly _extensionKind: vscode.ExtensionKind,
 		private readonly _ghesUri?: vscode.Uri
@@ -78,17 +75,6 @@ export class GitHubServer implements IGitHubServer {
 			this._redirectEndpoint = 'https://vscode.dev/redirect';
 		}
 		return this._redirectEndpoint;
-	}
-
-	// TODO@joaomoreno TODO@TylerLeonhardt
-	private _isNoCorsEnvironment: boolean | undefined;
-	private async isNoCorsEnvironment(): Promise<boolean> {
-		if (this._isNoCorsEnvironment !== undefined) {
-			return this._isNoCorsEnvironment;
-		}
-		const uri = await vscode.env.asExternalUri(vscode.Uri.parse(`${vscode.env.uriScheme}://vscode.github-authentication/dummy`));
-		this._isNoCorsEnvironment = (uri.scheme === 'https' && /^((insiders\.)?vscode|github)\./.test(uri.authority)) || (uri.scheme === 'http' && /^localhost/.test(uri.authority));
-		return this._isNoCorsEnvironment;
 	}
 
 	public async login(scopes: string): Promise<string> {
@@ -251,99 +237,6 @@ export class GitHubServer implements IGitHubServer {
 			}
 			this._logger.error(`Getting account info failed: ${errorMessage}`);
 			throw new Error(errorMessage);
-		}
-	}
-
-	public async sendAdditionalTelemetryInfo(session: vscode.AuthenticationSession): Promise<void> {
-		if (!vscode.env.isTelemetryEnabled) {
-			return;
-		}
-		const nocors = await this.isNoCorsEnvironment();
-
-		if (nocors) {
-			return;
-		}
-
-		if (this._type === AuthProviderType.github) {
-			return await this.checkUserDetails(session);
-		}
-
-		// GHES
-		await this.checkEnterpriseVersion(session.accessToken);
-	}
-
-	private async checkUserDetails(session: vscode.AuthenticationSession): Promise<void> {
-		let edu: string | undefined;
-
-		try {
-			const result = await fetching('https://education.github.com/api/user', {
-				headers: {
-					Authorization: `token ${session.accessToken}`,
-					'faculty-check-preview': 'true',
-					'User-Agent': `${vscode.env.appName} (${vscode.env.appHost})`
-				}
-			});
-
-			if (result.ok) {
-				const json: { student: boolean; faculty: boolean } = await result.json();
-				edu = json.student
-					? 'student'
-					: json.faculty
-						? 'faculty'
-						: 'none';
-			} else {
-				edu = 'unknown';
-			}
-		} catch (e) {
-			edu = 'unknown';
-		}
-
-		/* __GDPR__
-			"session" : {
-				"owner": "TylerLeonhardt",
-				"isEdu": { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-				"isManaged": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-			}
-		*/
-		this._telemetryReporter.sendTelemetryEvent('session', {
-			isEdu: edu,
-			// Apparently, this is how you tell if a user is an EMU...
-			isManaged: session.account.label.includes('_') ? 'true' : 'false'
-		});
-	}
-
-	private async checkEnterpriseVersion(token: string): Promise<void> {
-		try {
-			let version: string;
-			if (!isSupportedTarget(this._type, this._ghesUri)) {
-				const result = await fetching(this.getServerUri('/meta').toString(), {
-					headers: {
-						Authorization: `token ${token}`,
-						'User-Agent': `${vscode.env.appName} (${vscode.env.appHost})`
-					}
-				});
-
-				if (!result.ok) {
-					return;
-				}
-
-				const json: { verifiable_password_authentication: boolean; installed_version: string } = await result.json();
-				version = json.installed_version;
-			} else {
-				version = 'hosted';
-			}
-
-			/* __GDPR__
-				"ghe-session" : {
-					"owner": "TylerLeonhardt",
-					"version": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-				}
-			*/
-			this._telemetryReporter.sendTelemetryEvent('ghe-session', {
-				version
-			});
-		} catch {
-			// No-op
 		}
 	}
 

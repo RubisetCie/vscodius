@@ -21,7 +21,6 @@ import { Emitter } from 'vs/base/common/event';
 import { IPathService } from 'vs/workbench/services/path/common/pathService';
 import { ResourceMap } from 'vs/base/common/map';
 import { IExtHostContext } from 'vs/workbench/services/extensions/common/extHostCustomers';
-import { ErrorNoTelemetry } from 'vs/base/common/errors';
 
 export class BoundModelReferenceCollection {
 
@@ -213,7 +212,7 @@ export class MainThreadDocuments extends Disposable implements MainThreadDocumen
 	async $tryOpenDocument(uriData: UriComponents): Promise<URI> {
 		const inputUri = URI.revive(uriData);
 		if (!inputUri.scheme || !(inputUri.fsPath || inputUri.authority)) {
-			throw new ErrorNoTelemetry(`Invalid uri. Scheme and authority or path must be set.`);
+			throw new Error(`Invalid uri. Scheme and authority or path must be set.`);
 		}
 
 		const canonicalUri = this._uriIdentityService.asCanonicalUri(inputUri);
@@ -233,14 +232,14 @@ export class MainThreadDocuments extends Disposable implements MainThreadDocumen
 		try {
 			documentUri = await promise;
 		} catch (err) {
-			throw new ErrorNoTelemetry(`cannot open ${canonicalUri.toString()}. Detail: ${toErrorMessage(err)}`);
+			throw new Error(`cannot open ${canonicalUri.toString()}. Detail: ${toErrorMessage(err)}`);
 		}
 		if (!documentUri) {
-			throw new ErrorNoTelemetry(`cannot open ${canonicalUri.toString()}`);
+			throw new Error(`cannot open ${canonicalUri.toString()}`);
 		} else if (!extUri.isEqual(documentUri, canonicalUri)) {
-			throw new ErrorNoTelemetry(`cannot open ${canonicalUri.toString()}. Detail: Actual document opened as ${documentUri.toString()}`);
+			throw new Error(`cannot open ${canonicalUri.toString()}. Detail: Actual document opened as ${documentUri.toString()}`);
 		} else if (!this._modelTrackers.has(canonicalUri)) {
-			throw new ErrorNoTelemetry(`cannot open ${canonicalUri.toString()}. Detail: Files above 50MB cannot be synchronized with extensions.`);
+			throw new Error(`cannot open ${canonicalUri.toString()}. Detail: Files above 50MB cannot be synchronized with extensions.`);
 		} else {
 			return canonicalUri;
 		}

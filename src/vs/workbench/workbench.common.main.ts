@@ -103,7 +103,6 @@ import 'vs/workbench/services/quickinput/browser/quickInputService';
 import 'vs/workbench/services/userDataSync/browser/userDataSyncWorkbenchService';
 import 'vs/workbench/services/authentication/browser/authenticationService';
 import 'vs/workbench/services/hover/browser/hoverService';
-import 'vs/workbench/services/assignment/common/assignmentService';
 import 'vs/workbench/services/outline/browser/outlineService';
 import 'vs/workbench/services/languageDetection/browser/languageDetectionWorkerServiceImpl';
 import 'vs/editor/common/services/languageFeaturesService';
@@ -159,9 +158,6 @@ registerSingleton(IOpenerService, OpenerService, InstantiationType.Delayed);
 
 
 //#region --- workbench contributions
-
-// Telemetry
-import 'vs/workbench/contrib/telemetry/browser/telemetry.contribution';
 
 // Preferences
 import 'vs/workbench/contrib/preferences/browser/preferences.contribution';
@@ -301,14 +297,6 @@ import 'vs/workbench/contrib/inlayHints/browser/inlayHintsAccessibilty';
 // Themes
 import 'vs/workbench/contrib/themes/browser/themes.contribution';
 
-// Update
-import 'vs/workbench/contrib/update/browser/update.contribution';
-
-// Surveys
-import 'vs/workbench/contrib/surveys/browser/nps.contribution';
-import 'vs/workbench/contrib/surveys/browser/ces.contribution';
-import 'vs/workbench/contrib/surveys/browser/languageSurveys.contribution';
-
 // Welcome
 import 'vs/workbench/contrib/welcomeGettingStarted/browser/gettingStarted.contribution';
 import 'vs/workbench/contrib/welcomeWalkthrough/browser/walkThrough.contribution';
@@ -363,9 +351,6 @@ import 'vs/workbench/contrib/audioCues/browser/audioCues.contribution';
 
 // Deprecated Extension Migrator
 import 'vs/workbench/contrib/deprecatedExtensionMigrator/browser/deprecatedExtensionMigrator.contribution';
-
-// Bracket Pair Colorizer 2 Telemetry
-import 'vs/workbench/contrib/bracketPairColorizer2Telemetry/browser/bracketPairColorizer2Telemetry.contribution';
 
 // Accessibility
 import 'vs/workbench/contrib/accessibility/browser/accessibility.contribution';

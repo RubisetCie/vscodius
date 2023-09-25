@@ -11,7 +11,6 @@ import { createDecorator } from 'vs/platform/instantiation/common/instantiation'
 import { Event } from 'vs/base/common/event';
 import { localize } from 'vs/nls';
 import { observableFromEvent, derived } from 'vs/base/common/observable';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 
 export const IAudioCueService = createDecorator<IAudioCueService>('audioCue');
 
@@ -38,59 +37,24 @@ export class AudioCueService extends Disposable implements IAudioCueService {
 		this.accessibilityService.onDidChangeScreenReaderOptimized,
 		() => /** @description accessibilityService.onDidChangeScreenReaderOptimized */ this.accessibilityService.isScreenReaderOptimized()
 	);
-	private readonly sentTelemetry = new Set<string>();
 
 	constructor(
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IAccessibilityService private readonly accessibilityService: IAccessibilityService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 	) {
 		super();
 	}
 
 	public async playAudioCue(cue: AudioCue, options: IAudioCueOptions = {}): Promise<void> {
 		if (this.isEnabled(cue)) {
-			this.sendAudioCueTelemetry(cue, options.source);
 			await this.playSound(cue.sound.getSound(), options.allowManyInParallel);
 		}
 	}
 
 	public async playAudioCues(cues: (AudioCue | { cue: AudioCue; source: string })[]): Promise<void> {
-		for (const cue of cues) {
-			this.sendAudioCueTelemetry('cue' in cue ? cue.cue : cue, 'source' in cue ? cue.source : undefined);
-		}
-
 		// Some audio cues might reuse sounds. Don't play the same sound twice.
 		const sounds = new Set(cues.map(c => 'cue' in c ? c.cue : c).filter(cue => this.isEnabled(cue)).map(cue => cue.sound.getSound()));
 		await Promise.all(Array.from(sounds).map(sound => this.playSound(sound, true)));
-	}
-
-	private sendAudioCueTelemetry(cue: AudioCue, source: string | undefined): void {
-		const isScreenReaderOptimized = this.accessibilityService.isScreenReaderOptimized();
-		const key = cue.name + (source ? `::${source}` : '') + (isScreenReaderOptimized ? '{screenReaderOptimized}' : '');
-		// Only send once per user session
-		if (this.sentTelemetry.has(key) || this.getVolumeInPercent() === 0) {
-			return;
-		}
-		this.sentTelemetry.add(key);
-
-		this.telemetryService.publicLog2<{
-			audioCue: string;
-			source: string;
-			isScreenReaderOptimized: boolean;
-		}, {
-			owner: 'hediet';
-
-			audioCue: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The audio cue that was played.' };
-			source: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The source that triggered the audio cue (e.g. "diffEditorNavigation").' };
-			isScreenReaderOptimized: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Whether the user is using a screen reader' };
-
-			comment: 'This data is collected to understand how audio cues are used and if more audio cues should be added.';
-		}>('audioCue.played', {
-			audioCue: cue.name,
-			source: source ?? '',
-			isScreenReaderOptimized,
-		});
 	}
 
 	private getVolumeInPercent(): number {

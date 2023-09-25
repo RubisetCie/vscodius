@@ -13,7 +13,6 @@ import { EditMode, IInlineChatSessionProvider, IInlineChatSession, IInlineChatBu
 import { IRange, Range } from 'vs/editor/common/core/range';
 import { IActiveCodeEditor, ICodeEditor } from 'vs/editor/browser/editorBrowser';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IModelService } from 'vs/editor/common/services/model';
 import { ITextModelService } from 'vs/editor/common/services/resolverService';
 import { DisposableStore, IDisposable, toDisposable } from 'vs/base/common/lifecycle';
@@ -31,30 +30,6 @@ export type Recording = {
 	when: Date;
 	session: IInlineChatSession;
 	exchanges: { prompt: string; res: IInlineChatResponse }[];
-};
-
-type TelemetryData = {
-	extension: string;
-	rounds: string;
-	undos: string;
-	edits: boolean;
-	finishedByEdit: boolean;
-	startTime: string;
-	endTime: string;
-	editMode: string;
-};
-
-type TelemetryDataClassification = {
-	owner: 'jrieken';
-	comment: 'Data about an interaction editor session';
-	extension: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The extension providing the data' };
-	rounds: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Number of request that were made' };
-	undos: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Requests that have been undone' };
-	edits: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Did edits happen while the session was active' };
-	finishedByEdit: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Did edits cause the session to terminate' };
-	startTime: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'When the session started' };
-	endTime: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'When the session ended' };
-	editMode: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'What edit mode was choosen: live, livePreview, preview' };
 };
 
 export enum ExpansionState {
@@ -116,7 +91,6 @@ export class Session {
 	private _isUnstashed: boolean = false;
 	private readonly _exchange: SessionExchange[] = [];
 	private readonly _startTime = new Date();
-	private readonly _teldata: Partial<TelemetryData>;
 
 	readonly textModelNAltVersion: number;
 	private _textModelNSnapshotAltVersion: number | undefined;
@@ -131,14 +105,6 @@ export class Session {
 		readonly wholeRange: SessionWholeRange
 	) {
 		this.textModelNAltVersion = textModelN.getAlternativeVersionId();
-		this._teldata = {
-			extension: provider.debugName,
-			startTime: this._startTime.toISOString(),
-			edits: false,
-			rounds: '',
-			undos: '',
-			editMode
-		};
 	}
 
 	addInput(input: SessionPrompt): void {
@@ -175,8 +141,7 @@ export class Session {
 
 	addExchange(exchange: SessionExchange): void {
 		this._isUnstashed = false;
-		const newLen = this._exchange.push(exchange);
-		this._teldata.rounds += `${newLen}|`;
+		this._exchange.push(exchange);
 	}
 
 	get exchanges(): Iterable<SessionExchange> {
@@ -212,18 +177,6 @@ export class Session {
 		}
 
 		return this.textModelN.getValueInRange(new Range(startLine, 1, endLine, Number.MAX_VALUE));
-	}
-
-	recordExternalEditOccurred(didFinish: boolean) {
-		this._teldata.edits = true;
-		this._teldata.finishedByEdit = didFinish;
-	}
-
-	asTelemetryData(): TelemetryData {
-		return <TelemetryData>{
-			...this._teldata,
-			endTime: new Date().toISOString(),
-		};
 	}
 
 	asRecording(): Recording {
@@ -410,7 +363,6 @@ export class InlineChatSessionService implements IInlineChatSessionService {
 
 	constructor(
 		@IInlineChatService private readonly _inlineChatService: IInlineChatService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@IModelService private readonly _modelService: IModelService,
 		@ITextModelService private readonly _textModelService: ITextModelService,
 		@ILogService private readonly _logService: ILogService,
@@ -510,9 +462,6 @@ export class InlineChatSessionService implements IInlineChatSessionService {
 		if (newLen > 5) {
 			this._recordings.pop();
 		}
-
-		// send telemetry
-		this._telemetryService.publicLog2<TelemetryData, TelemetryDataClassification>('interactiveEditor/session', session.asTelemetryData());
 
 		this._onDidEndSession.fire(editor);
 	}

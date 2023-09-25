@@ -10,14 +10,12 @@ import { INativeEnvironmentService } from 'vs/platform/environment/common/enviro
 import { IExtensionRecommendationNotificationService } from 'vs/platform/extensionRecommendations/common/extensionRecommendations';
 import { INativeHostService } from 'vs/platform/native/common/native';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { AbstractNativeExtensionTipsService } from 'vs/platform/extensionManagement/common/extensionTipsService';
 
 export class ExtensionTipsService extends AbstractNativeExtensionTipsService {
 
 	constructor(
 		@INativeEnvironmentService environmentService: INativeEnvironmentService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IExtensionManagementService extensionManagementService: IExtensionManagementService,
 		@IStorageService storageService: IStorageService,
 		@INativeHostService nativeHostService: INativeHostService,
@@ -25,6 +23,6 @@ export class ExtensionTipsService extends AbstractNativeExtensionTipsService {
 		@IFileService fileService: IFileService,
 		@IProductService productService: IProductService,
 	) {
-		super(environmentService.userHome, nativeHostService, telemetryService, extensionManagementService, storageService, extensionRecommendationNotificationService, fileService, productService);
+		super(environmentService.userHome, nativeHostService, extensionManagementService, storageService, extensionRecommendationNotificationService, fileService, productService);
 	}
 }

@@ -8,9 +8,6 @@ import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/
 import { IFileService } from 'vs/platform/files/common/files';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { asTextOrError, IRequestService } from 'vs/platform/request/common/request';
-import { IStorageService } from 'vs/platform/storage/common/storage';
-import { IEnvironmentService } from 'vs/platform/environment/common/environment';
-import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { AbstractExtensionResourceLoaderService, IExtensionResourceLoaderService } from 'vs/platform/extensionResourceLoader/common/extensionResourceLoader';
 
@@ -18,13 +15,10 @@ export class ExtensionResourceLoaderService extends AbstractExtensionResourceLoa
 
 	constructor(
 		@IFileService fileService: IFileService,
-		@IStorageService storageService: IStorageService,
 		@IProductService productService: IProductService,
-		@IEnvironmentService environmentService: IEnvironmentService,
-		@IConfigurationService configurationService: IConfigurationService,
 		@IRequestService private readonly _requestService: IRequestService,
 	) {
-		super(fileService, storageService, productService, environmentService, configurationService);
+		super(fileService, productService);
 	}
 
 	async readExtensionResource(uri: URI): Promise<string> {

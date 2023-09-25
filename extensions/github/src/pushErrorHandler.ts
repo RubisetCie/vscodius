@@ -5,7 +5,6 @@
 
 import { TextDecoder } from 'util';
 import { commands, env, ProgressLocation, Uri, window, workspace, QuickPickOptions, FileType, l10n, Disposable, TextDocumentContentProvider } from 'vscode';
-import TelemetryReporter from '@vscode/extension-telemetry';
 import { getOctokit } from './auth';
 import { GitErrorCodes, PushErrorHandler, Remote, Repository } from './typings/git';
 import * as path from 'path';
@@ -100,7 +99,7 @@ export class GithubPushErrorHandler implements PushErrorHandler {
 	private disposables: Disposable[] = [];
 	private commandErrors = new CommandErrorOutputTextDocumentContentProvider();
 
-	constructor(private readonly telemetryReporter: TelemetryReporter) {
+	constructor() {
 		this.disposables.push(workspace.registerTextDocumentContentProvider('github-output', this.commandErrors));
 	}
 
@@ -127,40 +126,14 @@ export class GithubPushErrorHandler implements PushErrorHandler {
 
 		if (error.gitErrorCode === GitErrorCodes.PermissionDenied) {
 			await this.handlePermissionDeniedError(repository, remote, refspec, owner, repo);
-
-			/* __GDPR__
-				"pushErrorHandler" : {
-					"owner": "lszomoru",
-					"handler": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-				}
-			*/
-			this.telemetryReporter.sendTelemetryEvent('pushErrorHandler', { handler: 'PermissionDenied' });
-
 			return true;
 		}
 
 		// Push protection
 		if (/GH009: Secrets detected!/i.test(error.stderr)) {
 			await this.handlePushProtectionError(owner, repo, error.stderr);
-
-			/* __GDPR__
-				"pushErrorHandler" : {
-					"owner": "lszomoru",
-					"handler": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-				}
-			*/
-			this.telemetryReporter.sendTelemetryEvent('pushErrorHandler', { handler: 'PushRejected.PushProtection' });
-
 			return true;
 		}
-
-		/* __GDPR__
-			"pushErrorHandler" : {
-				"owner": "lszomoru",
-				"handler": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-			}
-		*/
-		this.telemetryReporter.sendTelemetryEvent('pushErrorHandler', { handler: 'None' });
 
 		return false;
 	}

@@ -18,7 +18,6 @@ import { ContextKeyExpr, IContextKeyService, ContextKeyExpression } from 'vs/pla
 import { ServicesAccessor as InstantiationServicesAccessor, BrandedService, IInstantiationService, IConstructorSignature } from 'vs/platform/instantiation/common/instantiation';
 import { IKeybindings, KeybindingsRegistry, KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
 import { Registry } from 'vs/platform/registry/common/platform';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { assertType } from 'vs/base/common/types';
 import { ThemeIcon } from 'vs/base/common/themables';
 import { IDisposable } from 'vs/base/common/lifecycle';
@@ -384,22 +383,7 @@ export abstract class EditorAction extends EditorCommand {
 	}
 
 	public runEditorCommand(accessor: ServicesAccessor, editor: ICodeEditor, args: any): void | Promise<void> {
-		this.reportTelemetry(accessor, editor);
 		return this.run(accessor, editor, args || {});
-	}
-
-	protected reportTelemetry(accessor: ServicesAccessor, editor: ICodeEditor) {
-		type EditorActionInvokedClassification = {
-			owner: 'alexdima';
-			comment: 'An editor action has been invoked.';
-			name: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The label of the action that was invoked.' };
-			id: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The identifier of the action that was invoked.' };
-		};
-		type EditorActionInvokedEvent = {
-			name: string;
-			id: string;
-		};
-		accessor.get(ITelemetryService).publicLog2<EditorActionInvokedEvent, EditorActionInvokedClassification>('editorActionInvoked', { name: this.label, id: this.id });
 	}
 
 	public abstract run(accessor: ServicesAccessor, editor: ICodeEditor, args: any): void | Promise<void>;

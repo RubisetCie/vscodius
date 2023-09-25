@@ -805,7 +805,7 @@ export class RawDebugSession implements IDisposable {
 		if (showErrors && error && error.format && error.showUser) {
 			this.notificationService.error(userMessage);
 		}
-		const result = new errors.ErrorNoTelemetry(userMessage);
+		const result = new Error(userMessage);
 		(<any>result).showUser = error?.showUser;
 
 		return result;

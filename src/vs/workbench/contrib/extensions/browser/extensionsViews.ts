@@ -23,7 +23,6 @@ import { Query } from 'vs/workbench/contrib/extensions/common/extensionQuery';
 import { IExtensionService, toExtension } from 'vs/workbench/services/extensions/common/extensions';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IViewletViewOptions } from 'vs/workbench/browser/parts/views/viewsViewlet';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { CountBadge } from 'vs/base/browser/ui/countBadge/countBadge';
 import { ManageExtensionAction, getContextMenuActions, ExtensionAction } from 'vs/workbench/contrib/extensions/browser/extensionsActions';
 import { WorkbenchPagedList } from 'vs/platform/list/browser/listService';
@@ -37,7 +36,7 @@ import { IListContextMenuEvent } from 'vs/base/browser/ui/list/list';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { IAction, Action, Separator, ActionRunner } from 'vs/base/common/actions';
 import { ExtensionIdentifierMap, ExtensionUntrustedWorkspaceSupportType, ExtensionVirtualWorkspaceSupportType, IExtensionDescription, isLanguagePackExtension } from 'vs/platform/extensions/common/extensions';
-import { CancelablePromise, createCancelablePromise, ThrottledDelayer } from 'vs/base/common/async';
+import { CancelablePromise, createCancelablePromise } from 'vs/base/common/async';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { SeverityIcon } from 'vs/platform/severityIcon/browser/severityIcon';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
@@ -130,7 +129,6 @@ export class ExtensionsListView extends ViewPane {
 		@IExtensionService private readonly extensionService: IExtensionService,
 		@IExtensionsWorkbenchService protected extensionsWorkbenchService: IExtensionsWorkbenchService,
 		@IExtensionRecommendationsService protected extensionRecommendationsService: IExtensionRecommendationsService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@IWorkspaceContextService protected contextService: IWorkspaceContextService,
 		@IExtensionManagementServerService protected readonly extensionManagementServerService: IExtensionManagementServerService,
@@ -152,7 +150,7 @@ export class ExtensionsListView extends ViewPane {
 			...(viewletViewOptions as IViewPaneOptions),
 			showActions: ViewPaneShowActions.Always,
 			maximumBodySize: options.flexibleHeight ? (storageService.getNumber(`${viewletViewOptions.id}.size`, StorageScope.PROFILE, 0) ? undefined : 0) : undefined
-		}, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, telemetryService);
+		}, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
 		if (this.options.onDidChangeTitle) {
 			this._register(this.options.onDidChangeTitle(title => this.updateTitle(title)));
 		}
@@ -1331,19 +1329,10 @@ export class DeprecatedExtensionsView extends ExtensionsListView {
 
 export class SearchMarketplaceExtensionsView extends ExtensionsListView {
 
-	private readonly reportSearchFinishedDelayer = this._register(new ThrottledDelayer(2000));
-	private searchWaitPromise: Promise<void> = Promise.resolve();
-
 	override async show(query: string): Promise<IPagedModel<IExtension>> {
 		const queryPromise = super.show(query);
-		this.reportSearchFinishedDelayer.trigger(() => this.reportSearchFinished());
-		this.searchWaitPromise = queryPromise.then(null, null);
+		queryPromise.then(null, null);
 		return queryPromise;
-	}
-
-	private async reportSearchFinished(): Promise<void> {
-		await this.searchWaitPromise;
-		this.telemetryService.publicLog2('extensionsView:MarketplaceSearchFinished');
 	}
 }
 

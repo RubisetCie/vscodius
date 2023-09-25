@@ -5,7 +5,6 @@
 
 import { localize } from 'vs/nls';
 import { BINARY_DIFF_EDITOR_ID } from 'vs/workbench/common/editor';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { SideBySideEditor } from 'vs/workbench/browser/parts/editor/sideBySideEditor';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -24,7 +23,6 @@ export class BinaryResourceDiffEditor extends SideBySideEditor {
 	static override readonly ID = BINARY_DIFF_EDITOR_ID;
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IThemeService themeService: IThemeService,
 		@IStorageService storageService: IStorageService,
@@ -33,7 +31,7 @@ export class BinaryResourceDiffEditor extends SideBySideEditor {
 		@IEditorService editorService: IEditorService,
 		@IEditorGroupsService editorGroupService: IEditorGroupsService
 	) {
-		super(telemetryService, instantiationService, themeService, storageService, configurationService, textResourceConfigurationService, editorService, editorGroupService);
+		super(instantiationService, themeService, storageService, configurationService, textResourceConfigurationService, editorService, editorGroupService);
 	}
 
 	getMetadata(): string | undefined {

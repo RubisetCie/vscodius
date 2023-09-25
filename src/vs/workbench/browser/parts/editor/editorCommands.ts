@@ -35,8 +35,6 @@ import { SideBySideEditor } from 'vs/workbench/browser/parts/editor/sideBySideEd
 import { IJSONSchema } from 'vs/base/common/jsonSchema';
 import { IEditorResolverService } from 'vs/workbench/services/editor/common/editorResolverService';
 import { IPathService } from 'vs/workbench/services/path/common/pathService';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { extname } from 'vs/base/common/resources';
 import { DiffEditorInput } from 'vs/workbench/common/editor/diffEditorInput';
 import { isDiffEditor } from 'vs/editor/browser/editorBrowser';
 import { IUntitledTextEditorService } from 'vs/workbench/services/untitled/common/untitledTextEditorService';
@@ -965,7 +963,6 @@ function registerCloseEditorCommands() {
 			const editorGroupService = accessor.get(IEditorGroupsService);
 			const editorService = accessor.get(IEditorService);
 			const editorResolverService = accessor.get(IEditorResolverService);
-			const telemetryService = accessor.get(ITelemetryService);
 
 			const { group, editor } = resolveCommandsContext(editorGroupService, getCommandsContext(resourceOrContext, context));
 
@@ -993,29 +990,6 @@ function registerCloseEditorCommands() {
 					options: resolvedEditor.options
 				}
 			]);
-
-			type WorkbenchEditorReopenClassification = {
-				owner: 'rebornix';
-				comment: 'Identify how a document is reopened';
-				scheme: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'File system provider scheme for the resource' };
-				ext: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'File extension for the resource' };
-				from: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The editor view type the resource is switched from' };
-				to: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The editor view type the resource is switched to' };
-			};
-
-			type WorkbenchEditorReopenEvent = {
-				scheme: string;
-				ext: string;
-				from: string;
-				to: string;
-			};
-
-			telemetryService.publicLog2<WorkbenchEditorReopenEvent, WorkbenchEditorReopenClassification>('workbenchEditorReopen', {
-				scheme: editor.resource?.scheme ?? '',
-				ext: editor.resource ? extname(editor.resource) : '',
-				from: editor.editorId ?? '',
-				to: resolvedEditor.editor.editorId ?? ''
-			});
 
 			// Make sure it becomes active too
 			await resolvedEditor.group.openEditor(resolvedEditor.editor);

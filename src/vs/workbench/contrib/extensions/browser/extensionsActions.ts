@@ -70,7 +70,6 @@ import { getLocale } from 'vs/platform/languagePacks/common/languagePacks';
 import { ILocaleService } from 'vs/workbench/services/localization/common/locale';
 import { isString } from 'vs/base/common/types';
 import { showWindowLogActionId } from 'vs/workbench/services/log/common/logConstants';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 
 export class PromptExtensionInstallFailureAction extends Action {
 
@@ -301,7 +300,6 @@ export class InstallAction extends ExtensionAction {
 		@ILabelService private readonly labelService: ILabelService,
 		@IDialogService private readonly dialogService: IDialogService,
 		@IPreferencesService private readonly preferencesService: IPreferencesService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 	) {
 		super('extensions.install', localize('install', "Install"), InstallAction.Class, false);
 		this.options = { ...options, isMachineScoped: false };
@@ -401,17 +399,6 @@ export class InstallAction extends ExtensionAction {
 		this.extensionsWorkbenchService.open(this.extension, { showPreReleaseVersion: this.options.installPreReleaseVersion });
 
 		alert(localize('installExtensionStart', "Installing extension {0} started. An editor is now open with more details on this extension", this.extension.displayName));
-
-		/* __GDPR__
-			"extensions:action:install" : {
-				"owner": "sandy081",
-				"actionId" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-				"${include}": [
-					"${GalleryExtensionTelemetryData}"
-				]
-			}
-		*/
-		this.telemetryService.publicLog('extensions:action:install', { ...this.extension.telemetryData, actionId: this.id });
 
 		const extension = await this.install(this.extension);
 

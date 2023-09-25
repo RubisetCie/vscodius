@@ -6,8 +6,6 @@
 import { IExtUri } from 'vs/base/common/resources';
 import { URI } from 'vs/base/common/uri';
 import { localize } from 'vs/nls';
-import { IEnvironmentService } from 'vs/platform/environment/common/environment';
-import { IFileService } from 'vs/platform/files/common/files';
 import { getServiceMachineId } from 'vs/platform/externalServices/common/serviceMachineId';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
@@ -52,9 +50,7 @@ export class UserDataSyncResourceProviderService implements IUserDataSyncResourc
 		@IUserDataSyncLocalStoreService private readonly userDataSyncLocalStoreService: IUserDataSyncLocalStoreService,
 		@IUserDataSyncLogService protected readonly logService: IUserDataSyncLogService,
 		@IUriIdentityService uriIdentityService: IUriIdentityService,
-		@IEnvironmentService private readonly environmentService: IEnvironmentService,
 		@IStorageService private readonly storageService: IStorageService,
-		@IFileService private readonly fileService: IFileService,
 		@IUserDataProfilesService private readonly userDataProfilesService: IUserDataProfilesService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
@@ -179,7 +175,7 @@ export class UserDataSyncResourceProviderService implements IUserDataSyncResourc
 			return undefined;
 		}
 
-		return getServiceMachineId(this.environmentService, this.fileService, this.storageService);
+		return getServiceMachineId(this.storageService);
 	}
 
 	async resolveContent(uri: URI): Promise<string | null> {

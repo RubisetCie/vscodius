@@ -10,7 +10,6 @@ import { RawContextKey } from 'vs/platform/contextkey/common/contextkey';
 import { IEnvironmentService } from 'vs/platform/environment/common/environment';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { IProductService } from 'vs/platform/product/common/productService';
-import { IWorkbenchAssignmentService } from 'vs/workbench/services/assignment/common/assignmentService';
 import { ISearchResult, ISettingsEditorModel } from 'vs/workbench/services/preferences/common/preferences';
 
 export interface IWorkbenchSettingsConfiguration {
@@ -102,7 +101,7 @@ type ExtensionToggleData = {
 
 let cachedExtensionToggleData: ExtensionToggleData | undefined;
 
-export async function getExperimentalExtensionToggleData(workbenchAssignmentService: IWorkbenchAssignmentService, environmentService: IEnvironmentService, productService: IProductService): Promise<ExtensionToggleData | undefined> {
+export async function getExperimentalExtensionToggleData(environmentService: IEnvironmentService, productService: IProductService): Promise<ExtensionToggleData | undefined> {
 	if (!ENABLE_EXTENSION_TOGGLE_SETTINGS) {
 		return undefined;
 	}
@@ -111,8 +110,7 @@ export async function getExperimentalExtensionToggleData(workbenchAssignmentServ
 		return cachedExtensionToggleData;
 	}
 
-	const isTreatment = await workbenchAssignmentService.getTreatment<boolean>('ExtensionToggleSettings');
-	if ((isTreatment || !environmentService.isBuilt) && productService.extensionRecommendations && productService.commonlyUsedSettings) {
+	if (!environmentService.isBuilt && productService.extensionRecommendations && productService.commonlyUsedSettings) {
 		const settingsEditorRecommendedExtensions: Record<string, IExtensionRecommendations> = {};
 		Object.keys(productService.extensionRecommendations).forEach(extensionId => {
 			const extensionInfo = productService.extensionRecommendations![extensionId];

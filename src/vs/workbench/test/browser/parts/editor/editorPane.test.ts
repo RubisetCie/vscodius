@@ -10,8 +10,6 @@ import { IEditorSerializer, IEditorFactoryRegistry, EditorExtensions, EditorInpu
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { Registry } from 'vs/platform/registry/common/platform';
 import { SyncDescriptor } from 'vs/platform/instantiation/common/descriptors';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 import { workbenchInstantiationService, TestEditorGroupView, TestEditorGroupsService, registerTestResourceEditor, TestEditorInput, createEditorPart, TestTextResourceConfigurationService } from 'vs/workbench/test/browser/workbenchTestServices';
 import { TextResourceEditorInput } from 'vs/workbench/common/editor/textResourceEditorInput';
 import { TestThemeService } from 'vs/platform/theme/test/common/testThemeService';
@@ -39,7 +37,7 @@ class TestEditor extends EditorPane {
 
 	constructor() {
 		const disposables = new DisposableStore();
-		super('TestEditor', NullTelemetryService, NullThemeService, disposables.add(new TestStorageService()));
+		super('TestEditor', NullThemeService, disposables.add(new TestStorageService()));
 
 		this._register(disposables);
 	}
@@ -53,7 +51,7 @@ class OtherTestEditor extends EditorPane {
 
 	constructor() {
 		const disposables = new DisposableStore();
-		super('testOtherEditor', NullTelemetryService, NullThemeService, disposables.add(new TestStorageService()));
+		super('testOtherEditor', NullThemeService, disposables.add(new TestStorageService()));
 
 		this._register(disposables);
 	}
@@ -454,8 +452,8 @@ suite('EditorPane', () => {
 	test('WorkspaceTrustRequiredEditor', async function () {
 
 		class TrustRequiredTestEditor extends EditorPane {
-			constructor(@ITelemetryService telemetryService: ITelemetryService) {
-				super('TestEditor', NullTelemetryService, NullThemeService, disposables.add(new TestStorageService()));
+			constructor() {
+				super('TestEditor', NullThemeService, disposables.add(new TestStorageService()));
 			}
 
 			override getId(): string { return 'trustRequiredTestEditor'; }

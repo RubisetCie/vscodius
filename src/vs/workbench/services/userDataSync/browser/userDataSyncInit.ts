@@ -107,7 +107,7 @@ export class UserDataSyncInitializer implements IUserDataInitializer {
 						return;
 					}
 
-					const userDataSyncStoreClient = new UserDataSyncStoreClient(userDataSyncStore.url, this.productService, this.requestService, this.logService, this.environmentService, this.fileService, this.storageService);
+					const userDataSyncStoreClient = new UserDataSyncStoreClient(userDataSyncStore.url, this.productService, this.requestService, this.logService, this.storageService);
 					userDataSyncStoreClient.setAuthToken(authenticationSession.accessToken, authenticationSession.providerId);
 
 					const manifest = await userDataSyncStoreClient.manifest(null);
@@ -138,14 +138,14 @@ export class UserDataSyncInitializer implements IUserDataInitializer {
 
 		const disposables = new DisposableStore();
 		try {
-			const userDataSyncStoreClient = disposables.add(new UserDataSyncStoreClient(userDataSyncStore.url, this.productService, this.requestService, this.logService, this.environmentService, this.fileService, this.storageService));
+			const userDataSyncStoreClient = disposables.add(new UserDataSyncStoreClient(userDataSyncStore.url, this.productService, this.requestService, this.logService, this.storageService));
 			userDataSyncStoreClient.setAuthToken(authenticationSession.accessToken, authenticationSession.providerId);
 
 			// Cache global state data for global state initialization
 			this.globalStateUserData = await userDataSyncStoreClient.readResource(SyncResource.GlobalState, null);
 
 			if (this.globalStateUserData) {
-				const userDataSyncStoreType = new UserDataSyncStoreTypeSynchronizer(userDataSyncStoreClient, this.storageService, this.environmentService, this.fileService, this.logService).getSyncStoreType(this.globalStateUserData);
+				const userDataSyncStoreType = new UserDataSyncStoreTypeSynchronizer(userDataSyncStoreClient, this.storageService, this.logService).getSyncStoreType(this.globalStateUserData);
 				if (userDataSyncStoreType) {
 					await this.userDataSyncStoreManagementService.switch(userDataSyncStoreType);
 

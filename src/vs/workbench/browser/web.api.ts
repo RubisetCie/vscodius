@@ -8,7 +8,6 @@ import type { UriComponents, URI } from 'vs/base/common/uri';
 import type { IWebSocketFactory } from 'vs/platform/remote/browser/browserSocketFactory';
 import type { IURLCallbackProvider } from 'vs/workbench/services/url/browser/urlService';
 import type { LogLevel } from 'vs/platform/log/common/log';
-import type { IUpdateProvider } from 'vs/workbench/services/update/browser/updateService';
 import type { Event } from 'vs/base/common/event';
 import type { IWorkspaceProvider } from 'vs/workbench/services/host/browser/browserHostService';
 import type { IProductConfiguration } from 'vs/base/common/product';
@@ -252,11 +251,6 @@ export interface IWorkbenchConstructionOptions {
 	readonly urlCallbackProvider?: IURLCallbackProvider;
 
 	/**
-	 * Support adding additional properties to telemetry.
-	 */
-	readonly resolveCommonTelemetryProperties?: ICommonTelemetryPropertiesResolver;
-
-	/**
 	 * A set of optional commands that should be registered with the commands
 	 * registry.
 	 *
@@ -291,22 +285,6 @@ export interface IWorkbenchConstructionOptions {
 	readonly profileToPreview?: UriComponents;
 
 	//#endregion
-
-
-	//#region Update/Quality related
-
-	/**
-	 * Support for update reporting
-	 */
-	readonly updateProvider?: IUpdateProvider;
-
-	/**
-	 * Support for product quality switching
-	 */
-	readonly productQualityChangeHandler?: IProductQualityChangeHandler;
-
-	//#endregion
-
 
 	//#region Branding
 
@@ -373,10 +351,6 @@ export interface IResourceUriProvider {
 export type ExtensionId = string;
 
 export type MarketplaceExtension = ExtensionId | { readonly id: ExtensionId; preRelease?: boolean; migrateStorageFrom?: ExtensionId };
-
-export interface ICommonTelemetryPropertiesResolver {
-	(): { [key: string]: any };
-}
 
 export interface IExternalUriResolver {
 	(uri: URI): Promise<URI>;
@@ -710,15 +684,6 @@ export interface IDefaultLayout {
 	 * the first time the workspace has been opened
 	 */
 	readonly force?: boolean;
-}
-
-export interface IProductQualityChangeHandler {
-
-	/**
-	 * Handler is being called when the user wants to switch between
-	 * `insider` or `stable` product qualities.
-	 */
-	(newQuality: 'insider' | 'stable'): void;
 }
 
 /**

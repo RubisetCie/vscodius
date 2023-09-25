@@ -42,9 +42,6 @@ import { CommitCharacterController } from './suggestCommitCharacters';
 import { State, SuggestModel } from './suggestModel';
 import { OvertypingCapturer } from './suggestOvertypingCapturer';
 import { ISelectedSuggestion, SuggestWidget } from './suggestWidget';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { basename, extname } from 'vs/base/common/resources';
-import { hash } from 'vs/base/common/hash';
 
 // sticky suggest widget which doesn't disappear on focus out and such
 const _sticky = false
@@ -129,7 +126,6 @@ export class SuggestController implements IEditorContribution {
 		@IContextKeyService private readonly _contextKeyService: IContextKeyService,
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 		@ILogService private readonly _logService: ILogService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 	) {
 		this.editor = editor;
 		this.model = _instantiationService.createInstance(SuggestModel, this.editor,);
@@ -340,10 +336,6 @@ export class SuggestController implements IEditorContribution {
 
 		const isResolved = item.isResolved;
 
-		// telemetry data points: duration of command execution, info about async additional edits (-1=n/a, -2=none, 1=success, 0=failed)
-		let _commandExectionDuration = -1;
-		let _additionalEditsAppliedAsync = -1;
-
 		if (Array.isArray(item.completion.additionalTextEdits)) {
 
 			// cancel -> stops all listening and closes widget
@@ -409,7 +401,6 @@ export class SuggestController implements IEditorContribution {
 				return true;
 			}).then(applied => {
 				this._logService.trace('[suggest] async resolving of edits DONE (ms, applied?)', sw.elapsed(), applied);
-				_additionalEditsAppliedAsync = applied === true ? 1 : applied === false ? 0 : -2;
 			}).finally(() => {
 				docListener.dispose();
 				typeListener.dispose();
@@ -444,15 +435,12 @@ export class SuggestController implements IEditorContribution {
 				this.model.trigger({ auto: true, retrigger: true });
 			} else {
 				// exec command, done
-				const sw = new StopWatch();
 				tasks.push(this._commandService.executeCommand(item.completion.command.id, ...(item.completion.command.arguments ? [...item.completion.command.arguments] : [])).catch(e => {
 					if (item.completion.extensionId) {
 						onUnexpectedExternalError(e);
 					} else {
 						onUnexpectedError(e);
 					}
-				}).finally(() => {
-					_commandExectionDuration = sw.elapsed();
 				}));
 			}
 		}
@@ -483,53 +471,8 @@ export class SuggestController implements IEditorContribution {
 
 		// clear only now - after all tasks are done
 		Promise.all(tasks).finally(() => {
-			this._reportSuggestionAcceptedTelemetry(item, model, isResolved, _commandExectionDuration, _additionalEditsAppliedAsync);
-
 			this.model.clear();
 			cts.dispose();
-		});
-	}
-
-	private _reportSuggestionAcceptedTelemetry(item: CompletionItem, model: ITextModel, itemResolved: boolean, commandExectionDuration: number, additionalEditsAppliedAsync: number) {
-
-		if (Math.floor(Math.random() * 100) === 0) {
-			// throttle telemetry event because accepting completions happens a lot
-			return;
-		}
-
-		type AcceptedSuggestion = {
-			extensionId: string; providerId: string;
-			fileExtension: string; languageId: string; basenameHash: string; kind: number;
-			resolveInfo: number; resolveDuration: number;
-			commandDuration: number;
-			additionalEditsAsync: number;
-		};
-		type AcceptedSuggestionClassification = {
-			owner: 'jrieken';
-			comment: 'Information accepting completion items';
-			extensionId: { classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight'; comment: 'Extension contributing the completions item' };
-			providerId: { classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight'; comment: 'Provider of the completions item' };
-			basenameHash: { classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight'; comment: 'Hash of the basename of the file into which the completion was inserted' };
-			fileExtension: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'File extension of the file into which the completion was inserted' };
-			languageId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Language type of the file into which the completion was inserted' };
-			kind: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'The completion item kind' };
-			resolveInfo: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'If the item was inserted before resolving was done' };
-			resolveDuration: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'How long resolving took to finish' };
-			commandDuration: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'How long a completion item command took' };
-			additionalEditsAsync: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Info about asynchronously applying additional edits' };
-		};
-
-		this._telemetryService.publicLog2<AcceptedSuggestion, AcceptedSuggestionClassification>('suggest.acceptedSuggestion', {
-			extensionId: item.extensionId?.value ?? 'unknown',
-			providerId: item.provider._debugDisplayName ?? 'unknown',
-			kind: item.completion.kind,
-			basenameHash: hash(basename(model.uri)).toString(16),
-			languageId: model.getLanguageId(),
-			fileExtension: extname(model.uri),
-			resolveInfo: !item.provider.resolveCompletionItem ? -1 : itemResolved ? 1 : 0,
-			resolveDuration: item.resolveDuration,
-			commandDuration: commandExectionDuration,
-			additionalEditsAsync: additionalEditsAppliedAsync
 		});
 	}
 

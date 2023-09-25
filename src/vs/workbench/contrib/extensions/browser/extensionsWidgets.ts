@@ -39,7 +39,6 @@ import { onUnexpectedError } from 'vs/base/common/errors';
 import { renderIcon } from 'vs/base/browser/ui/iconLabel/iconLabels';
 import { StandardKeyboardEvent } from 'vs/base/browser/keyboardEvent';
 import { KeyCode } from 'vs/base/common/keyCodes';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { defaultCountBadgeStyles } from 'vs/platform/theme/browser/defaultStyles';
 
 export abstract class ExtensionWidget extends Disposable implements IExtensionContainer {
@@ -226,7 +225,6 @@ export class SponsorWidget extends ExtensionWidget {
 	constructor(
 		private container: HTMLElement,
 		@IOpenerService private readonly openerService: IOpenerService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 	) {
 		super();
 		this.render();
@@ -245,15 +243,6 @@ export class SponsorWidget extends ExtensionWidget {
 		const label = $('span', undefined, localize('sponsor', "Sponsor"));
 		append(sponsor, sponsorIconElement, label);
 		this.disposables.add(onClick(sponsor, () => {
-			type SponsorExtensionClassification = {
-				owner: 'sandy081';
-				comment: 'Reporting when sponosor extension action is executed';
-				'extensionId': { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Id of the extension to be sponsored' };
-			};
-			type SponsorExtensionEvent = {
-				'extensionId': string;
-			};
-			this.telemetryService.publicLog2<SponsorExtensionEvent, SponsorExtensionClassification>('extensionsAction.sponsorExtension', { extensionId: this.extension!.identifier.id });
 			this.openerService.open(this.extension!.publisherSponsorLink!);
 		}));
 	}

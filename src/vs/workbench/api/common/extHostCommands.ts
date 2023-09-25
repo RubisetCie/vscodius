@@ -10,7 +10,7 @@ import { ICommandHandlerDescription } from 'vs/platform/commands/common/commands
 import * as extHostTypes from 'vs/workbench/api/common/extHostTypes';
 import * as extHostTypeConverter from 'vs/workbench/api/common/extHostTypeConverters';
 import { cloneAndChange } from 'vs/base/common/objects';
-import { MainContext, MainThreadCommandsShape, ExtHostCommandsShape, ICommandDto, ICommandHandlerDescriptionDto, MainThreadTelemetryShape } from './extHost.protocol';
+import { MainContext, MainThreadCommandsShape, ExtHostCommandsShape, ICommandDto, ICommandHandlerDescriptionDto } from './extHost.protocol';
 import { isNonEmptyArray } from 'vs/base/common/arrays';
 import * as languages from 'vs/editor/common/languages';
 import type * as vscode from 'vscode';
@@ -27,10 +27,7 @@ import { TestItemImpl } from 'vs/workbench/api/common/extHostTestItem';
 import { VSBuffer } from 'vs/base/common/buffer';
 import { SerializableObjectWithBuffers } from 'vs/workbench/services/extensions/common/proxyIdentifier';
 import { toErrorMessage } from 'vs/base/common/errorMessage';
-import { StopWatch } from 'vs/base/common/stopwatch';
 import { ExtensionIdentifier, IExtensionDescription } from 'vs/platform/extensions/common/extensions';
-import { TelemetryTrustedValue } from 'vs/platform/telemetry/common/telemetryUtils';
-import { IExtHostTelemetry } from 'vs/workbench/api/common/extHostTelemetry';
 
 interface CommandHandler {
 	callback: Function;
@@ -51,10 +48,8 @@ export class ExtHostCommands implements ExtHostCommandsShape {
 
 	private readonly _commands = new Map<string, CommandHandler>();
 	private readonly _apiCommands = new Map<string, ApiCommand>();
-	#telemetry: MainThreadTelemetryShape;
 
 	private readonly _logService: ILogService;
-	readonly #extHostTelemetry: IExtHostTelemetry;
 	private readonly _argumentProcessors: ArgumentProcessor[];
 
 	readonly converter: CommandsConverter;
@@ -62,12 +57,9 @@ export class ExtHostCommands implements ExtHostCommandsShape {
 	constructor(
 		@IExtHostRpcService extHostRpc: IExtHostRpcService,
 		@ILogService logService: ILogService,
-		@IExtHostTelemetry extHostTelemetry: IExtHostTelemetry
 	) {
 		this.#proxy = extHostRpc.getProxy(MainContext.MainThreadCommands);
 		this._logService = logService;
-		this.#extHostTelemetry = extHostTelemetry;
-		this.#telemetry = extHostRpc.getProxy(MainContext.MainThreadTelemetry);
 		this.converter = new CommandsConverter(
 			this,
 			id => {
@@ -243,7 +235,6 @@ export class ExtHostCommands implements ExtHostCommandsShape {
 			}
 		}
 
-		const stopWatch = StopWatch.create();
 		try {
 			return await callback.apply(thisArg, args);
 		} catch (err) {
@@ -262,8 +253,7 @@ export class ExtHostCommands implements ExtHostCommandsShape {
 			}
 
 			if (command.extension?.identifier) {
-				const reported = this.#extHostTelemetry.onExtensionError(command.extension.identifier, err);
-				this._logService.trace('forwarded error to extension?', reported, command.extension?.identifier);
+				this._logService.trace('forwarded error to extension?', command.extension?.identifier);
 			}
 
 			throw new class CommandError extends Error {
@@ -274,32 +264,6 @@ export class ExtHostCommands implements ExtHostCommandsShape {
 				}
 			};
 		}
-		finally {
-			this._reportTelemetry(command, id, stopWatch.elapsed());
-		}
-	}
-
-	private _reportTelemetry(command: CommandHandler, id: string, duration: number) {
-		if (!command.extension) {
-			return;
-		}
-		type ExtensionActionTelemetry = {
-			extensionId: string;
-			id: TelemetryTrustedValue<string>;
-			duration: number;
-		};
-		type ExtensionActionTelemetryMeta = {
-			extensionId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The id of the extension handling the command, informing which extensions provide most-used functionality.' };
-			id: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The id of the command, to understand which specific extension features are most popular.' };
-			duration: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'The duration of the command execution, to detect performance issues' };
-			owner: 'digitarald';
-			comment: 'Used to gain insight on the most popular commands used from extensions';
-		};
-		this.#telemetry.$publicLog2<ExtensionActionTelemetry, ExtensionActionTelemetryMeta>('Extension:ActionExecuted', {
-			extensionId: command.extension.identifier.value,
-			id: new TelemetryTrustedValue(id),
-			duration: duration,
-		});
 	}
 
 	$executeContributedCommand(id: string, ...args: any[]): Promise<unknown> {

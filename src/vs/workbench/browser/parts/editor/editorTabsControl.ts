@@ -151,7 +151,6 @@ export abstract class EditorTabsControl extends Themable {
 			actionRunner: this._register(new EditorCommandsContextActionRunner(context)),
 			anchorAlignmentProvider: () => AnchorAlignment.RIGHT,
 			renderDropdownAsChildElement: this.renderDropdownAsChildElement,
-			telemetrySource: 'editorPart',
 			resetMenu: MenuId.EditorTitle,
 			maxNumberOfItems: 9,
 			highlightToggledItems: true,

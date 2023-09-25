@@ -29,7 +29,6 @@ import { IEditorOptions, ITextEditorOptions, ITextResourceEditorInput } from 'vs
 import { IFileService } from 'vs/platform/files/common/files';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { AbstractTextEditor } from 'vs/workbench/browser/parts/editor/textEditor';
 import { DEFAULT_EDITOR_ASSOCIATION, EditorInputWithOptions, IEditorOpenContext, IResourceMergeEditorInput } from 'vs/workbench/common/editor';
@@ -110,7 +109,6 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 	constructor(
 		@IInstantiationService instantiation: IInstantiationService,
 		@IContextKeyService private readonly contextKeyService: IContextKeyService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IStorageService storageService: IStorageService,
 		@IThemeService themeService: IThemeService,
 		@ITextResourceConfigurationService textResourceConfigurationService: ITextResourceConfigurationService,
@@ -121,7 +119,7 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 		@ICodeEditorService private readonly _codeEditorService: ICodeEditorService,
 		@IConfigurationService private readonly configurationService: IConfigurationService
 	) {
-		super(MergeEditor.ID, telemetryService, instantiation, storageService, textResourceConfigurationService, themeService, editorService, editorGroupService, fileService);
+		super(MergeEditor.ID, instantiation, storageService, textResourceConfigurationService, themeService, editorService, editorGroupService, fileService);
 	}
 
 	override dispose(): void {
@@ -210,16 +208,6 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 			this.baseView,
 			this.showNonConflictingChanges,
 		);
-
-
-		model.telemetry.reportMergeEditorOpened({
-			combinableConflictCount: model.combinableConflictCount,
-			conflictCount: model.conflictCount,
-
-			baseTop: this._layoutModeObs.get().showBaseAtTop,
-			baseVisible: this._layoutModeObs.get().showBase,
-			isColumnView: this._layoutModeObs.get().kind === 'columns',
-		});
 
 		transaction(tx => {
 			this._viewModel.set(viewModel, tx);
@@ -529,11 +517,6 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 		if (JSON.stringify(value) === JSON.stringify(newLayout)) {
 			return;
 		}
-		this.model?.telemetry.reportLayoutChange({
-			baseTop: newLayout.showBaseAtTop,
-			baseVisible: newLayout.showBase,
-			isColumnView: newLayout.kind === 'columns',
-		});
 		this.applyLayout(newLayout);
 	}
 

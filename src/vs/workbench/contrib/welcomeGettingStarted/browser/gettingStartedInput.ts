@@ -14,7 +14,7 @@ import { IEditorOptions } from 'vs/platform/editor/common/editor';
 export const gettingStartedInputTypeId = 'workbench.editors.gettingStartedInput';
 
 export interface GettingStartedEditorOptions extends IEditorOptions {
-	selectedCategory?: string; selectedStep?: string; showTelemetryNotice?: boolean;
+	selectedCategory?: string; selectedStep?: string;
 }
 
 export class GettingStartedInput extends EditorInput {
@@ -61,7 +61,6 @@ export class GettingStartedInput extends EditorInput {
 		super();
 		this.selectedCategory = options.selectedCategory;
 		this.selectedStep = options.selectedStep;
-		this.showTelemetryNotice = !!options.showTelemetryNotice;
 	}
 
 	override getName() {
@@ -70,5 +69,4 @@ export class GettingStartedInput extends EditorInput {
 
 	selectedCategory: string | undefined;
 	selectedStep: string | undefined;
-	showTelemetryNotice: boolean;
 }

@@ -374,8 +374,6 @@ export class InlineChatController implements IEditorContribution {
 				editIsOutsideOfWholeRange = !Range.areIntersectingOrTouching(range, wholeRange.value);
 			}
 
-			this._activeSession!.recordExternalEditOccurred(editIsOutsideOfWholeRange);
-
 			if (editIsOutsideOfWholeRange) {
 				this._log('text changed outside of whole range, FINISH session');
 				this.finishExistingSession();

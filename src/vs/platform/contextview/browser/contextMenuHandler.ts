@@ -7,13 +7,12 @@ import { IContextMenuDelegate } from 'vs/base/browser/contextmenu';
 import { $, addDisposableListener, EventType, getActiveElement, isAncestor, isHTMLElement } from 'vs/base/browser/dom';
 import { StandardMouseEvent } from 'vs/base/browser/mouseEvent';
 import { Menu } from 'vs/base/browser/ui/menu/menu';
-import { ActionRunner, IRunEvent, WorkbenchActionExecutedClassification, WorkbenchActionExecutedEvent } from 'vs/base/common/actions';
+import { ActionRunner, IRunEvent } from 'vs/base/common/actions';
 import { isCancellationError } from 'vs/base/common/errors';
 import { combinedDisposable, DisposableStore, IDisposable } from 'vs/base/common/lifecycle';
 import { IContextViewService } from 'vs/platform/contextview/browser/contextView';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { INotificationService } from 'vs/platform/notification/common/notification';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { defaultMenuStyles } from 'vs/platform/theme/browser/defaultStyles';
 
 
@@ -30,7 +29,6 @@ export class ContextMenuHandler {
 
 	constructor(
 		private contextViewService: IContextViewService,
-		private telemetryService: ITelemetryService,
 		private notificationService: INotificationService,
 		private keybindingService: IKeybindingService,
 	) { }
@@ -82,7 +80,7 @@ export class ContextMenuHandler {
 				const menuDisposables = new DisposableStore();
 
 				const actionRunner = delegate.actionRunner || new ActionRunner();
-				actionRunner.onWillRun(evt => this.onActionRun(evt, !delegate.skipTelemetry), this, menuDisposables);
+				actionRunner.onWillRun(evt => this.onActionRun(evt), this, menuDisposables);
 				actionRunner.onDidRun(this.onDidActionRun, this, menuDisposables);
 				menu = new Menu(container, actions, {
 					actionViewItemProvider: delegate.getActionViewItem,
@@ -147,11 +145,7 @@ export class ContextMenuHandler {
 		}, shadowRootElement, !!shadowRootElement);
 	}
 
-	private onActionRun(e: IRunEvent, logTelemetry: boolean): void {
-		if (logTelemetry) {
-			this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: e.action.id, from: 'contextMenu' });
-		}
-
+	private onActionRun(e: IRunEvent): void {
 		this.contextViewService.hideContextView(false);
 	}
 

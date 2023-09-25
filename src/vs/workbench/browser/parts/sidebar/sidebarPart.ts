@@ -104,7 +104,6 @@ export class SidebarPart extends CompositePart<PaneComposite> implements IPaneCo
 			Registry.as<PaneCompositeRegistry>(ViewletExtensions.Viewlets),
 			SidebarPart.activeViewletSettingsKey,
 			viewDescriptorService.getDefaultViewContainer(ViewContainerLocation.Sidebar)!.id,
-			'sideBar',
 			'viewlet',
 			SIDE_BAR_TITLE_FOREGROUND,
 			Parts.SIDEBAR_PART,
@@ -287,7 +286,6 @@ export class SidebarPart extends CompositePart<PaneComposite> implements IPaneCo
 					getActions: () => contextMenuActions.slice(),
 					getActionViewItem: action => this.actionViewItemProvider(action),
 					actionRunner: activeViewlet.getActionRunner(),
-					skipTelemetry: true
 				});
 			}
 		}

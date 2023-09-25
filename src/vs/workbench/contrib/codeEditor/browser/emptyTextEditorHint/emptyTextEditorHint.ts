@@ -23,8 +23,6 @@ import { IContentActionHandler, renderFormattedText } from 'vs/base/browser/form
 import { ApplyFileSnippetAction } from 'vs/workbench/contrib/snippets/browser/commands/fileTemplateSnippets';
 import { IInlineChatSessionService } from 'vs/workbench/contrib/inlineChat/browser/inlineChatSession';
 import { IInlineChatService, IInlineChatSessionProvider } from 'vs/workbench/contrib/inlineChat/common/inlineChat';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { WorkbenchActionExecutedClassification, WorkbenchActionExecutedEvent } from 'vs/base/common/actions';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { KeybindingLabel } from 'vs/base/browser/ui/keybindingLabel/keybindingLabel';
 import { OS } from 'vs/base/common/platform';
@@ -69,7 +67,6 @@ export class EmptyTextEditorHintContribution implements IEditorContribution {
 		@IKeybindingService private readonly keybindingService: IKeybindingService,
 		@IInlineChatSessionService inlineChatSessionService: IInlineChatSessionService,
 		@IInlineChatService protected readonly inlineChatService: IInlineChatService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IProductService private readonly productService: IProductService,
 	) {
 		this.toDispose = [];
@@ -129,7 +126,6 @@ export class EmptyTextEditorHintContribution implements IEditorContribution {
 				this.configurationService,
 				this.keybindingService,
 				this.inlineChatService,
-				this.telemetryService,
 				this.productService
 			);
 		}
@@ -157,7 +153,6 @@ class EmptyTextEditorHintContentWidget implements IContentWidget {
 		private readonly configurationService: IConfigurationService,
 		private readonly keybindingService: IKeybindingService,
 		private readonly inlineChatService: IInlineChatService,
-		private readonly telemetryService: ITelemetryService,
 		private readonly productService: IProductService
 	) {
 		this.toDispose = new DisposableStore();
@@ -198,10 +193,6 @@ class EmptyTextEditorHintContentWidget implements IContentWidget {
 		let ariaLabel = `Ask ${providerName} something or start typing to dismiss.`;
 
 		const handleClick = () => {
-			this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', {
-				id: 'inlineChat.hintAction',
-				from: 'hint'
-			});
 			void this.commandService.executeCommand(inlineChatId, { from: 'hint' });
 		};
 
@@ -290,21 +281,12 @@ class EmptyTextEditorHintContentWidget implements IContentWidget {
 			e.stopPropagation();
 			// Need to focus editor before so current editor becomes active and the command is properly executed
 			this.editor.focus();
-			this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', {
-				id: ChangeLanguageAction.ID,
-				from: 'hint'
-			});
 			await this.commandService.executeCommand(ChangeLanguageAction.ID, { from: 'hint' });
 			this.editor.focus();
 		};
 
 		const snippetOnClickOrTap = async (e: UIEvent) => {
 			e.stopPropagation();
-
-			this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', {
-				id: ApplyFileSnippetAction.Id,
-				from: 'hint'
-			});
 			await this.commandService.executeCommand(ApplyFileSnippetAction.Id);
 		};
 
@@ -312,10 +294,6 @@ class EmptyTextEditorHintContentWidget implements IContentWidget {
 			e.stopPropagation();
 
 			const activeEditorInput = this.editorGroupsService.activeGroup.activeEditor;
-			this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', {
-				id: 'welcome.showNewFileEntries',
-				from: 'hint'
-			});
 			const newEditorSelected = await this.commandService.executeCommand('welcome.showNewFileEntries', { from: 'hint' });
 
 			// Close the active editor as long as it is untitled (swap the editors out)

@@ -10,7 +10,6 @@ import { Emitter } from 'vs/base/common/event';
 import { Disposable, toDisposable } from 'vs/base/common/lifecycle';
 import { escapeRegExpCharacters } from 'vs/base/common/strings';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { XtermAttributes, IXtermCore } from 'vs/workbench/contrib/terminal/browser/xterm-private';
 import { DEFAULT_LOCAL_ECHO_EXCLUDE, IBeforeProcessDataEvent, ITerminalConfiguration, ITerminalProcessManager, TERMINAL_CONFIG_SECTION } from 'vs/workbench/contrib/terminal/common/terminal';
 import type { IBuffer, IBufferCell, IDisposable, ITerminalAddon, Terminal } from 'xterm';
@@ -30,7 +29,6 @@ const NOT_WORD_RE = /[^a-z0-9]/i;
 
 const enum StatsConstants {
 	StatsBufferSize = 24,
-	StatsSendTelemetryEvery = 1000 * 60 * 5, // how often to collect stats
 	StatsMinSamplesToTurnOn = 5,
 	StatsMinAccuracyToTurnOn = 0.3,
 	StatsToggleOffThreshold = 0.5, // if latency is less than `threshold * this`, turn off
@@ -1304,7 +1302,6 @@ export class TypeAheadAddon extends Disposable implements ITerminalAddon {
 	constructor(
 		private _processManager: ITerminalProcessManager,
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 	) {
 		super();
 		this._register(toDisposable(() => this._clearPredictionDebounce?.dispose()));
@@ -1342,22 +1339,6 @@ export class TypeAheadAddon extends Disposable implements ITerminalAddon {
 			}
 		}));
 		this._register(this._processManager.onBeforeProcessData(e => this._onBeforeProcessData(e)));
-
-		let nextStatsSend: any;
-		this._register(stats.onChange(() => {
-			if (!nextStatsSend) {
-				nextStatsSend = setTimeout(() => {
-					this._sendLatencyStats(stats);
-					nextStatsSend = undefined;
-				}, StatsConstants.StatsSendTelemetryEvery);
-			}
-
-			if (timeline.length === 0) {
-				style.debounceStopTracking();
-			}
-
-			this._reevaluatePredictorState(stats, timeline);
-		}));
 	}
 
 	reset() {
@@ -1413,23 +1394,6 @@ export class TypeAheadAddon extends Disposable implements ITerminalAddon {
 				timeline.setShowPredictions(false);
 			}
 		}
-	}
-
-	private _sendLatencyStats(stats: PredictionStats) {
-		/* __GDPR__
-			"terminalLatencyStats" : {
-				"owner": "Tyriar",
-				"min" : { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true },
-				"max" : { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true },
-				"median" : { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true },
-				"count" : { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true },
-				"predictionAccuracy" : { "classification": "SystemMetaData", "purpose": "PerformanceAndHealth", "isMeasurement": true }
-			}
-		 */
-		this._telemetryService.publicLog('terminalLatencyStats', {
-			...stats.latency,
-			predictionAccuracy: stats.accuracy,
-		});
 	}
 
 	private _onUserData(data: string): void {

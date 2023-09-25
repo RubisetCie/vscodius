@@ -19,7 +19,6 @@ import { SaveStrategy, StateService } from 'vs/platform/state/node/stateService'
 import { IS_NEW_KEY, StorageScope } from 'vs/platform/storage/common/storage';
 import { IStorageChangeEvent, IStorageMain, IStorageMainOptions } from 'vs/platform/storage/electron-main/storageMain';
 import { StorageMainService } from 'vs/platform/storage/electron-main/storageMainService';
-import { currentSessionDateStorageKey, firstSessionDateStorageKey } from 'vs/platform/telemetry/common/telemetry';
 import { UriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentityService';
 import { IUserDataProfile } from 'vs/platform/userDataProfile/common/userDataProfile';
 import { UserDataProfilesMainService } from 'vs/platform/userDataProfile/electron-main/userDataProfile';
@@ -65,8 +64,6 @@ suite('StorageMainService', function () {
 		if (scope === StorageScope.APPLICATION) {
 			strictEqual(storage.items.size, 0);
 			await storage.init();
-			strictEqual(typeof storage.get(firstSessionDateStorageKey), 'string');
-			strictEqual(typeof storage.get(currentSessionDateStorageKey), 'string');
 		} else {
 			await storage.init();
 		}

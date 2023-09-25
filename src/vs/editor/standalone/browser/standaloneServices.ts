@@ -44,7 +44,6 @@ import { USLayoutResolvedKeybinding } from 'vs/platform/keybinding/common/usLayo
 import { ILabelService, ResourceLabelFormatter, IFormatterChangeEvent, Verbosity } from 'vs/platform/label/common/label';
 import { INotification, INotificationHandle, INotificationService, IPromptChoice, IPromptOptions, NoOpNotification, IStatusMessageOptions } from 'vs/platform/notification/common/notification';
 import { IProgressRunner, IEditorProgressService, IProgressService, IProgress, IProgressCompositeOptions, IProgressDialogOptions, IProgressNotificationOptions, IProgressOptions, IProgressStep, IProgressWindowOptions } from 'vs/platform/progress/common/progress';
-import { ITelemetryService, TelemetryLevel } from 'vs/platform/telemetry/common/telemetry';
 import { ISingleFolderWorkspaceIdentifier, IWorkspaceIdentifier, IWorkspace, IWorkspaceContextService, IWorkspaceFolder, IWorkspaceFoldersChangeEvent, IWorkspaceFoldersWillChangeEvent, WorkbenchState, WorkspaceFolder, STANDALONE_EDITOR_WORKSPACE_ID } from 'vs/platform/workspace/common/workspace';
 import { ILayoutService } from 'vs/platform/layout/browser/layoutService';
 import { StandaloneServicesNLS } from 'vs/editor/common/standaloneStrings';
@@ -230,7 +229,6 @@ class StandaloneEnvironmentService implements IEnvironmentService {
 	readonly extensionLogLevel?: [string, string][] | undefined = undefined;
 	readonly verbose: boolean = false;
 	readonly isBuilt: boolean = false;
-	readonly disableTelemetry: boolean = false;
 	readonly serviceMachineIdResource: URI = URI.from({ scheme: 'monaco', authority: 'serviceMachineIdResource' });
 	readonly policyFile?: URI | undefined = undefined;
 }
@@ -399,12 +397,11 @@ export class StandaloneKeybindingService extends AbstractKeybindingService {
 	constructor(
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@ICommandService commandService: ICommandService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@INotificationService notificationService: INotificationService,
 		@ILogService logService: ILogService,
 		@ICodeEditorService codeEditorService: ICodeEditorService
 	) {
-		super(contextKeyService, commandService, telemetryService, notificationService, logService);
+		super(contextKeyService, commandService, notificationService, logService);
 
 		this._cachedResolver = null;
 		this._dynamicKeybindings = [];
@@ -753,21 +750,6 @@ class StandaloneResourcePropertiesService implements ITextResourcePropertiesServ
 	}
 }
 
-class StandaloneTelemetryService implements ITelemetryService {
-	declare readonly _serviceBrand: undefined;
-	readonly telemetryLevel = TelemetryLevel.NONE;
-	readonly sessionId = 'someValue.sessionId';
-	readonly machineId = 'someValue.machineId';
-	readonly firstSessionDate = 'someValue.firstSessionDate';
-	readonly sendErrorTelemetry = false;
-	setEnabled(): void { }
-	setExperimentProperty(): void { }
-	publicLog() { }
-	publicLog2() { }
-	publicLogError() { }
-	publicLogError2() { }
-}
-
 class StandaloneWorkspaceContextService implements IWorkspaceContextService {
 
 	public _serviceBrand: undefined;
@@ -1025,14 +1007,13 @@ class StandaloneLogService extends LogService {
 
 class StandaloneContextMenuService extends ContextMenuService {
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@INotificationService notificationService: INotificationService,
 		@IContextViewService contextViewService: IContextViewService,
 		@IKeybindingService keybindingService: IKeybindingService,
 		@IMenuService menuService: IMenuService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 	) {
-		super(telemetryService, notificationService, contextViewService, keybindingService, menuService, contextKeyService);
+		super(notificationService, contextViewService, keybindingService, menuService, contextKeyService);
 		this.configure({ blockMouse: false }); // we do not want that in the standalone editor
 	}
 }
@@ -1069,7 +1050,6 @@ registerSingleton(ITextResourceConfigurationService, StandaloneResourceConfigura
 registerSingleton(ITextResourcePropertiesService, StandaloneResourcePropertiesService, InstantiationType.Eager);
 registerSingleton(IWorkspaceContextService, StandaloneWorkspaceContextService, InstantiationType.Eager);
 registerSingleton(ILabelService, StandaloneUriLabelService, InstantiationType.Eager);
-registerSingleton(ITelemetryService, StandaloneTelemetryService, InstantiationType.Eager);
 registerSingleton(IDialogService, StandaloneDialogService, InstantiationType.Eager);
 registerSingleton(IEnvironmentService, StandaloneEnvironmentService, InstantiationType.Eager);
 registerSingleton(INotificationService, StandaloneNotificationService, InstantiationType.Eager);

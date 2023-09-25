@@ -7,26 +7,6 @@ import { Emitter, Event } from 'vs/base/common/event';
 import { Disposable, IDisposable } from 'vs/base/common/lifecycle';
 import * as nls from 'vs/nls';
 
-export interface ITelemetryData {
-	readonly from?: string;
-	readonly target?: string;
-	[key: string]: unknown;
-}
-
-export type WorkbenchActionExecutedClassification = {
-	id: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The identifier of the action that was run.' };
-	from: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The name of the component the action was run from.' };
-	detail?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Optional details about how the action was run, e.g which keybinding was used.' };
-	owner: 'bpasero';
-	comment: 'Provides insight into actions that are executed within the workbench.';
-};
-
-export type WorkbenchActionExecutedEvent = {
-	id: string;
-	from: string;
-	detail?: string;
-};
-
 export interface IAction {
 	readonly id: string;
 	label: string;
@@ -153,7 +133,7 @@ export class Action extends Disposable implements IAction {
 		}
 	}
 
-	async run(event?: unknown, data?: ITelemetryData): Promise<void> {
+	async run(event?: unknown): Promise<void> {
 		if (this._actionCallback) {
 			await this._actionCallback(event);
 		}

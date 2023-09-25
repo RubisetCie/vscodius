@@ -5,7 +5,6 @@
 
 import { CONFIGURATION_KEY_HOST_NAME, CONFIGURATION_KEY_PREVENT_SLEEP, ConnectionInfo, IRemoteTunnelSession, IRemoteTunnelService, LOGGER_NAME, LOG_ID, TunnelStates, TunnelStatus, TunnelMode, INACTIVE_TUNNEL_MODE, ActiveTunnelMode } from 'vs/platform/remoteTunnel/common/remoteTunnel';
 import { Emitter } from 'vs/base/common/event';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { INativeEnvironmentService } from 'vs/platform/environment/common/environment';
 import { Disposable } from 'vs/base/common/lifecycle';
 import { ILogger, ILoggerService, LogLevelToString } from 'vs/platform/log/common/log';
@@ -22,18 +21,6 @@ import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storag
 import { isString } from 'vs/base/common/types';
 import { StreamSplitter } from 'vs/base/node/nodeStreams';
 import { joinPath } from 'vs/base/common/resources';
-
-type RemoteTunnelEnablementClassification = {
-	owner: 'aeschli';
-	comment: 'Reporting when Remote Tunnel access is turned on or off';
-	enabled?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Flag indicating if Remote Tunnel Access is enabled or not' };
-	service?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Flag indicating if Remote Tunnel Access is installed as a service' };
-};
-
-type RemoteTunnelEnablementEvent = {
-	enabled: boolean;
-	service: boolean;
-};
 
 const restartTunnelOnConfigurationChanges: readonly string[] = [
 	CONFIGURATION_KEY_HOST_NAME,
@@ -85,7 +72,6 @@ export class RemoteTunnelService extends Disposable implements IRemoteTunnelServ
 	private _initialized = false;
 
 	constructor(
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IProductService private readonly productService: IProductService,
 		@INativeEnvironmentService private readonly environmentService: INativeEnvironmentService,
 		@ILoggerService loggerService: ILoggerService,
@@ -235,11 +221,6 @@ export class RemoteTunnelService extends Disposable implements IRemoteTunnelServ
 	}
 
 	private async updateTunnelProcess(): Promise<void> {
-		this.telemetryService.publicLog2<RemoteTunnelEnablementEvent, RemoteTunnelEnablementClassification>('remoteTunnel.enablement', {
-			enabled: this._mode.active,
-			service: this._mode.active && this._mode.asService,
-		});
-
 		if (this._tunnelProcess) {
 			this._tunnelProcess.cancel();
 			this._tunnelProcess = undefined;

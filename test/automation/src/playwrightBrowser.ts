@@ -43,7 +43,6 @@ async function launchServer(options: LaunchOptions) {
 	};
 
 	const args = [
-		'--disable-telemetry',
 		'--disable-workspace-trust',
 		`--port=${port++}`,
 		'--enable-smoke-test-driver',

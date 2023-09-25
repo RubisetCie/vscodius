@@ -13,7 +13,6 @@ import { PartialCommandDetectionCapability } from 'vs/platform/terminal/common/c
 import { ILogService } from 'vs/platform/log/common/log';
 // Importing types is safe in any layer
 // eslint-disable-next-line local/code-import-patterns
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { Emitter } from 'vs/base/common/event';
 import { BufferMarkCapability } from 'vs/platform/terminal/common/capabilities/bufferMarkCapability';
 // Importing types is safe in any layer
@@ -195,7 +194,6 @@ const enum ITermOscPt {
 export class ShellIntegrationAddon extends Disposable implements IShellIntegration, ITerminalAddon {
 	private _terminal?: Terminal;
 	readonly capabilities = this._register(new TerminalCapabilityStore());
-	private _hasUpdatedTelemetry: boolean = false;
 	private _activationTimeout: any;
 	private _commonProtocolDisposables: IDisposable[] = [];
 	private _status: ShellIntegrationStatus = ShellIntegrationStatus.Off;
@@ -207,8 +205,6 @@ export class ShellIntegrationAddon extends Disposable implements IShellIntegrati
 
 	constructor(
 		private _nonce: string,
-		private readonly _disableTelemetry: boolean | undefined,
-		private readonly _telemetryService: ITelemetryService | undefined,
 		private readonly _logService: ILogService
 	) {
 		super();
@@ -233,7 +229,6 @@ export class ShellIntegrationAddon extends Disposable implements IShellIntegrati
 		);
 		this._register(xterm.parser.registerOscHandler(ShellIntegrationOscPs.SetCwd, data => this._doHandleSetCwd(data)));
 		this._register(xterm.parser.registerOscHandler(ShellIntegrationOscPs.SetWindowsFriendlyCwd, data => this._doHandleSetWindowsFriendlyCwd(data)));
-		this._ensureCapabilitiesOrAddFailureTelemetry();
 	}
 
 	getMarkerId(terminal: Terminal, vscodeMarkerId: string) {
@@ -282,29 +277,11 @@ export class ShellIntegrationAddon extends Disposable implements IShellIntegrati
 
 	private _handleVSCodeSequence(data: string): boolean {
 		const didHandle = this._doHandleVSCodeSequence(data);
-		if (!this._hasUpdatedTelemetry && didHandle) {
-			this._telemetryService?.publicLog2<{}, { owner: 'meganrogge'; comment: 'Indicates shell integration was activated' }>('terminal/shellIntegrationActivationSucceeded');
-			this._hasUpdatedTelemetry = true;
-			this._clearActivationTimeout();
-		}
 		if (this._status !== ShellIntegrationStatus.VSCode) {
 			this._status = ShellIntegrationStatus.VSCode;
 			this._onDidChangeStatus.fire(this._status);
 		}
 		return didHandle;
-	}
-
-	private async _ensureCapabilitiesOrAddFailureTelemetry(): Promise<void> {
-		if (!this._telemetryService || this._disableTelemetry) {
-			return;
-		}
-		this._activationTimeout = setTimeout(() => {
-			if (!this.capabilities.get(TerminalCapability.CommandDetection) && !this.capabilities.get(TerminalCapability.CwdDetection)) {
-				this._telemetryService?.publicLog2<{ classification: 'SystemMetaData'; purpose: 'FeatureInsight' }>('terminal/shellIntegrationActivationTimeout');
-				this._logService.warn('Shell integration failed to add capabilities within 10 seconds');
-			}
-			this._hasUpdatedTelemetry = true;
-		}, 10000);
 	}
 
 	private _clearActivationTimeout(): void {

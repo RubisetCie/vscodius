@@ -6,13 +6,11 @@
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { Emitter, Event } from 'vs/base/common/event';
 import { IDisposable } from 'vs/base/common/lifecycle';
-import { StopWatch } from 'vs/base/common/stopwatch';
 import { LineRange } from 'vs/editor/common/core/lineRange';
 import { IDocumentDiff, IDocumentDiffProvider, IDocumentDiffProviderOptions } from 'vs/editor/common/diff/documentDiffProvider';
 import { DetailedLineRangeMapping, RangeMapping } from 'vs/editor/common/diff/rangeMapping';
 import { ITextModel } from 'vs/editor/common/model';
 import { DiffAlgorithmName, IEditorWorkerService } from 'vs/editor/common/services/editorWorker';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 
 export class WorkerBasedDocumentDiffProvider implements IDocumentDiffProvider, IDisposable {
 	private onDidChangeEventEmitter = new Emitter<void>();
@@ -26,7 +24,6 @@ export class WorkerBasedDocumentDiffProvider implements IDocumentDiffProvider, I
 	constructor(
 		options: IWorkerBasedDocumentDiffProviderOptions,
 		@IEditorWorkerService private readonly editorWorkerService: IEditorWorkerService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 	) {
 		this.setOptions(options);
 	}
@@ -77,27 +74,7 @@ export class WorkerBasedDocumentDiffProvider implements IDocumentDiffProvider, I
 			return c.result;
 		}
 
-		const sw = StopWatch.create();
 		const result = await this.editorWorkerService.computeDiff(original.uri, modified.uri, options, this.diffAlgorithm);
-		const timeMs = sw.elapsed();
-
-		this.telemetryService.publicLog2<{
-			timeMs: number;
-			timedOut: boolean;
-			detectedMoves: number;
-		}, {
-			owner: 'hediet';
-
-			timeMs: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'To understand if the new diff algorithm is slower/faster than the old one' };
-			timedOut: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'To understand how often the new diff algorithm times out' };
-			detectedMoves: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'To understand how often the new diff algorithm detects moves' };
-
-			comment: 'This event gives insight about the performance of the new diff algorithm.';
-		}>('diffEditor.computeDiff', {
-			timeMs,
-			timedOut: result?.quitEarly ?? true,
-			detectedMoves: options.computeMoves ? (result?.moves.length ?? 0) : -1,
-		});
 
 		if (cancellationToken.isCancellationRequested) {
 			// Text models might be disposed!

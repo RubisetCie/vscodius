@@ -24,8 +24,6 @@ import { IProductService } from 'vs/platform/product/common/productService';
 import { RemoteAuthorityResolverService } from 'vs/platform/remote/browser/remoteAuthorityResolverService';
 import { IRemoteAuthorityResolverService, ResolverResult } from 'vs/platform/remote/common/remoteAuthorityResolver';
 import { IRemoteExtensionsScannerService } from 'vs/platform/remote/common/remoteExtensionsScanner';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { UriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentityService';
 import { IUserDataProfilesService, UserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
@@ -140,7 +138,6 @@ suite('ExtensionService', () => {
 			@IInstantiationService instantiationService: IInstantiationService,
 			@INotificationService notificationService: INotificationService,
 			@IWorkbenchEnvironmentService environmentService: IWorkbenchEnvironmentService,
-			@ITelemetryService telemetryService: ITelemetryService,
 			@IWorkbenchExtensionEnablementService extensionEnablementService: IWorkbenchExtensionEnablementService,
 			@IFileService fileService: IFileService,
 			@IProductService productService: IProductService,
@@ -169,7 +166,6 @@ suite('ExtensionService', () => {
 				instantiationService,
 				notificationService,
 				environmentService,
-				telemetryService,
 				extensionEnablementService,
 				fileService,
 				productService,
@@ -243,7 +239,6 @@ suite('ExtensionService', () => {
 			[IProductService, testProductService],
 			[IFileService, TestFileService],
 			[IWorkbenchExtensionEnablementService, TestWorkbenchExtensionEnablementService],
-			[ITelemetryService, NullTelemetryService],
 			[IEnvironmentService, TestEnvironmentService],
 			[IWorkspaceTrustEnablementService, WorkspaceTrustEnablementService],
 			[IUserDataProfilesService, UserDataProfilesService],

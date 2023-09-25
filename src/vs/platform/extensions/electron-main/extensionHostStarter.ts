@@ -12,7 +12,6 @@ import { ILifecycleMainService } from 'vs/platform/lifecycle/electron-main/lifec
 import { Promises } from 'vs/base/common/async';
 import { WindowUtilityProcess } from 'vs/platform/utilityProcess/electron-main/utilityProcess';
 import { IWindowsMainService } from 'vs/platform/windows/electron-main/windows';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 
 export class ExtensionHostStarter implements IDisposable, IExtensionHostStarter {
 
@@ -27,7 +26,6 @@ export class ExtensionHostStarter implements IDisposable, IExtensionHostStarter 
 		@ILogService private readonly _logService: ILogService,
 		@ILifecycleMainService private readonly _lifecycleMainService: ILifecycleMainService,
 		@IWindowsMainService private readonly _windowsMainService: IWindowsMainService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 	) {
 
 		// On shutdown: gracefully await extension host shutdowns
@@ -70,7 +68,7 @@ export class ExtensionHostStarter implements IDisposable, IExtensionHostStarter 
 			throw canceled();
 		}
 		const id = String(++ExtensionHostStarter._lastId);
-		const extHost = new WindowUtilityProcess(this._logService, this._windowsMainService, this._telemetryService, this._lifecycleMainService);
+		const extHost = new WindowUtilityProcess(this._logService, this._windowsMainService, this._lifecycleMainService);
 		this._extHosts.set(id, extHost);
 		extHost.onExit(({ pid, code, signal }) => {
 			this._logService.info(`Extension host with pid ${pid} exited with code: ${code}, signal: ${signal}.`);

@@ -9,8 +9,6 @@ import { onUnexpectedError } from 'vs/base/common/errors';
 import { INativeWorkbenchEnvironmentService } from 'vs/workbench/services/environment/electron-sandbox/environmentService';
 import { ILifecycleService } from 'vs/workbench/services/lifecycle/common/lifecycle';
 import { IProductService } from 'vs/platform/product/common/productService';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { IUpdateService } from 'vs/platform/update/common/update';
 import { INativeHostService } from 'vs/platform/native/common/native';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { ITimerService } from 'vs/workbench/services/timer/browser/timerService';
@@ -29,14 +27,12 @@ export class NativeStartupTimings extends StartupTimings implements IWorkbenchCo
 		@INativeHostService private readonly _nativeHostService: INativeHostService,
 		@IEditorService editorService: IEditorService,
 		@IPaneCompositePartService paneCompositeService: IPaneCompositePartService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@ILifecycleService lifecycleService: ILifecycleService,
-		@IUpdateService updateService: IUpdateService,
 		@INativeWorkbenchEnvironmentService private readonly _environmentService: INativeWorkbenchEnvironmentService,
 		@IProductService private readonly _productService: IProductService,
 		@IWorkspaceTrustManagementService workspaceTrustService: IWorkspaceTrustManagementService,
 	) {
-		super(editorService, paneCompositeService, lifecycleService, updateService, workspaceTrustService);
+		super(editorService, paneCompositeService, lifecycleService, workspaceTrustService);
 
 		this._report().catch(onUnexpectedError);
 	}
@@ -64,7 +60,7 @@ export class NativeStartupTimings extends StartupTimings implements IWorkbenchCo
 			const perfBaseline = await this._timerService.perfBaseline;
 
 			if (appendTo) {
-				const content = `${this._timerService.startupMetrics.ellapsed}\t${this._productService.nameShort}\t${(this._productService.commit || '').slice(0, 10) || '0000000000'}\t${this._telemetryService.sessionId}\t${standardStartupError === undefined ? 'standard_start' : 'NO_standard_start : ' + standardStartupError}\t${String(perfBaseline).padStart(4, '0')}ms\n`;
+				const content = `${this._timerService.startupMetrics.ellapsed}\t${this._productService.nameShort}\t${(this._productService.commit || '').slice(0, 10) || '0000000000'}\t${standardStartupError === undefined ? 'standard_start' : 'NO_standard_start : ' + standardStartupError}\t${String(perfBaseline).padStart(4, '0')}ms\n`;
 				await this.appendContent(URI.file(appendTo), content);
 			}
 

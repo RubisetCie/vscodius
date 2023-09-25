@@ -37,7 +37,6 @@ import { ITextModelService } from 'vs/editor/common/services/resolverService';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { WorkbenchToolBar } from 'vs/platform/actions/browser/toolbar';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { fixedDiffEditorOptions, fixedEditorOptions, fixedEditorPadding } from 'vs/workbench/contrib/notebook/browser/diff/diffCellEditorOptions';
 import { AccessibilityVerbositySettingId } from 'vs/workbench/contrib/accessibility/browser/accessibilityConfiguration';
 import { IAccessibilityService } from 'vs/platform/accessibility/common/accessibility';
@@ -86,7 +85,6 @@ class PropertyHeader extends Disposable {
 		@IMenuService private readonly menuService: IMenuService,
 		@IContextKeyService private readonly contextKeyService: IContextKeyService,
 		@IThemeService private readonly themeService: IThemeService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IAccessibilityService private readonly accessibilityService: IAccessibilityService
 	) {
 		super();
@@ -125,7 +123,7 @@ class PropertyHeader extends Disposable {
 
 				return undefined;
 			}
-		}, this.menuService, this.contextKeyService, this.contextMenuService, this.keybindingService, this.telemetryService);
+		}, this.menuService, this.contextKeyService, this.contextMenuService, this.keybindingService);
 		this._register(this._toolbar);
 		this._toolbar.context = {
 			cell: this.cell

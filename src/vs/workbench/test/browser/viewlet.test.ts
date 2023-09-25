@@ -15,7 +15,7 @@ suite('Viewlets', () => {
 	class TestViewlet extends PaneComposite {
 
 		constructor() {
-			super('id', null!, null!, null!, null!, null!, null!, null!);
+			super('id', null!, null!, null!, null!, null!, null!);
 		}
 
 		override layout(dimension: any): void {

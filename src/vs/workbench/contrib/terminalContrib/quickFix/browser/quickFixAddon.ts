@@ -17,7 +17,6 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { DecorationSelector, updateLayout } from 'vs/workbench/contrib/terminal/browser/xterm/decorationStyles';
 import type { IDecoration, Terminal } from 'xterm';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { CancellationTokenSource } from 'vs/base/common/cancellation';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
 import { AudioCue, IAudioCueService } from 'vs/platform/audioCues/browser/audioCueService';
@@ -79,7 +78,6 @@ export class TerminalQuickFixAddon extends Disposable implements ITerminalAddon,
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
 		@IAudioCueService private readonly _audioCueService: IAudioCueService,
 		@IOpenerService private readonly _openerService: IOpenerService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@IExtensionService private readonly _extensionService: IExtensionService,
 		@IActionWidgetService private readonly _actionWidgetService: IActionWidgetService,
 		@ILabelService private readonly _labelService: ILabelService
@@ -212,20 +210,6 @@ export class TerminalQuickFixAddon extends Disposable implements ITerminalAddon,
 	}
 
 	private _disposeQuickFix(id: string, ranQuickFix: boolean): void {
-		type QuickFixResultTelemetryEvent = {
-			quickFixId: string;
-			ranQuickFix: boolean;
-		};
-		type QuickFixClassification = {
-			owner: 'meganrogge';
-			quickFixId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The quick fix ID' };
-			ranQuickFix: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Whether the quick fix was run' };
-			comment: 'Terminal quick fixes';
-		};
-		this._telemetryService?.publicLog2<QuickFixResultTelemetryEvent, QuickFixClassification>('terminal/quick-fix', {
-			quickFixId: id,
-			ranQuickFix
-		});
 		this._decoration?.dispose();
 		this._decoration = undefined;
 		this._quickFixes = undefined;

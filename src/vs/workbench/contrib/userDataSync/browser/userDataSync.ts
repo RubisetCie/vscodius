@@ -23,7 +23,6 @@ import { IDialogService, IFileDialogService } from 'vs/platform/dialogs/common/d
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { QuickPickItem, IQuickInputService } from 'vs/platform/quickinput/common/quickInput';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import {
 	IUserDataAutoSyncService, IUserDataSyncService, registerConfiguration,
 	SyncResource, SyncStatus, UserDataSyncError, UserDataSyncErrorCode, USER_DATA_SYNC_SCHEME, IUserDataSyncEnablementService,
@@ -61,13 +60,6 @@ import { escapeRegExpCharacters } from 'vs/base/common/strings';
 import { IUserDataSyncMachinesService } from 'vs/platform/userDataSync/common/userDataSyncMachines';
 
 type ConfigureSyncQuickPickItem = { id: SyncResource; label: string; description?: string };
-
-type SyncConflictsClassification = {
-	owner: 'sandy081';
-	comment: 'Response information when conflict happens during settings sync';
-	source: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'settings sync resource. eg., settings, keybindings...' };
-	action?: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'action taken while resolving conflicts. Eg: acceptLocal, acceptRemote' };
-};
 
 const turnOffSyncCommand = { id: 'workbench.userDataSync.actions.turnOff', title: { value: localize('stop sync', "Turn Off"), original: 'Turn Off' } };
 const configureSyncCommand = { id: CONFIGURE_SYNC_COMMAND_ID, title: { value: localize('configure sync', "Configure..."), original: 'Configure...' } };
@@ -114,7 +106,6 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 		@IUserDataAutoSyncService userDataAutoSyncService: IUserDataAutoSyncService,
 		@ITextModelService textModelResolverService: ITextModelService,
 		@IPreferencesService private readonly preferencesService: IPreferencesService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IProductService private readonly productService: IProductService,
 		@IOpenerService private readonly openerService: IOpenerService,
 		@IAuthenticationService private readonly authenticationService: IAuthenticationService,
@@ -196,21 +187,18 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 							{
 								label: localize('replace remote', "Replace Remote"),
 								run: () => {
-									this.telemetryService.publicLog2<{ source: string; action: string }, SyncConflictsClassification>('sync/handleConflicts', { source: conflict.syncResource, action: 'acceptLocal' });
 									this.acceptLocal(conflict, conflict.conflicts[0]);
 								}
 							},
 							{
 								label: localize('replace local', "Replace Local"),
 								run: () => {
-									this.telemetryService.publicLog2<{ source: string; action: string }, SyncConflictsClassification>('sync/handleConflicts', { source: conflict.syncResource, action: 'acceptRemote' });
 									this.acceptRemote(conflict, conflict.conflicts[0]);
 								}
 							},
 							{
 								label: localize('show conflicts', "Show Conflicts"),
 								run: () => {
-									this.telemetryService.publicLog2<{ source: string; action?: string }, SyncConflictsClassification>('sync/showConflicts', { source: conflict.syncResource });
 									this.userDataSyncWorkbenchService.showConflicts(conflict.conflicts[0]);
 								}
 							}

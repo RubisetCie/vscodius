@@ -19,8 +19,6 @@ import { createTestCodeEditor } from 'vs/editor/test/browser/testCodeEditor';
 import { createTextModel } from 'vs/editor/test/common/testTextModel';
 import { ServiceCollection } from 'vs/platform/instantiation/common/serviceCollection';
 import { InMemoryStorageService, IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 
 const mockFile = URI.parse('test:somefile.ttt');
 const mockFileSelector = { scheme: 'test' };
@@ -59,7 +57,6 @@ suite('ParameterHintsModel', () => {
 		const textModel = disposables.add(createTextModel(fileContents, undefined, undefined, mockFile));
 		const editor = disposables.add(createTestCodeEditor(textModel, {
 			serviceCollection: new ServiceCollection(
-				[ITelemetryService, NullTelemetryService],
 				[IStorageService, disposables.add(new InMemoryStorageService())]
 			)
 		}));

@@ -33,9 +33,6 @@ export interface IEnvironmentMainService extends INativeEnvironmentService {
 	readonly mainIPCHandle: string;
 	readonly mainLockfile: string;
 
-	// --- config
-	readonly disableUpdates: boolean;
-
 	unsetSnapExportedVariables(): void;
 	restoreSnapExportedVariables(): void;
 }
@@ -55,9 +52,6 @@ export class EnvironmentMainService extends NativeEnvironmentService implements 
 
 	@memoize
 	get mainLockfile(): string { return join(this.userDataPath, 'code.lock'); }
-
-	@memoize
-	get disableUpdates(): boolean { return !!this.args['disable-updates']; }
 
 	@memoize
 	get crossOriginIsolated(): boolean { return !!this.args['enable-coi']; }

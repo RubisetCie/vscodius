@@ -5,7 +5,7 @@
 
 import * as performance from 'vs/base/common/performance';
 import { URI } from 'vs/base/common/uri';
-import { MainThreadTelemetryShape, MainContext } from 'vs/workbench/api/common/extHost.protocol';
+import { MainContext } from 'vs/workbench/api/common/extHost.protocol';
 import { ExtHostConfigProvider, IExtHostConfiguration } from 'vs/workbench/api/common/extHostConfiguration';
 import { nullExtensionDescription } from 'vs/workbench/services/extensions/common/extensions';
 import * as vscode from 'vscode';
@@ -62,7 +62,7 @@ export abstract class RequireInterceptor {
 		this.register(new VSCodeNodeModuleFactory(this._apiFactory, extensionPaths, this._extensionRegistry, configProvider, this._logService));
 		this.register(this._instaService.createInstance(NodeModuleAliasingModuleFactory));
 		if (this._initData.remote.isRemote) {
-			this.register(this._instaService.createInstance(OpenNodeModuleFactory, extensionPaths, this._initData.environment.appUriScheme));
+			this.register(this._instaService.createInstance(OpenNodeModuleFactory, this._initData.environment.appUriScheme));
 		}
 	}
 
@@ -204,18 +204,14 @@ class OpenNodeModuleFactory implements INodeModuleFactory {
 
 	public readonly nodeModuleName: string[] = ['open', 'opn'];
 
-	private _extensionId: string | undefined;
 	private _original?: IOriginalOpen;
 	private _impl: IOpenModule;
-	private _mainThreadTelemetry: MainThreadTelemetryShape;
 
 	constructor(
-		private readonly _extensionPaths: ExtensionPaths,
 		private readonly _appUriScheme: string,
 		@IExtHostRpcService rpcService: IExtHostRpcService,
 	) {
 
-		this._mainThreadTelemetry = rpcService.getProxy(MainContext.MainThreadTelemetry);
 		const mainThreadWindow = rpcService.getProxy(MainContext.MainThreadWindow);
 
 		this._impl = (target, options) => {
@@ -234,44 +230,12 @@ class OpenNodeModuleFactory implements INodeModuleFactory {
 	}
 
 	public load(request: string, parent: URI, original: LoadFunction): any {
-		// get extension id from filename and api for extension
-		const extension = this._extensionPaths.findSubstr(parent);
-		if (extension) {
-			this._extensionId = extension.identifier.value;
-			this.sendShimmingTelemetry();
-		}
-
 		this._original = original(request);
 		return this._impl;
 	}
 
 	private callOriginal(target: string, options: OpenOptions | undefined): Thenable<any> {
-		this.sendNoForwardTelemetry();
 		return this._original!(target, options);
-	}
-
-	private sendShimmingTelemetry(): void {
-		if (!this._extensionId) {
-			return;
-		}
-		type ShimmingOpenClassification = {
-			owner: 'jrieken';
-			comment: 'Know when the open-shim was used';
-			extension: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The extension is question' };
-		};
-		this._mainThreadTelemetry.$publicLog2<{ extension: string }, ShimmingOpenClassification>('shimming.open', { extension: this._extensionId });
-	}
-
-	private sendNoForwardTelemetry(): void {
-		if (!this._extensionId) {
-			return;
-		}
-		type ShimmingOpenCallNoForwardClassification = {
-			owner: 'jrieken';
-			comment: 'Know when the open-shim was used';
-			extension: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The extension is question' };
-		};
-		this._mainThreadTelemetry.$publicLog2<{ extension: string }, ShimmingOpenCallNoForwardClassification>('shimming.open.call.noForward', { extension: this._extensionId });
 	}
 }
 

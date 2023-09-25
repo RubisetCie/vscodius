@@ -11,7 +11,6 @@ import { GitFileSystemProvider } from './fileSystemProvider';
 import { GitDecorations } from './decorationProvider';
 import { Askpass } from './askpass';
 import { toDisposable, filterEvent, eventToPromise } from './util';
-import TelemetryReporter from '@vscode/extension-telemetry';
 import { GitExtension } from './api/git';
 import { GitProtocolHandler } from './protocolHandler';
 import { GitExtensionImpl } from './api/extension';
@@ -34,7 +33,7 @@ export async function deactivate(): Promise<any> {
 	}
 }
 
-async function createModel(context: ExtensionContext, logger: LogOutputChannel, telemetryReporter: TelemetryReporter, disposables: Disposable[]): Promise<Model> {
+async function createModel(context: ExtensionContext, logger: LogOutputChannel, disposables: Disposable[]): Promise<Model> {
 	const pathValue = workspace.getConfiguration('git').get<string | string[]>('path');
 	let pathHints = Array.isArray(pathValue) ? pathValue : pathValue ? [pathValue] : [];
 
@@ -86,7 +85,7 @@ async function createModel(context: ExtensionContext, logger: LogOutputChannel, 
 		version: info.version,
 		env: environment,
 	});
-	const model = new Model(git, askpass, context.globalState, context.workspaceState, logger, telemetryReporter);
+	const model = new Model(git, askpass, context.globalState, context.workspaceState, logger);
 	disposables.push(model);
 
 	const onRepository = () => commands.executeCommand('setContext', 'gitOpenRepositoryCount', `${model.repositories.length}`);
@@ -106,7 +105,7 @@ async function createModel(context: ExtensionContext, logger: LogOutputChannel, 
 	git.onOutput.addListener('log', onOutput);
 	disposables.push(toDisposable(() => git.onOutput.removeListener('log', onOutput)));
 
-	const cc = new CommandCenter(git, model, context.globalState, logger, telemetryReporter);
+	const cc = new CommandCenter(git, model, context.globalState, logger);
 	disposables.push(
 		cc,
 		new GitFileSystemProvider(model),
@@ -185,10 +184,6 @@ export async function _activate(context: ExtensionContext): Promise<GitExtension
 	disposables.push(logger.onDidChangeLogLevel(onDidChangeLogLevel));
 	onDidChangeLogLevel(logger.logLevel);
 
-	const { aiKey } = require('../package.json') as { aiKey: string };
-	const telemetryReporter = new TelemetryReporter(aiKey);
-	deactivateTasks.push(() => telemetryReporter.dispose());
-
 	const config = workspace.getConfiguration('git', null);
 	const enabled = config.get<boolean>('enabled');
 
@@ -197,12 +192,12 @@ export async function _activate(context: ExtensionContext): Promise<GitExtension
 		const onEnabled = filterEvent(onConfigChange, () => workspace.getConfiguration('git', null).get<boolean>('enabled') === true);
 		const result = new GitExtensionImpl();
 
-		eventToPromise(onEnabled).then(async () => result.model = await createModel(context, logger, telemetryReporter, disposables));
+		eventToPromise(onEnabled).then(async () => result.model = await createModel(context, logger, disposables));
 		return result;
 	}
 
 	try {
-		const model = await createModel(context, logger, telemetryReporter, disposables);
+		const model = await createModel(context, logger, disposables);
 		return new GitExtensionImpl(model);
 	} catch (err) {
 		if (!/Git installation not found/.test(err.message || '')) {
@@ -211,13 +206,6 @@ export async function _activate(context: ExtensionContext): Promise<GitExtension
 
 		console.warn(err.message);
 		logger.warn(err.message);
-
-		/* __GDPR__
-			"git.missing" : {
-				"owner": "lszomoru"
-			}
-		*/
-		telemetryReporter.sendTelemetryEvent('git.missing');
 
 		commands.executeCommand('setContext', 'git.missing', true);
 		warnAboutMissingGit();

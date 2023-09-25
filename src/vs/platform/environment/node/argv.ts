@@ -52,8 +52,6 @@ export const OPTIONS: OptionDescriptions<Required<NativeParsedArgs>> = {
 		description: 'Make the current machine accessible from vscode.dev or other machines through a secure tunnel',
 		options: {
 			'cli-data-dir': { type: 'string', args: 'dir', description: localize('cliDataDir', "Directory where CLI metadata should be stored.") },
-			'disable-telemetry': { type: 'boolean' },
-			'telemetry-level': { type: 'string' },
 			user: {
 				type: 'subcommand',
 				options: {
@@ -73,8 +71,6 @@ export const OPTIONS: OptionDescriptions<Required<NativeParsedArgs>> = {
 		description: 'Make the current machine accessible from vscode.dev or other machines through a secure tunnel',
 		options: {
 			'cli-data-dir': { type: 'string', args: 'dir', description: localize('cliDataDir', "Directory where CLI metadata should be stored.") },
-			'disable-telemetry': { type: 'boolean' },
-			'telemetry-level': { type: 'string' },
 		}
 	},
 
@@ -122,7 +118,6 @@ export const OPTIONS: OptionDescriptions<Required<NativeParsedArgs>> = {
 	'disable-gpu': { type: 'boolean', cat: 't', description: localize('disableGPU', "Disable GPU hardware acceleration.") },
 	'disable-chromium-sandbox': { type: 'boolean', cat: 't', description: localize('disableChromiumSandbox', "Use this option only when there is requirement to launch the application as sudo user on Linux or when running as an elevated user in an applocker environment on Windows.") },
 	'ms-enable-electron-run-as-node': { type: 'boolean', global: true },
-	'telemetry': { type: 'boolean', cat: 't', description: localize('telemetry', "Shows all telemetry events which VS code collects.") },
 
 	'remote': { type: 'string', allowEmptyValue: true },
 	'folder-uri': { type: 'string[]', cat: 'o', args: 'uri' },
@@ -147,8 +142,6 @@ export const OPTIONS: OptionDescriptions<Required<NativeParsedArgs>> = {
 	'logExtensionHostCommunication': { type: 'boolean' },
 	'skip-release-notes': { type: 'boolean' },
 	'skip-welcome': { type: 'boolean' },
-	'disable-telemetry': { type: 'boolean' },
-	'disable-updates': { type: 'boolean' },
 	'use-inmemory-secretstorage': { type: 'boolean', deprecates: ['disable-keytar'] },
 	'password-store': { type: 'string' },
 	'disable-workspace-trust': { type: 'boolean' },

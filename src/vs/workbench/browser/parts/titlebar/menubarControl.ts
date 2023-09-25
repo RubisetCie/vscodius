@@ -8,7 +8,7 @@ import { localize } from 'vs/nls';
 import { IMenuService, MenuId, IMenu, SubmenuItemAction, registerAction2, Action2, MenuItemAction, MenuRegistry } from 'vs/platform/actions/common/actions';
 import { MenuBarVisibility, getTitleBarStyle, IWindowOpenable, getMenuBarVisibility } from 'vs/platform/window/common/window';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
-import { IAction, Action, SubmenuAction, Separator, IActionRunner, ActionRunner, WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification, toAction } from 'vs/base/common/actions';
+import { IAction, Action, SubmenuAction, Separator, IActionRunner, ActionRunner, toAction } from 'vs/base/common/actions';
 import { addDisposableListener, Dimension, EventType } from 'vs/base/browser/dom';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { isMacintosh, isWeb, isIOS, isNative } from 'vs/base/common/platform';
@@ -19,7 +19,6 @@ import { IRecentlyOpened, isRecentFolder, IRecent, isRecentWorkspace, IWorkspace
 import { RunOnceScheduler } from 'vs/base/common/async';
 import { URI } from 'vs/base/common/uri';
 import { ILabelService, Verbosity } from 'vs/platform/label/common/label';
-import { IUpdateService, StateType } from 'vs/platform/update/common/update';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
 import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
 import { IPreferencesService } from 'vs/workbench/services/preferences/common/preferences';
@@ -36,7 +35,6 @@ import { KeyCode, KeyMod } from 'vs/base/common/keyCodes';
 import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
 import { IsMacNativeContext, IsWebContext } from 'vs/platform/contextkey/common/contextkeys';
 import { ICommandService } from 'vs/platform/commands/common/commands';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { OpenRecentAction } from 'vs/workbench/browser/actions/windowActions';
 import { isICommandActionToggleInfo } from 'vs/platform/action/common/action';
 import { createAndFillInContextMenuActions } from 'vs/platform/actions/browser/menuEntryActionViewItem';
@@ -157,7 +155,6 @@ export abstract class MenubarControl extends Disposable {
 		protected readonly keybindingService: IKeybindingService,
 		protected readonly configurationService: IConfigurationService,
 		protected readonly labelService: ILabelService,
-		protected readonly updateService: IUpdateService,
 		protected readonly storageService: IStorageService,
 		protected readonly notificationService: INotificationService,
 		protected readonly preferencesService: IPreferencesService,
@@ -187,9 +184,6 @@ export abstract class MenubarControl extends Disposable {
 
 		// Update when config changes
 		this._register(this.configurationService.onDidChangeConfiguration(e => this.onConfigurationUpdated(e)));
-
-		// Listen to update service
-		this.updateService.onStateChange(() => this.onUpdateStateChange());
 
 		// Listen for changes in recently opened menu
 		this._register(this.workspacesService.onDidChangeRecentlyOpened(() => { this.onDidChangeRecentlyOpened(); }));
@@ -391,26 +385,21 @@ export class CustomMenubarControl extends MenubarControl {
 		@IKeybindingService keybindingService: IKeybindingService,
 		@IConfigurationService configurationService: IConfigurationService,
 		@ILabelService labelService: ILabelService,
-		@IUpdateService updateService: IUpdateService,
 		@IStorageService storageService: IStorageService,
 		@INotificationService notificationService: INotificationService,
 		@IPreferencesService preferencesService: IPreferencesService,
 		@IWorkbenchEnvironmentService environmentService: IWorkbenchEnvironmentService,
 		@IAccessibilityService accessibilityService: IAccessibilityService,
 		@IWorkbenchLayoutService private readonly layoutService: IWorkbenchLayoutService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IHostService hostService: IHostService,
 		@ICommandService commandService: ICommandService
 	) {
-		super(menuService, workspacesService, contextKeyService, keybindingService, configurationService, labelService, updateService, storageService, notificationService, preferencesService, environmentService, accessibilityService, hostService, commandService);
+		super(menuService, workspacesService, contextKeyService, keybindingService, configurationService, labelService, storageService, notificationService, preferencesService, environmentService, accessibilityService, hostService, commandService);
 
 		this._onVisibilityChange = this._register(new Emitter<boolean>());
 		this._onFocusStateChange = this._register(new Emitter<boolean>());
 
 		this.actionRunner = this._register(new ActionRunner());
-		this.actionRunner.onDidRun(e => {
-			this.telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>('workbenchActionExecuted', { id: e.action.id, from: 'menu' });
-		});
 
 		this.workspacesService.getRecentlyOpened().then((recentlyOpened) => {
 			this.recentlyOpened = recentlyOpened;
@@ -456,40 +445,6 @@ export class CustomMenubarControl extends MenubarControl {
 		}
 	}
 
-	private getUpdateAction(): IAction | null {
-		const state = this.updateService.state;
-
-		switch (state.type) {
-			case StateType.Idle:
-				return new Action('update.check', localize({ key: 'checkForUpdates', comment: ['&& denotes a mnemonic'] }, "Check for &&Updates..."), undefined, true, () =>
-					this.updateService.checkForUpdates(true));
-
-			case StateType.CheckingForUpdates:
-				return new Action('update.checking', localize('checkingForUpdates', "Checking for Updates..."), undefined, false);
-
-			case StateType.AvailableForDownload:
-				return new Action('update.downloadNow', localize({ key: 'download now', comment: ['&& denotes a mnemonic'] }, "D&&ownload Update"), undefined, true, () =>
-					this.updateService.downloadUpdate());
-
-			case StateType.Downloading:
-				return new Action('update.downloading', localize('DownloadingUpdate', "Downloading Update..."), undefined, false);
-
-			case StateType.Downloaded:
-				return new Action('update.install', localize({ key: 'installUpdate...', comment: ['&& denotes a mnemonic'] }, "Install &&Update..."), undefined, true, () =>
-					this.updateService.applyUpdate());
-
-			case StateType.Updating:
-				return new Action('update.updating', localize('installingUpdate', "Installing Update..."), undefined, false);
-
-			case StateType.Ready:
-				return new Action('update.restart', localize({ key: 'restartToUpdate', comment: ['&& denotes a mnemonic'] }, "Restart to &&Update"), undefined, true, () =>
-					this.updateService.quitAndInstall());
-
-			default:
-				return null;
-		}
-	}
-
 	private get currentMenubarVisibility(): MenuBarVisibility {
 		return getMenuBarVisibility(this.configurationService);
 	}
@@ -509,18 +464,6 @@ export class CustomMenubarControl extends MenubarControl {
 		switch (nextAction.id) {
 			case OpenRecentAction.ID:
 				target.push(...this.getOpenRecentActions());
-				break;
-
-			case 'workbench.action.showAboutDialog':
-				if (!isMacintosh && !isWeb) {
-					const updateAction = this.getUpdateAction();
-					if (updateAction) {
-						updateAction.label = mnemonicMenuLabel(updateAction.label);
-						target.push(updateAction);
-						target.push(new Separator());
-					}
-				}
-
 				break;
 
 			default:

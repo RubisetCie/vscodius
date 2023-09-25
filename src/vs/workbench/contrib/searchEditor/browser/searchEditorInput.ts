@@ -15,7 +15,6 @@ import { localize } from 'vs/nls';
 import { IFileDialogService } from 'vs/platform/dialogs/common/dialogs';
 import { IInstantiationService, ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { GroupIdentifier, IRevertOptions, ISaveOptions, EditorResourceAccessor, IMoveResult, EditorInputCapabilities, IUntypedEditorInput } from 'vs/workbench/common/editor';
 import { Memento } from 'vs/workbench/common/memento';
 import { SearchEditorFindMatchClass, SearchEditorInputTypeId, SearchEditorScheme, SearchEditorWorkingCopyTypeId } from 'vs/workbench/contrib/searchEditor/browser/constants';
@@ -106,7 +105,6 @@ export class SearchEditorInput extends EditorInput {
 		@IFileDialogService private readonly fileDialogService: IFileDialogService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IWorkingCopyService private readonly workingCopyService: IWorkingCopyService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IPathService private readonly pathService: IPathService,
 		@IStorageService storageService: IStorageService,
 	) {
@@ -193,13 +191,6 @@ export class SearchEditorInput extends EditorInput {
 	override async saveAs(group: GroupIdentifier, options?: ITextFileSaveOptions): Promise<EditorInput | undefined> {
 		const path = await this.fileDialogService.pickFileToSave(await this.suggestFileName(), options?.availableFileSystems);
 		if (path) {
-			this.telemetryService.publicLog2<
-				{},
-				{
-					owner: 'roblourens';
-					comment: 'Fired when a search editor is saved';
-				}>
-				('searchEditor/saveSearchResults');
 			const toWrite = await this.serializeForDisk();
 			if (await this.textFileService.create([{ resource: path, value: toWrite, options: { overwrite: true } }])) {
 				this.setDirty(false);

@@ -6,7 +6,6 @@
 import { Cancellation } from '@vscode/sync-api-common/lib/common/messageCancellation';
 import * as vscode from 'vscode';
 import { TypeScriptServiceConfiguration } from '../configuration/configuration';
-import { TelemetryReporter } from '../logging/telemetry';
 import Tracer from '../logging/tracer';
 import { CallbackMap } from '../tsServer/callbackMap';
 import { RequestItem, RequestQueue, RequestQueueingType } from '../tsServer/requestQueue';
@@ -98,7 +97,6 @@ export class SingleTsServer extends Disposable implements ITypeScriptServer {
 		private readonly _tsServerLog: TsServerLog | undefined,
 		private readonly _requestCanceller: OngoingRequestCanceller,
 		private readonly _version: TypeScriptVersion,
-		private readonly _telemetryReporter: TelemetryReporter,
 		private readonly _tracer: Tracer,
 	) {
 		super();
@@ -240,21 +238,6 @@ export class SingleTsServer extends Disposable implements ITypeScriptServer {
 					});
 				}
 			}).catch((err: Error) => {
-				if (err instanceof TypeScriptServerError) {
-					if (!executeInfo.token?.isCancellationRequested) {
-						/* __GDPR__
-							"languageServiceErrorResponse" : {
-								"owner": "mjbvz",
-								"${include}": [
-									"${TypeScriptCommonProperties}",
-									"${TypeScriptRequestErrorProperties}"
-								]
-							}
-						*/
-						this._telemetryReporter.logTelemetry('languageServiceErrorResponse', err.telemetry);
-					}
-				}
-
 				throw err;
 			});
 		}

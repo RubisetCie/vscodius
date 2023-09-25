@@ -17,7 +17,6 @@ import { DEFAULT_EDITOR_ASSOCIATION, EditorInputCapabilities, IResourceMergeEdit
 import { EditorInput, IEditorCloseHandler } from 'vs/workbench/common/editor/editorInput';
 import { AbstractTextResourceEditorInput } from 'vs/workbench/common/editor/textResourceEditorInput';
 import { IMergeEditorInputModel, TempFileMergeEditorModeFactory, WorkspaceMergeEditorModeFactory } from 'vs/workbench/contrib/mergeEditor/browser/mergeEditorInputModel';
-import { MergeEditorTelemetry } from 'vs/workbench/contrib/mergeEditor/browser/telemetry';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IFilesConfigurationService } from 'vs/workbench/services/filesConfiguration/common/filesConfigurationService';
 import { ILanguageSupport, ITextFileSaveOptions, ITextFileService } from 'vs/workbench/services/textfile/common/textfiles';
@@ -93,7 +92,6 @@ export class MergeEditorInput extends AbstractTextResourceEditorInput implements
 		this.useWorkingCopy
 			? TempFileMergeEditorModeFactory
 			: WorkspaceMergeEditorModeFactory,
-		this._instaService.createInstance(MergeEditorTelemetry),
 	);
 
 	override async resolve(): Promise<IMergeEditorInputModel> {

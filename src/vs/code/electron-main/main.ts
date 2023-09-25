@@ -3,8 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import 'vs/platform/update/common/update.config.contribution';
-
 import { app, dialog } from 'electron';
 import { unlinkSync } from 'fs';
 import { URI } from 'vs/base/common/uri';
@@ -57,7 +55,6 @@ import { RequestMainService } from 'vs/platform/request/electron-main/requestMai
 import { ISignService } from 'vs/platform/sign/common/sign';
 import { SignService } from 'vs/platform/sign/node/signService';
 import { IStateReadService, IStateService } from 'vs/platform/state/node/state';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 import { IThemeMainService, ThemeMainService } from 'vs/platform/theme/electron-main/themeMainService';
 import { IUserDataProfilesMainService, UserDataProfilesMainService } from 'vs/platform/userDataProfile/electron-main/userDataProfile';
 import { IPolicyService, NullPolicyService } from 'vs/platform/policy/common/policy';
@@ -355,7 +352,7 @@ class CodeMain {
 			// Process Info
 			if (environmentMainService.args.status) {
 				return instantiationService.invokeFunction(async () => {
-					const diagnosticsService = new DiagnosticsService(NullTelemetryService, productService);
+					const diagnosticsService = new DiagnosticsService(productService);
 					const mainDiagnostics = await otherInstanceDiagnosticsMainService.getMainDiagnostics();
 					const remoteDiagnostics = await otherInstanceDiagnosticsMainService.getRemoteDiagnostics({ includeProcesses: true, includeWorkspaceMetadata: true });
 					const diagnostics = await diagnosticsService.getDiagnostics(mainDiagnostics, remoteDiagnostics);

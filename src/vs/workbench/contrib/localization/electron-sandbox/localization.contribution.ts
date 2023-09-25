@@ -14,7 +14,6 @@ import Severity from 'vs/base/common/severity';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
 import { VIEWLET_ID as EXTENSIONS_VIEWLET_ID, IExtensionsViewPaneContainer } from 'vs/workbench/contrib/extensions/common/extensions';
 import { minimumTranslatedStrings } from 'vs/workbench/contrib/localization/electron-sandbox/minimalTranslations';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { IPaneCompositePartService } from 'vs/workbench/services/panecomposite/browser/panecomposite';
 import { ViewContainerLocation } from 'vs/workbench/common/views';
@@ -33,7 +32,6 @@ class NativeLocalizationWorkbenchContribution extends BaseLocalizationWorkbenchC
 		@IExtensionManagementService private readonly extensionManagementService: IExtensionManagementService,
 		@IExtensionGalleryService private readonly galleryService: IExtensionGalleryService,
 		@IPaneCompositePartService private readonly paneCompositeService: IPaneCompositePartService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 	) {
 		super();
 
@@ -153,21 +151,9 @@ class NativeLocalizationWorkbenchContribution extends BaseLocalizationWorkbenchC
 			}
 		});
 
-		const logUserReaction = (userReaction: string) => {
-			/* __GDPR__
-				"languagePackSuggestion:popup" : {
-					"owner": "TylerLeonhardt",
-					"userReaction" : { "classification": "SystemMetaData", "purpose": "FeatureInsight" },
-					"language": { "classification": "SystemMetaData", "purpose": "FeatureInsight" }
-				}
-			*/
-			this.telemetryService.publicLog('languagePackSuggestion:popup', { userReaction, language: locale });
-		};
-
 		const searchAction = {
 			label: translations['searchMarketplace'],
 			run: async () => {
-				logUserReaction('search');
 				const viewlet = await this.paneCompositeService.openPaneComposite(EXTENSIONS_VIEWLET_ID, ViewContainerLocation.Sidebar, true);
 				if (!viewlet) {
 					return;
@@ -184,7 +170,6 @@ class NativeLocalizationWorkbenchContribution extends BaseLocalizationWorkbenchC
 		const installAndRestartAction = {
 			label: translations['installAndRestart'],
 			run: async () => {
-				logUserReaction('installAndRestart');
 				await this.localeService.setLocale({
 					id: locale,
 					label: languageName,
@@ -212,13 +197,9 @@ class NativeLocalizationWorkbenchContribution extends BaseLocalizationWorkbenchC
 						StorageScope.APPLICATION,
 						StorageTarget.USER
 					);
-					logUserReaction('neverShowAgain');
 				}
 			}],
 			{
-				onCancel: () => {
-					logUserReaction('cancelled');
-				}
 			}
 		);
 	}

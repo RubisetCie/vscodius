@@ -18,7 +18,6 @@ import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/
 import { IPaneComposite } from 'vs/workbench/common/panecomposite';
 import { ServicesAccessor, IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ViewPaneContainer } from 'vs/workbench/browser/parts/views/viewPaneContainer';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
@@ -572,7 +571,6 @@ export class ViewsService extends Disposable implements IViewsService {
 		const that = this;
 		class PaneContainer extends PaneComposite {
 			constructor(
-				@ITelemetryService telemetryService: ITelemetryService,
 				@IWorkspaceContextService contextService: IWorkspaceContextService,
 				@IStorageService storageService: IStorageService,
 				@IInstantiationService instantiationService: IInstantiationService,
@@ -580,7 +578,7 @@ export class ViewsService extends Disposable implements IViewsService {
 				@IContextMenuService contextMenuService: IContextMenuService,
 				@IExtensionService extensionService: IExtensionService,
 			) {
-				super(viewContainer.id, telemetryService, storageService, instantiationService, themeService, contextMenuService, extensionService, contextService);
+				super(viewContainer.id, storageService, instantiationService, themeService, contextMenuService, extensionService, contextService);
 			}
 
 			protected createViewPaneContainer(element: HTMLElement): ViewPaneContainer {

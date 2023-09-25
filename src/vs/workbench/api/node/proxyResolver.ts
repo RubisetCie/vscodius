@@ -10,7 +10,6 @@ import * as net from 'net';
 
 import { IExtHostWorkspaceProvider } from 'vs/workbench/api/common/extHostWorkspace';
 import { ExtHostConfigProvider } from 'vs/workbench/api/common/extHostConfiguration';
-import { MainThreadTelemetryShape } from 'vs/workbench/api/common/extHost.protocol';
 import { IExtensionHostInitData } from 'vs/workbench/services/extensions/common/extensionHostProtocol';
 import { ExtHostExtensionService } from 'vs/workbench/api/node/extHostExtensionService';
 import { URI } from 'vs/base/common/uri';
@@ -25,14 +24,13 @@ export function connectProxyResolver(
 	configProvider: ExtHostConfigProvider,
 	extensionService: ExtHostExtensionService,
 	extHostLogService: ILogService,
-	mainThreadTelemetry: MainThreadTelemetryShape,
 	initData: IExtensionHostInitData,
 ) {
 	const useHostProxy = initData.environment.useHostProxy;
 	const doUseHostProxy = typeof useHostProxy === 'boolean' ? useHostProxy : !initData.remote.isRemote;
 	const params: ProxyAgentParams = {
 		resolveProxy: url => extHostWorkspace.resolveProxy(url),
-		lookupProxyAuthorization: lookupProxyAuthorization.bind(undefined, extHostLogService, mainThreadTelemetry, configProvider, {}, initData.remote.isRemote),
+		lookupProxyAuthorization: lookupProxyAuthorization.bind(undefined, extHostLogService, configProvider, {}, initData.remote.isRemote),
 		getProxyURL: () => configProvider.getConfiguration('http').get('proxy'),
 		getProxySupport: () => configProvider.getConfiguration('http').get<ProxySupportSetting>('proxySupport') || 'off',
 		getSystemCertificatesV1: () => certSettingV1(configProvider),
@@ -133,7 +131,6 @@ function configureModuleLoading(extensionService: ExtHostExtensionService, looku
 
 async function lookupProxyAuthorization(
 	extHostLogService: ILogService,
-	mainThreadTelemetry: MainThreadTelemetryShape,
 	configProvider: ExtHostConfigProvider,
 	proxyAuthenticateCache: Record<string, string | string[] | undefined>,
 	isRemote: boolean,
@@ -148,7 +145,6 @@ async function lookupProxyAuthorization(
 	extHostLogService.trace('ProxyResolver#lookupProxyAuthorization callback', `proxyURL:${proxyURL}`, `proxyAuthenticate:${proxyAuthenticate}`, `proxyAuthenticateCache:${cached}`);
 	const header = proxyAuthenticate || cached;
 	const authenticate = Array.isArray(header) ? header : typeof header === 'string' ? [header] : [];
-	sendTelemetry(mainThreadTelemetry, authenticate, isRemote);
 	if (authenticate.some(a => /^(Negotiate|Kerberos)( |$)/i.test(a)) && !state.kerberosRequested) {
 		try {
 			state.kerberosRequested = true;
@@ -165,30 +161,4 @@ async function lookupProxyAuthorization(
 		}
 	}
 	return undefined;
-}
-
-type ProxyAuthenticationClassification = {
-	owner: 'chrmarti';
-	comment: 'Data about proxy authentication requests';
-	authenticationType: { classification: 'PublicNonPersonalData'; purpose: 'FeatureInsight'; comment: 'Type of the authentication requested' };
-	extensionHostType: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Type of the extension host' };
-};
-
-type ProxyAuthenticationEvent = {
-	authenticationType: string;
-	extensionHostType: string;
-};
-
-let telemetrySent = false;
-
-function sendTelemetry(mainThreadTelemetry: MainThreadTelemetryShape, authenticate: string[], isRemote: boolean) {
-	if (telemetrySent || !authenticate.length) {
-		return;
-	}
-	telemetrySent = true;
-
-	mainThreadTelemetry.$publicLog2<ProxyAuthenticationEvent, ProxyAuthenticationClassification>('proxyAuthenticationRequest', {
-		authenticationType: authenticate.map(a => a.split(' ')[0]).join(','),
-		extensionHostType: isRemote ? 'remote' : 'local',
-	});
 }

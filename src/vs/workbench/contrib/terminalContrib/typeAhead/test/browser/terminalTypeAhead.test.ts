@@ -5,11 +5,10 @@
 
 import * as assert from 'assert';
 import type { IBuffer, Terminal } from 'xterm';
-import { SinonStub, stub, useFakeTimers } from 'sinon';
+import { useFakeTimers } from 'sinon';
 import { Emitter } from 'vs/base/common/event';
 import { CharPredictState, IPrediction, PredictionStats, TypeAheadAddon } from 'vs/workbench/contrib/terminalContrib/typeAhead/browser/terminalTypeAheadAddon';
 import { DEFAULT_LOCAL_ECHO_EXCLUDE, IBeforeProcessDataEvent, ITerminalConfiguration, ITerminalProcessManager } from 'vs/workbench/contrib/terminal/common/terminal';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { TestConfigurationService } from 'vs/platform/configuration/test/common/testConfigurationService';
 import { ensureNoDisposablesAreLeakedInTestSuite } from 'vs/base/test/common/utils';
 import { DisposableStore } from 'vs/base/common/lifecycle';
@@ -83,7 +82,6 @@ suite('Workbench - Terminal Typeahead', () => {
 
 	suite('timeline', () => {
 		let onBeforeProcessData: Emitter<IBeforeProcessDataEvent>;
-		let publicLog: SinonStub;
 		let config: ITerminalConfiguration;
 		let addon: TestTypeAheadAddon;
 
@@ -108,11 +106,9 @@ suite('Workbench - Terminal Typeahead', () => {
 				localEchoLatencyThreshold: 0,
 				localEchoExcludePrograms: DEFAULT_LOCAL_ECHO_EXCLUDE,
 			});
-			publicLog = stub();
 			addon = new TestTypeAheadAddon(
 				upcastPartial<ITerminalProcessManager>({ onBeforeProcessData: onBeforeProcessData.event }),
 				new TestConfigurationService({ terminal: { integrated: { ...config } } }),
-				upcastPartial<ITelemetryService>({ publicLog })
 			);
 			addon.unlockMakingPredictions();
 		});

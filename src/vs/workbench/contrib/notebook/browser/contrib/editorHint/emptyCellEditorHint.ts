@@ -10,7 +10,6 @@ import { ICommandService } from 'vs/platform/commands/common/commands';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { IProductService } from 'vs/platform/product/common/productService';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { EmptyTextEditorHintContribution } from 'vs/workbench/contrib/codeEditor/browser/emptyTextEditorHint/emptyTextEditorHint';
 import { IInlineChatSessionService } from 'vs/workbench/contrib/inlineChat/browser/inlineChatSession';
 import { IInlineChatService } from 'vs/workbench/contrib/inlineChat/common/inlineChat';
@@ -29,7 +28,6 @@ export class EmptyCellEditorHintContribution extends EmptyTextEditorHintContribu
 		@IKeybindingService keybindingService: IKeybindingService,
 		@IInlineChatSessionService inlineChatSessionService: IInlineChatSessionService,
 		@IInlineChatService inlineChatService: IInlineChatService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IProductService productService: IProductService
 	) {
 		super(
@@ -40,7 +38,6 @@ export class EmptyCellEditorHintContribution extends EmptyTextEditorHintContribu
 			keybindingService,
 			inlineChatSessionService,
 			inlineChatService,
-			telemetryService,
 			productService
 		);
 

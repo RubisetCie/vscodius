@@ -15,7 +15,6 @@ import { CompositePart, ICompositeTitleLabel } from 'vs/workbench/browser/parts/
 import { IWorkbenchLayoutService, Parts, Position } from 'vs/workbench/services/layout/browser/layoutService';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { PanelActivityAction, TogglePanelAction, PlaceHolderPanelActivityAction, PlaceHolderToggleCompositePinnedAction } from 'vs/workbench/browser/parts/panel/panelActions';
@@ -166,7 +165,6 @@ export abstract class BasePanelPart extends CompositePart<PaneComposite> impleme
 			Registry.as<PaneCompositeRegistry>(panelRegistryId),
 			activePanelSettingsKey,
 			viewDescriptorService.getDefaultViewContainer(viewContainerLocation)?.id || '',
-			'panel',
 			'panel',
 			undefined,
 			partId,
@@ -918,7 +916,6 @@ export class PanelPart extends BasePanelPart {
 	constructor(
 		@INotificationService notificationService: INotificationService,
 		@IStorageService storageService: IStorageService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@IWorkbenchLayoutService layoutService: IWorkbenchLayoutService,
 		@IKeybindingService keybindingService: IKeybindingService,

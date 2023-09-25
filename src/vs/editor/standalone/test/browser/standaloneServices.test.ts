@@ -15,7 +15,6 @@ import { InstantiationService } from 'vs/platform/instantiation/common/instantia
 import { ServiceCollection } from 'vs/platform/instantiation/common/serviceCollection';
 import { IKeyboardEvent } from 'vs/platform/keybinding/common/keybinding';
 import { NullLogService } from 'vs/platform/log/common/log';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 
 suite('StandaloneKeybindingService', () => {
 
@@ -38,7 +37,7 @@ suite('StandaloneKeybindingService', () => {
 		const notificationService = new StandaloneNotificationService();
 		const standaloneThemeService = disposables.add(new StandaloneThemeService());
 		const codeEditorService = disposables.add(new StandaloneCodeEditorService(contextKeyService, standaloneThemeService));
-		const keybindingService = disposables.add(new TestStandaloneKeybindingService(contextKeyService, commandService, NullTelemetryService, notificationService, new NullLogService(), codeEditorService));
+		const keybindingService = disposables.add(new TestStandaloneKeybindingService(contextKeyService, commandService, notificationService, new NullLogService(), codeEditorService));
 
 		let commandInvoked = false;
 		disposables.add(keybindingService.addDynamicKeybinding('testCommand', KeyCode.F9, () => {

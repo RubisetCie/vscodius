@@ -158,7 +158,6 @@ export interface IDropdownMenuOptions extends IBaseDropdownOptions {
 	readonly actionProvider?: IActionProvider;
 	menuClassName?: string;
 	menuAsChild?: boolean; // scope down for #99448
-	readonly skipTelemetry?: boolean;
 }
 
 export class DropdownMenu extends BaseDropdown {
@@ -207,7 +206,6 @@ export class DropdownMenu extends BaseDropdown {
 			actionRunner: this.menuOptions ? this.menuOptions.actionRunner : undefined,
 			anchorAlignment: this.menuOptions ? this.menuOptions.anchorAlignment : AnchorAlignment.LEFT,
 			domForShadowRoot: this._options.menuAsChild ? this.element : undefined,
-			skipTelemetry: this._options.skipTelemetry
 		});
 	}
 

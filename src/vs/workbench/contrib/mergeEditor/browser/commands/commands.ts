@@ -389,7 +389,6 @@ export class GoToNextUnhandledConflict extends MergeEditorAction {
 	}
 
 	override runWithViewModel(viewModel: MergeEditorViewModel): void {
-		viewModel.model.telemetry.reportNavigationToNextConflict();
 		viewModel.goToNextModifiedBaseRange(r => !viewModel.model.isHandled(r).get());
 	}
 }
@@ -421,7 +420,6 @@ export class GoToPreviousUnhandledConflict extends MergeEditorAction {
 	}
 
 	override runWithViewModel(viewModel: MergeEditorViewModel): void {
-		viewModel.model.telemetry.reportNavigationToPreviousConflict();
 		viewModel.goToPreviousModifiedBaseRange(r => !viewModel.model.isHandled(r).get());
 	}
 }

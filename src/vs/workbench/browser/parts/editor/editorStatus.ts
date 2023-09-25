@@ -46,9 +46,8 @@ import { Emitter, Event } from 'vs/base/common/event';
 import { IWorkbenchContribution } from 'vs/workbench/common/contributions';
 import { IStatusbarEntryAccessor, IStatusbarService, StatusbarAlignment, IStatusbarEntry } from 'vs/workbench/services/statusbar/browser/statusbar';
 import { IMarker, IMarkerService, MarkerSeverity, IMarkerData } from 'vs/platform/markers/common/markers';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { SideBySideEditorInput } from 'vs/workbench/common/editor/sideBySideEditorInput';
-import { AutomaticLanguageDetectionLikelyWrongClassification, AutomaticLanguageDetectionLikelyWrongId, IAutomaticLanguageDetectionLikelyWrongData, ILanguageDetectionService } from 'vs/workbench/services/languageDetection/common/languageDetectionWorkerService';
+import { ILanguageDetectionService } from 'vs/workbench/services/languageDetection/common/languageDetectionWorkerService';
 import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
 import { Action2 } from 'vs/platform/actions/common/actions';
 import { ServicesAccessor } from 'vs/editor/browser/editorExtensions';
@@ -1050,7 +1049,6 @@ export class ChangeLanguageAction extends Action2 {
 		const preferencesService = accessor.get(IPreferencesService);
 		const instantiationService = accessor.get(IInstantiationService);
 		const configurationService = accessor.get(IConfigurationService);
-		const telemetryService = accessor.get(ITelemetryService);
 
 		const activeTextEditorControl = getCodeEditor(editorService.activeTextEditorControl);
 		if (!activeTextEditorControl) {
@@ -1171,62 +1169,11 @@ export class ChangeLanguageAction extends Action2 {
 				} else {
 					const languageId = languageService.getLanguageIdByLanguageName(pick.label);
 					languageSelection = languageService.createById(languageId);
-
-					if (resource) {
-						// fire and forget to not slow things down
-						languageDetectionService.detectLanguage(resource).then(detectedLanguageId => {
-							const chosenLanguageId = languageService.getLanguageIdByLanguageName(pick.label) || 'unknown';
-							if (detectedLanguageId === currentLanguageId && currentLanguageId !== chosenLanguageId) {
-								// If they didn't choose the detected language (which should also be the active language if automatic detection is enabled)
-								// then the automatic language detection was likely wrong and the user is correcting it. In this case, we want telemetry.
-								// Keep track of what model was preferred and length of input to help track down potential differences between the result quality across models and content size.
-								const modelPreference = configurationService.getValue<boolean>('workbench.editor.preferHistoryBasedLanguageDetection') ? 'history' : 'classic';
-								telemetryService.publicLog2<IAutomaticLanguageDetectionLikelyWrongData, AutomaticLanguageDetectionLikelyWrongClassification>(AutomaticLanguageDetectionLikelyWrongId, {
-									currentLanguageId: currentLanguageName ?? 'unknown',
-									nextLanguageId: pick.label,
-									lineCount: textModel?.getLineCount() ?? -1,
-									modelPreference,
-								});
-							}
-						});
-					}
 				}
 
 				// Change language
 				if (typeof languageSelection !== 'undefined') {
 					languageSupport.setLanguageId(languageSelection.languageId, ChangeLanguageAction.ID);
-
-					if (resource?.scheme === Schemas.untitled) {
-						type SetUntitledDocumentLanguageEvent = { to: string; from: string; modelPreference: string };
-						type SetUntitledDocumentLanguageClassification = {
-							owner: 'TylerLeonhardt';
-							comment: 'Helps understand what the automatic language detection does for untitled files';
-							to: {
-								classification: 'SystemMetaData';
-								purpose: 'FeatureInsight';
-								owner: 'TylerLeonhardt';
-								comment: 'Help understand effectiveness of automatic language detection';
-							};
-							from: {
-								classification: 'SystemMetaData';
-								purpose: 'FeatureInsight';
-								owner: 'TylerLeonhardt';
-								comment: 'Help understand effectiveness of automatic language detection';
-							};
-							modelPreference: {
-								classification: 'SystemMetaData';
-								purpose: 'FeatureInsight';
-								owner: 'TylerLeonhardt';
-								comment: 'Help understand effectiveness of automatic language detection';
-							};
-						};
-						const modelPreference = configurationService.getValue<boolean>('workbench.editor.preferHistoryBasedLanguageDetection') ? 'history' : 'classic';
-						telemetryService.publicLog2<SetUntitledDocumentLanguageEvent, SetUntitledDocumentLanguageClassification>('setUntitledDocumentLanguage', {
-							to: languageSelection.languageId,
-							from: currentLanguageId ?? 'none',
-							modelPreference,
-						});
-					}
 				}
 			}
 

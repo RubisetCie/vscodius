@@ -14,7 +14,6 @@ import { EditorInput } from 'vs/workbench/common/editor/editorInput';
 import { applyTextEditorOptions } from 'vs/workbench/common/editor/editorOptions';
 import { DiffEditorInput } from 'vs/workbench/common/editor/diffEditorInput';
 import { TextDiffEditorModel } from 'vs/workbench/common/editor/textDiffEditorModel';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { ITextResourceConfigurationChangeEvent, ITextResourceConfigurationService } from 'vs/editor/common/services/textResourceConfiguration';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -33,7 +32,6 @@ import { Dimension, multibyteAwareBtoa } from 'vs/base/browser/dom';
 import { ByteSize, FileOperationError, FileOperationResult, IFileService, TooLargeFileOperationError } from 'vs/platform/files/common/files';
 import { IBoundarySashes } from 'vs/base/browser/ui/sash/sash';
 import { IPreferencesService } from 'vs/workbench/services/preferences/common/preferences';
-import { StopWatch } from 'vs/base/common/stopwatch';
 import { DiffEditorWidget } from 'vs/editor/browser/widget/diffEditor/diffEditorWidget';
 
 /**
@@ -43,8 +41,6 @@ export class TextDiffEditor extends AbstractTextEditor<IDiffEditorViewState> imp
 	static readonly ID = TEXT_DIFF_EDITOR_ID;
 
 	private diffEditorControl: IDiffEditor | undefined = undefined;
-
-	private inputLifecycleStopWatch: StopWatch | undefined = undefined;
 
 	override get scopedContextKeyService(): IContextKeyService | undefined {
 		if (!this.diffEditorControl) {
@@ -58,7 +54,6 @@ export class TextDiffEditor extends AbstractTextEditor<IDiffEditorViewState> imp
 	}
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IStorageService storageService: IStorageService,
 		@ITextResourceConfigurationService configurationService: ITextResourceConfigurationService,
@@ -68,7 +63,7 @@ export class TextDiffEditor extends AbstractTextEditor<IDiffEditorViewState> imp
 		@IFileService fileService: IFileService,
 		@IPreferencesService private readonly preferencesService: IPreferencesService
 	) {
-		super(TextDiffEditor.ID, telemetryService, instantiationService, storageService, configurationService, themeService, editorService, editorGroupService, fileService);
+		super(TextDiffEditor.ID, instantiationService, storageService, configurationService, themeService, editorService, editorGroupService, fileService);
 	}
 
 	override getTitle(): string {
@@ -92,9 +87,6 @@ export class TextDiffEditor extends AbstractTextEditor<IDiffEditorViewState> imp
 	}
 
 	override async setInput(input: DiffEditorInput, options: ITextEditorOptions | undefined, context: IEditorOpenContext, token: CancellationToken): Promise<void> {
-
-		// Cleanup previous things associated with the input
-		this.inputLifecycleStopWatch = undefined;
 
 		// Set input and resolve
 		await super.setInput(input, options, context, token);
@@ -146,9 +138,6 @@ export class TextDiffEditor extends AbstractTextEditor<IDiffEditorViewState> imp
 				...this.getReadonlyConfiguration(resolvedDiffEditorModel.modifiedModel?.isReadonly()),
 				originalEditable: !resolvedDiffEditorModel.originalModel?.isReadonly()
 			});
-
-			// Start to measure input lifecycle
-			this.inputLifecycleStopWatch = new StopWatch(false);
 		} catch (error) {
 			await this.handleSetInputError(error, input, options);
 		}
@@ -300,37 +289,8 @@ export class TextDiffEditor extends AbstractTextEditor<IDiffEditorViewState> imp
 	override clearInput(): void {
 		super.clearInput();
 
-		// Log input lifecycle telemetry
-		const inputLifecycleElapsed = this.inputLifecycleStopWatch?.elapsed();
-		this.inputLifecycleStopWatch = undefined;
-		if (typeof inputLifecycleElapsed === 'number') {
-			this.logInputLifecycleTelemetry(inputLifecycleElapsed, this.getControl()?.getModel()?.modified?.getLanguageId());
-		}
-
 		// Clear Model
 		this.diffEditorControl?.setModel(null);
-	}
-
-	private logInputLifecycleTelemetry(duration: number, languageId: string | undefined): void {
-		let collapseUnchangedRegions = false;
-		if (this.diffEditorControl instanceof DiffEditorWidget) {
-			collapseUnchangedRegions = this.diffEditorControl.collapseUnchangedRegions;
-		}
-		this.telemetryService.publicLog2<{
-			editorVisibleTimeMs: number;
-			languageId: string;
-			collapseUnchangedRegions: boolean;
-		}, {
-			owner: 'hediet';
-			editorVisibleTimeMs: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; isMeasurement: true; comment: 'Indicates the time the diff editor was visible to the user' };
-			languageId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Indicates for which language the diff editor was shown' };
-			collapseUnchangedRegions: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Indicates whether unchanged regions were collapsed' };
-			comment: 'This event gives insight about how long the diff editor was visible to the user.';
-		}>('diffEditor.editorVisibleTime', {
-			editorVisibleTimeMs: duration,
-			languageId: languageId ?? '',
-			collapseUnchangedRegions,
-		});
 	}
 
 	override getControl(): IDiffEditor | undefined {

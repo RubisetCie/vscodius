@@ -25,7 +25,6 @@ import { EditorProgressIndicator } from 'vs/workbench/services/progress/browser/
 import { localize } from 'vs/nls';
 import { coalesce, firstOrDefault } from 'vs/base/common/arrays';
 import { MutableDisposable, toDisposable } from 'vs/base/common/lifecycle';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { DeferredPromise, Promises, RunOnceWorker } from 'vs/base/common/async';
 import { EventType as TouchEventType, GestureEvent } from 'vs/base/browser/touch';
 import { IEditorGroupsAccessor, IEditorGroupView, fillActiveEditorViewState, EditorServiceImpl, IEditorGroupTitleHeight, IInternalEditorOpenOptions, IInternalMoveCopyOptions, IInternalEditorCloseOptions, IInternalEditorTitleControlOptions } from 'vs/workbench/browser/parts/editor/editor';
@@ -37,10 +36,7 @@ import { StandardMouseEvent } from 'vs/base/browser/mouseEvent';
 import { createAndFillInActionBarActions } from 'vs/platform/actions/browser/menuEntryActionViewItem';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { hash } from 'vs/base/common/hash';
-import { getMimeTypes } from 'vs/editor/common/services/languagesAssociations';
-import { extname, isEqual } from 'vs/base/common/resources';
-import { Schemas } from 'vs/base/common/network';
+import { isEqual } from 'vs/base/common/resources';
 import { EditorActivation, IEditorOptions } from 'vs/platform/editor/common/editor';
 import { IFileDialogService, ConfirmResult } from 'vs/platform/dialogs/common/dialogs';
 import { IFilesConfigurationService, AutoSaveMode } from 'vs/workbench/services/filesConfiguration/common/filesConfigurationService';
@@ -48,7 +44,6 @@ import { URI } from 'vs/base/common/uri';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { isLinux, isMacintosh, isNative, isWindows } from 'vs/base/common/platform';
 import { ILogService } from 'vs/platform/log/common/log';
-import { TelemetryTrustedValue } from 'vs/platform/telemetry/common/telemetryUtils';
 import { defaultProgressBarStyles } from 'vs/platform/theme/browser/defaultStyles';
 import { IBoundarySashes } from 'vs/base/browser/ui/sash/sash';
 import { EditorGroupWatermark } from 'vs/workbench/browser/parts/editor/editorGroupWatermark';
@@ -139,7 +134,6 @@ export class EditorGroupView extends Themable implements IEditorGroupView {
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IContextKeyService private readonly contextKeyService: IContextKeyService,
 		@IThemeService themeService: IThemeService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IKeybindingService private readonly keybindingService: IKeybindingService,
 		@IMenuService private readonly menuService: IMenuService,
 		@IContextMenuService private readonly contextMenuService: IContextMenuService,
@@ -544,17 +538,6 @@ export class EditorGroupView extends Themable implements IEditorGroupView {
 	}
 
 	private onDidOpenEditor(editor: EditorInput, editorIndex: number): void {
-
-		/* __GDPR__
-			"editorOpened" : {
-				"owner": "bpasero",
-				"${include}": [
-					"${EditorTelemetryDescriptor}"
-				]
-			}
-		*/
-		this.telemetryService.publicLog('editorOpened', this.toEditorTelemetryDescriptor(editor));
-
 		// Update container
 		this.updateContainer();
 	}
@@ -582,16 +565,6 @@ export class EditorGroupView extends Themable implements IEditorGroupView {
 			}
 		}
 
-		/* __GDPR__
-			"editorClosed" : {
-				"owner": "bpasero",
-				"${include}": [
-					"${EditorTelemetryDescriptor}"
-				]
-			}
-		*/
-		this.telemetryService.publicLog('editorClosed', this.toEditorTelemetryDescriptor(editor));
-
 		// Update container
 		this.updateContainer();
 
@@ -610,29 +583,6 @@ export class EditorGroupView extends Themable implements IEditorGroupView {
 		}
 
 		return true;
-	}
-
-	private toEditorTelemetryDescriptor(editor: EditorInput): object {
-		const descriptor = editor.getTelemetryDescriptor();
-
-		const resource = EditorResourceAccessor.getOriginalUri(editor);
-		const path = resource ? resource.scheme === Schemas.file ? resource.fsPath : resource.path : undefined;
-		if (resource && path) {
-			let resourceExt = extname(resource);
-			// Remove query parameters from the resource extension
-			const queryStringLocation = resourceExt.indexOf('?');
-			resourceExt = queryStringLocation !== -1 ? resourceExt.substr(0, queryStringLocation) : resourceExt;
-			descriptor['resource'] = { mimeType: new TelemetryTrustedValue(getMimeTypes(resource).join(', ')), scheme: resource.scheme, ext: resourceExt, path: hash(path) };
-
-			/* __GDPR__FRAGMENT__
-				"EditorTelemetryDescriptor" : {
-					"resource": { "${inline}": [ "${URIDescriptor}" ] }
-				}
-			*/
-			return descriptor;
-		}
-
-		return descriptor;
 	}
 
 	private onWillDisposeEditor(editor: EditorInput): void {

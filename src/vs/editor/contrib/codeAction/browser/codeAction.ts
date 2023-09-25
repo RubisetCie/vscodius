@@ -23,7 +23,6 @@ import { CommandsRegistry, ICommandService } from 'vs/platform/commands/common/c
 import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { IProgress, Progress } from 'vs/platform/progress/common/progress';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { CodeActionFilter, CodeActionItem, CodeActionKind, CodeActionSet, CodeActionTrigger, CodeActionTriggerSource, filtersAction, mayIncludeActionsOfKind } from '../common/types';
 
 export const codeActionCommandId = 'editor.action.codeAction';
@@ -244,30 +243,7 @@ export async function applyCodeAction(
 ): Promise<void> {
 	const bulkEditService = accessor.get(IBulkEditService);
 	const commandService = accessor.get(ICommandService);
-	const telemetryService = accessor.get(ITelemetryService);
 	const notificationService = accessor.get(INotificationService);
-
-	type ApplyCodeActionEvent = {
-		codeActionTitle: string;
-		codeActionKind: string | undefined;
-		codeActionIsPreferred: boolean;
-		reason: ApplyCodeActionReason;
-	};
-	type ApplyCodeEventClassification = {
-		codeActionTitle: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The display label of the applied code action' };
-		codeActionKind: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The kind (refactor, quickfix) of the applied code action' };
-		codeActionIsPreferred: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'Was the code action marked as being a preferred action?' };
-		reason: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The kind of action used to trigger apply code action.' };
-		owner: 'mjbvz';
-		comment: 'Event used to gain insights into which code actions are being triggered';
-	};
-
-	telemetryService.publicLog2<ApplyCodeActionEvent, ApplyCodeEventClassification>('codeAction.applyCodeAction', {
-		codeActionTitle: item.action.title,
-		codeActionKind: item.action.kind,
-		codeActionIsPreferred: !!item.action.isPreferred,
-		reason: codeActionReason,
-	});
 
 	await item.resolve(token);
 	if (token.isCancellationRequested) {

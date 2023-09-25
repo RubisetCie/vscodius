@@ -11,7 +11,6 @@ import Severity from 'vs/base/common/severity';
 import { URI } from 'vs/base/common/uri';
 import { localize } from 'vs/nls';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
-import { ITelemetryData } from 'vs/platform/telemetry/common/telemetry';
 import { MessageBoxOptions } from 'vs/base/parts/sandbox/common/electronTypes';
 import { mnemonicButtonLabel } from 'vs/base/common/labels';
 import { isLinux, isMacintosh, isWindows } from 'vs/base/common/platform';
@@ -173,7 +172,6 @@ export interface ICheckboxResult {
 export interface IPickAndOpenOptions {
 	readonly forceNewWindow?: boolean;
 	defaultUri?: URI;
-	readonly telemetryExtraData?: ITelemetryData;
 	availableFileSystems?: string[];
 	remoteAuthority?: string | null;
 }
@@ -596,9 +594,6 @@ export interface INativeOpenDialogOptions {
 	readonly forceNewWindow?: boolean;
 
 	readonly defaultPath?: string;
-
-	readonly telemetryEventName?: string;
-	readonly telemetryExtraData?: ITelemetryData;
 }
 
 export interface IMassagedMessageBoxOptions {

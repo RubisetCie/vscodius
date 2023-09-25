@@ -13,7 +13,6 @@ import { KeyCode } from 'vs/base/common/keyCodes';
 import { DisposableStore } from 'vs/base/common/lifecycle';
 import { IMenuService, MenuId, IMenu, registerAction2, Action2, IAction2Options } from 'vs/platform/actions/common/actions';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { activeContrastBorder, focusBorder } from 'vs/platform/theme/common/colorRegistry';
 import { IColorTheme, IThemeService, registerThemingParticipant } from 'vs/platform/theme/common/themeService';
 import { ActivityAction, ActivityActionViewItem, IActivityActionViewItemOptions, IActivityHoverOptions, ICompositeBar, ICompositeBarColors, ToggleCompositeBadgeAction, ToggleCompositePinnedAction } from 'vs/workbench/browser/parts/compositeBarActions';
@@ -54,7 +53,6 @@ export class ViewContainerActivityAction extends ActivityAction {
 		activity: IActivity,
 		private readonly paneCompositePart: IPaneCompositePart,
 		@IWorkbenchLayoutService private readonly layoutService: IWorkbenchLayoutService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IConfigurationService private readonly configurationService: IConfigurationService
 	) {
 		super(activity);
@@ -84,13 +82,11 @@ export class ViewContainerActivityAction extends ActivityAction {
 		if (sideBarVisible && activeViewlet?.getId() === this.activity.id) {
 			switch (focusBehavior) {
 				case 'focus':
-					this.logAction('refocus');
 					this.paneCompositePart.openPaneComposite(this.activity.id, focus);
 					break;
 				case 'toggle':
 				default:
 					// Hide sidebar if selected viewlet already visible
-					this.logAction('hide');
 					this.layoutService.setPartHidden(true, Parts.SIDEBAR_PART);
 					break;
 			}
@@ -98,20 +94,9 @@ export class ViewContainerActivityAction extends ActivityAction {
 			return;
 		}
 
-		this.logAction('show');
 		await this.paneCompositePart.openPaneComposite(this.activity.id, focus);
 
 		return this.activate();
-	}
-
-	private logAction(action: string) {
-		type ActivityBarActionClassification = {
-			owner: 'sbatten';
-			comment: 'Event logged when an activity bar action is triggered.';
-			viewletId: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The view in the activity bar for which the action was performed.' };
-			action: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The action that was performed. e.g. "hide", "show", or "refocus"' };
-		};
-		this.telemetryService.publicLog2<{ viewletId: String; action: String }, ActivityBarActionClassification>('activityBarAction', { viewletId: this.activity.id, action });
 	}
 }
 

@@ -16,7 +16,6 @@ import { IWorkbenchContribution } from 'vs/workbench/common/contributions';
 import { configureOpenerTrustedDomainsHandler, readAuthenticationTrustedDomains, readStaticTrustedDomains, readWorkspaceTrustedDomains } from 'vs/workbench/contrib/url/browser/trustedDomains';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IClipboardService } from 'vs/platform/clipboard/common/clipboardService';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IdleValue } from 'vs/base/common/async';
 import { IAuthenticationService } from 'vs/workbench/services/authentication/common/authentication';
@@ -38,7 +37,6 @@ export class OpenerValidatorContributions implements IWorkbenchContribution {
 		@IQuickInputService private readonly _quickInputService: IQuickInputService,
 		@IEditorService private readonly _editorService: IEditorService,
 		@IClipboardService private readonly _clipboardService: IClipboardService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 		@IAuthenticationService private readonly _authenticationService: IAuthenticationService,
 		@IWorkspaceContextService private readonly _workspaceContextService: IWorkspaceContextService,
@@ -136,7 +134,6 @@ export class OpenerValidatorContributions implements IWorkbenchContribution {
 								this._quickInputService,
 								this._storageService,
 								this._editorService,
-								this._telemetryService,
 							);
 							// Trust all domains
 							if (pickedDomains.indexOf('*') !== -1) {

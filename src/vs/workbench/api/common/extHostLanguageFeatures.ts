@@ -34,7 +34,6 @@ import { StopWatch } from 'vs/base/common/stopwatch';
 import { isCancellationError, NotImplementedError } from 'vs/base/common/errors';
 import { raceCancellationError } from 'vs/base/common/async';
 import { isProposedApiEnabled } from 'vs/workbench/services/extensions/common/extensions';
-import { IExtHostTelemetry } from 'vs/workbench/api/common/extHostTelemetry';
 import { localize } from 'vs/nls';
 import { IAutoClosingPairConditional } from 'vs/editor/common/languages/languageConfiguration';
 
@@ -1874,7 +1873,6 @@ export class ExtHostLanguageFeatures implements extHostProtocol.ExtHostLanguageF
 		private readonly _diagnostics: ExtHostDiagnostics,
 		private readonly _logService: ILogService,
 		private readonly _apiDeprecation: IExtHostApiDeprecationService,
-		private readonly _extensionTelemetry: IExtHostTelemetry
 	) {
 		this._proxy = mainContext.getProxy(extHostProtocol.MainContext.MainThreadLanguageFeatures);
 	}
@@ -1919,8 +1917,6 @@ export class ExtHostLanguageFeatures implements extHostProtocol.ExtHostLanguageF
 			if (!isCancellationError(err)) {
 				this._logService.error(`[${data.extension.identifier.value}] provider FAILED`);
 				this._logService.error(err);
-
-				this._extensionTelemetry.onExtensionError(data.extension.identifier, err);
 			}
 		}).finally(() => {
 			if (!doNotLog) {

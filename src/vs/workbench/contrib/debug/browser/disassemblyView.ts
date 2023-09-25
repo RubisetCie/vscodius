@@ -29,7 +29,6 @@ import { IInstantiationService } from 'vs/platform/instantiation/common/instanti
 import { WorkbenchTable } from 'vs/platform/list/browser/listService';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { editorBackground } from 'vs/platform/theme/common/colorRegistry';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
@@ -92,14 +91,13 @@ export class DisassemblyView extends EditorPane {
 	private readonly _referenceToMemoryAddress = new Map<string, bigint>();
 
 	constructor(
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IThemeService themeService: IThemeService,
 		@IStorageService storageService: IStorageService,
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 		@IDebugService private readonly _debugService: IDebugService,
 	) {
-		super(DISASSEMBLY_VIEW_ID, telemetryService, themeService, storageService);
+		super(DISASSEMBLY_VIEW_ID, themeService, storageService);
 
 		this._disassembledInstructions = undefined;
 		this._onDidChangeStackFrame = this._register(new Emitter<void>({ leakWarningThreshold: 1000 }));

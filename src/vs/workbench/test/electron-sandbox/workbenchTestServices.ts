@@ -27,7 +27,6 @@ import { IExtensionManagementService } from 'vs/platform/extensionManagement/com
 import { IExtensionRecommendationNotificationService } from 'vs/platform/extensionRecommendations/common/extensionRecommendations';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IModelService } from 'vs/editor/common/services/model';
 import { ModelService } from 'vs/editor/common/services/modelService';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
@@ -154,7 +153,6 @@ export class TestExtensionTipsService extends AbstractNativeExtensionTipsService
 
 	constructor(
 		@INativeEnvironmentService environmentService: INativeEnvironmentService,
-		@ITelemetryService telemetryService: ITelemetryService,
 		@IExtensionManagementService extensionManagementService: IExtensionManagementService,
 		@IStorageService storageService: IStorageService,
 		@INativeHostService nativeHostService: INativeHostService,
@@ -162,7 +160,7 @@ export class TestExtensionTipsService extends AbstractNativeExtensionTipsService
 		@IFileService fileService: IFileService,
 		@IProductService productService: IProductService,
 	) {
-		super(environmentService.userHome, nativeHostService, telemetryService, extensionManagementService, storageService, extensionRecommendationNotificationService, fileService, productService);
+		super(environmentService.userHome, nativeHostService, extensionManagementService, storageService, extensionRecommendationNotificationService, fileService, productService);
 	}
 }
 

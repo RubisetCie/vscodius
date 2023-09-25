@@ -12,7 +12,6 @@ import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/
 import { ILogService } from 'vs/platform/log/common/log';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { IRequestService, asJson } from 'vs/platform/request/common/request';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { DidChangeProfilesEvent, IUserDataProfile, IUserDataProfileOptions, IUserDataProfilesService, IUserDataProfileUpdateOptions } from 'vs/platform/userDataProfile/common/userDataProfile';
 import { IWorkspaceContextService, toWorkspaceIdentifier } from 'vs/platform/workspace/common/workspace';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
@@ -41,7 +40,6 @@ export class UserDataProfileManagementService extends Disposable implements IUse
 		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
 		@IExtensionService private readonly extensionService: IExtensionService,
 		@IWorkbenchEnvironmentService private readonly environmentService: IWorkbenchEnvironmentService,
-		@ITelemetryService private readonly telemetryService: ITelemetryService,
 		@IProductService private readonly productService: IProductService,
 		@IRequestService private readonly requestService: IRequestService,
 		@ILogService private readonly logService: ILogService,
@@ -81,14 +79,12 @@ export class UserDataProfileManagementService extends Disposable implements IUse
 	async createAndEnterProfile(name: string, options?: IUserDataProfileOptions): Promise<IUserDataProfile> {
 		const profile = await this.userDataProfilesService.createNamedProfile(name, options, toWorkspaceIdentifier(this.workspaceContextService.getWorkspace()));
 		await this.changeCurrentProfile(profile);
-		this.telemetryService.publicLog2<ProfileManagementActionExecutedEvent, ProfileManagementActionExecutedClassification>('profileManagementActionExecuted', { id: 'createAndEnterProfile' });
 		return profile;
 	}
 
 	async createAndEnterTransientProfile(): Promise<IUserDataProfile> {
 		const profile = await this.userDataProfilesService.createTransientProfile(toWorkspaceIdentifier(this.workspaceContextService.getWorkspace()));
 		await this.changeCurrentProfile(profile);
-		this.telemetryService.publicLog2<ProfileManagementActionExecutedEvent, ProfileManagementActionExecutedClassification>('profileManagementActionExecuted', { id: 'createAndEnterTransientProfile' });
 		return profile;
 	}
 
@@ -100,7 +96,6 @@ export class UserDataProfileManagementService extends Disposable implements IUse
 			throw new Error(localize('cannotRenameDefaultProfile', "Cannot rename the default profile"));
 		}
 		await this.userDataProfilesService.updateProfile(profile, updateOptions);
-		this.telemetryService.publicLog2<ProfileManagementActionExecutedEvent, ProfileManagementActionExecutedClassification>('profileManagementActionExecuted', { id: 'updateProfile' });
 	}
 
 	async removeProfile(profile: IUserDataProfile): Promise<void> {
@@ -111,7 +106,6 @@ export class UserDataProfileManagementService extends Disposable implements IUse
 			throw new Error(localize('cannotDeleteDefaultProfile', "Cannot delete the default profile"));
 		}
 		await this.userDataProfilesService.removeProfile(profile);
-		this.telemetryService.publicLog2<ProfileManagementActionExecutedEvent, ProfileManagementActionExecutedClassification>('profileManagementActionExecuted', { id: 'removeProfile' });
 	}
 
 	async switchProfile(profile: IUserDataProfile): Promise<void> {
@@ -124,7 +118,6 @@ export class UserDataProfileManagementService extends Disposable implements IUse
 		}
 		await this.userDataProfilesService.setProfileForWorkspace(workspaceIdentifier, profile);
 		await this.changeCurrentProfile(profile);
-		this.telemetryService.publicLog2<ProfileManagementActionExecutedEvent, ProfileManagementActionExecutedClassification>('profileManagementActionExecuted', { id: 'switchProfile' });
 	}
 
 	async getBuiltinProfileTemplates(): Promise<IProfileTemplateInfo[]> {

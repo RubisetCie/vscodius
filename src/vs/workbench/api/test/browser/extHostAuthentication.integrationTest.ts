@@ -12,8 +12,6 @@ import { INotificationService } from 'vs/platform/notification/common/notificati
 import { TestNotificationService } from 'vs/platform/notification/test/common/testNotificationService';
 import { IQuickInputHideEvent, IQuickInputService, IQuickPickDidAcceptEvent } from 'vs/platform/quickinput/common/quickInput';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { NullTelemetryService } from 'vs/platform/telemetry/common/telemetryUtils';
 import { MainThreadAuthentication } from 'vs/workbench/api/browser/mainThreadAuthentication';
 import { ExtHostContext, MainContext } from 'vs/workbench/api/common/extHost.protocol';
 import { ExtHostAuthentication } from 'vs/workbench/api/common/extHostAuthentication';
@@ -108,7 +106,6 @@ suite('ExtHostAuthentication', () => {
 		instantiationService.stub(IActivityService, new TestActivityService());
 		instantiationService.stub(IRemoteAgentService, new TestRemoteAgentService());
 		instantiationService.stub(INotificationService, new TestNotificationService());
-		instantiationService.stub(ITelemetryService, NullTelemetryService);
 		const rpcProtocol = new TestRPCProtocol();
 
 		instantiationService.stub(IAuthenticationService, instantiationService.createInstance(AuthenticationService));

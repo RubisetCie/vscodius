@@ -12,7 +12,6 @@ import * as vscode from 'vscode';
 import { CommandManager } from './commands/commandManager';
 import { ServiceConfigurationProvider } from './configuration/configuration';
 import { DiagnosticLanguage, LanguageDescription } from './configuration/languageDescription';
-import { IExperimentationTelemetryReporter } from './experimentTelemetryReporter';
 import { DiagnosticKind } from './languageFeatures/diagnostics';
 import FileConfigurationManager from './languageFeatures/fileConfigurationManager';
 import LanguageProvider from './languageProvider';
@@ -74,7 +73,6 @@ export default class TypeScriptServiceClientHost extends Disposable {
 			processFactory: TsServerProcessFactory;
 			activeJsTsEditorTracker: ActiveJsTsEditorTracker;
 			serviceConfigurationProvider: ServiceConfigurationProvider;
-			experimentTelemetryReporter: IExperimentationTelemetryReporter | undefined;
 			logger: Logger;
 		},
 		onCompletionAccepted: (item: vscode.CompletionItem) => void,
@@ -106,7 +104,7 @@ export default class TypeScriptServiceClientHost extends Disposable {
 		this.fileConfigurationManager = this._register(new FileConfigurationManager(this.client, onCaseInsensitiveFileSystem));
 
 		for (const description of descriptions) {
-			const manager = new LanguageProvider(this.client, description, this.commandManager, this.client.telemetryReporter, this.typingsStatus, this.fileConfigurationManager, onCompletionAccepted);
+			const manager = new LanguageProvider(this.client, description, this.commandManager, this.typingsStatus, this.fileConfigurationManager, onCompletionAccepted);
 			this.languages.push(manager);
 			this._register(manager);
 			this.languagePerId.set(description.id, manager);
@@ -162,7 +160,7 @@ export default class TypeScriptServiceClientHost extends Disposable {
 	}
 
 	private registerExtensionLanguageProvider(description: LanguageDescription, onCompletionAccepted: (item: vscode.CompletionItem) => void) {
-		const manager = new LanguageProvider(this.client, description, this.commandManager, this.client.telemetryReporter, this.typingsStatus, this.fileConfigurationManager, onCompletionAccepted);
+		const manager = new LanguageProvider(this.client, description, this.commandManager, this.typingsStatus, this.fileConfigurationManager, onCompletionAccepted);
 		this.languages.push(manager);
 		this._register(manager);
 		this.languagePerId.set(description.id, manager);

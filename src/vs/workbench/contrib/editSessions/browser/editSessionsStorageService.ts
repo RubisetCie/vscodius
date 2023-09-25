@@ -7,8 +7,6 @@ import { Disposable, DisposableStore } from 'vs/base/common/lifecycle';
 import { localize } from 'vs/nls';
 import { Action2, MenuId, MenuRegistry, registerAction2 } from 'vs/platform/actions/common/actions';
 import { ContextKeyExpr, IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
-import { IEnvironmentService } from 'vs/platform/environment/common/environment';
-import { IFileService } from 'vs/platform/files/common/files';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { IQuickInputService, IQuickPickItem, IQuickPickSeparator } from 'vs/platform/quickinput/common/quickInput';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
@@ -71,12 +69,10 @@ export class EditSessionsWorkbenchService extends Disposable implements IEditSes
 	storeClient: EditSessionsStoreClient | undefined; // TODO@joyceerhl lifecycle hack
 
 	constructor(
-		@IFileService private readonly fileService: IFileService,
 		@IStorageService private readonly storageService: IStorageService,
 		@IQuickInputService private readonly quickInputService: IQuickInputService,
 		@IAuthenticationService private readonly authenticationService: IAuthenticationService,
 		@IExtensionService private readonly extensionService: IExtensionService,
-		@IEnvironmentService private readonly environmentService: IEnvironmentService,
 		@IEditSessionsLogService private readonly logService: IEditSessionsLogService,
 		@IProductService private readonly productService: IProductService,
 		@IContextKeyService private readonly contextKeyService: IContextKeyService,
@@ -221,7 +217,7 @@ export class EditSessionsWorkbenchService extends Disposable implements IEditSes
 		}));
 
 		if (this.machineClient === undefined) {
-			this.machineClient = new UserDataSyncMachinesService(this.environmentService, this.fileService, this.storageService, this.storeClient!, this.logService, this.productService);
+			this.machineClient = new UserDataSyncMachinesService(this.storageService, this.storeClient!, this.logService, this.productService);
 		}
 
 		// If we already have an existing auth session in memory, use that

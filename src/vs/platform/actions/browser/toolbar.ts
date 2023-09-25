@@ -6,7 +6,7 @@
 import { addDisposableListener } from 'vs/base/browser/dom';
 import { StandardMouseEvent } from 'vs/base/browser/mouseEvent';
 import { IToolBarOptions, ToolBar } from 'vs/base/browser/ui/toolbar/toolbar';
-import { IAction, Separator, SubmenuAction, toAction, WorkbenchActionExecutedClassification, WorkbenchActionExecutedEvent } from 'vs/base/common/actions';
+import { IAction, Separator, SubmenuAction, toAction } from 'vs/base/common/actions';
 import { coalesceInPlace } from 'vs/base/common/arrays';
 import { BugIndicatingError } from 'vs/base/common/errors';
 import { Emitter, Event } from 'vs/base/common/event';
@@ -17,7 +17,6 @@ import { IMenuActionOptions, IMenuService, MenuId, MenuItemAction, SubmenuItemAc
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 
 export const enum HiddenItemStrategy {
 	/** This toolbar doesn't support hiding*/
@@ -53,12 +52,6 @@ export type IWorkbenchToolBarOptions = IToolBarOptions & {
 	 */
 	menuOptions?: IMenuActionOptions;
 
-	/**
-	 * When set the `workbenchActionExecuted` is automatically send for each invoked action. The `from` property
-	 * of the event will the passed `telemetrySource`-value
-	 */
-	telemetrySource?: string;
-
 	/** This is controlled by the WorkbenchToolBar */
 	allowContextMenu?: never;
 
@@ -87,7 +80,6 @@ export class WorkbenchToolBar extends ToolBar {
 		@IContextKeyService private readonly _contextKeyService: IContextKeyService,
 		@IContextMenuService private readonly _contextMenuService: IContextMenuService,
 		@IKeybindingService keybindingService: IKeybindingService,
-		@ITelemetryService telemetryService: ITelemetryService,
 	) {
 		super(container, _contextMenuService, {
 			// defaults
@@ -96,17 +88,7 @@ export class WorkbenchToolBar extends ToolBar {
 			..._options,
 			// mandatory (overide options)
 			allowContextMenu: true,
-			skipTelemetry: typeof _options?.telemetrySource === 'string',
 		});
-
-		// telemetry logic
-		const telemetrySource = _options?.telemetrySource;
-		if (telemetrySource) {
-			this._store.add(this.actionBar.onDidRun(e => telemetryService.publicLog2<WorkbenchActionExecutedEvent, WorkbenchActionExecutedClassification>(
-				'workbenchActionExecuted',
-				{ id: e.action.id, from: telemetrySource })
-			));
-		}
 	}
 
 	override setActions(_primary: readonly IAction[], _secondary: readonly IAction[] = [], menuIds?: readonly MenuId[]): void {
@@ -239,7 +221,6 @@ export class WorkbenchToolBar extends ToolBar {
 					// add context menu actions (iff appicable)
 					menuId: this._options?.contextMenu,
 					menuActionOptions: { renderShortTitle: true, ...this._options?.menuOptions },
-					skipTelemetry: typeof this._options?.telemetrySource === 'string',
 					contextKeyService: this._contextKeyService,
 				});
 			}));
@@ -300,9 +281,8 @@ export class MenuWorkbenchToolBar extends WorkbenchToolBar {
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@IKeybindingService keybindingService: IKeybindingService,
-		@ITelemetryService telemetryService: ITelemetryService,
 	) {
-		super(container, { resetMenu: menuId, ...options }, menuService, contextKeyService, contextMenuService, keybindingService, telemetryService);
+		super(container, { resetMenu: menuId, ...options }, menuService, contextKeyService, contextMenuService, keybindingService);
 
 		// update logic
 		const menu = this._store.add(menuService.createMenu(menuId, contextKeyService, { emitEventsForSubmenuChanges: true }));

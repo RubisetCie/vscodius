@@ -7,7 +7,6 @@ import * as assert from 'assert';
 import 'mocha';
 import * as stream from 'stream';
 import { Logger } from '../../logging/logger';
-import { TelemetryReporter } from '../../logging/telemetry';
 import Tracer from '../../logging/tracer';
 import { NodeRequestCanceller } from '../../tsServer/cancellation.electron';
 import type * as Proto from '../../tsServer/protocol/protocol';
@@ -15,11 +14,6 @@ import { SingleTsServer, TsServerProcess } from '../../tsServer/server';
 import { ServerType } from '../../typescriptService';
 import { nulToken } from '../../utils/cancellation';
 
-
-const NoopTelemetryReporter = new class implements TelemetryReporter {
-	logTelemetry(): void { /* noop */ }
-	dispose(): void { /* noop */ }
-};
 
 class FakeServerProcess implements TsServerProcess {
 	private readonly _out: stream.PassThrough;
@@ -65,7 +59,7 @@ suite.skip('Server', () => {
 
 	test('should send requests with increasing sequence numbers', async () => {
 		const process = new FakeServerProcess();
-		const server = new SingleTsServer('semantic', ServerType.Semantic, process, undefined, new NodeRequestCanceller('semantic', tracer), undefined!, NoopTelemetryReporter, tracer);
+		const server = new SingleTsServer('semantic', ServerType.Semantic, process, undefined, new NodeRequestCanceller('semantic', tracer), undefined!, tracer);
 
 		const onWrite1 = process.onWrite();
 		server.executeImpl('geterr', {}, { isAsync: false, token: nulToken, expectsResult: true });

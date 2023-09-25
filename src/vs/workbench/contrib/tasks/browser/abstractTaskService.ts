@@ -26,7 +26,6 @@ import { IFileService, IFileStatWithPartialMetadata } from 'vs/platform/files/co
 import { IMarkerService } from 'vs/platform/markers/common/markers';
 import { IProgressOptions, IProgressService, ProgressLocation } from 'vs/platform/progress/common/progress';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { INamedProblemMatcher, ProblemMatcherRegistry } from 'vs/workbench/contrib/tasks/common/problemMatcher';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
 
@@ -242,7 +241,6 @@ export abstract class AbstractTaskService extends Disposable implements ITaskSer
 		@IEditorService private readonly _editorService: IEditorService,
 		@IFileService protected readonly _fileService: IFileService,
 		@IWorkspaceContextService protected readonly _contextService: IWorkspaceContextService,
-		@ITelemetryService protected readonly _telemetryService: ITelemetryService,
 		@ITextFileService private readonly _textFileService: ITextFileService,
 		@IModelService protected readonly _modelService: IModelService,
 		@IExtensionService private readonly _extensionService: IExtensionService,
@@ -2425,17 +2423,6 @@ export abstract class AbstractTaskService extends Disposable implements ITaskSer
 			const workspaceFolder: IWorkspaceFolder = this._contextService.getWorkspace().folders[0];
 			workspaceFolders.push(workspaceFolder);
 			executionEngine = this._computeExecutionEngine(workspaceFolder);
-			const telemetryData: { [key: string]: any } = {
-				executionEngineVersion: executionEngine
-			};
-			/* __GDPR__
-				"taskService.engineVersion" : {
-					"owner": "alexr00",
-					"comment": "The engine version of tasks. Used to determine if a user is using a deprecated version.",
-					"executionEngineVersion" : { "classification": "SystemMetaData", "purpose": "FeatureInsight", "comment": "The engine version of tasks." }
-				}
-			*/
-			this._telemetryService.publicLog('taskService.engineVersion', telemetryData);
 			schemaVersion = this._computeJsonSchemaVersion(workspaceFolder);
 		} else if (this._contextService.getWorkbenchState() === WorkbenchState.WORKSPACE) {
 			workspace = this._contextService.getWorkspace();

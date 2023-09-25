@@ -41,8 +41,6 @@ import { IWorkbenchContribution, IWorkbenchContributionsRegistry, Extensions } f
 import { LifecyclePhase } from 'vs/workbench/services/lifecycle/common/lifecycle';
 import { INotificationService, IPromptChoice, Severity } from 'vs/platform/notification/common/notification';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { isWeb } from 'vs/base/common/platform';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IHostService } from 'vs/workbench/services/host/browser/host';
 
 export const manageExtensionIcon = registerIcon('theme-selection-manage-extension', Codicon.gear, localize('manageExtensionIcon', 'Icon for the \'Manage\' action in the theme selection quick pick.'));
@@ -756,8 +754,6 @@ MenuRegistry.appendMenuItem(ThemesSubMenu, {
 	order: 3
 });
 
-type DefaultThemeUpdatedNotificationReaction = 'keepNew' | 'keepOld' | 'tryNew' | 'cancel' | 'browse';
-
 class DefaultThemeUpdatedNotificationContribution implements IWorkbenchContribution {
 
 	static STORAGE_KEY = 'themeUpdatedNotificationShown';
@@ -767,7 +763,6 @@ class DefaultThemeUpdatedNotificationContribution implements IWorkbenchContribut
 		@IWorkbenchThemeService private readonly _workbenchThemeService: IWorkbenchThemeService,
 		@IStorageService private readonly _storageService: IStorageService,
 		@ICommandService private readonly _commandService: ICommandService,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@IHostService private readonly _hostService: IHostService,
 	) {
 		if (_storageService.getBoolean(DefaultThemeUpdatedNotificationContribution.STORAGE_KEY, StorageScope.APPLICATION)) {
@@ -800,20 +795,17 @@ class DefaultThemeUpdatedNotificationContribution implements IWorkbenchContribut
 				{
 					label: localize('button.keep', "Keep New Theme"),
 					run: () => {
-						this._writeTelemetry('keepNew');
 					}
 				},
 				{
 					label: localize('button.browse', "Browse Themes"),
 					run: () => {
-						this._writeTelemetry('browse');
 						this._commandService.executeCommand(SelectColorThemeCommandId);
 					}
 				},
 				{
 					label: localize('button.revert', "Revert"),
 					run: async () => {
-						this._writeTelemetry('keepOld');
 						const oldSettingsId = usingLight ? ThemeSettingDefaults.COLOR_THEME_LIGHT_OLD : ThemeSettingDefaults.COLOR_THEME_DARK_OLD;
 						const oldTheme = (await this._workbenchThemeService.getColorThemes()).find(theme => theme.settingsId === oldSettingsId);
 						if (oldTheme) {
@@ -827,7 +819,6 @@ class DefaultThemeUpdatedNotificationContribution implements IWorkbenchContribut
 				localize({ key: 'themeUpdatedNotification', comment: ['{0} is the name of the new default theme'] }, "VSCodius now ships with a new default theme '{0}'. If you prefer, you can switch back to the old theme or try one of the many other color themes available.", newTheme.label),
 				choices,
 				{
-					onCancel: () => this._writeTelemetry('cancel')
 				}
 			);
 		}
@@ -840,41 +831,21 @@ class DefaultThemeUpdatedNotificationContribution implements IWorkbenchContribut
 			const choices: IPromptChoice[] = [{
 				label: localize('button.tryTheme', "Try New Theme"),
 				run: () => {
-					this._writeTelemetry('tryNew');
 					this._workbenchThemeService.setColorTheme(theme, 'auto');
 				}
 			},
 			{
 				label: localize('button.cancel', "Cancel"),
 				run: () => {
-					this._writeTelemetry('cancel');
 				}
 			}];
 			await this._notificationService.prompt(
 				Severity.Info,
 				localize({ key: 'newThemeNotification', comment: ['{0} is the name of the new default theme'] }, "VSCodius now ships with a new default theme '{0}'. Do you want to give it a try?", theme.label),
 				choices,
-				{ onCancel: () => this._writeTelemetry('cancel') }
+				{}
 			);
 		}
-	}
-
-	private _writeTelemetry(outcome: DefaultThemeUpdatedNotificationReaction): void {
-		type ThemeUpdatedNoticationClassification = {
-			owner: 'aeschli';
-			comment: 'Reaction to the notification that theme has updated to a new default theme';
-			web: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'Whether this is running on web' };
-			reaction: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'Outcome of the notification' };
-		};
-		type ThemeUpdatedNoticationEvent = {
-			web: boolean;
-			reaction: DefaultThemeUpdatedNotificationReaction;
-		};
-
-		this._telemetryService.publicLog2<ThemeUpdatedNoticationEvent, ThemeUpdatedNoticationClassification>('themeUpdatedNotication', {
-			web: isWeb,
-			reaction: outcome
-		});
 	}
 }
 const workbenchRegistry = Registry.as<IWorkbenchContributionsRegistry>(Extensions.Workbench);

@@ -15,7 +15,6 @@ import { ICodeEditorService } from 'vs/editor/browser/services/codeEditorService
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { WelcomeWidget } from 'vs/workbench/contrib/welcomeDialog/browser/welcomeWidget';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IConfigurationRegistry, Extensions as ConfigurationExtensions, ConfigurationScope } from 'vs/platform/configuration/common/configurationRegistry';
 import { localize } from 'vs/nls';
@@ -37,7 +36,6 @@ class WelcomeDialogContribution extends Disposable implements IWorkbenchContribu
 		@ICodeEditorService readonly codeEditorService: ICodeEditorService,
 		@IInstantiationService readonly instantiationService: IInstantiationService,
 		@ICommandService readonly commandService: ICommandService,
-		@ITelemetryService readonly telemetryService: ITelemetryService,
 		@IOpenerService readonly openerService: IOpenerService,
 		@IEditorService readonly editorService: IEditorService
 	) {
@@ -72,7 +70,6 @@ class WelcomeDialogContribution extends Disposable implements IWorkbenchContribu
 								codeEditor,
 								instantiationService,
 								commandService,
-								telemetryService,
 								openerService);
 
 							welcomeWidget.render(welcomeDialog.title,

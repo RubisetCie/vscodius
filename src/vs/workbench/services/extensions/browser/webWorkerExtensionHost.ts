@@ -21,8 +21,6 @@ import { ILayoutService } from 'vs/platform/layout/browser/layoutService';
 import { ILogService, ILoggerService } from 'vs/platform/log/common/log';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { ITelemetryService } from 'vs/platform/telemetry/common/telemetry';
-import { isLoggingOnly } from 'vs/platform/telemetry/common/telemetryUtils';
 import { IUserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
 import { IWorkspaceContextService, WorkbenchState } from 'vs/platform/workspace/common/workspace';
 import { IBrowserWorkbenchEnvironmentService } from 'vs/workbench/services/environment/browser/environmentService';
@@ -56,7 +54,6 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 		public readonly runningLocation: LocalWebWorkerRunningLocation,
 		public readonly startup: ExtensionHostStartup,
 		private readonly _initDataProvider: IWebWorkerExtensionHostDataProvider,
-		@ITelemetryService private readonly _telemetryService: ITelemetryService,
 		@IWorkspaceContextService private readonly _contextService: IWorkspaceContextService,
 		@ILabelService private readonly _labelService: ILabelService,
 		@ILogService private readonly _logService: ILogService,
@@ -284,8 +281,6 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 				appHost: this._productService.embedderIdentifier ?? (platform.isWeb ? 'web' : 'desktop'),
 				appUriScheme: this._productService.urlProtocol,
 				appLanguage: platform.language,
-				extensionTelemetryLogResource: this._environmentService.extHostTelemetryLogFile,
-				isExtensionTelemetryLoggingOnly: isLoggingOnly(this._productService, this._environmentService),
 				extensionDevelopmentLocationURI: this._environmentService.extensionDevelopmentLocationURI,
 				extensionTestsLocationURI: this._environmentService.extensionTestsLocationURI,
 				globalStorageHome: this._userDataProfilesService.defaultProfile.globalStorageHome,
@@ -304,12 +299,6 @@ export class WebWorkerExtensionHost extends Disposable implements IExtensionHost
 			},
 			extensions: this.extensions.toSnapshot(),
 			nlsBaseUrl: nlsUrlWithDetails,
-			telemetryInfo: {
-				sessionId: this._telemetryService.sessionId,
-				machineId: this._telemetryService.machineId,
-				firstSessionDate: this._telemetryService.firstSessionDate,
-				msftInternal: this._telemetryService.msftInternal
-			},
 			logLevel: this._logService.getLevel(),
 			loggers: [...this._loggerService.getRegisteredLoggers()],
 			logsLocation: this._extensionHostLogsLocation,
