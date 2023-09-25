@@ -1,0 +1,35 @@
+name: Windows Unit Tests
+on:
+  workflow_dispatch:
+    inputs:
+      vs_arch:
+        description: 'Target MSVC architecture (x64, x86, etc)'
+        required: true
+        default: 'x64'
+      node_version:
+        description: 'Node.js version'
+        required: true
+        default: '18.x'
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - name: Set up Yarn
+        uses: mskelton/setup-yarn@v1
+        with:
+          node-version: '${{github.event.inputs.node_version}}'
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: '${{github.event.inputs.vs_arch}}'
+          spectre: false
+          uwp: false
+      - name: Compilation
+        run: yarn compile
+      - name: Testing
+        run: ./scripts/test.bat > output.txt
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: VSCodius-Win32-Testing-Logs.zip
+          path: 'output.txt'

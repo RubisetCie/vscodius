@@ -1,0 +1,73 @@
+name: Linux Build Release
+on:
+  workflow_dispatch:
+    inputs:
+      pkg_version:
+        description: 'Arbitrary release version'
+        required: false
+        default: '1.0.0'
+      target_arch:
+        description: 'Target architecture (x64, ia32 or arm)'
+        required: true
+        default: 'x64'
+      pkg_arch:
+        description: 'Target package architecture (x64, armhf or arm64)'
+        required: true
+        default: 'x64'
+      node_version:
+        description: 'Node.js version'
+        required: true
+        default: '18.x'
+      pack_deb:
+        description: 'Create a Debian package'
+        type: boolean
+        required: true
+        default: true
+      pack_rpm:
+        description: 'Create a Red-Hat package'
+        type: boolean
+        required: true
+        default: true
+      ignore_new_dependencies:
+        description: 'Ignore new dependencies assertion during packaging'
+        type: boolean
+        required: true
+        default: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '${{github.event.inputs.node_version}}'
+      - name: Set up Yarn
+        run: yarn
+      - name: Packaging
+        run: yarn gulp vscode-linux-${{github.event.inputs.target_arch}}-min
+      - name: Setting environment
+        if: ${{github.event.inputs.ignore_new_dependencies == 'true'}}
+        run: echo 'IGNORE_NEW_DEPENDENCIES=true' >> $GITHUB_ENV
+      - name: Creating DEB package
+        if: ${{github.event.inputs.pack_deb == 'true'}}
+        run: yarn gulp vscode-linux-${{github.event.inputs.pkg_arch}}-build-deb
+      - name: Upload DEB package
+        if: ${{github.event.inputs.pack_deb == 'true'}}
+        uses: actions/upload-artifact@v3
+        with:
+          name: VSCodius-Linux-${{github.event.inputs.pkg_arch}}-Release-DEB
+          path: '.build/linux/deb/**/*.deb'
+          if-no-files-found: error
+      - name: Creating RPM package
+        if: ${{github.event.inputs.pack_rpm == 'true'}}
+        run: yarn gulp vscode-linux-${{github.event.inputs.pkg_arch}}-build-rpm
+      - name: Upload RPM package
+        if: ${{github.event.inputs.pack_rpm == 'true'}}
+        uses: actions/upload-artifact@v3
+        with:
+          name: VSCodius-Linux-${{github.event.inputs.pkg_arch}}-Release-RPM
+          path: '.build/linux/rpm/**/*.rpm'
+          if-no-files-found: error

@@ -1,0 +1,44 @@
+name: Windows Build Release
+on:
+  workflow_dispatch:
+    inputs:
+      pkg_version:
+        description: 'Arbitrary release version'
+        required: false
+        default: '1.0.0'
+      pkg_arch:
+        description: 'Target package architecture (x64 or ia32)'
+        required: true
+        default: 'x64'
+      vs_arch:
+        description: 'Target MSVC architecture (x64, x86, etc)'
+        required: true
+        default: 'x64'
+      node_version:
+        description: 'Node.js version'
+        required: true
+        default: '18.x'
+      patch_resources:
+        description: 'Patch Win32 resources after build'
+        type: boolean
+        required: true
+        default: false
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Set up Yarn
+        uses: mskelton/setup-yarn@v1
+        with:
+          node-version: '${{github.event.inputs.node_version}}'
+      - name: Packaging
+        run: yarn gulp vscode-win32-${{github.event.inputs.pkg_arch}}-min
+      - name: Patch resources
+        if: ${{github.event.inputs.patch_resources == 'true'}}
+        run: node build\win32-resources-patch ..\VSCode-win32-${{github.event.inputs.pkg_arch}}/VSCodius.exe
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: VSCodius-Win32-${{github.event.inputs.pkg_arch}}-${{github.event.inputs.pkg_version}}-Release
+          path: 'D:\a\${{github.event.repository.name}}\VSCode-win32-${{github.event.inputs.pkg_arch}}'
+          if-no-files-found: error
