@@ -17,7 +17,7 @@ on:
       node_version:
         description: 'Node.js version'
         required: true
-        default: '18.x'
+        default: '18'
       patch_resources:
         description: 'Patch Win32 resources after build'
         type: boolean

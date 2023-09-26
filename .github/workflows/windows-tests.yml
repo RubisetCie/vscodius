@@ -9,7 +9,7 @@ on:
       node_version:
         description: 'Node.js version'
         required: true
-        default: '18.x'
+        default: '18'
 jobs:
   test:
     runs-on: windows-latest

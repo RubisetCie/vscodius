@@ -17,7 +17,7 @@ on:
       node_version:
         description: 'Node.js version'
         required: true
-        default: '18.x'
+        default: '18'
       pack_deb:
         description: 'Create a Debian package'
         type: boolean
@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Set up Node
         uses: actions/setup-node@v3
         with:
