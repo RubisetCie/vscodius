@@ -400,7 +400,6 @@ export class UserDataSyncResourceProviderService implements IUserDataSyncResourc
 		}
 		paths.push(`syncResource:${syncResourceUriInfo.syncResource}`);
 		paths.push(`profile:${syncResourceUriInfo.profile}`);
-		paths.push(syncResourceUriInfo.profile);
 		if (syncResourceUriInfo.collection) {
 			paths.push(`collection:${syncResourceUriInfo.collection}`);
 		}

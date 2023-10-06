@@ -1364,6 +1364,7 @@ export class TypeAheadAddon extends Disposable implements ITerminalAddon {
 				}
 			},
 			Math.max(500, this.stats.maxLatency * 3 / 2),
+			this._store
 		);
 	}
 

@@ -33,12 +33,17 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { COMMENTS_SECTION, ICommentsConfiguration } from 'vs/workbench/contrib/comments/common/commentsConfiguration';
 import { COMMENTEDITOR_DECORATION_KEY } from 'vs/workbench/contrib/comments/browser/commentReply';
 import { Emitter } from 'vs/base/common/event';
-import { IContextKey, IContextKeyService, RawContextKey } from 'vs/platform/contextkey/common/contextkey';
+import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { Position } from 'vs/editor/common/core/position';
 import { CommentThreadRangeDecorator } from 'vs/workbench/contrib/comments/browser/commentThreadRangeDecorator';
 import { ICursorSelectionChangedEvent } from 'vs/editor/common/cursorEvents';
 import { CommentsPanel } from 'vs/workbench/contrib/comments/browser/commentsView';
 import { status } from 'vs/base/browser/ui/aria/aria';
+import { CommentContextKeys } from 'vs/workbench/contrib/comments/common/commentContextKeys';
+import { AccessibilityVerbositySettingId } from 'vs/workbench/contrib/accessibility/browser/accessibilityConfiguration';
+import { AccessibilityCommandId } from 'vs/workbench/contrib/accessibility/common/accessibilityCommands';
+import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
+import { IAccessibilityService } from 'vs/platform/accessibility/common/accessibility';
 
 export const ID = 'editor.contrib.review';
 
@@ -339,18 +344,13 @@ class CommentingRangeDecorator {
 
 			return range;
 		}
-		return decorations[0].getActiveRange() ?? undefined;
+		return (decorations.length > 0 ? (decorations[0].getActiveRange() ?? undefined) : undefined);
 	}
 
 	public dispose(): void {
 		this.commentingRangeDecorations = [];
 	}
 }
-
-export const ActiveCursorHasCommentingRange = new RawContextKey<boolean>('activeCursorHasCommentingRange', false, {
-	description: nls.localize('hasCommentingRange', "Whether the position at the active cursor has a commenting range"),
-	type: 'boolean'
-});
 
 export class CommentController implements IEditorContribution {
 	private readonly globalToDispose = new DisposableStore();
@@ -371,7 +371,8 @@ export class CommentController implements IEditorContribution {
 	private _pendingEditsCache: { [key: string]: { [key: string]: { [key: number]: string } } }; // owner -> threadId -> uniqueIdInThread -> pending comment
 	private _editorDisposables: IDisposable[] = [];
 	private _activeCursorHasCommentingRange: IContextKey<boolean>;
-	private _hasProvidedAriaStatus: boolean = false;
+	private _activeEditorHasCommentingRange: IContextKey<boolean>;
+	private _hasRespondedToEditorChange: boolean = false;
 
 	constructor(
 		editor: ICodeEditor,
@@ -383,14 +384,17 @@ export class CommentController implements IEditorContribution {
 		@IViewsService private readonly viewsService: IViewsService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IContextKeyService contextKeyService: IContextKeyService,
-		@IEditorService private readonly editorService: IEditorService
+		@IEditorService private readonly editorService: IEditorService,
+		@IKeybindingService private readonly keybindingService: IKeybindingService,
+		@IAccessibilityService private readonly accessibilityService: IAccessibilityService
 	) {
 		this._commentInfos = [];
 		this._commentWidgets = [];
 		this._pendingNewCommentCache = {};
 		this._pendingEditsCache = {};
 		this._computePromise = null;
-		this._activeCursorHasCommentingRange = ActiveCursorHasCommentingRange.bindTo(contextKeyService);
+		this._activeCursorHasCommentingRange = CommentContextKeys.activeCursorHasCommentingRange.bindTo(contextKeyService);
+		this._activeEditorHasCommentingRange = CommentContextKeys.activeEditorHasCommentingRange.bindTo(contextKeyService);
 
 		if (editor instanceof EmbeddedCodeEditorWidget) {
 			return;
@@ -419,8 +423,8 @@ export class CommentController implements IEditorContribution {
 			}
 			this.beginCompute();
 		}));
-		this.globalToDispose.add(this.commentService.onDidSetDataProvider(_ => this.beginComputeAndProvideStatus()));
-		this.globalToDispose.add(this.commentService.onDidUpdateCommentingRanges(_ => this.beginComputeAndProvideStatus()));
+		this.globalToDispose.add(this.commentService.onDidSetDataProvider(_ => this.beginComputeAndHandleEditorChange()));
+		this.globalToDispose.add(this.commentService.onDidUpdateCommentingRanges(_ => this.beginComputeAndHandleEditorChange()));
 
 		this.globalToDispose.add(this.commentService.onDidSetResourceCommentInfos(e => {
 			const editorURI = this.editor && this.editor.hasModel() && this.editor.getModel().uri;
@@ -723,6 +727,14 @@ export class CommentController implements IEditorContribution {
 			this.editor.setPosition(position);
 			this.editor.revealLineInCenterIfOutsideViewport(position.lineNumber);
 		}
+		if (this.accessibilityService.isScreenReaderOptimized()) {
+			const commentRangeStart = range?.getStartPosition().lineNumber;
+			const commentRangeEnd = range?.getEndPosition().lineNumber;
+			if (commentRangeStart && commentRangeEnd) {
+				const oneLine = commentRangeStart === commentRangeEnd;
+				oneLine ? status(nls.localize('commentRange', "Line {0}", commentRangeStart)) : status(nls.localize('commentRangeStart', "Lines {0} to {1}", commentRangeStart, commentRangeEnd));
+			}
+		}
 	}
 
 	public nextCommentingRange(): void {
@@ -750,7 +762,7 @@ export class CommentController implements IEditorContribution {
 			return;
 		}
 
-		this._hasProvidedAriaStatus = false;
+		this._hasRespondedToEditorChange = false;
 
 		this.localToDispose.add(this.editor.onMouseDown(e => this.onEditorMouseDown(e)));
 		this.localToDispose.add(this.editor.onMouseUp(e => this.onEditorMouseUp(e)));
@@ -841,14 +853,26 @@ export class CommentController implements IEditorContribution {
 			this._commentThreadRangeDecorator.update(this.editor, commentInfo);
 		}));
 
-		this.beginComputeAndProvideStatus();
+		this.beginComputeAndHandleEditorChange();
 	}
 
-	private beginComputeAndProvideStatus(): void {
+	private beginComputeAndHandleEditorChange(): void {
 		this.beginCompute().then(() => {
-			if (!this._hasProvidedAriaStatus && this._commentInfos.some(commentInfo => commentInfo.commentingRanges.ranges.length > 0 || commentInfo.commentingRanges.fileComments)) {
-				this._hasProvidedAriaStatus = true;
-				status(nls.localize('hasCommentRanges', "Editor has commenting ranges."));
+			if (!this._hasRespondedToEditorChange) {
+				if (this._commentInfos.some(commentInfo => commentInfo.commentingRanges.ranges.length > 0 || commentInfo.commentingRanges.fileComments)) {
+					this._hasRespondedToEditorChange = true;
+					const verbose = this.configurationService.getValue(AccessibilityVerbositySettingId.Comments);
+					if (verbose) {
+						const keybinding = this.keybindingService.lookupKeybinding(AccessibilityCommandId.OpenAccessibilityHelp)?.getAriaLabel();
+						if (keybinding) {
+							status(nls.localize('hasCommentRangesKb', "Editor has commenting ranges, run the command Open Accessibility Help ({0}), for more information.", keybinding));
+						} else {
+							status(nls.localize('hasCommentRangesNoKb', "Editor has commenting ranges, run the command Open Accessibility Help, which is currently not triggerable via keybinding, for more information."));
+						}
+					} else {
+						status(nls.localize('hasCommentRanges', "Editor has commenting ranges."));
+					}
+				}
 			}
 		});
 	}
@@ -1112,7 +1136,12 @@ export class CommentController implements IEditorContribution {
 		// create viewzones
 		this.removeCommentWidgetsAndStoreCache();
 
+		let hasCommentingRanges = false;
 		this._commentInfos.forEach(info => {
+			if (!hasCommentingRanges && (info.commentingRanges.ranges.length > 0 || info.commentingRanges.fileComments)) {
+				hasCommentingRanges = true;
+			}
+
 			const providerCacheStore = this._pendingNewCommentCache[info.owner];
 			const providerEditsCacheStore = this._pendingEditsCache[info.owner];
 			info.threads = info.threads.filter(thread => !thread.isDisposed);
@@ -1140,6 +1169,12 @@ export class CommentController implements IEditorContribution {
 
 		this._commentingRangeDecorator.update(this.editor, this._commentInfos);
 		this._commentThreadRangeDecorator.update(this.editor, this._commentInfos);
+
+		if (hasCommentingRanges) {
+			this._activeEditorHasCommentingRange.set(true);
+		} else {
+			this._activeEditorHasCommentingRange.set(false);
+		}
 	}
 
 	public closeWidget(): void {

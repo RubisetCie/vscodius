@@ -10060,7 +10060,8 @@ declare module 'vscode' {
 		export const isNewAppInstall: boolean;
 
 		/**
-		 * An {@link Event} which fires when the default shell changes.
+		 * An {@link Event} which fires when the default shell changes. This fires with the new
+		 * shell path.
 		 */
 		export const onDidChangeShell: Event<string>;
 

@@ -39,7 +39,7 @@ import { IContextMenuService, IContextViewService } from 'vs/platform/contextvie
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
-import { defaultButtonStyles, defaultSelectBoxStyles } from 'vs/platform/theme/browser/defaultStyles';
+import { defaultButtonStyles, defaultInputBoxStyles, defaultSelectBoxStyles } from 'vs/platform/theme/browser/defaultStyles';
 import { generateUuid } from 'vs/base/common/uuid';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { EditorsOrder } from 'vs/workbench/common/editor';
@@ -61,7 +61,7 @@ import { Mutable, isUndefined } from 'vs/base/common/types';
 import { Action, ActionRunner, IAction, IActionRunner } from 'vs/base/common/actions';
 import { isWeb } from 'vs/base/common/platform';
 import { Action2, MenuId, registerAction2 } from 'vs/platform/actions/common/actions';
-import { Codicon } from 'vs/base/common/codicons';
+import { Codicon, getAllCodicons } from 'vs/base/common/codicons';
 import { Barrier } from 'vs/base/common/async';
 import { IExtensionManagementService } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { ExtensionType } from 'vs/platform/extensions/common/extensions';
@@ -70,10 +70,18 @@ import { MarkdownString } from 'vs/base/common/htmlContent';
 import { renderMarkdown } from 'vs/base/browser/markdownRenderer';
 import { showWindowLogActionId } from 'vs/workbench/services/log/common/logConstants';
 import { ISelectOptionItem, SelectBox } from 'vs/base/browser/ui/selectBox/selectBox';
+import { ThemeIcon } from 'vs/base/common/themables';
+import { IHoverService } from 'vs/workbench/services/hover/browser/hover';
+import { HoverPosition } from 'vs/base/browser/ui/hover/hoverWidget';
+import { DEFAULT_ICON, ICONS } from 'vs/workbench/services/userDataProfile/common/userDataProfileIcons';
+import { WorkbenchIconSelectBox } from 'vs/workbench/browser/iconSelectBox';
+import { IHoverWidget } from 'vs/base/browser/ui/iconLabel/iconHoverDelegate';
+import { StandardKeyboardEvent } from 'vs/base/browser/keyboardEvent';
+import { KeyCode } from 'vs/base/common/keyCodes';
 
 interface IUserDataProfileTemplate {
 	readonly name: string;
-	readonly shortName?: string;
+	readonly icon?: string;
 	readonly settings?: string;
 	readonly keybindings?: string;
 	readonly tasks?: string;
@@ -87,7 +95,7 @@ function isUserDataProfileTemplate(thing: unknown): thing is IUserDataProfileTem
 
 	return !!(candidate && typeof candidate === 'object'
 		&& (candidate.name && typeof candidate.name === 'string')
-		&& (isUndefined(candidate.shortName) || typeof candidate.shortName === 'string')
+		&& (isUndefined(candidate.icon) || typeof candidate.icon === 'string')
 		&& (isUndefined(candidate.settings) || typeof candidate.settings === 'string')
 		&& (isUndefined(candidate.globalState) || typeof candidate.globalState === 'string')
 		&& (isUndefined(candidate.extensions) || typeof candidate.extensions === 'string'));
@@ -130,6 +138,7 @@ export class UserDataProfileImportExportService extends Disposable implements IU
 		@IProductService private readonly productService: IProductService,
 		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService,
 		@IContextViewService private readonly contextViewService: IContextViewService,
+		@IHoverService private readonly hoverService: IHoverService,
 		@ILogService private readonly logService: ILogService,
 	) {
 		super();
@@ -300,7 +309,17 @@ export class UserDataProfileImportExportService extends Disposable implements IU
 
 		disposables.add(quickPick.onDidChangeValue(validate));
 
-		let result: { name: string; items: ReadonlyArray<IQuickPickItem> } | undefined;
+		let icon = DEFAULT_ICON;
+		if (profile?.icon) {
+			icon = ThemeIcon.fromId(profile.icon);
+		}
+		if (isUserDataProfileTemplate(source) && source.icon) {
+			icon = ThemeIcon.fromId(source.icon);
+		}
+		if (icon.id !== DEFAULT_ICON.id && !ICONS.some(({ id }) => id === icon.id) && !getAllCodicons().some(({ id }) => id === icon.id)) {
+			icon = DEFAULT_ICON;
+		}
+		let result: { name: string; items: ReadonlyArray<IQuickPickItem>; icon?: string | null } | undefined;
 		disposables.add(Event.any(quickPick.onDidCustom, quickPick.onDidAccept)(() => {
 			const name = quickPick.value.trim();
 			if (!name) {
@@ -310,15 +329,75 @@ export class UserDataProfileImportExportService extends Disposable implements IU
 			if (quickPick.validationMessage) {
 				return;
 			}
-			result = { name, items: quickPick.selectedItems };
+			result = { name, items: quickPick.selectedItems, icon: icon.id === DEFAULT_ICON.id ? null : icon.id };
 			quickPick.hide();
 			quickPick.severity = Severity.Ignore;
 			quickPick.validationMessage = undefined;
 		}));
 
+		const domNode = DOM.$('.profile-edit-widget');
+
+		const profileIconContainer = DOM.$('.profile-icon-container');
+		DOM.append(profileIconContainer, DOM.$('.profile-icon-label', undefined, localize('icon', "Icon:")));
+		const profileIconElement = DOM.append(profileIconContainer, DOM.$(`.profile-icon${ThemeIcon.asCSSSelector(icon)}`));
+		profileIconElement.tabIndex = 0;
+		profileIconElement.role = 'button';
+		profileIconElement.ariaLabel = localize('select icon', "Icon: {0}", icon.id);
+		const iconSelectBox = disposables.add(this.instantiationService.createInstance(WorkbenchIconSelectBox, { icons: ICONS, inputBoxStyles: defaultInputBoxStyles }));
+		const dimension = new DOM.Dimension(486, 260);
+		iconSelectBox.layout(dimension);
+		let hoverWidget: IHoverWidget | undefined;
+
+		const updateIcon = (updated: ThemeIcon | undefined) => {
+			icon = updated ?? DEFAULT_ICON;
+			profileIconElement.className = `profile-icon ${ThemeIcon.asClassName(icon)}`;
+			profileIconElement.ariaLabel = localize('select icon', "Icon: {0}", icon.id);
+		};
+		disposables.add(iconSelectBox.onDidSelect(selectedIcon => {
+			if (icon.id !== selectedIcon.id) {
+				updateIcon(selectedIcon);
+			}
+			hoverWidget?.dispose();
+			profileIconElement.focus();
+		}));
+		const showIconSelectBox = () => {
+			iconSelectBox.clearInput();
+			hoverWidget = this.hoverService.showHover({
+				content: iconSelectBox.domNode,
+				target: profileIconElement,
+				hoverPosition: HoverPosition.BELOW,
+				showPointer: true,
+				hideOnHover: false,
+			}, true);
+			if (hoverWidget) {
+				iconSelectBox.layout(dimension);
+				disposables.add(hoverWidget);
+			}
+			iconSelectBox.focus();
+		};
+		disposables.add(DOM.addDisposableListener(profileIconElement, DOM.EventType.CLICK, (e: MouseEvent) => {
+			DOM.EventHelper.stop(e, true);
+			showIconSelectBox();
+		}));
+		disposables.add(DOM.addDisposableListener(profileIconElement, DOM.EventType.KEY_DOWN, e => {
+			const event = new StandardKeyboardEvent(e);
+			if (event.equals(KeyCode.Enter) || event.equals(KeyCode.Space)) {
+				DOM.EventHelper.stop(event, true);
+				showIconSelectBox();
+			}
+		}));
+		disposables.add(DOM.addDisposableListener(iconSelectBox.domNode, DOM.EventType.KEY_DOWN, e => {
+			const event = new StandardKeyboardEvent(e);
+			if (event.equals(KeyCode.Escape)) {
+				DOM.EventHelper.stop(event, true);
+				hoverWidget?.dispose();
+				profileIconElement.focus();
+			}
+		}));
+
 		if (!profile && !isUserDataProfileTemplate(source)) {
-			const domNode = DOM.$('.profile-type-widget');
-			DOM.append(domNode, DOM.$('.profile-type-create-label', undefined, localize('create from', "Copy from:")));
+			const profileTypeContainer = DOM.append(domNode, DOM.$('.profile-type-container'));
+			DOM.append(profileTypeContainer, DOM.$('.profile-type-create-label', undefined, localize('create from', "Copy from:")));
 			const separator = { text: '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500', isDisabled: true };
 			const profileOptions: (ISelectOptionItem & { id?: string; source?: IUserDataProfile | URI })[] = [];
 			profileOptions.push({ text: localize('empty profile', "None") });
@@ -347,9 +426,17 @@ export class UserDataProfileImportExportService extends Disposable implements IU
 			};
 
 			const initialIndex = findOptionIndex();
-			const selectBox = disposables.add(this.instantiationService.createInstance(SelectBox, profileOptions, initialIndex, this.contextViewService, defaultSelectBoxStyles, { useCustomDrawn: true }));
-			selectBox.render(DOM.append(domNode, DOM.$('.profile-type-select-container')));
-			quickPick.widget = domNode;
+			const selectBox = disposables.add(this.instantiationService.createInstance(SelectBox,
+				profileOptions,
+				initialIndex,
+				this.contextViewService,
+				defaultSelectBoxStyles,
+				{
+					useCustomDrawn: true,
+					ariaLabel: localize('copy profile from', "Copy profile from"),
+				}
+			));
+			selectBox.render(DOM.append(profileTypeContainer, DOM.$('.profile-type-select-container')));
 
 			if (profileOptions[initialIndex].source) {
 				quickPick.value = this.generateProfileName(profileOptions[initialIndex].text);
@@ -360,6 +447,7 @@ export class UserDataProfileImportExportService extends Disposable implements IU
 				for (const resource of resources) {
 					resource.picked = option.source && !(option.source instanceof URI) ? !option.source?.useDefaultFlags?.[resource.id] : true;
 				}
+				updateIcon(!(option.source instanceof URI) && option.source?.icon ? ThemeIcon.fromId(option.source.icon) : undefined);
 				update();
 			};
 
@@ -370,6 +458,9 @@ export class UserDataProfileImportExportService extends Disposable implements IU
 			}));
 		}
 
+		DOM.append(domNode, profileIconContainer);
+
+		quickPick.widget = domNode;
 		quickPick.show();
 
 		await new Promise<void>((c, e) => {
@@ -394,17 +485,17 @@ export class UserDataProfileImportExportService extends Disposable implements IU
 					extensions: !result.items.includes(extensions)
 				};
 			if (profile) {
-				await this.userDataProfileManagementService.updateProfile(profile, { name: result.name, useDefaultFlags: profile.useDefaultFlags && !useDefaultFlags ? {} : useDefaultFlags });
+				await this.userDataProfileManagementService.updateProfile(profile, { name: result.name, icon: result.icon, useDefaultFlags: profile.useDefaultFlags && !useDefaultFlags ? {} : useDefaultFlags });
 			} else {
 				if (source instanceof URI) {
-					await this.importProfile(source, { mode: 'apply', name: result.name, useDefaultFlags });
+					await this.importProfile(source, { mode: 'apply', name: result.name, useDefaultFlags, icon: result.icon ? result.icon : undefined });
 				} else if (isUserDataProfile(source)) {
-					await this.createFromProfile(source, result.name, { useDefaultFlags });
+					await this.createFromProfile(source, result.name, { useDefaultFlags, icon: result.icon ? result.icon : undefined });
 				} else if (isUserDataProfileTemplate(source)) {
 					source.name = result.name;
-					await this.createAndSwitch(source, false, true, { useDefaultFlags }, localize('create profile', "Create Profile"));
+					await this.createAndSwitch(source, false, true, { useDefaultFlags, icon: result.icon ? result.icon : undefined }, localize('create profile', "Create Profile"));
 				} else {
-					await this.userDataProfileManagementService.createAndEnterProfile(result.name, { useDefaultFlags });
+					await this.userDataProfileManagementService.createAndEnterProfile(result.name, { useDefaultFlags, icon: result.icon ? result.icon : undefined });
 				}
 			}
 		} catch (error) {
@@ -444,14 +535,14 @@ export class UserDataProfileImportExportService extends Disposable implements IU
 	private async createFromProfile(profile: IUserDataProfile, name: string, options?: IUserDataProfileOptions): Promise<void> {
 		const userDataProfilesExportState = this.instantiationService.createInstance(UserDataProfileExportState, profile);
 		try {
-			const profileTemplate = await userDataProfilesExportState.getProfileTemplate(name, undefined);
+			const profileTemplate = await userDataProfilesExportState.getProfileTemplate(name, options?.icon);
 			await this.progressService.withProgress({
 				location: ProgressLocation.Notification,
 				delay: 500,
 				sticky: true,
 			}, async progress => {
 				const reportProgress = (message: string) => progress.report({ message: localize('create from profile', "Create Profile: {0}", message) });
-				const profile = await this.doCreateProfile(profileTemplate, false, false, { useDefaultFlags: options?.useDefaultFlags }, reportProgress);
+				const profile = await this.doCreateProfile(profileTemplate, false, false, { useDefaultFlags: options?.useDefaultFlags, icon: options?.icon }, reportProgress);
 				if (profile) {
 					reportProgress(localize('progress extensions', "Applying Extensions..."));
 					await this.instantiationService.createInstance(ExtensionsResource).copy(this.userDataProfileService.currentProfile, profile, false);
@@ -567,6 +658,10 @@ export class UserDataProfileImportExportService extends Disposable implements IU
 
 		if (options?.name) {
 			profileTemplate.name = options.name;
+		}
+
+		if (options?.icon) {
+			profileTemplate.icon = options.icon;
 		}
 
 		return profileTemplate;
@@ -788,7 +883,7 @@ export class UserDataProfileImportExportService extends Disposable implements IU
 		const profile = this.userDataProfilesService.profiles.find(p => p.name === profileName);
 		if (profile) {
 			if (temp) {
-				return this.userDataProfilesService.createNamedProfile(`${profileName} ${this.getProfileNameIndex(profileName)}`, { ...options, shortName: profileTemplate.shortName, transient: temp });
+				return this.userDataProfilesService.createNamedProfile(`${profileName} ${this.getProfileNameIndex(profileName)}`, { ...options, transient: temp });
 			}
 
 			enum ImportProfileChoice {
@@ -839,7 +934,7 @@ export class UserDataProfileImportExportService extends Disposable implements IU
 			}
 			return this.userDataProfilesService.createNamedProfile(name);
 		} else {
-			return this.userDataProfilesService.createNamedProfile(profileName, { ...options, shortName: profileTemplate.shortName, transient: temp });
+			return this.userDataProfilesService.createNamedProfile(profileName, { ...options, transient: temp });
 		}
 	}
 
@@ -1156,7 +1251,7 @@ abstract class UserDataProfileImportExportState extends Disposable implements IT
 		return this.roots.some(root => this.isSelected(root));
 	}
 
-	async getProfileTemplate(name: string, shortName: string | undefined): Promise<IUserDataProfileTemplate> {
+	async getProfileTemplate(name: string, icon: string | undefined): Promise<IUserDataProfileTemplate> {
 		const roots = await this.getRoots();
 		let settings: string | undefined;
 		let keybindings: string | undefined;
@@ -1185,7 +1280,7 @@ abstract class UserDataProfileImportExportState extends Disposable implements IT
 
 		return {
 			name,
-			shortName,
+			icon,
 			settings,
 			keybindings,
 			tasks,
@@ -1283,6 +1378,7 @@ class UserDataProfileExportState extends UserDataProfileImportExportState {
 			location: profile.location,
 			isDefault: profile.isDefault,
 			shortName: profile.shortName,
+			icon: profile.icon,
 			globalStorageHome: profile.globalStorageHome,
 			settingsResource: profile.settingsResource.with({ scheme: USER_DATA_PROFILE_EXPORT_SCHEME }),
 			keybindingsResource: profile.keybindingsResource.with({ scheme: USER_DATA_PROFILE_EXPORT_SCHEME }),
@@ -1313,7 +1409,7 @@ class UserDataProfileExportState extends UserDataProfileImportExportState {
 			}
 		}
 
-		return super.getProfileTemplate(name, this.profile.shortName);
+		return super.getProfileTemplate(name, this.profile.icon);
 	}
 
 }
@@ -1401,7 +1497,7 @@ class UserDataProfileImportState extends UserDataProfileImportExportState {
 	}
 
 	async getProfileTemplateToImport(): Promise<IUserDataProfileTemplate> {
-		return this.getProfileTemplate(this.profile.name, this.profile.shortName);
+		return this.getProfileTemplate(this.profile.name, this.profile.icon);
 	}
 
 }
