@@ -78,6 +78,7 @@ export const SplitEditorsVertically = new RawContextKey<boolean>('splitEditorsVe
 export const ShowSplitEditorsButton = new RawContextKey<boolean>('showSplitEditorsButton', false, localize('showSplitEditorsButton', "Whether show the editors split button"));
 export const EditorAreaVisibleContext = new RawContextKey<boolean>('editorAreaVisible', true, localize('editorAreaVisible', "Whether the editor area is visible"));
 export const EditorTabsVisibleContext = new RawContextKey<boolean>('editorTabsVisible', true, localize('editorTabsVisible', "Whether editor tabs are visible"));
+export const EditorPinnedAndUnpinnedTabsContext = new RawContextKey<boolean>('editorPinnedAndUnpinnedTabsVisible', false, true);
 
 //#endregion
 

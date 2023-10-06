@@ -3,11 +3,11 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { IExternalTerminalService } from 'vs/platform/externalTerminal/common/externalTerminal';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 
-export const IExtensionUrlTrustService = createDecorator<IExtensionUrlTrustService>('extensionUrlTrustService');
+export const IExternalTerminalMainService = createDecorator<IExternalTerminalMainService>('externalTerminal');
 
-export interface IExtensionUrlTrustService {
+export interface IExternalTerminalMainService extends IExternalTerminalService {
 	readonly _serviceBrand: undefined;
-	isExtensionUrlTrusted(extensionId: string, url: string): Promise<boolean>;
 }

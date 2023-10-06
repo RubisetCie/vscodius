@@ -203,11 +203,11 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 					menu: [{
 						id: MenuId.GlobalActivity,
 						group: '2_configuration',
-						order: 1
+						order: 2
 					}, {
 						id: MenuId.MenubarPreferencesMenu,
 						group: '2_configuration',
-						order: 1
+						order: 2
 					}],
 				});
 			}
@@ -755,7 +755,7 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 						{
 							id: MenuId.GlobalActivity,
 							group: '2_configuration',
-							order: 3
+							order: 4
 						}
 					]
 				});
@@ -771,7 +771,7 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 				title: nls.localize('keyboardShortcuts', "Keyboard Shortcuts"),
 			},
 			group: '2_configuration',
-			order: 3
+			order: 4
 		}));
 		registerAction2(class extends Action2 {
 			constructor() {

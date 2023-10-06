@@ -88,7 +88,7 @@ export class UserDataProfilesWorkbenchContribution extends Disposable implements
 				return getProfilesTitle();
 			},
 			submenu: ProfilesMenu,
-			group: '1_profiles',
+			group: '2_configuration',
 			order: 1,
 		});
 		MenuRegistry.appendMenuItem(MenuId.MenubarPreferencesMenu, <ISubmenuItem>{
@@ -96,7 +96,7 @@ export class UserDataProfilesWorkbenchContribution extends Disposable implements
 				return getProfilesTitle();
 			},
 			submenu: ProfilesMenu,
-			group: '1_profiles',
+			group: '2_configuration',
 			order: 1,
 			when: PROFILES_ENABLEMENT_CONTEXT,
 		});
