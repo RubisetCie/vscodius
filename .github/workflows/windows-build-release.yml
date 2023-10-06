@@ -25,12 +25,24 @@ on:
         default: false
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
-      - name: Set up Yarn
-        uses: mskelton/setup-yarn@v1
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: '${{github.event.inputs.node_version}}'
+      - name: Set up Python 3
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Installing Yarn
+        run: npm install -g yarn
+      - name: Installing node-gyp
+        run: yarn global add node-gyp
+      - name: Dependencies
+        run: yarn
       - name: Packaging
         run: yarn gulp vscode-win32-${{github.event.inputs.pkg_arch}}-min
       - name: Patch resources
