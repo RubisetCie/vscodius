@@ -18,22 +18,6 @@ on:
         description: 'Node.js version'
         required: true
         default: '18'
-      pack_deb:
-        description: 'Create a Debian package'
-        type: boolean
-        required: true
-        default: true
-      pack_rpm:
-        description: 'Create a Red-Hat package'
-        type: boolean
-        required: true
-        default: true
-      ignore_new_dependencies:
-        description: 'Ignore new dependencies assertion during packaging'
-        type: boolean
-        required: true
-        default: false
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -52,26 +36,9 @@ jobs:
         run: yarn
       - name: Packaging
         run: yarn gulp vscode-linux-${{github.event.inputs.target_arch}}-min
-      - name: Setting environment
-        if: ${{github.event.inputs.ignore_new_dependencies == 'true'}}
-        run: echo 'IGNORE_NEW_DEPENDENCIES=true' >> $GITHUB_ENV
-      - name: Creating DEB package
-        if: ${{github.event.inputs.pack_deb == 'true'}}
-        run: yarn gulp vscode-linux-${{github.event.inputs.pkg_arch}}-build-deb
-      - name: Upload DEB package
-        if: ${{github.event.inputs.pack_deb == 'true'}}
+      - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: VSCodius-Linux-${{github.event.inputs.pkg_arch}}-Release-DEB
-          path: '.build/linux/deb/**/*.deb'
-          if-no-files-found: error
-      - name: Creating RPM package
-        if: ${{github.event.inputs.pack_rpm == 'true'}}
-        run: yarn gulp vscode-linux-${{github.event.inputs.pkg_arch}}-build-rpm
-      - name: Upload RPM package
-        if: ${{github.event.inputs.pack_rpm == 'true'}}
-        uses: actions/upload-artifact@v3
-        with:
-          name: VSCodius-Linux-${{github.event.inputs.pkg_arch}}-Release-RPM
-          path: '.build/linux/rpm/**/*.rpm'
+          name: VSCodius-Linux-${{github.event.inputs.pkg_arch}}-Release
+          path: '~/work/${{github.event.repository.name}}/VSCode-linux-${{github.event.inputs.pkg_arch}}'
           if-no-files-found: error
