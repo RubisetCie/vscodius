@@ -19,6 +19,7 @@ vscode.db
 /cli/openssl
 product.overrides.json
 *.snap.actual
+/.github/
 /.vscode/
 /.configurations/
 /.devcontainer/
