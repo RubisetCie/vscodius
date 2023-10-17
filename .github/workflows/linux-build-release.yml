@@ -35,6 +35,6 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: VSCodius-Linux-${{github.event.inputs.pkg_arch}}-Release
+          name: VSCodius-Linux-${{github.event.inputs.pkg_arch}}-${{github.event.inputs.pkg_version}}-Release
           path: '~/work/${{github.event.repository.name}}/VSCode-linux-${{github.event.inputs.pkg_arch}}'
           if-no-files-found: error
