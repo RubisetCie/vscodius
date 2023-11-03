@@ -7,7 +7,6 @@ import * as strings from 'vs/base/common/strings';
 import { ReplaceCommand } from 'vs/editor/common/commands/replaceCommand';
 import { EditorAutoClosingEditStrategy, EditorAutoClosingStrategy } from 'vs/editor/common/config/editorOptions';
 import { CursorConfiguration, EditOperationResult, EditOperationType, ICursorSimpleModel, isQuote } from 'vs/editor/common/cursorCommon';
-import { CursorColumns } from 'vs/editor/common/core/cursorColumns';
 import { MoveOperations } from 'vs/editor/common/cursor/cursorMoveOperations';
 import { Range } from 'vs/editor/common/core/range';
 import { Selection } from 'vs/editor/common/core/selection';
@@ -150,7 +149,7 @@ export class DeleteOperations {
 		const commands: Array<ICommand | null> = [];
 		let shouldPushStackElementBefore = (prevEditOperationType !== EditOperationType.DeletingLeft);
 		for (let i = 0, len = selections.length; i < len; i++) {
-			const deleteRange = DeleteOperations.getDeleteRange(selections[i], model, config);
+			const deleteRange = DeleteOperations.getDeleteRange(selections[i], model);
 
 			// Ignore empty delete ranges, as they have no effect
 			// They happen if the cursor is at the beginning of the file.
@@ -169,32 +168,12 @@ export class DeleteOperations {
 
 	}
 
-	private static getDeleteRange(selection: Selection, model: ICursorSimpleModel, config: CursorConfiguration,): Range {
+	private static getDeleteRange(selection: Selection, model: ICursorSimpleModel): Range {
 		if (!selection.isEmpty()) {
 			return selection;
 		}
 
 		const position = selection.getPosition();
-
-		// Unintend when using tab stops and cursor is within indentation
-		if (config.useTabStops && position.column > 1) {
-			const lineContent = model.getLineContent(position.lineNumber);
-
-			const firstNonWhitespaceIndex = strings.firstNonWhitespaceIndex(lineContent);
-			const lastIndentationColumn = (
-				firstNonWhitespaceIndex === -1
-					? /* entire string is whitespace */ lineContent.length + 1
-					: firstNonWhitespaceIndex + 1
-			);
-
-			if (position.column <= lastIndentationColumn) {
-				const fromVisibleColumn = config.visibleColumnFromColumn(model, position);
-				const toVisibleColumn = CursorColumns.prevIndentTabStop(fromVisibleColumn, config.indentSize);
-				const toColumn = config.columnFromVisibleColumn(model, position.lineNumber, toVisibleColumn);
-				return new Range(position.lineNumber, toColumn, position.lineNumber, position.column);
-			}
-		}
-
 		return Range.fromPositions(DeleteOperations.getPositionAfterDeleteLeft(position, model), position);
 	}
 

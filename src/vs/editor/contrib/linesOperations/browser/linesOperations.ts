@@ -4,7 +4,6 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { KeyChord, KeyCode, KeyMod } from 'vs/base/common/keyCodes';
-import { CoreEditingCommands } from 'vs/editor/browser/coreCommands';
 import { IActiveCodeEditor, ICodeEditor } from 'vs/editor/browser/editorBrowser';
 import { EditorAction, IActionOptions, registerEditorAction, ServicesAccessor } from 'vs/editor/browser/editorExtensions';
 import { ReplaceCommand, ReplaceCommandThatPreservesSelection, ReplaceCommandThatSelectsText } from 'vs/editor/common/commands/replaceCommand';
@@ -547,7 +546,13 @@ class OutdentLinesAction extends EditorAction {
 	}
 
 	public run(_accessor: ServicesAccessor, editor: ICodeEditor): void {
-		CoreEditingCommands.Outdent.runEditorCommand(_accessor, editor, null);
+		const viewModel = editor._getViewModel();
+		if (!viewModel) {
+			return;
+		}
+		editor.pushUndoStop();
+		editor.executeCommands(this.id, TypeOperations.outdent(viewModel.cursorConfig, editor.getModel(), editor.getSelections()));
+		editor.pushUndoStop();
 	}
 }
 

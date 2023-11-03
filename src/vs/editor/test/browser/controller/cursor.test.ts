@@ -1853,7 +1853,7 @@ suite('Editor Controller', () => {
 			moveTo(editor, viewModel, 1, 6, false);
 			assertCursor(viewModel, new Selection(1, 6, 1, 6));
 
-			CoreEditingCommands.Outdent.runEditorCommand(null, editor, null);
+			CoreEditingCommands.Untab.runEditorCommand(null, editor, null);
 			assert.strictEqual(model.getLineContent(1), '    function baz() {');
 			assertCursor(viewModel, new Selection(1, 5, 1, 5));
 		});
@@ -1870,7 +1870,7 @@ suite('Editor Controller', () => {
 			moveTo(editor, viewModel, 1, 7, false);
 			assertCursor(viewModel, new Selection(1, 7, 1, 7));
 
-			CoreEditingCommands.Outdent.runEditorCommand(null, editor, null);
+			CoreEditingCommands.Untab.runEditorCommand(null, editor, null);
 			assert.strictEqual(model.getLineContent(1), '    ');
 			assertCursor(viewModel, new Selection(1, 5, 1, 5));
 		});
@@ -1887,7 +1887,7 @@ suite('Editor Controller', () => {
 			moveTo(editor, viewModel, 1, 9, false);
 			assertCursor(viewModel, new Selection(1, 9, 1, 9));
 
-			CoreEditingCommands.Outdent.runEditorCommand(null, editor, null);
+			CoreEditingCommands.Untab.runEditorCommand(null, editor, null);
 			assert.strictEqual(model.getLineContent(1), '    ');
 			assertCursor(viewModel, new Selection(1, 5, 1, 5));
 		});

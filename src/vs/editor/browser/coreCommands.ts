@@ -1992,10 +1992,10 @@ export namespace CoreEditingCommands {
 		}
 	});
 
-	export const Outdent: EditorCommand = registerEditorCommand(new class extends CoreEditingCommand {
+	export const Untab: EditorCommand = registerEditorCommand(new class extends CoreEditingCommand {
 		constructor() {
 			super({
-				id: 'outdent',
+				id: 'untab',
 				precondition: EditorContextKeys.writable,
 				kbOpts: {
 					weight: CORE_WEIGHT,
@@ -2010,7 +2010,7 @@ export namespace CoreEditingCommands {
 
 		public runCoreEditingCommand(editor: ICodeEditor, viewModel: IViewModel, args: unknown): void {
 			editor.pushUndoStop();
-			editor.executeCommands(this.id, TypeOperations.outdent(viewModel.cursorConfig, viewModel.model, viewModel.getCursorStates().map(s => s.modelState.selection)));
+			editor.executeCommands(this.id, TypeOperations.untab(viewModel.cursorConfig, viewModel.model, viewModel.getCursorStates().map(s => s.modelState.selection)));
 			editor.pushUndoStop();
 		}
 	});

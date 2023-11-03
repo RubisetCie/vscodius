@@ -45,7 +45,11 @@ export class TypeOperations {
 		return commands;
 	}
 
-	public static outdent(config: CursorConfiguration, model: ICursorSimpleModel, selections: Selection[]): ICommand[] {
+	public static outdent(config: CursorConfiguration, model: ICursorSimpleModel | null, selections: Selection[] | null): ICommand[] {
+		if (model === null || selections === null) {
+			return [];
+		}
+
 		const commands: ICommand[] = [];
 		for (let i = 0, len = selections.length; i < len; i++) {
 			commands[i] = new ShiftCommand(selections[i], {
@@ -203,8 +207,8 @@ export class TypeOperations {
 	private static _replaceJumpToNextIndent(config: CursorConfiguration, model: ICursorSimpleModel, selection: Selection, insertsAutoWhitespace: boolean): ReplaceCommand {
 		let typeText = '';
 
-		const position = selection.getStartPosition();
 		if (config.insertSpaces) {
+			const position = selection.getStartPosition();
 			const visibleColumnFromColumn = config.visibleColumnFromColumn(model, position);
 			const indentSize = config.indentSize;
 			const spacesCnt = indentSize - (visibleColumnFromColumn % indentSize);
@@ -216,6 +220,49 @@ export class TypeOperations {
 		}
 
 		return new ReplaceCommand(selection, typeText, insertsAutoWhitespace);
+	}
+
+	private static _replaceJumpToPreviousIndent(config: CursorConfiguration, model: ICursorSimpleModel, selection: Selection): ReplaceCommand {
+		let len = 0;
+
+		if (config.insertSpaces) {
+			const position = selection.getStartPosition();
+			const visibleColumnFromColumn = config.visibleColumnFromColumn(model, position);
+			const indentSize = config.indentSize;
+			const spacesCnt = visibleColumnFromColumn % indentSize;
+			len += spacesCnt !== 0 ? spacesCnt : 4;
+		} else {
+			len = 1;
+		}
+
+		return new ReplaceCommand(new Range(selection.startLineNumber, selection.startColumn - len, selection.startLineNumber, selection.startColumn), '');
+	}
+
+	public static untab(config: CursorConfiguration, model: ITextModel, selections: Selection[]): ICommand[] {
+		const commands: ICommand[] = [];
+		for (let i = 0, len = selections.length; i < len; i++) {
+			const selection = selections[i];
+			const columnText = selection.selectionStartColumn;
+
+			if (selection.isEmpty() && columnText > 1) {
+				// Check if the previous character is blank
+				const character = model.getLineContent(selection.startLineNumber).charAt(columnText-2);
+				if (character === '\t' || character === ' ') {
+					commands[i] = this._replaceJumpToPreviousIndent(config, model, selection);
+					continue;
+				}
+			}
+
+			commands[i] = new ShiftCommand(selections[i], {
+				isUnshift: true,
+				tabSize: config.tabSize,
+				indentSize: config.indentSize,
+				insertSpaces: config.insertSpaces,
+				useTabStops: config.useTabStops,
+				autoIndent: config.autoIndent
+			}, config.languageConfigurationService);
+		}
+		return commands;
 	}
 
 	public static tab(config: CursorConfiguration, model: ITextModel, selections: Selection[]): ICommand[] {
