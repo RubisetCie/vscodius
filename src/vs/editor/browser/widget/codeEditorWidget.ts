@@ -239,6 +239,7 @@ export class CodeEditorWidget extends Disposable implements editorBrowser.ICodeE
 
 	protected readonly _instantiationService: IInstantiationService;
 	protected readonly _contextKeyService: IContextKeyService;
+	get contextKeyService() { return this._contextKeyService; }
 	private readonly _notificationService: INotificationService;
 	protected readonly _codeEditorService: ICodeEditorService;
 	private readonly _commandService: ICommandService;
@@ -1437,7 +1438,7 @@ export class CodeEditorWidget extends Disposable implements editorBrowser.ICodeE
 		};
 
 		if (this._contentWidgets.hasOwnProperty(widget.getId())) {
-			console.warn('Overwriting a content widget with the same id.');
+			console.warn('Overwriting a content widget with the same id:' + widget.getId());
 		}
 
 		this._contentWidgets[widget.getId()] = widgetData;

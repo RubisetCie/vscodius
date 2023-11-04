@@ -487,11 +487,12 @@ class ResultSummaryView extends Disposable {
 		const { results } = this.resultService;
 		const { count, root, status, duration, rerun } = this.elements;
 		if (!results.length) {
-			this.container.innerText = localize('noResults', 'No test results yet.');
 			if (this.elementsWereAttached) {
 				this.container.removeChild(root);
 				this.elementsWereAttached = false;
 			}
+			this.container.innerText = localize('noResults', 'No test results yet.');
+			this.badgeDisposable.clear();
 			return;
 		}
 
@@ -750,7 +751,7 @@ class TestingExplorerViewModel extends Disposable {
 		}));
 
 		this._register(this.tree.onDidChangeSelection(evt => {
-			if (evt.browserEvent instanceof MouseEvent && (evt.browserEvent.altKey || evt.browserEvent.shiftKey)) {
+			if (dom.isMouseEvent(evt.browserEvent) && (evt.browserEvent.altKey || evt.browserEvent.shiftKey)) {
 				return; // don't focus when alt-clicking to multi select
 			}
 

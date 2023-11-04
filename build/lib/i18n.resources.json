@@ -83,7 +83,7 @@
 			"project": "vscode-workbench"
 		},
 		{
-			"name": "vs/workbench/services/voiceRecognition",
+			"name": "vs/workbench/services/auxiliaryWindow",
 			"project": "vscode-workbench"
 		},
 		{
@@ -215,6 +215,10 @@
 			"project": "vscode-workbench"
 		},
 		{
+			"name": "vs/workbench/contrib/speech",
+			"project": "vscode-workbench"
+		},
+		{
 			"name": "vs/workbench/contrib/surveys",
 			"project": "vscode-workbench"
 		},
@@ -324,10 +328,6 @@
 		},
 		{
 			"name": "vs/workbench/contrib/deprecatedExtensionMigrator",
-			"project": "vscode-workbench"
-		},
-		{
-			"name": "vs/workbench/contrib/bracketPairColorizer2Telemetry",
 			"project": "vscode-workbench"
 		},
 		{
@@ -536,6 +536,10 @@
 		},
 		{
 			"name": "vs/workbench/services/secrets",
+			"project": "vscode-workbench"
+		},
+		{
+			"name": "vs/workbench/contrib/accountEntitlements",
 			"project": "vscode-workbench"
 		}
 	]

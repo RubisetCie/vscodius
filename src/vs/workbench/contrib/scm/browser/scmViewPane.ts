@@ -85,7 +85,6 @@ import { RepositoryContextKeys } from 'vs/workbench/contrib/scm/browser/scmViewS
 import { DragAndDropController } from 'vs/editor/contrib/dnd/browser/dnd';
 import { DropIntoEditorController } from 'vs/editor/contrib/dropOrPasteInto/browser/dropIntoEditorController';
 import { MessageController } from 'vs/editor/contrib/message/browser/messageController';
-import { contrastBorder, registerColor } from 'vs/platform/theme/common/colorRegistry';
 import { defaultButtonStyles, defaultCountBadgeStyles } from 'vs/platform/theme/browser/defaultStyles';
 import { InlineCompletionsController } from 'vs/editor/contrib/inlineCompletions/browser/inlineCompletionsController';
 import { CodeActionController } from 'vs/editor/contrib/codeAction/browser/codeActionController';
@@ -246,7 +245,7 @@ class InputRenderer implements ICompressibleTreeRenderer<ISCMInput, FuzzyScore, 
 		private outerLayout: ISCMLayout,
 		private overflowWidgetsDomNode: HTMLElement,
 		private updateHeight: (input: ISCMInput, height: number) => void,
-		@IInstantiationService private instantiationService: IInstantiationService,
+		@IInstantiationService private instantiationService: IInstantiationService
 	) { }
 
 	renderTemplate(container: HTMLElement): InputTemplate {
@@ -1272,6 +1271,7 @@ class ViewModel {
 		for (const repository of added) {
 			const disposable = combinedDisposable(
 				repository.provider.groups.onDidSplice(splice => this._onDidSpliceGroups(item, splice)),
+				repository.input.onDidChangeActionButton(() => this.refresh(item)),
 				repository.input.onDidChangeVisibility(() => this.refresh(item)),
 				repository.provider.onDidChange(() => {
 					if (this.showActionButton) {
@@ -1807,6 +1807,7 @@ class SCMInputWidget {
 	private editorContainer: HTMLElement;
 	private placeholderTextContainer: HTMLElement;
 	private inputEditor: CodeEditorWidget;
+	private actionBar: ActionBar;
 	private readonly disposables = new DisposableStore();
 
 	private model: { readonly input: ISCMInput; textModelRef?: IReference<IResolvedTextEditorModel> } | undefined;
@@ -1955,6 +1956,29 @@ class SCMInputWidget {
 		};
 		this.repositoryDisposables.add(input.onDidChangeEnablement(enabled => updateEnablement(enabled)));
 		updateEnablement(input.enabled);
+
+		// ActionBar
+		const onDidChangeActionButton = () => {
+			// Update placeholder width to accommodate for the action bar
+			this.placeholderTextContainer.style.width = input.actionButton ? 'calc(100% - 26px)' : '100%';
+
+			this.actionBar.clear();
+			if (!input.actionButton) {
+				return;
+			}
+
+			const action = new Action(
+				input.actionButton.command.id,
+				input.actionButton.command.title,
+				ThemeIcon.isThemeIcon(input.actionButton.icon) ? ThemeIcon.asClassName(input.actionButton.icon) : undefined,
+				input.actionButton.enabled,
+				() => this.commandService.executeCommand(input.actionButton!.command.id, ...(input.actionButton!.command.arguments || [])));
+
+			this.actionBar.push(action, { icon: true, label: false });
+		};
+
+		this.repositoryDisposables.add(input.onDidChangeActionButton(onDidChangeActionButton, this));
+		onDidChangeActionButton();
 	}
 
 	get selections(): Selection[] | null {
@@ -1997,6 +2021,7 @@ class SCMInputWidget {
 		@ISCMViewService private readonly scmViewService: ISCMViewService,
 		@IContextViewService private readonly contextViewService: IContextViewService,
 		@IOpenerService private readonly openerService: IOpenerService,
+		@ICommandService private readonly commandService: ICommandService,
 	) {
 		this.element = append(container, $('.scm-editor'));
 		this.editorContainer = append(this.element, $('.scm-editor-container'));
@@ -2049,6 +2074,9 @@ class SCMInputWidget {
 				FormatOnType.ID
 			])
 		};
+
+		this.actionBar = new ActionBar(append(this.element, $('.actions')));
+		this.disposables.add(this.actionBar);
 
 		const services = new ServiceCollection([IContextKeyService, contextKeyService2]);
 		const instantiationService2 = instantiationService.createChild(services);
@@ -2599,8 +2627,6 @@ export class SCMViewPane extends ViewPane {
 		super.dispose();
 	}
 }
-
-export const scmProviderSeparatorBorderColor = registerColor('scm.providerBorder', { dark: '#454545', light: '#C8C8C8', hcDark: contrastBorder, hcLight: contrastBorder }, localize('scm.providerBorder', "SCM Provider separator border."));
 
 export class SCMActionButton implements IDisposable {
 	private button: Button | ButtonWithDescription | ButtonWithDropdown | undefined;

@@ -86,6 +86,7 @@ function onConfigureExcludesSelected(
 		const root = client.getWorkspaceRootForResource(vscode.Uri.file(configFileName));
 		if (root) {
 			openOrCreateConfig(
+				client.apiVersion,
 				/tsconfig\.?.*\.json/.test(configFileName) ? ProjectType.TypeScript : ProjectType.JavaScript,
 				root,
 				client.configuration);

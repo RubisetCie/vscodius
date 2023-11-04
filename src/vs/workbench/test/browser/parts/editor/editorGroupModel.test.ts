@@ -98,6 +98,7 @@ suite('EditorGroupModel', () => {
 		locked: number[];
 		active: number[];
 		index: number[];
+		label: number[];
 		opened: IGroupEditorOpenEvent[];
 		activated: IGroupEditorChangeEvent[];
 		closed: IGroupEditorCloseEvent[];
@@ -113,6 +114,7 @@ suite('EditorGroupModel', () => {
 		const groupEvents: GroupEvents = {
 			active: [],
 			index: [],
+			label: [],
 			locked: [],
 			opened: [],
 			closed: [],
@@ -134,6 +136,9 @@ suite('EditorGroupModel', () => {
 				return;
 			} else if (e.kind === GroupModelChangeKind.GROUP_INDEX) {
 				groupEvents.index.push(group.id);
+				return;
+			} else if (e.kind === GroupModelChangeKind.GROUP_LABEL) {
+				groupEvents.label.push(group.id);
 				return;
 			}
 			if (!e.editor) {
@@ -802,6 +807,17 @@ suite('EditorGroupModel', () => {
 		group.setIndex(4);
 
 		assert.strictEqual(events.index.length, 1);
+	});
+
+	test('label', function () {
+		const group = createEditorGroupModel();
+		const events = groupListener(group);
+
+		assert.strictEqual(events.label.length, 0);
+
+		group.setLabel('Window 1');
+
+		assert.strictEqual(events.label.length, 1);
 	});
 
 	test('active', function () {

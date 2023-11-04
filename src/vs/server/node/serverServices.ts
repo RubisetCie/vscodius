@@ -8,7 +8,7 @@ import { DisposableStore } from 'vs/base/common/lifecycle';
 import { Schemas } from 'vs/base/common/network';
 import * as path from 'vs/base/common/path';
 import { IURITransformer } from 'vs/base/common/uriIpc';
-import { getMachineId } from 'vs/base/node/id';
+import { getMachineId, getSqmMachineId } from 'vs/base/node/id';
 import { Promises } from 'vs/base/node/pfs';
 import { ClientConnectionEvent, IMessagePassingProtocol, IPCServer, StaticRouter } from 'vs/base/parts/ipc/common/ipc';
 import { ProtocolConstants } from 'vs/base/parts/ipc/common/ipc.net';
@@ -124,7 +124,8 @@ export async function setupServerServices(connectionToken: ServerConnectionToken
 	await Promise.all([
 		configurationService.initialize(),
 		userDataProfilesService.init(),
-		getMachineId(logService.error.bind(logService))
+		getMachineId(logService.error.bind(logService)),
+		getSqmMachineId(logService.error.bind(logService))
 	]);
 
 	const extensionHostStatusService = new ExtensionHostStatusService();

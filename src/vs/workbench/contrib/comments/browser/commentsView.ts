@@ -223,7 +223,10 @@ export class CommentsPanel extends FilterViewPane implements ICommentsView {
 	}
 
 	public override focus(): void {
-		if (this.tree && this.tree.getHTMLElement() === document.activeElement) {
+		super.focus();
+
+		const element = this.tree?.getHTMLElement();
+		if (element && dom.isActiveElement(element)) {
 			return;
 		}
 
@@ -351,7 +354,7 @@ export class CommentsPanel extends FilterViewPane implements ICommentsView {
 					return '';
 				},
 				getWidgetAriaLabel(): string {
-					return COMMENTS_VIEW_TITLE;
+					return COMMENTS_VIEW_TITLE.value;
 				}
 			}
 		}));

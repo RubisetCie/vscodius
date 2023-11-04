@@ -203,8 +203,18 @@ export class GettingStartedPage extends EditorPane {
 		const rerender = () => {
 			this.gettingStartedCategories = this.gettingStartedService.getWalkthroughs();
 			this.featuredExtensions = this.featuredExtensionService.getExtensions();
-
-			this.buildSlideThrottle.queue(async () => await this.buildCategoriesSlide());
+			if (this.currentWalkthrough) {
+				const existingSteps = this.currentWalkthrough.steps.map(step => step.id);
+				const newCategory = this.gettingStartedCategories.find(category => this.currentWalkthrough?.id === category.id);
+				if (newCategory) {
+					const newSteps = newCategory.steps.map(step => step.id);
+					if (!equals(newSteps, existingSteps)) {
+						this.buildSlideThrottle.queue(() => this.buildCategoriesSlide());
+					}
+				}
+			} else {
+				this.buildSlideThrottle.queue(() => this.buildCategoriesSlide());
+			}
 		};
 
 		this._register(this.extensionManagementService.onDidInstallExtensions(async (result) => {
@@ -1189,9 +1199,9 @@ export class GettingStartedPage extends EditorPane {
 		const toSide = href.startsWith('command:toSide:');
 		const command = href.replace(/command:(toSide:)?/, 'command:');
 
-		const fullSize = this.groupsService.contentDimension;
+		const fullSize = this.group ? this.groupsService.getPart(this.group).contentDimension : undefined;
 
-		if (toSide && fullSize.width > 700) {
+		if (toSide && fullSize && fullSize.width > 700) {
 			if (this.groupsService.count === 1) {
 				const sideGroup = this.groupsService.addGroup(this.groupsService.groups[0], GroupDirection.RIGHT);
 				this.groupsService.activateGroup(sideGroup);
@@ -1518,7 +1528,9 @@ export class GettingStartedPage extends EditorPane {
 	}
 
 	override focus() {
-		const active = document.activeElement;
+		super.focus();
+
+		const active = this.container.ownerDocument.activeElement;
 
 		let parent = this.container.parentElement;
 		while (parent && parent !== active) {

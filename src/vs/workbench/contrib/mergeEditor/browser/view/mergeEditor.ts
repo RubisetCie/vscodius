@@ -441,6 +441,8 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 	}
 
 	override focus(): void {
+		super.focus();
+
 		(this.getControl() ?? this.inputResultView.editor).focus();
 	}
 

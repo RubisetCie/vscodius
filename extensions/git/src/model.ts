@@ -11,13 +11,14 @@ import { Git } from './git';
 import * as path from 'path';
 import * as fs from 'fs';
 import { fromGitUri } from './uri';
-import { APIState as State, CredentialsProvider, PushErrorHandler, PublishEvent, RemoteSourcePublisher, PostCommitCommandsProvider, BranchProtectionProvider } from './api/git';
+import { APIState as State, CredentialsProvider, PushErrorHandler, PublishEvent, RemoteSourcePublisher, PostCommitCommandsProvider, BranchProtectionProvider, CommitMessageProvider } from './api/git';
 import { Askpass } from './askpass';
 import { IPushErrorHandlerRegistry } from './pushError';
 import { ApiRepository } from './api/api1';
 import { IRemoteSourcePublisherRegistry } from './remotePublisher';
 import { IPostCommitCommandsProviderRegistry } from './postCommitCommands';
 import { IBranchProtectionProviderRegistry } from './branchProtection';
+import { ICommitMessageProviderRegistry } from './commitMessageProvider';
 
 class RepositoryPick implements QuickPickItem {
 	@memoize get label(): string {
@@ -169,7 +170,7 @@ class UnsafeRepositoriesManager {
 	}
 }
 
-export class Model implements IRepositoryResolver, IBranchProtectionProviderRegistry, IRemoteSourcePublisherRegistry, IPostCommitCommandsProviderRegistry, IPushErrorHandlerRegistry {
+export class Model implements IRepositoryResolver, IBranchProtectionProviderRegistry, ICommitMessageProviderRegistry, IRemoteSourcePublisherRegistry, IPostCommitCommandsProviderRegistry, IPushErrorHandlerRegistry {
 
 	private _onDidOpenRepository = new EventEmitter<Repository>();
 	readonly onDidOpenRepository: Event<Repository> = this._onDidOpenRepository.event;
@@ -235,6 +236,14 @@ export class Model implements IRepositoryResolver, IBranchProtectionProviderRegi
 	readonly onDidChangeBranchProtectionProviders = this._onDidChangeBranchProtectionProviders.event;
 
 	private pushErrorHandlers = new Set<PushErrorHandler>();
+
+	private _commitMessageProvider: CommitMessageProvider | undefined;
+	get commitMessageProvider(): CommitMessageProvider | undefined {
+		return this._commitMessageProvider;
+	}
+
+	private _onDidChangeCommitMessageProvider = new EventEmitter<void>();
+	readonly onDidChangeCommitMessageProvider = this._onDidChangeCommitMessageProvider.event;
 
 	private _unsafeRepositoriesManager: UnsafeRepositoriesManager;
 	get unsafeRepositories(): string[] {
@@ -567,7 +576,7 @@ export class Model implements IRepositoryResolver, IBranchProtectionProviderRegi
 
 			// Open repository
 			const [dotGit, repositoryRootRealPath] = await Promise.all([this.git.getRepositoryDotGit(repositoryRoot), this.getRepositoryRootRealPath(repositoryRoot)]);
-			const repository = new Repository(this.git.open(repositoryRoot, repositoryRootRealPath, dotGit, this.logger), this, this, this, this, this, this.globalState, this.logger);
+			const repository = new Repository(this.git.open(repositoryRoot, repositoryRootRealPath, dotGit, this.logger), this, this, this, this, this, this, this.globalState, this.logger);
 
 			this.open(repository);
 			this._closedRepositoriesManager.deleteRepository(repository.root);
@@ -582,8 +591,8 @@ export class Model implements IRepositoryResolver, IBranchProtectionProviderRegi
 	}
 
 	async openParentRepository(repoPath: string): Promise<void> {
-		await this.openRepository(repoPath);
 		this._parentRepositoriesManager.openRepository(repoPath);
+		await this.openRepository(repoPath);
 	}
 
 	private async getRepositoryRoot(repoPath: string): Promise<{ repositoryRoot: string; unsafeRepositoryMatch: RegExpMatchArray | null }> {
@@ -926,6 +935,16 @@ export class Model implements IRepositoryResolver, IBranchProtectionProviderRegi
 	registerPushErrorHandler(handler: PushErrorHandler): Disposable {
 		this.pushErrorHandlers.add(handler);
 		return toDisposable(() => this.pushErrorHandlers.delete(handler));
+	}
+
+	registerCommitMessageProvider(provider: CommitMessageProvider): Disposable {
+		this._commitMessageProvider = provider;
+		this._onDidChangeCommitMessageProvider.fire();
+
+		return toDisposable(() => {
+			this._commitMessageProvider = undefined;
+			this._onDidChangeCommitMessageProvider.fire();
+		});
 	}
 
 	getPushErrorHandlers(): PushErrorHandler[] {

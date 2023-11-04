@@ -14,7 +14,7 @@ import { IPager, singlePagePager } from 'vs/base/common/paging';
 import {
 	IExtensionGalleryService, ILocalExtension, IGalleryExtension, IQueryOptions,
 	InstallExtensionEvent, DidUninstallExtensionEvent, InstallOperation, InstallOptions, WEB_EXTENSION_TAG, InstallExtensionResult,
-	IExtensionsControlManifest, InstallVSIXOptions, IExtensionInfo, IExtensionQueryOptions, IDeprecationInfo, isTargetPlatformCompatible
+	IExtensionsControlManifest, InstallVSIXOptions, IExtensionInfo, IExtensionQueryOptions, IDeprecationInfo, isTargetPlatformCompatible, InstallExtensionInfo
 } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { IWorkbenchExtensionEnablementService, EnablementState, IExtensionManagementServerService, IExtensionManagementServer, IWorkbenchExtensionManagementService, DefaultIconPath } from 'vs/workbench/services/extensionManagement/common/extensionManagement';
 import { areSameExtensions, groupByExtension, ExtensionKey, getGalleryExtensionId } from 'vs/platform/extensionManagement/common/extensionManagementUtil';
@@ -1304,6 +1304,23 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 				await this.syncInstalledExtensionsWithGallery(galleryExtensions);
 			}
 		}
+	}
+
+	async updateAll(): Promise<InstallExtensionResult[]> {
+		const toUpdate: InstallExtensionInfo[] = [];
+		this.outdated.forEach((extension) => {
+			if (extension.gallery) {
+				toUpdate.push({
+					extension: extension.gallery,
+					options: {
+						operation: InstallOperation.Update,
+						installPreReleaseVersion: extension.local?.isPreReleaseVersion,
+						profileLocation: this.userDataProfileService.currentProfile.extensionsResource,
+					}
+				});
+			}
+		});
+		return this.extensionManagementService.installGalleryExtensions(toUpdate);
 	}
 
 	private async syncInstalledExtensionsWithGallery(gallery: IGalleryExtension[]): Promise<void> {
