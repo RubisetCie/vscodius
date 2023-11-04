@@ -160,8 +160,8 @@ export class TrimFinalNewLinesParticipant implements ITextFileSaveParticipant {
 	 */
 	private findLastNonEmptyLine(model: ITextModel): number {
 		for (let lineNumber = model.getLineCount(); lineNumber >= 1; lineNumber--) {
-			const lineContent = model.getLineContent(lineNumber);
-			if (lineContent.length > 0) {
+			const lineLength = model.getLineLength(lineNumber);
+			if (lineLength > 0) {
 				// this line has content
 				return lineNumber;
 			}
@@ -258,7 +258,7 @@ class FormatOnSaveParticipant implements ITextFileSaveParticipant {
 
 			} else if (ranges) {
 				// formatted modified ranges
-				await this.instantiationService.invokeFunction(formatDocumentRangesWithSelectedProvider, editorOrModel, ranges, FormattingMode.Silent, nestedProgress, token);
+				await this.instantiationService.invokeFunction(formatDocumentRangesWithSelectedProvider, editorOrModel, ranges, FormattingMode.Silent, nestedProgress, token, false);
 			}
 		}
 	}

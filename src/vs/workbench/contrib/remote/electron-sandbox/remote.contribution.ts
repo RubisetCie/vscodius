@@ -179,7 +179,7 @@ if (isMacintosh) {
 		weight: KeybindingWeight.WorkbenchContrib,
 		primary: KeyMod.CtrlCmd | KeyCode.KeyO,
 		when: RemoteFileDialogContext,
-		description: { description: OpenLocalFileFolderCommand.LABEL, args: [] },
+		metadata: { description: OpenLocalFileFolderCommand.LABEL, args: [] },
 		handler: OpenLocalFileFolderCommand.handler()
 	});
 } else {
@@ -188,7 +188,7 @@ if (isMacintosh) {
 		weight: KeybindingWeight.WorkbenchContrib,
 		primary: KeyMod.CtrlCmd | KeyCode.KeyO,
 		when: RemoteFileDialogContext,
-		description: { description: OpenLocalFileCommand.LABEL, args: [] },
+		metadata: { description: OpenLocalFileCommand.LABEL, args: [] },
 		handler: OpenLocalFileCommand.handler()
 	});
 	KeybindingsRegistry.registerCommandAndKeybindingRule({
@@ -196,7 +196,7 @@ if (isMacintosh) {
 		weight: KeybindingWeight.WorkbenchContrib,
 		primary: KeyChord(KeyMod.CtrlCmd | KeyCode.KeyK, KeyMod.CtrlCmd | KeyCode.KeyO),
 		when: RemoteFileDialogContext,
-		description: { description: OpenLocalFolderCommand.LABEL, args: [] },
+		metadata: { description: OpenLocalFolderCommand.LABEL, args: [] },
 		handler: OpenLocalFolderCommand.handler()
 	});
 }
@@ -206,6 +206,6 @@ KeybindingsRegistry.registerCommandAndKeybindingRule({
 	weight: KeybindingWeight.WorkbenchContrib,
 	primary: KeyMod.CtrlCmd | KeyMod.Shift | KeyCode.KeyS,
 	when: RemoteFileDialogContext,
-	description: { description: SaveLocalFileCommand.LABEL, args: [] },
+	metadata: { description: SaveLocalFileCommand.LABEL, args: [] },
 	handler: SaveLocalFileCommand.handler()
 });

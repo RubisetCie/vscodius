@@ -416,6 +416,8 @@ export class SideBySideEditor extends AbstractEditorWithViewState<ISideBySideEdi
 	}
 
 	override focus(): void {
+		super.focus();
+
 		this.getLastFocusedEditorPane()?.focus();
 	}
 

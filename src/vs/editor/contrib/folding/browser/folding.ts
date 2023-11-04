@@ -622,7 +622,7 @@ class UnfoldAction extends FoldingAction<FoldingArguments> {
 				},
 				weight: KeybindingWeight.EditorContrib
 			},
-			description: {
+			metadata: {
 				description: 'Unfold the content in the editor',
 				args: [
 					{
@@ -707,7 +707,7 @@ class FoldAction extends FoldingAction<FoldingArguments> {
 				},
 				weight: KeybindingWeight.EditorContrib
 			},
-			description: {
+			metadata: {
 				description: 'Fold the content in the editor',
 				args: [
 					{

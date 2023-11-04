@@ -122,6 +122,7 @@ export class OutlinePane extends ViewPane implements IOutlinePane {
 	}
 
 	override focus(): void {
+		super.focus();
 		this._tree?.domFocus();
 	}
 

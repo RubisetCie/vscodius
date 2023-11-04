@@ -12,6 +12,7 @@ import { Disposable, DisposableStore, IDisposable } from 'vs/base/common/lifecyc
 import { LRUCache } from 'vs/base/common/map';
 import { TfIdfCalculator, normalizeTfIdfScores } from 'vs/base/common/tfIdf';
 import { localize } from 'vs/nls';
+import { ILocalizedString } from 'vs/platform/action/common/action';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { IConfigurationChangeEvent, IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
@@ -20,11 +21,12 @@ import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { FastAndSlowPicks, IPickerQuickAccessItem, IPickerQuickAccessProviderOptions, PickerQuickAccessProvider, Picks } from 'vs/platform/quickinput/browser/pickerQuickAccess';
 import { IQuickAccessProviderRunOptions } from 'vs/platform/quickinput/common/quickAccess';
 import { IQuickPickSeparator } from 'vs/platform/quickinput/common/quickInput';
-import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
+import { IStorageService, StorageScope, StorageTarget, WillSaveStateReason } from 'vs/platform/storage/common/storage';
 
 export interface ICommandQuickPick extends IPickerQuickAccessItem {
 	readonly commandId: string;
 	readonly commandAlias?: string;
+	readonly commandDescription?: ILocalizedString;
 	tfIdfScore?: number;
 	readonly args?: any[];
 }
@@ -72,7 +74,7 @@ export abstract class AbstractCommandsQuickAccessProvider extends PickerQuickAcc
 			const tfidf = new TfIdfCalculator();
 			tfidf.updateDocuments(allCommandPicks.map(commandPick => ({
 				key: commandPick.commandId,
-				textChunks: [commandPick.label + (commandPick.commandAlias ? ` ${commandPick.commandAlias}` : '')]
+				textChunks: [this.getTfIdfChunk(commandPick)]
 			})));
 			const result = tfidf.calculateScores(filter, token);
 
@@ -272,6 +274,19 @@ export abstract class AbstractCommandsQuickAccessProvider extends PickerQuickAcc
 		};
 	}
 
+	// TF-IDF string to be indexed
+	private getTfIdfChunk({ label, commandAlias, commandDescription }: ICommandQuickPick) {
+		let chunk = label;
+		if (commandAlias && commandAlias !== label) {
+			chunk += ` - ${commandAlias}`;
+		}
+		if (commandDescription && commandDescription.value !== label) {
+			// If the original is the same as the value, don't add it
+			chunk += ` - ${commandDescription.value === commandDescription.original ? commandDescription.value : `${commandDescription.value} (${commandDescription.original})`}`;
+		}
+		return chunk;
+	}
+
 	protected abstract getCommandPicks(token: CancellationToken): Promise<Array<ICommandQuickPick>>;
 
 	protected abstract hasAdditionalCommandPicks(filter: string, token: CancellationToken): boolean;
@@ -301,6 +316,7 @@ export class CommandsHistory extends Disposable {
 
 	private static cache: LRUCache<string, number> | undefined;
 	private static counter = 1;
+	private static hasChanges = false;
 
 	private configuredCommandsHistoryLength = 0;
 
@@ -318,6 +334,14 @@ export class CommandsHistory extends Disposable {
 
 	private registerListeners(): void {
 		this._register(this.configurationService.onDidChangeConfiguration(e => this.updateConfiguration(e)));
+		this._register(this.storageService.onWillSaveState(e => {
+			if (e.reason === WillSaveStateReason.SHUTDOWN) {
+				// Commands history is very dynamic and so we limit impact
+				// on storage to only save on shutdown. This helps reduce
+				// the overhead of syncing this data across machines.
+				this.saveState();
+			}
+		}));
 	}
 
 	private updateConfiguration(e?: IConfigurationChangeEvent): void {
@@ -329,8 +353,7 @@ export class CommandsHistory extends Disposable {
 
 		if (CommandsHistory.cache && CommandsHistory.cache.limit !== this.configuredCommandsHistoryLength) {
 			CommandsHistory.cache.limit = this.configuredCommandsHistoryLength;
-
-			CommandsHistory.saveState(this.storageService);
+			CommandsHistory.hasChanges = true;
 		}
 	}
 
@@ -365,24 +388,28 @@ export class CommandsHistory extends Disposable {
 		}
 
 		CommandsHistory.cache.set(commandId, CommandsHistory.counter++); // set counter to command
-
-		CommandsHistory.saveState(this.storageService);
+		CommandsHistory.hasChanges = true;
 	}
 
 	peek(commandId: string): number | undefined {
 		return CommandsHistory.cache?.peek(commandId);
 	}
 
-	static saveState(storageService: IStorageService): void {
+	private saveState(): void {
 		if (!CommandsHistory.cache) {
+			return;
+		}
+
+		if (!CommandsHistory.hasChanges) {
 			return;
 		}
 
 		const serializedCache: ISerializedCommandHistory = { usesLRU: true, entries: [] };
 		CommandsHistory.cache.forEach((value, key) => serializedCache.entries.push({ key, value }));
 
-		storageService.store(CommandsHistory.PREF_KEY_CACHE, JSON.stringify(serializedCache), StorageScope.PROFILE, StorageTarget.USER);
-		storageService.store(CommandsHistory.PREF_KEY_COUNTER, CommandsHistory.counter, StorageScope.PROFILE, StorageTarget.USER);
+		this.storageService.store(CommandsHistory.PREF_KEY_CACHE, JSON.stringify(serializedCache), StorageScope.PROFILE, StorageTarget.USER);
+		this.storageService.store(CommandsHistory.PREF_KEY_COUNTER, CommandsHistory.counter, StorageScope.PROFILE, StorageTarget.USER);
+		CommandsHistory.hasChanges = false;
 	}
 
 	static getConfiguredCommandHistoryLength(configurationService: IConfigurationService): number {
@@ -401,6 +428,6 @@ export class CommandsHistory extends Disposable {
 		CommandsHistory.cache = new LRUCache<string, number>(commandHistoryLength);
 		CommandsHistory.counter = 1;
 
-		CommandsHistory.saveState(storageService);
+		CommandsHistory.hasChanges = true;
 	}
 }

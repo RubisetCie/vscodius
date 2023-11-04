@@ -965,10 +965,6 @@ export class NotebookTextDiffEditor extends EditorPane implements INotebookTextD
 		super.setEditorVisible(visible, group);
 	}
 
-	override focus() {
-		super.focus();
-	}
-
 	override clearInput(): void {
 		super.clearInput();
 

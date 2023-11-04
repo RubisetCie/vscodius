@@ -41,7 +41,7 @@ import { Registry } from 'vs/platform/registry/common/platform';
 import { SyncDescriptor } from 'vs/platform/instantiation/common/descriptors';
 import { ViewContainerLocation, IViewContainersRegistry, Extensions, ViewContainer } from 'vs/workbench/common/views';
 import { UserDataSyncDataViews } from 'vs/workbench/contrib/userDataSync/browser/userDataSyncViews';
-import { IUserDataSyncWorkbenchService, getSyncAreaLabel, AccountStatus, CONTEXT_SYNC_STATE, CONTEXT_SYNC_ENABLEMENT, CONTEXT_ACCOUNT_STATE, CONFIGURE_SYNC_COMMAND_ID, SHOW_SYNC_LOG_COMMAND_ID, SYNC_VIEW_CONTAINER_ID, SYNC_TITLE, SYNC_ORIGINAL_TITLE, SYNC_VIEW_ICON, CONTEXT_HAS_CONFLICTS, DOWNLOAD_ACTIVITY_ACTION_DESCRIPTOR } from 'vs/workbench/services/userDataSync/common/userDataSync';
+import { IUserDataSyncWorkbenchService, getSyncAreaLabel, AccountStatus, CONTEXT_SYNC_STATE, CONTEXT_SYNC_ENABLEMENT, CONTEXT_ACCOUNT_STATE, CONFIGURE_SYNC_COMMAND_ID, SHOW_SYNC_LOG_COMMAND_ID, SYNC_VIEW_CONTAINER_ID, SYNC_TITLE, SYNC_VIEW_ICON, CONTEXT_HAS_CONFLICTS, DOWNLOAD_ACTIVITY_ACTION_DESCRIPTOR } from 'vs/workbench/services/userDataSync/common/userDataSync';
 import { Codicon } from 'vs/base/common/codicons';
 import { ViewPaneContainer } from 'vs/workbench/browser/parts/views/viewPaneContainer';
 import { Categories } from 'vs/platform/action/common/actionCommonCategories';
@@ -158,10 +158,11 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 
 	private readonly conflictsDisposables = new Map<string, IDisposable>();
 	private onDidChangeConflicts(conflicts: IUserDataSyncResourceConflicts[]) {
+		this.updateGlobalActivityBadge();
+		this.registerShowConflictsAction();
 		if (!this.userDataSyncEnablementService.isEnabled()) {
 			return;
 		}
-		this.updateGlobalActivityBadge();
 		if (conflicts.length) {
 			// Clear and dispose conflicts those were cleared
 			for (const [key, disposable] of this.conflictsDisposables.entries()) {
@@ -370,6 +371,9 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 	}
 
 	private handleInvalidContentError({ profile, syncResource: source }: IUserDataSyncResource): void {
+		if (this.userDataProfileService.currentProfile.id !== profile.id) {
+			return;
+		}
 		const key = `${profile.id}:${source}`;
 		if (this.invalidContentErrorDisposables.has(key)) {
 			return;
@@ -412,19 +416,17 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 		this.globalActivityBadgeDisposable.clear();
 
 		let badge: IBadge | undefined = undefined;
-		let clazz: string | undefined;
 		let priority: number | undefined = undefined;
 
 		if (this.userDataSyncService.conflicts.length && this.userDataSyncEnablementService.isEnabled()) {
-			badge = new NumberBadge(this.getConflictsCount(), () => localize('has conflicts', "{0}: Conflicts Detected", SYNC_TITLE));
+			badge = new NumberBadge(this.getConflictsCount(), () => localize('has conflicts', "{0}: Conflicts Detected", SYNC_TITLE.value));
 		} else if (this.turningOnSync) {
 			badge = new ProgressBadge(() => localize('turning on syncing', "Turning on Settings Sync..."));
-			clazz = 'progress-badge';
 			priority = 1;
 		}
 
 		if (badge) {
-			this.globalActivityBadgeDisposable.value = this.activityService.showGlobalActivity({ badge, clazz, priority });
+			this.globalActivityBadgeDisposable.value = this.activityService.showGlobalActivity({ badge, priority });
 		}
 	}
 
@@ -438,7 +440,7 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 		}
 
 		if (badge) {
-			this.accountBadgeDisposable.value = this.activityService.showAccountsActivity({ badge, clazz: undefined, priority: undefined });
+			this.accountBadgeDisposable.value = this.activityService.showAccountsActivity({ badge, priority: undefined });
 		}
 	}
 
@@ -507,7 +509,7 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 			const disposables: DisposableStore = new DisposableStore();
 			const quickPick = this.quickInputService.createQuickPick<ConfigureSyncQuickPickItem>();
 			disposables.add(quickPick);
-			quickPick.title = SYNC_TITLE;
+			quickPick.title = SYNC_TITLE.value;
 			quickPick.ok = false;
 			quickPick.customButton = true;
 			quickPick.customLabel = localize('sign in and turn on', "Sign in");
@@ -585,7 +587,7 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 			const disposables: DisposableStore = new DisposableStore();
 			const quickPick = this.quickInputService.createQuickPick<ConfigureSyncQuickPickItem>();
 			disposables.add(quickPick);
-			quickPick.title = localize('configure sync title', "{0}: Configure...", SYNC_TITLE);
+			quickPick.title = localize('configure sync title', "{0}: Configure...", SYNC_TITLE.value);
 			quickPick.placeholder = localize('configure sync placeholder', "Choose what to sync");
 			quickPick.canSelectMany = true;
 			quickPick.ignoreFocusOut = true;
@@ -641,7 +643,7 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 		return new Promise<void>((c, e) => {
 			const disposables: DisposableStore = new DisposableStore();
 			const quickPick = disposables.add(this.quickInputService.createQuickPick<{ id: UserDataSyncStoreType; label: string; description?: string }>());
-			quickPick.title = localize('switchSyncService.title', "{0}: Select Service", SYNC_TITLE);
+			quickPick.title = localize('switchSyncService.title', "{0}: Select Service", SYNC_TITLE.value);
 			quickPick.description = localize('switchSyncService.description', "Ensure you are using the same settings sync service when syncing with multiple environments");
 			quickPick.hideInput = true;
 			quickPick.ignoreFocusOut = true;
@@ -712,7 +714,7 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 				super({
 					id: 'workbench.userDataSync.actions.turnOn',
 					title: { value: localize('global activity turn on sync', "Backup and Sync Settings..."), original: 'Backup and Sync Settings...' },
-					category: { value: SYNC_TITLE, original: `Settings Sync` },
+					category: SYNC_TITLE,
 					f1: true,
 					precondition: when,
 					menu: [{
@@ -824,14 +826,15 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 		return { value: localize('resolveConflicts_global', "Show Conflicts ({0})", this.getConflictsCount()), original: `Show Conflicts (${this.getConflictsCount()})` };
 	}
 
+	private conflictsActionDisposable = this._register(new MutableDisposable());
 	private registerShowConflictsAction(): void {
 		const that = this;
-		this._register(registerAction2(class TurningOnSyncAction extends Action2 {
+		this.conflictsActionDisposable.value = registerAction2(class TurningOnSyncAction extends Action2 {
 			constructor() {
 				super({
 					id: showConflictsCommandId,
 					get title() { return that.getShowConflictsTitle(); },
-					category: { value: SYNC_TITLE, original: `Settings Sync` },
+					category: SYNC_TITLE,
 					f1: true,
 					precondition: CONTEXT_HAS_CONFLICTS,
 					menu: [{
@@ -850,7 +853,7 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 			async run(): Promise<any> {
 				return that.userDataSyncWorkbenchService.showConflicts();
 			}
-		}));
+		});
 	}
 
 	private registerManageSyncAction(): void {
@@ -892,17 +895,17 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 					disposables.add(quickPick);
 					const items: Array<QuickPickItem> = [];
 					if (that.userDataSyncService.conflicts.length) {
-						items.push({ id: showConflictsCommandId, label: `${SYNC_TITLE}: ${that.getShowConflictsTitle().original}` });
+						items.push({ id: showConflictsCommandId, label: `${SYNC_TITLE.value}: ${that.getShowConflictsTitle().original}` });
 						items.push({ type: 'separator' });
 					}
-					items.push({ id: configureSyncCommand.id, label: `${SYNC_TITLE}: ${configureSyncCommand.title.original}` });
-					items.push({ id: showSyncSettingsCommand.id, label: `${SYNC_TITLE}: ${showSyncSettingsCommand.title.original}` });
-					items.push({ id: showSyncedDataCommand.id, label: `${SYNC_TITLE}: ${showSyncedDataCommand.title.original}` });
+					items.push({ id: configureSyncCommand.id, label: `${SYNC_TITLE.value}: ${configureSyncCommand.title.original}` });
+					items.push({ id: showSyncSettingsCommand.id, label: `${SYNC_TITLE.value}: ${showSyncSettingsCommand.title.original}` });
+					items.push({ id: showSyncedDataCommand.id, label: `${SYNC_TITLE.value}: ${showSyncedDataCommand.title.original}` });
 					items.push({ type: 'separator' });
-					items.push({ id: syncNowCommand.id, label: `${SYNC_TITLE}: ${syncNowCommand.title.original}`, description: syncNowCommand.description(that.userDataSyncService) });
+					items.push({ id: syncNowCommand.id, label: `${SYNC_TITLE.value}: ${syncNowCommand.title.original}`, description: syncNowCommand.description(that.userDataSyncService) });
 					if (that.userDataSyncEnablementService.canToggleEnablement()) {
 						const account = that.userDataSyncWorkbenchService.current;
-						items.push({ id: turnOffSyncCommand.id, label: `${SYNC_TITLE}: ${turnOffSyncCommand.title.original}`, description: account ? `${account.accountName} (${that.authenticationService.getLabel(account.authenticationProviderId)})` : undefined });
+						items.push({ id: turnOffSyncCommand.id, label: `${SYNC_TITLE.value}: ${turnOffSyncCommand.title.original}`, description: account ? `${account.accountName} (${that.authenticationService.getLabel(account.authenticationProviderId)})` : undefined });
 					}
 					quickPick.items = items;
 					disposables.add(quickPick.onDidAccept(() => {
@@ -929,7 +932,7 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 				super({
 					id: showSyncedDataCommand.id,
 					title: showSyncedDataCommand.title,
-					category: { value: SYNC_TITLE, original: `Settings Sync` },
+					category: SYNC_TITLE,
 					precondition: when,
 					menu: {
 						id: MenuId.CommandPalette,
@@ -950,7 +953,7 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 				super({
 					id: syncNowCommand.id,
 					title: syncNowCommand.title,
-					category: { value: SYNC_TITLE, original: `Settings Sync` },
+					category: SYNC_TITLE,
 					menu: {
 						id: MenuId.CommandPalette,
 						when: ContextKeyExpr.and(CONTEXT_SYNC_ENABLEMENT, CONTEXT_ACCOUNT_STATE.isEqualTo(AccountStatus.Available), CONTEXT_SYNC_STATE.notEqualsTo(SyncStatus.Uninitialized))
@@ -970,7 +973,7 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 				super({
 					id: turnOffSyncCommand.id,
 					title: turnOffSyncCommand.title,
-					category: { value: SYNC_TITLE, original: `Settings Sync` },
+					category: SYNC_TITLE,
 					menu: {
 						id: MenuId.CommandPalette,
 						when: ContextKeyExpr.and(CONTEXT_SYNC_STATE.notEqualsTo(SyncStatus.Uninitialized), CONTEXT_SYNC_ENABLEMENT),
@@ -997,7 +1000,7 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 				super({
 					id: configureSyncCommand.id,
 					title: configureSyncCommand.title,
-					category: { value: SYNC_TITLE, original: `Settings Sync` },
+					category: SYNC_TITLE,
 					icon: Codicon.settingsGear,
 					tooltip: localize('configure', "Configure..."),
 					menu: [{
@@ -1021,7 +1024,7 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 			constructor() {
 				super({
 					id: SHOW_SYNC_LOG_COMMAND_ID,
-					title: localize('show sync log title', "{0}: Show Log", SYNC_TITLE),
+					title: localize('show sync log title', "{0}: Show Log", SYNC_TITLE.value),
 					tooltip: localize('show sync log toolrip', "Show Log"),
 					icon: Codicon.output,
 					menu: [{
@@ -1045,7 +1048,7 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 				super({
 					id: showSyncSettingsCommand.id,
 					title: showSyncSettingsCommand.title,
-					category: { value: SYNC_TITLE, original: `Settings Sync` },
+					category: SYNC_TITLE,
 					menu: {
 						id: MenuId.CommandPalette,
 						when: ContextKeyExpr.and(CONTEXT_SYNC_STATE.notEqualsTo(SyncStatus.Uninitialized)),
@@ -1064,7 +1067,7 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 			constructor() {
 				super({
 					id: 'workbench.userDataSync.actions.help',
-					title: { value: SYNC_TITLE, original: 'Settings Sync' },
+					title: SYNC_TITLE,
 					category: Categories.Help,
 					menu: [{
 						id: MenuId.CommandPalette,
@@ -1141,7 +1144,7 @@ export class UserDataSyncWorkbenchContribution extends Disposable implements IWo
 		return Registry.as<IViewContainersRegistry>(Extensions.ViewContainersRegistry).registerViewContainer(
 			{
 				id: SYNC_VIEW_CONTAINER_ID,
-				title: { value: SYNC_TITLE, original: SYNC_ORIGINAL_TITLE },
+				title: SYNC_TITLE,
 				ctorDescriptor: new SyncDescriptor(
 					ViewPaneContainer,
 					[SYNC_VIEW_CONTAINER_ID, { mergeViewWithContainerWhenSingleView: true }]

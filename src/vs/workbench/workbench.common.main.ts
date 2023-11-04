@@ -42,8 +42,8 @@ import 'vs/workbench/api/browser/viewsExtensionPoint';
 //#region --- workbench parts
 
 import 'vs/workbench/browser/parts/editor/editor.contribution';
-import 'vs/workbench/browser/parts/editor/editorPart';
-import 'vs/workbench/browser/parts/paneCompositePart';
+import 'vs/workbench/browser/parts/editor/editorParts';
+import 'vs/workbench/browser/parts/paneCompositePartService';
 import 'vs/workbench/browser/parts/banner/bannerPart';
 import 'vs/workbench/browser/parts/statusbar/statusbarPart';
 import 'vs/workbench/browser/parts/views/viewsService';
@@ -174,6 +174,10 @@ import 'vs/workbench/contrib/contextmenu/browser/contextmenu.contribution';
 // Notebook
 import 'vs/workbench/contrib/notebook/browser/notebook.contribution';
 
+// Speech
+import 'vs/workbench/contrib/speech/common/speech.contribution';
+
+// Chat
 import 'vs/workbench/contrib/chat/browser/chat.contribution';
 import 'vs/workbench/contrib/inlineChat/browser/inlineChat.contribution';
 
@@ -358,5 +362,8 @@ import 'vs/workbench/contrib/accessibility/browser/accessibility.contribution';
 
 // Share
 import 'vs/workbench/contrib/share/browser/share.contribution';
+
+// Account Entitlements
+import 'vs/workbench/contrib/accountEntitlements/browser/accountsEntitlements.contribution';
 
 //#endregion

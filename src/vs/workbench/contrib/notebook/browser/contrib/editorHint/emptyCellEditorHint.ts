@@ -10,7 +10,7 @@ import { ICommandService } from 'vs/platform/commands/common/commands';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { IProductService } from 'vs/platform/product/common/productService';
-import { EmptyTextEditorHintContribution } from 'vs/workbench/contrib/codeEditor/browser/emptyTextEditorHint/emptyTextEditorHint';
+import { EmptyTextEditorHintContribution, IEmptyTextEditorHintOptions } from 'vs/workbench/contrib/codeEditor/browser/emptyTextEditorHint/emptyTextEditorHint';
 import { IInlineChatSessionService } from 'vs/workbench/contrib/inlineChat/browser/inlineChatSession';
 import { IInlineChatService } from 'vs/workbench/contrib/inlineChat/common/inlineChat';
 import { getNotebookEditorFromEditorPane } from 'vs/workbench/contrib/notebook/browser/notebookBrowser';
@@ -50,12 +50,11 @@ export class EmptyCellEditorHintContribution extends EmptyTextEditorHintContribu
 		this.toDispose.push(activeEditor.onDidChangeActiveCell(() => this.update()));
 	}
 
-	protected override _shouldRenderHint(): boolean {
-		// TODO@rebornix, remove this when we have a better way to present the editor hints in empty cells
-		if (this.productService.quality === 'stable') {
-			return false;
-		}
+	protected override _getOptions(): IEmptyTextEditorHintOptions {
+		return { clickable: false };
+	}
 
+	protected override _shouldRenderHint(): boolean {
 		const shouldRenderHint = super._shouldRenderHint();
 		if (!shouldRenderHint) {
 			return false;
