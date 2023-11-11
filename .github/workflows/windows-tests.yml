@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       vs_arch:
-        description: 'Target MSVC architecture (x64, x86, etc)'
+        description: 'Target MSVC architecture (x64, etc)'
         required: true
         default: 'x64'
       node_version:

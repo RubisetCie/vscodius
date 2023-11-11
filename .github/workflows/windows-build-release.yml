@@ -7,11 +7,11 @@ on:
         required: false
         default: '1.0.0'
       pkg_arch:
-        description: 'Target package architecture (x64 or ia32)'
+        description: 'Target package architecture (x64)'
         required: true
         default: 'x64'
       vs_arch:
-        description: 'Target MSVC architecture (x64, x86, etc)'
+        description: 'Target MSVC architecture (x64, etc)'
         required: true
         default: 'x64'
       node_version:

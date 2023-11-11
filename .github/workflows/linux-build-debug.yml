@@ -21,7 +21,7 @@ jobs:
         with:
           node-version: '${{github.event.inputs.node_version}}'
       - name: Installing libraries
-        run: sudo apt install build-essential libx11-dev libxkbfile-dev libsecret-1-dev libkrb5-dev python-is-python3 fakeroot rpm
+        run: sudo apt update && sudo apt install build-essential libx11-dev libxkbfile-dev libsecret-1-dev libkrb5-dev python-is-python3 fakeroot rpm
       - name: Installing node-gyp
         run: yarn global add node-gyp
       - name: Dependencies
