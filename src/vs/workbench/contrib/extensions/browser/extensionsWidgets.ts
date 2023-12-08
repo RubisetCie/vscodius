@@ -208,7 +208,7 @@ export class VerifiedPublisherWidget extends ExtensionWidget {
 
 		if (!this.small) {
 			verifiedPublisher.tabIndex = 0;
-			verifiedPublisher.title = this.extension.publisherDomain.link;
+			verifiedPublisher.title = `Verified Domain: ${this.extension.publisherDomain.link}`;
 			verifiedPublisher.setAttribute('role', 'link');
 
 			append(verifiedPublisher, $('span.extension-verified-publisher-domain', undefined, publisherDomainLink.authority.startsWith('www.') ? publisherDomainLink.authority.substring(4) : publisherDomainLink.authority));
@@ -525,9 +525,11 @@ export class ExtensionHoverWidget extends ExtensionWidget {
 				showHover: (options) => {
 					return this.hoverService.showHover({
 						...options,
-						hoverPosition: this.options.position(),
-						forcePosition: true,
-						additionalClasses: ['extension-hover']
+						additionalClasses: ['extension-hover'],
+						position: {
+							hoverPosition: this.options.position(),
+							forcePosition: true,
+						},
 					});
 				},
 				placement: 'element'
@@ -696,7 +698,7 @@ export class ExtensionHoverWidget extends ExtensionWidget {
 
 export class ExtensionStatusWidget extends ExtensionWidget {
 
-	private readonly renderDisposables = this._register(new DisposableStore());
+	private readonly renderDisposables = this._register(new MutableDisposable());
 
 	private readonly _onDidRender = this._register(new Emitter<void>());
 	readonly onDidRender: Event<void> = this._onDidRender.event;
@@ -713,6 +715,9 @@ export class ExtensionStatusWidget extends ExtensionWidget {
 
 	render(): void {
 		reset(this.container);
+		this.renderDisposables.value = undefined;
+		const disposables = new DisposableStore();
+		this.renderDisposables.value = disposables;
 		const extensionStatus = this.extensionStatusAction.status;
 		if (extensionStatus) {
 			const markdown = new MarkdownString('', { isTrusted: true, supportThemeIcons: true });
@@ -720,12 +725,12 @@ export class ExtensionStatusWidget extends ExtensionWidget {
 				markdown.appendMarkdown(`$(${extensionStatus.icon.id})&nbsp;`);
 			}
 			markdown.appendMarkdown(extensionStatus.message.value);
-			const rendered = this.renderDisposables.add(renderMarkdown(markdown, {
+			const rendered = disposables.add(renderMarkdown(markdown, {
 				actionHandler: {
 					callback: (content) => {
 						this.openerService.open(content, { allowCommands: true }).catch(onUnexpectedError);
 					},
-					disposables: this.renderDisposables
+					disposables
 				}
 			}));
 			append(this.container, rendered.element);

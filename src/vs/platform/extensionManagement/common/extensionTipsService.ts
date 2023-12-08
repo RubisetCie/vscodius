@@ -103,8 +103,8 @@ export abstract class AbstractNativeExtensionTipsService extends ExtensionTipsSe
 	constructor(
 		private readonly userHome: URI,
 		private readonly windowEvents: {
-			readonly onDidOpenWindow: Event<unknown>;
-			readonly onDidFocusWindow: Event<unknown>;
+			readonly onDidOpenMainWindow: Event<unknown>;
+			readonly onDidFocusMainWindow: Event<unknown>;
 		},
 		private readonly extensionManagementService: IExtensionManagementService,
 		private readonly storageService: IStorageService,
@@ -215,7 +215,7 @@ export abstract class AbstractNativeExtensionTipsService extends ExtensionTipsSe
 						break;
 					case RecommendationsNotificationResult.IncompatibleWindow: {
 						// Recommended in incompatible window. Schedule the prompt after active window change
-						const onActiveWindowChange = Event.once(Event.latch(Event.any(this.windowEvents.onDidOpenWindow, this.windowEvents.onDidFocusWindow)));
+						const onActiveWindowChange = Event.once(Event.latch(Event.any(this.windowEvents.onDidOpenMainWindow, this.windowEvents.onDidFocusMainWindow)));
 						this._register(onActiveWindowChange(() => this.promptHighImportanceExeBasedTip()));
 						break;
 					}
@@ -270,7 +270,7 @@ export abstract class AbstractNativeExtensionTipsService extends ExtensionTipsSe
 
 					case RecommendationsNotificationResult.IncompatibleWindow: {
 						// Recommended in incompatible window. Schedule the prompt after active window change
-						const onActiveWindowChange = Event.once(Event.latch(Event.any(this.windowEvents.onDidOpenWindow, this.windowEvents.onDidFocusWindow)));
+						const onActiveWindowChange = Event.once(Event.latch(Event.any(this.windowEvents.onDidOpenMainWindow, this.windowEvents.onDidFocusMainWindow)));
 						this._register(onActiveWindowChange(() => this.promptMediumImportanceExeBasedTip()));
 						break;
 					}

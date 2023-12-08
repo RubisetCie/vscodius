@@ -50,6 +50,13 @@ export interface EditorChatFollowUp_Args {
 	readonly message: string;
 	readonly document: vscode.TextDocument;
 	readonly expand: Expand;
+	readonly action: {
+		readonly type: 'refactor';
+		readonly refactor: Proto.RefactorActionInfo;
+	} | {
+		readonly type: 'quickfix';
+		readonly quickfix: Proto.CodeFixAction;
+	};
 }
 
 export class CompositeCommand implements Command {

@@ -17,7 +17,7 @@ import { EditorPane } from 'vs/workbench/browser/parts/editor/editorPane';
 import { IEditorOpenContext } from 'vs/workbench/common/editor';
 import { Memento } from 'vs/workbench/common/memento';
 import { ChatEditorInput } from 'vs/workbench/contrib/chat/browser/chatEditorInput';
-import { IViewState, ChatWidget } from 'vs/workbench/contrib/chat/browser/chatWidget';
+import { IChatViewState, ChatWidget } from 'vs/workbench/contrib/chat/browser/chatWidget';
 import { IChatModel, ISerializableChatData } from 'vs/workbench/contrib/chat/common/chatModel';
 import { clearChatEditor } from 'vs/workbench/contrib/chat/browser/actions/chatClear';
 
@@ -34,7 +34,7 @@ export class ChatEditor extends EditorPane {
 	}
 
 	private _memento: Memento | undefined;
-	private _viewState: IViewState | undefined;
+	private _viewState: IChatViewState | undefined;
 
 	constructor(
 		@IThemeService themeService: IThemeService,
@@ -97,7 +97,7 @@ export class ChatEditor extends EditorPane {
 
 	private updateModel(model: IChatModel): void {
 		this._memento = new Memento('interactive-session-editor-' + model.sessionId, this.storageService);
-		this._viewState = this._memento.getMemento(StorageScope.WORKSPACE, StorageTarget.MACHINE) as IViewState;
+		this._viewState = this._memento.getMemento(StorageScope.WORKSPACE, StorageTarget.MACHINE) as IChatViewState;
 		this.widget.setModel(model, { ...this._viewState });
 	}
 

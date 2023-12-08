@@ -13,6 +13,7 @@ import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IFileService } from 'vs/platform/files/common/files';
+import { IEditorConfiguration } from 'vs/workbench/browser/parts/editor/textEditor';
 
 export class LogViewer extends AbstractTextResourceEditor {
 
@@ -30,8 +31,8 @@ export class LogViewer extends AbstractTextResourceEditor {
 		super(LogViewer.LOG_VIEWER_EDITOR_ID, instantiationService, storageService, textResourceConfigurationService, themeService, editorGroupService, editorService, fileService);
 	}
 
-	protected override getConfigurationOverrides(): IEditorOptions {
-		const options = super.getConfigurationOverrides();
+	protected override getConfigurationOverrides(configuration: IEditorConfiguration): IEditorOptions {
+		const options = super.getConfigurationOverrides(configuration);
 		options.wordWrap = 'off'; // all log viewers do not wrap
 		options.folding = false;
 		options.scrollBeyondLastLine = false;

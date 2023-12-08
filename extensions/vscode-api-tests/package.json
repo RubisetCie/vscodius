@@ -51,6 +51,7 @@
     "treeViewActiveItem",
     "treeViewReveal",
     "workspaceTrust",
+    "testingActiveProfile",
     "windowActivity",
     "interactiveUserActions"
   ],
