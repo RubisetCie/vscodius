@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { localize } from 'vs/nls';
-import { IDisposable, toDisposable, combinedDisposable } from 'vs/base/common/lifecycle';
+import { IDisposable, combinedDisposable } from 'vs/base/common/lifecycle';
 import { URI } from 'vs/base/common/uri';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
@@ -28,6 +28,8 @@ import { IProgressService, ProgressLocation } from 'vs/platform/progress/common/
 import { IsWebContext } from 'vs/platform/contextkey/common/contextkeys';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { IProductService } from 'vs/platform/product/common/productService';
+import { disposableWindowInterval } from 'vs/base/browser/dom';
+import { mainWindow } from 'vs/base/browser/window';
 
 const FIVE_MINUTES = 5 * 60 * 1000;
 const THIRTY_SECONDS = 30 * 1000;
@@ -116,7 +118,7 @@ class ExtensionUrlHandler implements IExtensionUrlHandler, IURLHandler {
 	) {
 		this.userTrustedExtensionsStorage = new UserTrustedExtensionIdStorage(storageService);
 
-		const interval = setInterval(() => this.garbageCollect(), THIRTY_SECONDS);
+		const interval = disposableWindowInterval(mainWindow, () => this.garbageCollect(), THIRTY_SECONDS);
 		const urlToHandleValue = this.storageService.get(URL_TO_HANDLE, StorageScope.WORKSPACE);
 		if (urlToHandleValue) {
 			this.storageService.remove(URL_TO_HANDLE, StorageScope.WORKSPACE);
@@ -125,7 +127,7 @@ class ExtensionUrlHandler implements IExtensionUrlHandler, IURLHandler {
 
 		this.disposable = combinedDisposable(
 			urlService.registerHandler(this),
-			toDisposable(() => clearInterval(interval))
+			interval
 		);
 
 		const cache = ExtensionUrlBootstrapHandler.cache;

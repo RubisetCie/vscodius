@@ -454,7 +454,7 @@ export class CommentsPanel extends FilterViewPane implements ICommentsView {
 
 	private onAllCommentsChanged(e: IWorkspaceCommentThreadsEvent): void {
 		this.cachedFilterStats = undefined;
-		this.commentsModel.setCommentThreads(e.ownerId, e.commentThreads);
+		this.commentsModel.setCommentThreads(e.ownerId, e.ownerLabel, e.commentThreads);
 		this.totalComments += e.commentThreads.length;
 
 		let unresolved = 0;

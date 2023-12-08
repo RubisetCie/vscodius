@@ -160,7 +160,7 @@ export interface IExtendedExtensionSearchOptions {
 
 export interface IFileMatch<U extends UriComponents = URI> {
 	resource: U;
-	results?: ITextSearchResult[];
+	results?: ITextSearchResult<U>[];
 }
 
 export type IRawFileMatch2 = IFileMatch<UriComponents>;
@@ -183,20 +183,20 @@ export interface ITextSearchResultPreview {
 	cellFragment?: string;
 }
 
-export interface ITextSearchMatch {
-	uri?: URI;
+export interface ITextSearchMatch<U extends UriComponents = URI> {
+	uri?: U;
 	ranges: ISearchRange | ISearchRange[];
 	preview: ITextSearchResultPreview;
 	webviewIndex?: number;
 }
 
-export interface ITextSearchContext {
-	uri?: URI;
+export interface ITextSearchContext<U extends UriComponents = URI> {
+	uri?: U;
 	text: string;
 	lineNumber: number;
 }
 
-export type ITextSearchResult = ITextSearchMatch | ITextSearchContext;
+export type ITextSearchResult<U extends UriComponents = URI> = ITextSearchMatch<U> | ITextSearchContext<U>;
 
 export function resultIsMatch(result: ITextSearchResult): result is ITextSearchMatch {
 	return !!(<ITextSearchMatch>result).preview;

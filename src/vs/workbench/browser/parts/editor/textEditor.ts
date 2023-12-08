@@ -37,6 +37,9 @@ export interface IEditorConfiguration {
 			diffEditor?: boolean;
 		};
 	};
+	problems?: {
+		visibility?: boolean;
+	};
 }
 
 /**
@@ -100,7 +103,7 @@ export abstract class AbstractTextEditor<T extends IEditorViewState> extends Abs
 	}
 
 	protected shouldHandleConfigurationChangeEvent(e: ITextResourceConfigurationChangeEvent, resource: URI | undefined): boolean {
-		return e.affectsConfiguration(resource, 'editor');
+		return e.affectsConfiguration(resource, 'editor') || e.affectsConfiguration(resource, 'problems');
 	}
 
 	private consumePendingConfigurationChangeEvent(): void {
@@ -114,7 +117,7 @@ export abstract class AbstractTextEditor<T extends IEditorViewState> extends Abs
 
 		// Specific editor options always overwrite user configuration
 		const editorConfiguration: ICodeEditorOptions = isObject(configuration.editor) ? deepClone(configuration.editor) : Object.create(null);
-		Object.assign(editorConfiguration, this.getConfigurationOverrides());
+		Object.assign(editorConfiguration, this.getConfigurationOverrides(configuration));
 
 		// ARIA label
 		editorConfiguration.ariaLabel = this.computeAriaLabel();
@@ -153,13 +156,13 @@ export abstract class AbstractTextEditor<T extends IEditorViewState> extends Abs
 		};
 	}
 
-	protected getConfigurationOverrides(): ICodeEditorOptions {
+	protected getConfigurationOverrides(configuration: IEditorConfiguration): ICodeEditorOptions {
 		return {
 			overviewRulerLanes: 3,
 			lineNumbersMinChars: 3,
 			fixedOverflowWidgets: true,
 			...this.getReadonlyConfiguration(this.input?.isReadonly()),
-			renderValidationDecorations: 'on' // render problems even in readonly editors (https://github.com/microsoft/vscode/issues/89057)
+			renderValidationDecorations: configuration.problems?.visibility !== false ? 'on' : 'off'
 		};
 	}
 

@@ -39,6 +39,7 @@ import { OpenRecentAction } from 'vs/workbench/browser/actions/windowActions';
 import { isICommandActionToggleInfo } from 'vs/platform/action/common/action';
 import { createAndFillInContextMenuActions } from 'vs/platform/actions/browser/menuEntryActionViewItem';
 import { defaultMenuStyles } from 'vs/platform/theme/browser/defaultStyles';
+import { mainWindow } from 'vs/base/browser/window';
 
 export type IOpenRecentAction = IAction & { uri: URI; remoteAuthority?: string };
 
@@ -732,7 +733,7 @@ export class CustomMenubarControl extends MenubarControl {
 	protected override registerListeners(): void {
 		super.registerListeners();
 
-		this._register(addDisposableListener(window, EventType.RESIZE, () => {
+		this._register(addDisposableListener(mainWindow, EventType.RESIZE, () => {
 			if (this.menubar && !(isIOS && BrowserFeatures.pointerEvents)) {
 				this.menubar.blur();
 			}

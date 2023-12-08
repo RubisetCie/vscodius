@@ -882,7 +882,7 @@ export class InstallGalleryExtensionTask extends InstallExtensionTask {
 			updated: !!existingExtension,
 			isPreReleaseVersion: this.gallery.properties.isPreReleaseVersion,
 			installedTimestamp: Date.now(),
-			pinned: this.options.installGivenVersion ? true : undefined,
+			pinned: this.options.installGivenVersion ? true : (this.options.pinned ?? existingExtension?.pinned),
 			preRelease: this.gallery.properties.isPreReleaseVersion ||
 				(isBoolean(this.options.installPreReleaseVersion)
 					? this.options.installPreReleaseVersion /* Respect the passed flag */
@@ -953,7 +953,7 @@ class InstallVSIXTask extends InstallExtensionTask {
 			isMachineScoped: this.options.isMachineScoped || existing?.isMachineScoped,
 			isBuiltin: this.options.isBuiltin || existing?.isBuiltin,
 			installedTimestamp: Date.now(),
-			pinned: this.options.installGivenVersion ? true : undefined,
+			pinned: this.options.installGivenVersion ? true : (this.options.pinned ?? existing?.pinned),
 		};
 
 		if (existing) {

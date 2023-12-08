@@ -84,6 +84,7 @@ export class ToolBar extends Disposable {
 							classNames: ThemeIcon.asClassNameArray(options.moreIcon ?? Codicon.toolBarMore),
 							anchorAlignmentProvider: this.options.anchorAlignmentProvider,
 							menuAsChild: !!this.options.renderDropdownAsChildElement,
+							isMenu: true
 						}
 					);
 					this.toggleMenuActionViewItem.setActionContext(this.actionBar.context);

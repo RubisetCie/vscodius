@@ -80,8 +80,8 @@ import { UserDataSyncService } from 'vs/platform/userDataSync/common/userDataSyn
 import { IUserDataSyncAccountService, UserDataSyncAccountService } from 'vs/platform/userDataSync/common/userDataSyncAccount';
 import { UserDataAutoSyncService } from 'vs/platform/userDataSync/common/userDataAutoSyncService';
 import { AccessibilityService } from 'vs/platform/accessibility/browser/accessibilityService';
-import { ITitleService } from 'vs/workbench/services/title/common/titleService';
-import { TitlebarPart } from 'vs/workbench/browser/parts/titlebar/titlebarPart';
+import { ITitleService } from 'vs/workbench/services/title/browser/titleService';
+import { BrowserTitleService } from 'vs/workbench/browser/parts/titlebar/titlebarPart';
 import { ITimerService, TimerService } from 'vs/workbench/services/timer/browser/timerService';
 import { IDiagnosticsService, NullDiagnosticsService } from 'vs/platform/diagnostics/common/diagnostics';
 import { ILanguagePackService } from 'vs/platform/languagePacks/common/languagePacks';
@@ -97,7 +97,7 @@ registerSingleton(IUserDataSyncAccountService, UserDataSyncAccountService, Insta
 registerSingleton(IUserDataSyncService, UserDataSyncService, InstantiationType.Delayed);
 registerSingleton(IUserDataSyncResourceProviderService, UserDataSyncResourceProviderService, InstantiationType.Delayed);
 registerSingleton(IUserDataAutoSyncService, UserDataAutoSyncService, InstantiationType.Eager /* Eager to start auto sync */);
-registerSingleton(ITitleService, TitlebarPart, InstantiationType.Eager);
+registerSingleton(ITitleService, BrowserTitleService, InstantiationType.Eager);
 registerSingleton(IExtensionTipsService, ExtensionTipsService, InstantiationType.Delayed);
 registerSingleton(ITimerService, TimerService, InstantiationType.Delayed);
 registerSingleton(IDiagnosticsService, NullDiagnosticsService, InstantiationType.Delayed);
