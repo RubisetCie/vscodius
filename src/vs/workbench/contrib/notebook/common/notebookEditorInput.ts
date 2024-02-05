@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as glob from 'vs/base/common/glob';
-import { GroupIdentifier, ISaveOptions, IMoveResult, IRevertOptions, EditorInputCapabilities, Verbosity, IUntypedEditorInput } from 'vs/workbench/common/editor';
+import { GroupIdentifier, ISaveOptions, IMoveResult, IRevertOptions, EditorInputCapabilities, Verbosity, IUntypedEditorInput, IFileLimitedEditorInputOptions } from 'vs/workbench/common/editor';
 import { EditorInput } from 'vs/workbench/common/editor/editorInput';
 import { INotebookService, SimpleNotebookProviderInfo } from 'vs/workbench/contrib/notebook/common/notebookService';
 import { URI } from 'vs/base/common/uri';
@@ -18,16 +18,17 @@ import { ILabelService } from 'vs/platform/label/common/label';
 import { Schemas } from 'vs/base/common/network';
 import { IFileService } from 'vs/platform/files/common/files';
 import { AbstractResourceEditorInput } from 'vs/workbench/common/editor/resourceEditorInput';
-import { IEditorOptions, IResourceEditorInput } from 'vs/platform/editor/common/editor';
+import { IResourceEditorInput } from 'vs/platform/editor/common/editor';
 import { onUnexpectedError } from 'vs/base/common/errors';
 import { VSBuffer } from 'vs/base/common/buffer';
 import { IWorkingCopyIdentifier } from 'vs/workbench/services/workingCopy/common/workingCopy';
 import { NotebookProviderInfo } from 'vs/workbench/contrib/notebook/common/notebookProvider';
-import { AutoSaveMode, IFilesConfigurationService } from 'vs/workbench/services/filesConfiguration/common/filesConfigurationService';
+import { IFilesConfigurationService } from 'vs/workbench/services/filesConfiguration/common/filesConfigurationService';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
 import { localize } from 'vs/nls';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IMarkdownString } from 'vs/base/common/htmlContent';
+import { ITextResourceConfigurationService } from 'vs/editor/common/services/textResourceConfiguration';
 
 export interface NotebookEditorInputOptions {
 	startDirty?: boolean;
@@ -78,9 +79,10 @@ export class NotebookEditorInput extends AbstractResourceEditorInput {
 		@IFileService fileService: IFileService,
 		@IFilesConfigurationService filesConfigurationService: IFilesConfigurationService,
 		@IExtensionService extensionService: IExtensionService,
-		@IEditorService editorService: IEditorService
+		@IEditorService editorService: IEditorService,
+		@ITextResourceConfigurationService textResourceConfigurationService: ITextResourceConfigurationService
 	) {
-		super(resource, preferredResource, labelService, fileService, filesConfigurationService);
+		super(resource, preferredResource, labelService, fileService, filesConfigurationService, textResourceConfigurationService);
 		this._defaultDirtyState = !!options.startDirty;
 
 		// Automatically resolve this input when the "wanted" model comes to life via
@@ -126,7 +128,7 @@ export class NotebookEditorInput extends AbstractResourceEditorInput {
 	}
 
 	override get capabilities(): EditorInputCapabilities {
-		let capabilities = EditorInputCapabilities.AuxWindowUnsupported;
+		let capabilities = EditorInputCapabilities.None;
 
 		if (this.resource.scheme === Schemas.untitled) {
 			capabilities |= EditorInputCapabilities.Untitled;
@@ -178,7 +180,7 @@ export class NotebookEditorInput extends AbstractResourceEditorInput {
 		}
 
 		// if a short auto save is configured, treat this as being saved
-		return this.filesConfigurationService.getAutoSaveMode() === AutoSaveMode.AFTER_SHORT_DELAY;
+		return this.filesConfigurationService.hasShortAutoSaveDelay(this);
 	}
 
 	override async save(group: GroupIdentifier, options?: ISaveOptions): Promise<EditorInput | IUntypedEditorInput | undefined> {
@@ -280,7 +282,7 @@ export class NotebookEditorInput extends AbstractResourceEditorInput {
 		}
 	}
 
-	override async resolve(_options?: IEditorOptions): Promise<IResolvedNotebookEditorModel | null> {
+	override async resolve(_options?: IFileLimitedEditorInputOptions): Promise<IResolvedNotebookEditorModel | null> {
 		if (!await this._notebookService.canResolve(this.viewType)) {
 			return null;
 		}
@@ -290,7 +292,7 @@ export class NotebookEditorInput extends AbstractResourceEditorInput {
 		this._sideLoadedListener.dispose();
 
 		if (!this._editorModelReference) {
-			const ref = await this._notebookModelResolverService.resolve(this.resource, this.viewType);
+			const ref = await this._notebookModelResolverService.resolve(this.resource, this.viewType, this.ensureLimits(_options));
 			if (this._editorModelReference) {
 				// Re-entrant, double resolve happened. Dispose the addition references and proceed
 				// with the truth.
@@ -310,7 +312,7 @@ export class NotebookEditorInput extends AbstractResourceEditorInput {
 				this._onDidChangeDirty.fire();
 			}
 		} else {
-			this._editorModelReference.object.load();
+			this._editorModelReference.object.load({ limits: this.ensureLimits(_options) });
 		}
 
 		if (this.options._backupId) {

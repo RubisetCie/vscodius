@@ -10,8 +10,10 @@ import { CommandsRegistry } from 'vs/platform/commands/common/commands';
 import { SingleProxyRPCProtocol } from 'vs/workbench/api/test/common/testRPCProtocol';
 import { mock } from 'vs/base/test/common/mock';
 import { NullLogService } from 'vs/platform/log/common/log';
+import { ensureNoDisposablesAreLeakedInTestSuite } from 'vs/base/test/common/utils';
 
 suite('ExtHostCommands', function () {
+	ensureNoDisposablesAreLeakedInTestSuite();
 
 	test('dispose calls unregister', function () {
 

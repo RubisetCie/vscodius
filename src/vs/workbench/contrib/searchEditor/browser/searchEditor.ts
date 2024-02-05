@@ -528,7 +528,6 @@ export class SearchEditor extends AbstractTextCodeEditor<SearchEditorViewState> 
 		};
 
 		const options: ITextQueryBuilderOptions = {
-			_reason: 'searchEditor',
 			extraFileResources: this.instantiationService.invokeFunction(getOutOfWorkspaceEditorResources),
 			maxResults: this.searchConfig.maxResults ?? undefined,
 			disregardIgnoreFiles: !config.useExcludeSettingsAndIgnoreFiles || undefined,

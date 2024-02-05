@@ -26,7 +26,6 @@ import { IExtensionIgnoredRecommendationsService } from 'vs/workbench/services/e
 
 const ignoreImportantExtensionRecommendationStorageKey = 'extensionsAssistant/importantRecommendationsIgnore';
 const donotShowWorkspaceRecommendationsStorageKey = 'extensionsAssistant/workspaceRecommendationsIgnore';
-const choiceNever = localize('neverShowAgain', "Don't Show Again");
 
 type RecommendationsNotificationActions = {
 	onDidInstallRecommendedExtensions(extensions: IExtension[]): void;
@@ -140,7 +139,27 @@ export class ExtensionRecommendationNotificationService extends Disposable imple
 			return RecommendationsNotificationResult.Ignored;
 		}
 
-		return this.promptRecommendationsNotification({ ...extensionRecommendations, extensions });
+		return this.promptRecommendationsNotification({ ...extensionRecommendations, extensions }, {
+			onDidInstallRecommendedExtensions: () => {},
+			onDidShowRecommendedExtensions: () => {},
+			onDidCancelRecommendedExtensions: () => {},
+			onDidNeverShowRecommendedExtensionsAgain: (extensions: IExtension[]) => {
+				for (const extension of extensions) {
+					this.addToImportantRecommendationsIgnore(extension.identifier.id);
+				}
+				this.notificationService.prompt(
+					Severity.Info,
+					localize('ignoreExtensionRecommendations', "Do you want to ignore all extension recommendations?"),
+					[{
+						label: localize('ignoreAll', "Yes, Ignore All"),
+						run: () => this.setIgnoreRecommendationsConfig(true)
+					}, {
+						label: localize('no', "No"),
+						run: () => this.setIgnoreRecommendationsConfig(false)
+					}]
+				);
+			}
+		});
 	}
 
 	async promptWorkspaceRecommendations(recommendations: string[]): Promise<void> {
@@ -155,11 +174,18 @@ export class ExtensionRecommendationNotificationService extends Disposable imple
 			return;
 		}
 
-		await this.promptRecommendationsNotification({ extensions: recommendations, source: RecommendationSource.WORKSPACE, name: localize({ key: 'this repository', comment: ['this repository means the current repository that is opened'] }, "this repository") });
+		await this.promptRecommendationsNotification({ extensions: recommendations, source: RecommendationSource.WORKSPACE, name: localize({ key: 'this repository', comment: ['this repository means the current repository that is opened'] }, "this repository") }, {
+			onDidInstallRecommendedExtensions: () => {},
+			onDidShowRecommendedExtensions: () => {},
+			onDidCancelRecommendedExtensions: () => {},
+			onDidNeverShowRecommendedExtensionsAgain: () => {
+				this.storageService.store(donotShowWorkspaceRecommendationsStorageKey, true, StorageScope.WORKSPACE, StorageTarget.MACHINE);
+			},
+		});
 
 	}
 
-	private async promptRecommendationsNotification({ extensions: extensionIds, source, name, searchValue }: IExtensionRecommendations): Promise<RecommendationsNotificationResult> {
+	private async promptRecommendationsNotification({ extensions: extensionIds, source, name, searchValue }: IExtensionRecommendations, recommendationsNotificationActions: RecommendationsNotificationActions): Promise<RecommendationsNotificationResult> {
 
 		if (this.hasToIgnoreRecommendationNotifications()) {
 			return RecommendationsNotificationResult.Ignored;
@@ -213,21 +239,17 @@ export class ExtensionRecommendationNotificationService extends Disposable imple
 			searchValue = source === RecommendationSource.WORKSPACE ? '@recommended' : extensions.map(extensionId => `@id:${extensionId.identifier.id}`).join(' ');
 		}
 
+		const donotShowAgainLabel = source === RecommendationSource.WORKSPACE ? localize('donotShowAgain', "Don't Show Again for this Repository")
+			: extensions.length > 1 ? localize('donotShowAgainExtension', "Don't Show Again for these Extensions") : localize('donotShowAgainExtensionSingle', "Don't Show Again for this Extension");
+
 		return raceCancellablePromises([
-			this._registerP(this.showRecommendationsNotification(extensions, message, searchValue, source, {
-				onDidInstallRecommendedExtensions: () => {},
-				onDidShowRecommendedExtensions: () => {},
-				onDidCancelRecommendedExtensions: () => {},
-				onDidNeverShowRecommendedExtensionsAgain: () => {
-					this.storageService.store(donotShowWorkspaceRecommendationsStorageKey, true, StorageScope.WORKSPACE, StorageTarget.MACHINE);
-				},
-			})),
+			this._registerP(this.showRecommendationsNotification(extensions, message, searchValue, donotShowAgainLabel, source, recommendationsNotificationActions)),
 			this._registerP(this.waitUntilRecommendationsAreInstalled(extensions))
 		]);
 
 	}
 
-	private showRecommendationsNotification(extensions: IExtension[], message: string, searchValue: string, source: RecommendationSource,
+	private showRecommendationsNotification(extensions: IExtension[], message: string, searchValue: string, donotShowAgainLabel: string, source: RecommendationSource,
 		{ onDidInstallRecommendedExtensions, onDidShowRecommendedExtensions, onDidCancelRecommendedExtensions, onDidNeverShowRecommendedExtensionsAgain }: RecommendationsNotificationActions): CancelablePromise<RecommendationsNotificationResult> {
 		return createCancelablePromise<RecommendationsNotificationResult>(async token => {
 			let accepted = false;
@@ -258,7 +280,7 @@ export class ExtensionRecommendationNotificationService extends Disposable imple
 					this.runAction(this.instantiationService.createInstance(SearchExtensionsAction, searchValue));
 				}
 			}, {
-				label: choiceNever,
+				label: donotShowAgainLabel,
 				isSecondary: true,
 				run: () => {
 					onDidNeverShowRecommendedExtensionsAgain(extensions);
@@ -395,6 +417,18 @@ export class ExtensionRecommendationNotificationService extends Disposable imple
 				action.dispose();
 			}
 		}
+	}
+
+	private addToImportantRecommendationsIgnore(id: string) {
+		const importantRecommendationsIgnoreList = [...this.ignoredRecommendations];
+		if (!importantRecommendationsIgnoreList.includes(id.toLowerCase())) {
+			importantRecommendationsIgnoreList.push(id.toLowerCase());
+			this.storageService.store(ignoreImportantExtensionRecommendationStorageKey, JSON.stringify(importantRecommendationsIgnoreList), StorageScope.PROFILE, StorageTarget.USER);
+		}
+	}
+
+	private setIgnoreRecommendationsConfig(configVal: boolean) {
+		this.configurationService.updateValue('extensions.ignoreRecommendations', configVal);
 	}
 
 	private _registerP<T>(o: CancelablePromise<T>): CancelablePromise<T> {

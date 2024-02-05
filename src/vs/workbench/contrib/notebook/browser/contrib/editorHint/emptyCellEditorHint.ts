@@ -11,7 +11,7 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { EmptyTextEditorHintContribution, IEmptyTextEditorHintOptions } from 'vs/workbench/contrib/codeEditor/browser/emptyTextEditorHint/emptyTextEditorHint';
-import { IInlineChatSessionService } from 'vs/workbench/contrib/inlineChat/browser/inlineChatSession';
+import { IInlineChatSessionService } from 'vs/workbench/contrib/inlineChat/browser/inlineChatSessionService';
 import { IInlineChatService } from 'vs/workbench/contrib/inlineChat/common/inlineChat';
 import { getNotebookEditorFromEditorPane } from 'vs/workbench/contrib/notebook/browser/notebookBrowser';
 import { IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';

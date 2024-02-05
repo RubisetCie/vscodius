@@ -203,6 +203,10 @@ export class Extension implements IExtension {
 		return this.gallery && this.gallery.assets.license ? this.gallery.assets.license.uri : undefined;
 	}
 
+	get supportUrl(): string | undefined {
+		return this.gallery && this.gallery.supportLink ? this.gallery.supportLink : undefined;
+	}
+
 	get state(): ExtensionState {
 		return this.stateProvider(this);
 	}
@@ -262,8 +266,19 @@ export class Extension implements IExtension {
 		return this.local?.manifest.preview ?? this.gallery?.preview ?? false;
 	}
 
+	get preRelease(): boolean {
+		return !!this.local?.preRelease;
+	}
+
+	get isPreReleaseVersion(): boolean {
+		if (this.local) {
+			return this.local.isPreReleaseVersion;
+		}
+		return !!this.gallery?.properties.isPreReleaseVersion;
+	}
+
 	get hasPreReleaseVersion(): boolean {
-		return !!this.gallery?.hasPreReleaseVersion;
+		return !!this.gallery?.hasPreReleaseVersion || !!this.local?.hasPreReleaseVersion;
 	}
 
 	get hasReleaseVersion(): boolean {
@@ -610,7 +625,8 @@ class Extensions extends Disposable {
 	private async onDidUpdateExtensionMetadata(local: ILocalExtension): Promise<void> {
 		const extension = this.installed.find(e => areSameExtensions(e.identifier, local.identifier));
 		if (extension?.local) {
-			const hasChanged = extension.local.pinned !== local.pinned;
+			const hasChanged = extension.local.pinned !== local.pinned
+				|| extension.local.preRelease !== local.preRelease;
 			extension.local = local;
 			if (hasChanged) {
 				this._onChange.fire({ extension });
@@ -1047,7 +1063,7 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 		if (isUninstalled) {
 			const canRemoveRunningExtension = runningExtension && this.extensionService.canRemoveExtension(runningExtension);
 			const isSameExtensionRunning = runningExtension && (!extension.server || extension.server === this.extensionManagementServerService.getExtensionManagementServer(toExtension(runningExtension)));
-			if (!canRemoveRunningExtension && isSameExtensionRunning) {
+			if (!canRemoveRunningExtension && isSameExtensionRunning && !runningExtension.isUnderDevelopment) {
 				return nls.localize('postUninstallTooltip', "Please reload VSCodius to complete the uninstallation of this extension.");
 			}
 			return undefined;
@@ -1575,6 +1591,8 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 		return false;
 	}
 
+
+
 	install(extension: URI | IExtension, installOptions?: InstallOptions | InstallVSIXOptions, progressLocation?: ProgressLocation): Promise<IExtension> {
 		return this.doInstall(extension, async () => {
 			if (extension instanceof URI) {
@@ -1702,6 +1720,17 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 	isExtensionIgnoredToSync(extension: IExtension): boolean {
 		return extension.local ? !this.isInstalledExtensionSynced(extension.local)
 			: this.extensionsSyncManagementService.hasToNeverSyncExtension(extension.identifier.id);
+	}
+
+	async togglePreRelease(extension: IExtension): Promise<void> {
+		if (!extension.local) {
+			return;
+		}
+		if (extension.preRelease !== extension.isPreReleaseVersion) {
+			await this.extensionManagementService.updateMetadata(extension.local, { preRelease: !extension.preRelease });
+			return;
+		}
+		await this.install(extension, { installPreReleaseVersion: !extension.preRelease, preRelease: !extension.preRelease });
 	}
 
 	async toggleExtensionIgnoredToSync(extension: IExtension): Promise<void> {

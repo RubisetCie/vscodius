@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { localize } from 'vs/nls';
+import { localize, localize2 } from 'vs/nls';
 import { KeyMod, KeyChord, KeyCode } from 'vs/base/common/keyCodes';
 import { MenuRegistry, MenuId, Action2, registerAction2, ISubmenuItem } from 'vs/platform/actions/common/actions';
 import { equalsIgnoreCase } from 'vs/base/common/strings';
@@ -382,7 +382,7 @@ registerAction2(class extends Action2 {
 	constructor() {
 		super({
 			id: SelectColorThemeCommandId,
-			title: { value: localize('selectTheme.label', "Color Theme"), original: 'Color Theme' },
+			title: localize2('selectTheme.label', 'Color Theme'),
 			category: Categories.Preferences,
 			f1: true,
 			keybinding: {
@@ -424,7 +424,7 @@ registerAction2(class extends Action2 {
 	constructor() {
 		super({
 			id: SelectFileIconThemeCommandId,
-			title: { value: localize('selectIconTheme.label', "File Icon Theme"), original: 'File Icon Theme' },
+			title: localize2('selectIconTheme.label', 'File Icon Theme'),
 			category: Categories.Preferences,
 			f1: true
 		});
@@ -459,7 +459,7 @@ registerAction2(class extends Action2 {
 	constructor() {
 		super({
 			id: SelectProductIconThemeCommandId,
-			title: { value: localize('selectProductIconTheme.label', "Product Icon Theme"), original: 'Product Icon Theme' },
+			title: localize2('selectProductIconTheme.label', 'Product Icon Theme'),
 			category: Categories.Preferences,
 			f1: true
 		});
@@ -576,7 +576,7 @@ registerAction2(class extends Action2 {
 	constructor() {
 		super({
 			id: 'workbench.action.generateColorTheme',
-			title: { value: localize('generateColorTheme.label', "Generate Color Theme From Current Settings"), original: 'Generate Color Theme From Current Settings' },
+			title: localize2('generateColorTheme.label', 'Generate Color Theme From Current Settings'),
 			category: Categories.Developer,
 			f1: true
 		});
@@ -630,7 +630,7 @@ registerAction2(class extends Action2 {
 	constructor() {
 		super({
 			id: toggleLightDarkThemesCommandId,
-			title: { value: localize('toggleLightDarkThemes.label', "Toggle between Light/Dark Themes"), original: 'Toggle between Light/Dark Themes' },
+			title: localize2('toggleLightDarkThemes.label', 'Toggle between Light/Dark Themes'),
 			category: Categories.Preferences,
 			f1: true,
 		});
@@ -675,7 +675,7 @@ registerAction2(class extends Action2 {
 	constructor() {
 		super({
 			id: browseColorThemesInMarketplaceCommandId,
-			title: { value: localize('browseColorThemeInMarketPlace.label', "Browse Color Themes in Marketplace"), original: 'Browse Color Themes in Marketplace' },
+			title: localize2('browseColorThemeInMarketPlace.label', 'Browse Color Themes in Marketplace'),
 			category: Categories.Preferences,
 			f1: true,
 		});
@@ -734,7 +734,7 @@ MenuRegistry.appendMenuItem(MenuId.MenubarPreferencesMenu, <ISubmenuItem>{
 MenuRegistry.appendMenuItem(ThemesSubMenu, {
 	command: {
 		id: SelectColorThemeCommandId,
-		title: localize('selectTheme.label', "Color Theme")
+		title: localize('selectTheme.label', 'Color Theme')
 	},
 	order: 1
 });

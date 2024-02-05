@@ -489,7 +489,7 @@ export class PaneCompositeBar extends Disposable {
 					name: cachedViewContainer.name,
 					order: cachedViewContainer.order,
 					pinned: cachedViewContainer.pinned,
-					visible: cachedViewContainer.visible,
+					visible: cachedViewContainer.visible && !!this.getViewContainer(cachedViewContainer.id),
 				});
 			}
 
