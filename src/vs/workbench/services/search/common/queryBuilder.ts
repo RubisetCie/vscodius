@@ -48,7 +48,6 @@ export interface ISearchPathsInfo {
 }
 
 interface ICommonQueryBuilderOptions {
-	_reason?: string;
 	excludePattern?: string | string[];
 	includePattern?: string | string[];
 	extraFileResources?: uri[];

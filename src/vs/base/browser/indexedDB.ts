@@ -125,8 +125,8 @@ export class IndexedDB {
 					c(request.result);
 				}
 			};
-			transaction.onerror = () => e(transaction.error);
-			transaction.onabort = () => e(transaction.error);
+			transaction.onerror = () => e(transaction.error ? transaction.error : new Error('unknown error'));
+			transaction.onabort = () => e(transaction.error ? transaction.error : new Error('unknown error'));
 			const request = dbRequestFn(transaction.objectStore(store));
 		}).finally(() => this.pendingTransactions.splice(this.pendingTransactions.indexOf(transaction), 1));
 	}

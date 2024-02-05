@@ -17,6 +17,7 @@ import { ExtensionResourceLoaderService } from 'vs/platform/extensionResourceLoa
 import { ITokenStyle } from 'vs/platform/theme/common/themeService';
 import { mock, TestProductService } from 'vs/workbench/test/common/workbenchTestServices';
 import { IRequestService } from 'vs/platform/request/common/request';
+import { ensureNoDisposablesAreLeakedInTestSuite } from 'vs/base/test/common/utils';
 
 const undefinedStyle = { bold: undefined, underline: undefined, italic: undefined };
 const unsetStyle = { bold: false, underline: false, italic: false };
@@ -90,6 +91,8 @@ suite('Themes - TokenStyleResolving', () => {
 	teardown(() => {
 		diskFileSystemProvider.dispose();
 	});
+
+	ensureNoDisposablesAreLeakedInTestSuite();
 
 	test('color defaults', async () => {
 		const themeData = ColorThemeData.createUnloadedTheme('foo');

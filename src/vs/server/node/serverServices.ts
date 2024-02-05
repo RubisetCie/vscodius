@@ -270,10 +270,6 @@ class ServerLogger extends AbstractLogger {
 		}
 	}
 
-	override dispose(): void {
-		// noop
-	}
-
 	flush(): void {
 		// noop
 	}

@@ -120,7 +120,6 @@ export function checkGlobFileExists(
 	const searchService = accessor.get(ISearchService);
 	const queryBuilder = instantiationService.createInstance(QueryBuilder);
 	const query = queryBuilder.file(folders.map(folder => toWorkspaceFolder(URI.revive(folder))), {
-		_reason: 'checkExists',
 		includePattern: includes,
 		exists: true
 	});

@@ -342,12 +342,12 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 		return this._onReady!.promise.then(f);
 	}
 
-	private info(message: string, data?: any): void {
-		this.logger.info(message, data);
+	private info(message: string, ...data: any[]): void {
+		this.logger.info(message, ...data);
 	}
 
-	private error(message: string, data?: any): void {
-		this.logger.error(message, data);
+	private error(message: string, ...data: any[]): void {
+		this.logger.error(message, ...data);
 	}
 
 	public ensureServiceStarted() {
