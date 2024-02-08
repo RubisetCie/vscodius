@@ -42,6 +42,7 @@ export interface IRemoteAgentEnvironmentDTO {
 		all: UriDto<IUserDataProfile[]>;
 		home: UriComponents;
 	};
+	isUnsupportedGlibc: boolean;
 }
 
 export class RemoteExtensionEnvironmentChannelClient {
@@ -69,7 +70,8 @@ export class RemoteExtensionEnvironmentChannelClient {
 			arch: data.arch,
 			marks: data.marks,
 			useHostProxy: data.useHostProxy,
-			profiles: revive(data.profiles)
+			profiles: revive(data.profiles),
+			isUnsupportedGlibc: data.isUnsupportedGlibc
 		};
 	}
 
