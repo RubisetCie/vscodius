@@ -245,6 +245,7 @@ function configureCommandlineSwitchesSync(cliArgs) {
 					app.commandLine.appendSwitch(argvKey, argvValue);
 				} else if (argvKey === 'password-store') {
 					// Password store
+					// TODO@TylerLeonhardt: Remove this migration in 3 months
 					let migratedArgvValue = argvValue;
 					if (argvValue === 'gnome' || argvValue === 'gnome-keyring') {
 						migratedArgvValue = 'gnome-libsecret';

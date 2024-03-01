@@ -539,7 +539,7 @@ export class MarkersView extends FilterViewPane implements IMarkersView {
 		this.markersModel.setResourceMarkers(groupBy(readMarkers(), compareMarkersByUri).map(group => [group[0].resource, group]));
 		disposables.push(Event.debounce<readonly URI[], ResourceMap<URI>>(this.markerService.onMarkerChanged, (resourcesMap, resources) => {
 			resourcesMap = resourcesMap || new ResourceMap<URI>();
-			resources.forEach(resource => resourcesMap!.set(resource, resource));
+			resources.forEach(resource => resourcesMap.set(resource, resource));
 			return resourcesMap;
 		}, 64)(resourcesMap => {
 			this.markersModel.setResourceMarkers([...resourcesMap.values()].map(resource => [resource, readMarkers(resource)]));
@@ -805,7 +805,7 @@ export class MarkersView extends FilterViewPane implements IMarkersView {
 		e.browserEvent.stopPropagation();
 
 		this.contextMenuService.showContextMenu({
-			getAnchor: () => e.anchor!,
+			getAnchor: () => e.anchor,
 			menuId: MenuId.ProblemsPanelContext,
 			contextKeyService: this.widget.contextKeyService,
 			getActions: () => this.getMenuActions(element),

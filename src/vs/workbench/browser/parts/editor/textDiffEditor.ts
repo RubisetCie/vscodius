@@ -98,7 +98,7 @@ export class TextDiffEditor extends AbstractTextEditor<IDiffEditorViewState> imp
 		await super.setInput(input, options, context, token);
 
 		try {
-			const resolvedModel = await input.resolve(options);
+			const resolvedModel = await input.resolve();
 
 			// Check for cancellation
 			if (token.isCancellationRequested) {
@@ -183,6 +183,10 @@ export class TextDiffEditor extends AbstractTextEditor<IDiffEditorViewState> imp
 			}
 
 			control.restoreViewState(editorViewState);
+
+			if (options?.revealIfVisible) {
+				control.revealFirstDiff();
+			}
 
 			return true;
 		}

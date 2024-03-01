@@ -338,7 +338,7 @@ export class ExtensionRecommendationNotificationService extends Disposable imple
 				const index = this.pendingNotificaitons.length;
 				disposables.add(token.onCancellationRequested(() => this.pendingNotificaitons.splice(index, 1)));
 				this.pendingNotificaitons.push({ recommendationsNotification, source, token });
-				if (source !== RecommendationSource.EXE && source <= this.visibleNotification!.source) {
+				if (source !== RecommendationSource.EXE && source <= this.visibleNotification.source) {
 					this.hideVisibleNotification(3000);
 				}
 			} else {
@@ -386,7 +386,7 @@ export class ExtensionRecommendationNotificationService extends Disposable imple
 		if (this.visibleNotification && !this.hideVisibleNotificationPromise) {
 			const visibleNotification = this.visibleNotification;
 			this.hideVisibleNotificationPromise = timeout(Math.max(timeInMillis - (Date.now() - visibleNotification.from), 0));
-			this.hideVisibleNotificationPromise.then(() => visibleNotification!.recommendationsNotification.hide());
+			this.hideVisibleNotificationPromise.then(() => visibleNotification.recommendationsNotification.hide());
 		}
 	}
 

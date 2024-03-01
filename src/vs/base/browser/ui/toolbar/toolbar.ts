@@ -15,6 +15,8 @@ import { ResolvedKeybinding } from 'vs/base/common/keybindings';
 import { Disposable, DisposableStore } from 'vs/base/common/lifecycle';
 import 'vs/css!./toolbar';
 import * as nls from 'vs/nls';
+import { IHoverDelegate } from 'vs/base/browser/ui/iconLabel/iconHoverDelegate';
+import { getDefaultHoverDelegate } from 'vs/base/browser/ui/hover/hoverDelegate';
 
 
 
@@ -29,6 +31,7 @@ export interface IToolBarOptions {
 	renderDropdownAsChildElement?: boolean;
 	moreIcon?: ThemeIcon;
 	allowContextMenu?: boolean;
+	hoverDelegate?: IHoverDelegate;
 
 	/**
 	 * If true, toggled primary items are highlighted with a background color.
@@ -56,6 +59,7 @@ export class ToolBar extends Disposable {
 	constructor(container: HTMLElement, contextMenuProvider: IContextMenuProvider, options: IToolBarOptions = { orientation: ActionsOrientation.HORIZONTAL }) {
 		super();
 
+		options.hoverDelegate = options.hoverDelegate ?? this._register(getDefaultHoverDelegate('element', true));
 		this.options = options;
 		this.lookupKeybindings = typeof this.options.getKeyBinding === 'function';
 
@@ -71,6 +75,7 @@ export class ToolBar extends Disposable {
 			actionRunner: options.actionRunner,
 			allowContextMenu: options.allowContextMenu,
 			highlightToggledItems: options.highlightToggledItems,
+			hoverDelegate: options.hoverDelegate,
 			actionViewItemProvider: (action, viewItemOptions) => {
 				if (action.id === ToggleMenuAction.ID) {
 					this.toggleMenuActionViewItem = new DropdownMenuActionViewItem(
@@ -84,7 +89,8 @@ export class ToolBar extends Disposable {
 							classNames: ThemeIcon.asClassNameArray(options.moreIcon ?? Codicon.toolBarMore),
 							anchorAlignmentProvider: this.options.anchorAlignmentProvider,
 							menuAsChild: !!this.options.renderDropdownAsChildElement,
-							isMenu: true
+							isMenu: true,
+							hoverDelegate: this.options.hoverDelegate
 						}
 					);
 					this.toggleMenuActionViewItem.setActionContext(this.actionBar.context);
@@ -113,6 +119,7 @@ export class ToolBar extends Disposable {
 							classNames: action.class,
 							anchorAlignmentProvider: this.options.anchorAlignmentProvider,
 							menuAsChild: !!this.options.renderDropdownAsChildElement,
+							hoverDelegate: this.options.hoverDelegate
 						}
 					);
 					result.setActionContext(this.actionBar.context);

@@ -207,7 +207,7 @@ export interface ErrorReporter {
 	onEmptyValue(id: string): void;
 	onDeprecatedOption(deprecatedId: string, message: string): void;
 
-	getSubcommandReporter?(commmand: string): ErrorReporter;
+	getSubcommandReporter?(command: string): ErrorReporter;
 }
 
 const ignoringReporter = {

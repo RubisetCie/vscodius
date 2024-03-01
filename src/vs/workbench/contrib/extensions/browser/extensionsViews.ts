@@ -35,7 +35,7 @@ import { alert } from 'vs/base/browser/ui/aria/aria';
 import { IListContextMenuEvent } from 'vs/base/browser/ui/list/list';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { IAction, Action, Separator, ActionRunner } from 'vs/base/common/actions';
-import { ExtensionIdentifierMap, ExtensionUntrustedWorkspaceSupportType, ExtensionVirtualWorkspaceSupportType, IExtensionDescription, isLanguagePackExtension } from 'vs/platform/extensions/common/extensions';
+import { ExtensionIdentifier, ExtensionIdentifierMap, ExtensionUntrustedWorkspaceSupportType, ExtensionVirtualWorkspaceSupportType, IExtensionDescription, isLanguagePackExtension } from 'vs/platform/extensions/common/extensions';
 import { CancelablePromise, createCancelablePromise } from 'vs/base/common/async';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { SeverityIcon } from 'vs/platform/severityIcon/browser/severityIcon';
@@ -54,6 +54,8 @@ import { HoverPosition } from 'vs/base/browser/ui/hover/hoverWidget';
 import { ILogService } from 'vs/platform/log/common/log';
 import { isOfflineError } from 'vs/base/parts/request/common/request';
 import { defaultCountBadgeStyles } from 'vs/platform/theme/browser/defaultStyles';
+import { Registry } from 'vs/platform/registry/common/platform';
+import { Extensions, IExtensionFeatureRenderer, IExtensionFeaturesManagementService, IExtensionFeaturesRegistry } from 'vs/workbench/services/extensionManagement/common/extensionFeatures';
 
 export const NONE_CATEGORY = 'none';
 
@@ -143,6 +145,7 @@ export class ExtensionsListView extends ViewPane {
 		@IWorkspaceTrustManagementService private readonly workspaceTrustManagementService: IWorkspaceTrustManagementService,
 		@IWorkbenchExtensionEnablementService private readonly extensionEnablementService: IWorkbenchExtensionEnablementService,
 		@IWorkbenchLayoutService private readonly layoutService: IWorkbenchLayoutService,
+		@IExtensionFeaturesManagementService private readonly extensionFeaturesManagementService: IExtensionFeaturesManagementService,
 		@ILogService private readonly logService: ILogService
 	) {
 		super({
@@ -440,6 +443,10 @@ export class ExtensionsListView extends ViewPane {
 			extensions = this.filterRecentlyUpdatedExtensions(local, query, options);
 		}
 
+		else if (/@feature:/i.test(query.value)) {
+			extensions = this.filterExtensionsByFeature(local, query, options);
+		}
+
 		return { extensions, canIncludeInstalledExtensions };
 	}
 
@@ -672,6 +679,23 @@ export class ExtensionsListView extends ViewPane {
 
 		options.sortBy = options.sortBy ?? LocalSortBy.UpdateDate;
 
+		return this.sortExtensions(result, options);
+	}
+
+	private filterExtensionsByFeature(local: IExtension[], query: Query, options: IQueryOptions): IExtension[] {
+		const value = query.value.replace(/@feature:/g, '').trim().toLowerCase();
+		const featureId = value.split(' ')[0];
+		const feature = Registry.as<IExtensionFeaturesRegistry>(Extensions.ExtensionFeaturesRegistry).getExtensionFeature(featureId);
+		if (!feature) {
+			return [];
+		}
+		const renderer = feature.renderer ? this.instantiationService.createInstance<IExtensionFeatureRenderer>(feature.renderer) : undefined;
+		const result = local.filter(e => {
+			if (!e.local) {
+				return false;
+			}
+			return renderer?.shouldRender(e.local.manifest) || this.extensionFeaturesManagementService.getAccessData(new ExtensionIdentifier(e.identifier.id), featureId);
+		});
 		return this.sortExtensions(result, options);
 	}
 
@@ -1072,7 +1096,8 @@ export class ExtensionsListView extends ViewPane {
 			|| this.isSearchWorkspaceUnsupportedExtensionsQuery(query)
 			|| this.isSearchRecentlyUpdatedQuery(query)
 			|| this.isSearchExtensionUpdatesQuery(query)
-			|| this.isSortInstalledExtensionsQuery(query, sortBy);
+			|| this.isSortInstalledExtensionsQuery(query, sortBy)
+			|| this.isFeatureExtensionsQuery(query);
 	}
 
 	static isSearchBuiltInExtensionsQuery(query: string): boolean {
@@ -1096,7 +1121,7 @@ export class ExtensionsListView extends ViewPane {
 	}
 
 	static isSearchInstalledExtensionsQuery(query: string): boolean {
-		return /@installed\s./i.test(query);
+		return /@installed\s./i.test(query) || this.isFeatureExtensionsQuery(query);
 	}
 
 	static isOutdatedExtensionsQuery(query: string): boolean {
@@ -1165,6 +1190,10 @@ export class ExtensionsListView extends ViewPane {
 
 	static isSortUpdateDateQuery(query: string): boolean {
 		return /@sort:updateDate/i.test(query);
+	}
+
+	static isFeatureExtensionsQuery(query: string): boolean {
+		return /@feature:/i.test(query);
 	}
 
 	override focus(): void {
@@ -1280,12 +1309,13 @@ export class StaticQueryExtensionsView extends ExtensionsListView {
 		@IWorkspaceTrustManagementService workspaceTrustManagementService: IWorkspaceTrustManagementService,
 		@IWorkbenchExtensionEnablementService extensionEnablementService: IWorkbenchExtensionEnablementService,
 		@IWorkbenchLayoutService layoutService: IWorkbenchLayoutService,
+		@IExtensionFeaturesManagementService extensionFeaturesManagementService: IExtensionFeaturesManagementService,
 		@ILogService logService: ILogService
 	) {
 		super(options, viewletViewOptions, notificationService, keybindingService, contextMenuService, instantiationService, themeService, extensionService,
 			extensionsWorkbenchService, extensionRecommendationsService, configurationService, contextService, extensionManagementServerService,
 			extensionManifestPropertiesService, extensionManagementService, workspaceService, productService, contextKeyService, viewDescriptorService, openerService,
-			preferencesService, storageService, workspaceTrustManagementService, extensionEnablementService, layoutService, logService);
+			preferencesService, storageService, workspaceTrustManagementService, extensionEnablementService, layoutService, extensionFeaturesManagementService, logService);
 	}
 
 	override show(): Promise<IPagedModel<IExtension>> {

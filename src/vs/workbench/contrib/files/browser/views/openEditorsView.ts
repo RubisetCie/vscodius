@@ -66,6 +66,7 @@ export class OpenEditorsView extends ViewPane {
 	private dirtyCountElement!: HTMLElement;
 	private listRefreshScheduler: RunOnceScheduler | undefined;
 	private structuralRefreshDelay: number;
+	private dnd: OpenEditorsDragAndDrop | undefined;
 	private list: WorkbenchList<OpenEditor | IEditorGroup> | undefined;
 	private listLabels: ResourceLabels | undefined;
 	private needsRefresh = false;
@@ -196,13 +197,16 @@ export class OpenEditorsView extends ViewPane {
 		if (this.listLabels) {
 			this.listLabels.clear();
 		}
+
+		this.dnd = new OpenEditorsDragAndDrop(this.sortOrder, this.instantiationService, this.editorGroupService);
+
 		this.listLabels = this.instantiationService.createInstance(ResourceLabels, { onDidChangeVisibility: this.onDidChangeBodyVisibility });
 		this.list = this.instantiationService.createInstance(WorkbenchList, 'OpenEditors', container, delegate, [
 			new EditorGroupRenderer(this.keybindingService, this.instantiationService),
 			new OpenEditorRenderer(this.listLabels, this.instantiationService, this.keybindingService, this.configurationService)
 		], {
 			identityProvider: { getId: (element: OpenEditor | IEditorGroup) => element instanceof OpenEditor ? element.getId() : element.id.toString() },
-			dnd: new OpenEditorsDragAndDrop(this.instantiationService, this.editorGroupService),
+			dnd: this.dnd,
 			overrideStyles: {
 				listBackground: this.getBackgroundColor()
 			},
@@ -444,6 +448,9 @@ export class OpenEditorsView extends ViewPane {
 		// Trigger a 'repaint' when decoration settings change or the sort order changed
 		if (event.affectsConfiguration('explorer.decorations') || event.affectsConfiguration('explorer.openEditors.sortOrder')) {
 			this.sortOrder = this.configurationService.getValue('explorer.openEditors.sortOrder');
+			if (this.dnd) {
+				this.dnd.sortOrder = this.sortOrder;
+			}
 			this.listRefreshScheduler?.schedule();
 		}
 	}
@@ -668,10 +675,18 @@ class OpenEditorRenderer implements IListRenderer<OpenEditor, IOpenEditorTemplat
 
 class OpenEditorsDragAndDrop implements IListDragAndDrop<OpenEditor | IEditorGroup> {
 
+	private _sortOrder: 'editorOrder' | 'alphabetical' | 'fullPath';
+	public set sortOrder(value: 'editorOrder' | 'alphabetical' | 'fullPath') {
+		this._sortOrder = value;
+	}
+
 	constructor(
+		sortOrder: 'editorOrder' | 'alphabetical' | 'fullPath',
 		private instantiationService: IInstantiationService,
 		private editorGroupService: IEditorGroupsService
-	) { }
+	) {
+		this._sortOrder = sortOrder;
+	}
 
 	@memoize private get dropHandler(): ResourcesDropHandler {
 		return this.instantiationService.createInstance(ResourcesDropHandler, { allowWorkspaceOpen: false });
@@ -717,6 +732,16 @@ class OpenEditorsDragAndDrop implements IListDragAndDrop<OpenEditor | IEditorGro
 		if (data instanceof NativeDragAndDropData) {
 			if (!containsDragType(originalEvent, DataTransfers.FILES, CodeDataTransfers.FILES)) {
 				return false;
+			}
+		}
+
+		if (this._sortOrder !== 'editorOrder') {
+			if (data instanceof ElementsDragAndDropData) {
+				// No reordering supported when sorted
+				return false;
+			} else {
+				// Allow droping files to open them
+				return { accept: true, effect: { type: ListDragOverEffectType.Move }, feedback: [-1] } as IListDragOverReaction;
 			}
 		}
 
@@ -791,7 +816,7 @@ registerAction2(class extends Action2 {
 	constructor() {
 		super({
 			id: 'workbench.action.toggleEditorGroupLayout',
-			title: { value: nls.localize('flipLayout', "Toggle Vertical/Horizontal Editor Layout"), original: 'Toggle Vertical/Horizontal Editor Layout' },
+			title: nls.localize2('flipLayout', "Toggle Vertical/Horizontal Editor Layout"),
 			f1: true,
 			keybinding: {
 				primary: KeyMod.Shift | KeyMod.Alt | KeyCode.Digit0,
@@ -820,8 +845,7 @@ MenuRegistry.appendMenuItem(MenuId.MenubarLayoutMenu, {
 	command: {
 		id: toggleEditorGroupLayoutId,
 		title: {
-			original: 'Flip Layout',
-			value: nls.localize('miToggleEditorLayoutWithoutMnemonic', "Flip Layout"),
+			...nls.localize2('miToggleEditorLayoutWithoutMnemonic', "Flip Layout"),
 			mnemonicTitle: nls.localize({ key: 'miToggleEditorLayout', comment: ['&& denotes a mnemonic'] }, "Flip &&Layout")
 		}
 	},
@@ -832,7 +856,7 @@ registerAction2(class extends Action2 {
 	constructor() {
 		super({
 			id: 'workbench.action.files.saveAll',
-			title: { value: SAVE_ALL_LABEL, original: 'Save All' },
+			title: SAVE_ALL_LABEL,
 			f1: true,
 			icon: Codicon.saveAll,
 			menu: {
@@ -878,7 +902,7 @@ registerAction2(class extends Action2 {
 	constructor() {
 		super({
 			id: 'openEditors.newUntitledFile',
-			title: { value: nls.localize('newUntitledFile', "New Untitled Text File"), original: 'New Untitled Text File' },
+			title: nls.localize2('newUntitledFile', "New Untitled Text File"),
 			f1: false,
 			icon: Codicon.newFile,
 			menu: {
