@@ -352,7 +352,7 @@ export class SettingsEditor2 extends EditorPane {
 			return;
 		}
 
-		const model = await this.input.resolve(options);
+		const model = await this.input.resolve();
 		if (token.isCancellationRequested || !(model instanceof Settings2EditorModel)) {
 			return;
 		}
@@ -540,7 +540,8 @@ export class SettingsEditor2 extends EditorPane {
 			this.searchWidget.setValue(filter);
 		}
 
-		this.searchWidget.focus(selectAll);
+		// Do not select all if the user is already searching.
+		this.searchWidget.focus(selectAll && !this.searchInputDelayer.isTriggered);
 	}
 
 	clearSearchResults(): void {
@@ -651,7 +652,6 @@ export class SettingsEditor2 extends EditorPane {
 		this.controlsElement = DOM.append(searchContainer, DOM.$('.settings-clear-widget'));
 
 		const actionBar = this._register(new ActionBar(this.controlsElement, {
-			animated: false,
 			actionViewItemProvider: (action) => {
 				if (action.id === filterAction.id) {
 					return this.instantiationService.createInstance(SettingsSearchFilterDropdownMenuActionViewItem, action, this.actionRunner, this.searchWidget);
@@ -1475,8 +1475,8 @@ export class SettingsEditor2 extends EditorPane {
 			query = parsedQuery.query;
 			parsedQuery.tags.forEach(tag => this.viewState.tagFilters!.add(tag));
 			parsedQuery.extensionFilters.forEach(extensionId => this.viewState.extensionFilters!.add(extensionId));
-			parsedQuery.featureFilters!.forEach(feature => this.viewState.featureFilters!.add(feature));
-			parsedQuery.idFilters!.forEach(id => this.viewState.idFilters!.add(id));
+			parsedQuery.featureFilters.forEach(feature => this.viewState.featureFilters!.add(feature));
+			parsedQuery.idFilters.forEach(id => this.viewState.idFilters!.add(id));
 			this.viewState.languageFilter = parsedQuery.languageFilter;
 		}
 

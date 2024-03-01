@@ -5,6 +5,7 @@
  *--------------------------------------------------------------------------------------------*/
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Mangler = void 0;
+const v8 = require("node:v8");
 const fs = require("fs");
 const path = require("path");
 const process_1 = require("process");
@@ -292,19 +293,17 @@ const skippedExportMangledSymbols = [
 class DeclarationData {
     fileName;
     node;
-    service;
     replacementName;
-    constructor(fileName, node, service, fileIdents) {
+    constructor(fileName, node, fileIdents) {
         this.fileName = fileName;
         this.node = node;
-        this.service = service;
         // Todo: generate replacement names based on usage count, with more used names getting shorter identifiers
         this.replacementName = fileIdents.next();
     }
-    get locations() {
+    getLocations(service) {
         if (ts.isVariableDeclaration(this.node)) {
             // If the const aliases any types, we need to rename those too
-            const definitionResult = this.service.getDefinitionAndBoundSpan(this.fileName, this.node.name.getStart());
+            const definitionResult = service.getDefinitionAndBoundSpan(this.fileName, this.node.name.getStart());
             if (definitionResult?.definitions && definitionResult.definitions.length > 1) {
                 return definitionResult.definitions.map(x => ({ fileName: x.fileName, offset: x.textSpan.start }));
             }
@@ -345,19 +344,18 @@ class Mangler {
     config;
     allClassDataByKey = new Map();
     allExportedSymbols = new Set();
-    service;
     renameWorkerPool;
     constructor(projectPath, log = () => { }, config) {
         this.projectPath = projectPath;
         this.log = log;
         this.config = config;
-        this.service = ts.createLanguageService(new staticLanguageServiceHost_1.StaticLanguageServiceHost(projectPath));
         this.renameWorkerPool = workerpool.pool(path.join(__dirname, 'renameWorker.js'), {
             maxWorkers: 1,
             minWorkers: 'max'
         });
     }
     async computeNewFileContents(strictImplicitPublicHandling) {
+        const service = ts.createLanguageService(new staticLanguageServiceHost_1.StaticLanguageServiceHost(this.projectPath));
         // STEP:
         // - Find all classes and their field info.
         // - Find exported symbols.
@@ -404,12 +402,12 @@ class Mangler {
                     if (isInAmbientContext(node)) {
                         return;
                     }
-                    this.allExportedSymbols.add(new DeclarationData(node.getSourceFile().fileName, node, this.service, fileIdents));
+                    this.allExportedSymbols.add(new DeclarationData(node.getSourceFile().fileName, node, fileIdents));
                 }
             }
             ts.forEachChild(node, visit);
         };
-        for (const file of this.service.getProgram().getSourceFiles()) {
+        for (const file of service.getProgram().getSourceFiles()) {
             if (!file.isDeclarationFile) {
                 ts.forEachChild(file, visit);
             }
@@ -422,7 +420,7 @@ class Mangler {
                 // no EXTENDS-clause
                 return;
             }
-            const info = this.service.getDefinitionAtPosition(data.fileName, extendsClause.types[0].expression.getEnd());
+            const info = service.getDefinitionAtPosition(data.fileName, extendsClause.types[0].expression.getEnd());
             if (!info || info.length === 0) {
                 // throw new Error('SUPER type not found');
                 return;
@@ -528,7 +526,7 @@ class Mangler {
                 continue;
             }
             const newText = data.replacementName;
-            for (const { fileName, offset } of data.locations) {
+            for (const { fileName, offset } of data.getLocations(service)) {
                 queueRename(fileName, offset, newText);
             }
         }
@@ -544,8 +542,8 @@ class Mangler {
         // STEP: apply all rename edits (per file)
         const result = new Map();
         let savedBytes = 0;
-        for (const item of this.service.getProgram().getSourceFiles()) {
-            const { mapRoot, sourceRoot } = this.service.getProgram().getCompilerOptions();
+        for (const item of service.getProgram().getSourceFiles()) {
+            const { mapRoot, sourceRoot } = service.getProgram().getCompilerOptions();
             const projectDir = path.dirname(this.projectPath);
             const sourceMapRoot = mapRoot ?? (0, url_1.pathToFileURL)(sourceRoot ?? projectDir).toString();
             // source maps
@@ -613,7 +611,9 @@ class Mangler {
             }
             result.set(item.fileName, { out: newFullText, sourceMap: generator?.toString() });
         }
-        this.log(`Done: ${savedBytes / 1000}kb saved`);
+        service.dispose();
+        this.renameWorkerPool.terminate();
+        this.log(`Done: ${savedBytes / 1000}kb saved, memory-usage: ${JSON.stringify(v8.getHeapStatistics())}`);
         return result;
     }
 }

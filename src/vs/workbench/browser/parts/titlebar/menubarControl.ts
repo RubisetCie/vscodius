@@ -608,7 +608,7 @@ export class CustomMenubarControl extends MenubarControl {
 					if (!this.focusInsideMenubar) {
 						const actions: IAction[] = [];
 						updateActions(this.toActionsArray(menu), actions, title);
-						this.menubar?.updateMenu({ actions: actions, label: mnemonicMenuLabel(this.topLevelTitles[title]) });
+						this.menubar?.updateMenu({ actions, label: mnemonicMenuLabel(this.topLevelTitles[title]) });
 					}
 				}));
 
@@ -618,7 +618,7 @@ export class CustomMenubarControl extends MenubarControl {
 						if (!this.focusInsideMenubar) {
 							const actions: IAction[] = [];
 							updateActions(this.toActionsArray(menu), actions, title);
-							this.menubar?.updateMenu({ actions: actions, label: mnemonicMenuLabel(this.topLevelTitles[title]) });
+							this.menubar?.updateMenu({ actions, label: mnemonicMenuLabel(this.topLevelTitles[title]) });
 						}
 					}));
 				}
@@ -631,9 +631,9 @@ export class CustomMenubarControl extends MenubarControl {
 
 			if (this.menubar) {
 				if (!firstTime) {
-					this.menubar.updateMenu({ actions: actions, label: mnemonicMenuLabel(this.topLevelTitles[title]) });
+					this.menubar.updateMenu({ actions, label: mnemonicMenuLabel(this.topLevelTitles[title]) });
 				} else {
-					this.menubar.push({ actions: actions, label: mnemonicMenuLabel(this.topLevelTitles[title]) });
+					this.menubar.push({ actions, label: mnemonicMenuLabel(this.topLevelTitles[title]) });
 				}
 			}
 		}

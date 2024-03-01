@@ -42,7 +42,7 @@ import { debounce } from 'vs/base/common/decorators';
 import { MouseWheelClassifier } from 'vs/base/browser/ui/scrollbar/scrollableElement';
 import { IMouseWheelEvent, StandardWheelEvent } from 'vs/base/browser/mouseEvent';
 import { ILayoutService } from 'vs/platform/layout/browser/layoutService';
-import { AudioCue, IAudioCueService } from 'vs/platform/audioCues/browser/audioCueService';
+import { AccessibilitySignal, IAccessibilitySignalService } from 'vs/platform/accessibilitySignal/browser/accessibilitySignalService';
 
 const enum RenderConstants {
 	/**
@@ -202,7 +202,7 @@ export class XtermTerminal extends Disposable implements IXtermTerminal, IDetach
 		@IThemeService private readonly _themeService: IThemeService,
 		@IClipboardService private readonly _clipboardService: IClipboardService,
 		@IContextKeyService contextKeyService: IContextKeyService,
-		@IAudioCueService private readonly _audioCueService: IAudioCueService,
+		@IAccessibilitySignalService private readonly _accessibilitySignalService: IAccessibilitySignalService,
 		@ILayoutService layoutService: ILayoutService
 	) {
 		super();
@@ -351,7 +351,7 @@ export class XtermTerminal extends Disposable implements IXtermTerminal, IDetach
 
 		// Track wheel events in mouse wheel classifier and update smoothScrolling when it changes
 		// as it must be disabled when a trackpad is used
-		ad.add(dom.addDisposableListener(this.raw.element!, dom.EventType.MOUSE_WHEEL, (e: IMouseWheelEvent) => {
+		ad.add(dom.addDisposableListener(this.raw.element, dom.EventType.MOUSE_WHEEL, (e: IMouseWheelEvent) => {
 			const classifier = MouseWheelClassifier.INSTANCE;
 			classifier.acceptStandardWheelEvent(new StandardWheelEvent(e));
 			const value = classifier.isPhysicalMouseWheel();
@@ -581,7 +581,7 @@ export class XtermTerminal extends Disposable implements IXtermTerminal, IDetach
 		// the prompt being written
 		this._capabilities.get(TerminalCapability.CommandDetection)?.handlePromptStart();
 		this._capabilities.get(TerminalCapability.CommandDetection)?.handleCommandStart();
-		this._audioCueService.playAudioCue(AudioCue.clear);
+		this._accessibilitySignalService.playSignal(AccessibilitySignal.clear);
 	}
 
 	hasSelection(): boolean {

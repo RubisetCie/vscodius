@@ -316,7 +316,7 @@ export class CommentsPanel extends FilterViewPane implements ICommentsView {
 					if (element instanceof CommentNode) {
 						if (element.range) {
 							return nls.localize('resourceWithCommentLabel',
-								"Comment from ${0} at line {1} column {2} in {3}, source: {4}",
+								"${0} at line {1} column {2} in {3}, source: {4}",
 								element.comment.userName,
 								element.range.startLineNumber,
 								element.range.startColumn,
@@ -325,7 +325,7 @@ export class CommentsPanel extends FilterViewPane implements ICommentsView {
 							);
 						} else {
 							return nls.localize('resourceWithCommentLabelFile',
-								"Comment from ${0} in {1}, source: {2}",
+								"${0} in {1}, source: {2}",
 								element.comment.userName,
 								basename(element.resource),
 								(typeof element.comment.body === 'string') ? element.comment.body : element.comment.body.value

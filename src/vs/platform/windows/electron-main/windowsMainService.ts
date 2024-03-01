@@ -1544,7 +1544,7 @@ export class WindowsMainService extends Disposable implements IWindowsMainServic
 		if (window.isReady) {
 			this.lifecycleMainService.unload(window, UnloadReason.LOAD).then(async veto => {
 				if (!veto) {
-					await this.doOpenInBrowserWindow(window!, configuration, options, defaultProfile);
+					await this.doOpenInBrowserWindow(window, configuration, options, defaultProfile);
 				}
 			});
 		} else {

@@ -16,6 +16,7 @@ import { assertIsDefined } from 'vs/base/common/types';
 import { IActionViewItem } from 'vs/base/browser/ui/actionbar/actionbar';
 import { MenuId } from 'vs/platform/actions/common/actions';
 import { IBoundarySashes } from 'vs/base/browser/ui/sash/sash';
+import { IBaseActionViewItemOptions } from 'vs/base/browser/ui/actionbar/actionViewItems';
 
 /**
  * Composites are layed out in the sidebar and panel part of the workbench. At a time only one composite
@@ -198,7 +199,7 @@ export abstract class Composite extends Component implements IComposite {
 	 * of an action. Returns undefined to indicate that the action is not rendered through
 	 * an action item.
 	 */
-	getActionViewItem(action: IAction): IActionViewItem | undefined {
+	getActionViewItem(action: IAction, options: IBaseActionViewItemOptions): IActionViewItem | undefined {
 		return undefined;
 	}
 
