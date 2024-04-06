@@ -200,7 +200,7 @@ export class TerminalVoiceSession extends Disposable {
 		this._ghostText = xterm.registerDecoration({
 			marker: this._ghostTextMarker,
 			layer: 'top',
-			x: onFirstLine ? xterm.buffer.active.cursorX + 4 : xterm.buffer.active.cursorX + 1 ?? 0,
+			x: onFirstLine ? xterm.buffer.active.cursorX + 4 : xterm.buffer.active.cursorX + 1,
 		});
 		this._ghostText?.onRender((e: HTMLElement) => {
 			e.classList.add('terminal-voice-progress-text');
