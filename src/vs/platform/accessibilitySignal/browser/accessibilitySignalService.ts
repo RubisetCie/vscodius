@@ -16,20 +16,25 @@ export const IAccessibilitySignalService = createDecorator<IAccessibilitySignalS
 
 export interface IAccessibilitySignalService {
 	readonly _serviceBrand: undefined;
-	playSignal(cue: AccessibilitySignal, options?: IAccessbilitySignalOptions): Promise<void>;
-	playAccessibilitySignals(cues: (AccessibilitySignal | { cue: AccessibilitySignal; source: string })[]): Promise<void>;
-	isSoundEnabled(cue: AccessibilitySignal): boolean;
-	isAnnouncementEnabled(cue: AccessibilitySignal): boolean;
-	onSoundEnabledChanged(cue: AccessibilitySignal): Event<void>;
-	onAnnouncementEnabledChanged(cue: AccessibilitySignal): Event<void>;
+	playSignal(signal: AccessibilitySignal, options?: IAccessbilitySignalOptions): Promise<void>;
+	playSignals(signals: (AccessibilitySignal | { signal: AccessibilitySignal; source: string })[]): Promise<void>;
+	isSoundEnabled(signal: AccessibilitySignal): boolean;
+	isAnnouncementEnabled(signal: AccessibilitySignal): boolean;
+	onSoundEnabledChanged(signal: AccessibilitySignal): Event<void>;
+	onAnnouncementEnabledChanged(signal: AccessibilitySignal): Event<void>;
 
-	playSound(cue: Sound, allowManyInParallel?: boolean): Promise<void>;
-	playSignalLoop(cue: AccessibilitySignal, milliseconds: number): IDisposable;
+	playSound(signal: Sound, allowManyInParallel?: boolean): Promise<void>;
+	playSignalLoop(signal: AccessibilitySignal, milliseconds: number): IDisposable;
 }
 
 export interface IAccessbilitySignalOptions {
 	allowManyInParallel?: boolean;
+
+	/**
+	 * The source that triggered the signal (e.g. "diffEditor.cursorPositionChanged").
+	 */
 	source?: string;
+
 	/**
 	 * For actions like save or format, depending on the
 	 * configured value, we will only
@@ -54,9 +59,9 @@ export class AccessibilitySignalService extends Disposable implements IAccessibi
 	}
 
 	public async playSignal(signal: AccessibilitySignal, options: IAccessbilitySignalOptions = {}): Promise<void> {
-		const alertMessage = signal.announcementMessage;
-		if (this.isAnnouncementEnabled(signal, options.userGesture) && alertMessage) {
-			this.accessibilityService.status(alertMessage);
+		const announcementMessage = signal.announcementMessage;
+		if (this.isAnnouncementEnabled(signal, options.userGesture) && announcementMessage) {
+			this.accessibilityService.status(announcementMessage);
 		}
 
 		if (this.isSoundEnabled(signal, options.userGesture)) {
@@ -64,17 +69,16 @@ export class AccessibilitySignalService extends Disposable implements IAccessibi
 		}
 	}
 
-	public async playAccessibilitySignals(cues: (AccessibilitySignal | { cue: AccessibilitySignal; source: string })[]): Promise<void> {
-		const cueArray = cues.map(c => 'cue' in c ? c.cue : c);
-		const alerts = cueArray.filter(cue => this.isAnnouncementEnabled(cue)).map(c => c.announcementMessage);
-		if (alerts.length) {
-			this.accessibilityService.status(alerts.join(', '));
+	public async playSignals(signals: (AccessibilitySignal | { signal: AccessibilitySignal; source: string })[]): Promise<void> {
+		const signalArray = signals.map(s => 'signal' in s ? s.signal : s);
+		const announcements = signalArray.filter(signal => this.isAnnouncementEnabled(signal)).map(s => s.announcementMessage);
+		if (announcements.length) {
+			this.accessibilityService.status(announcements.join(', '));
 		}
 
 		// Some sounds are reused. Don't play the same sound twice.
-		const sounds = new Set(cueArray.filter(cue => this.isSoundEnabled(cue)).map(cue => cue.sound.getSound()));
+		const sounds = new Set(signalArray.filter(signal => this.isSoundEnabled(signal)).map(signal => signal.sound.getSound()));
 		await Promise.all(Array.from(sounds).map(sound => this.playSound(sound, true)));
-
 	}
 
 	private getVolumeInPercent(): number {
@@ -178,7 +182,7 @@ export class AccessibilitySignalService extends Disposable implements IAccessibi
 			() => event.signal.announcementMessage ? this.configurationService.getValue<'auto' | 'off' | 'userGesture' | 'always' | 'never'>(event.signal.settingsKey + '.announcement') : false
 		);
 		return derived(reader => {
-			/** @description alert enabled */
+			/** @description announcement enabled */
 			const setting = settingObservable.read(reader);
 			if (
 				!this.screenReaderAttached.read(reader)
@@ -204,8 +208,8 @@ export class AccessibilitySignalService extends Disposable implements IAccessibi
 		return Event.fromObservableLight(this.isSoundEnabledCache.get({ signal }));
 	}
 
-	public onAnnouncementEnabledChanged(cue: AccessibilitySignal): Event<void> {
-		return Event.fromObservableLight(this.isAnnouncementEnabledCache.get({ signal: cue }));
+	public onAnnouncementEnabledChanged(signal: AccessibilitySignal): Event<void> {
+		return Event.fromObservableLight(this.isAnnouncementEnabledCache.get({ signal }));
 	}
 }
 
@@ -278,6 +282,8 @@ export class Sound {
 	public static readonly clear = Sound.register({ fileName: 'clear.mp3' });
 	public static readonly save = Sound.register({ fileName: 'save.mp3' });
 	public static readonly format = Sound.register({ fileName: 'format.mp3' });
+	public static readonly voiceRecordingStarted = Sound.register({ fileName: 'voiceRecordingStarted.mp3' });
+	public static readonly voiceRecordingStopped = Sound.register({ fileName: 'voiceRecordingStopped.mp3' });
 
 	private constructor(public readonly fileName: string) { }
 }
@@ -544,6 +550,20 @@ export class AccessibilitySignal {
 		legacyAnnouncementSettingsKey: AccessibilityAlertSettingId.Format,
 		announcementMessage: localize('accessibility.signals.format', 'Format'),
 		settingsKey: 'accessibility.signals.format'
+	});
+
+	public static readonly voiceRecordingStarted = AccessibilitySignal.register({
+		name: localize('accessibilitySignals.voiceRecordingStarted', 'Voice Recording Started'),
+		sound: Sound.voiceRecordingStarted,
+		legacySoundSettingsKey: 'audioCues.voiceRecordingStarted',
+		settingsKey: 'accessibility.signals.voiceRecordingStarted'
+	});
+
+	public static readonly voiceRecordingStopped = AccessibilitySignal.register({
+		name: localize('accessibilitySignals.voiceRecordingStopped', 'Voice Recording Stopped'),
+		sound: Sound.voiceRecordingStopped,
+		legacySoundSettingsKey: 'audioCues.voiceRecordingStopped',
+		settingsKey: 'accessibility.signals.voiceRecordingStopped'
 	});
 
 	private constructor(

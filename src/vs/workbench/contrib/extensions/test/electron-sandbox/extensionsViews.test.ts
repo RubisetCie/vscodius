@@ -26,6 +26,7 @@ import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace
 import { TestMenuService } from 'vs/workbench/test/browser/workbenchTestServices';
 import { TestSharedProcessService } from 'vs/workbench/test/electron-sandbox/workbenchTestServices';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
+import { NullLogService } from 'vs/platform/log/common/log';
 import { NativeURLService } from 'vs/platform/url/common/urlService';
 import { URI } from 'vs/base/common/uri';
 import { TestConfigurationService } from 'vs/platform/configuration/test/common/testConfigurationService';
@@ -45,6 +46,8 @@ import { arch } from 'vs/base/common/process';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { ensureNoDisposablesAreLeakedInTestSuite } from 'vs/base/test/common/utils';
+import { IFileService } from 'vs/platform/files/common/files';
+import { FileService } from 'vs/platform/files/common/fileService';
 
 suite('ExtensionsViews Tests', () => {
 
@@ -73,6 +76,7 @@ suite('ExtensionsViews Tests', () => {
 
 	setup(async () => {
 		instantiationService = disposableStore.add(new TestInstantiationService());
+		instantiationService.stub(IFileService, disposableStore.add(new FileService(new NullLogService())));
 		instantiationService.stub(IProductService, {});
 
 		instantiationService.stub(IWorkspaceContextService, new TestContextService());
@@ -89,6 +93,7 @@ suite('ExtensionsViews Tests', () => {
 			onDidUpdateExtensionMetadata: Event.None,
 			onDidChangeProfile: Event.None,
 			async getInstalled() { return []; },
+			async getInstalledWorkspaceExtensions() { return []; },
 			async canInstall() { return true; },
 			async getExtensionsControlManifest() { return { malicious: [], deprecated: {}, search: [] }; },
 			async getTargetPlatform() { return getTargetPlatform(platform, arch); },

@@ -135,4 +135,5 @@ export interface NativeParsedArgs {
 	'log-net-log'?: string;
 	'vmodule'?: string;
 	'disable-dev-shm-usage'?: boolean;
+	'ozone-platform'?: string;
 }

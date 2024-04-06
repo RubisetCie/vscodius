@@ -5,8 +5,9 @@
 
 import { $, Dimension, addDisposableListener, append, setParentFlowTo } from 'vs/base/browser/dom';
 import { ActionBar } from 'vs/base/browser/ui/actionbar/actionbar';
+import { getDefaultHoverDelegate } from 'vs/base/browser/ui/hover/hoverDelegateFactory';
+import { setupCustomHover } from 'vs/base/browser/ui/hover/updatableHoverWidget';
 import { DomScrollableElement } from 'vs/base/browser/ui/scrollbar/scrollableElement';
-import { CheckboxActionViewItem } from 'vs/base/browser/ui/toggle/toggle';
 import { Action, IAction } from 'vs/base/common/actions';
 import * as arrays from 'vs/base/common/arrays';
 import { Cache, CacheResult } from 'vs/base/common/cache';
@@ -38,9 +39,9 @@ import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegis
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { IOpenerService } from 'vs/platform/opener/common/opener';
 import { IStorageService } from 'vs/platform/storage/common/storage';
-import { defaultCheckboxStyles } from 'vs/platform/theme/browser/defaultStyles';
 import { buttonForeground, buttonHoverBackground, editorBackground, textLinkActiveForeground, textLinkForeground } from 'vs/platform/theme/common/colorRegistry';
 import { IColorTheme, ICssStyleCollector, IThemeService, registerThemingParticipant } from 'vs/platform/theme/common/themeService';
+import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
 import { EditorPane } from 'vs/workbench/browser/parts/editor/editorPane';
 import { IEditorOpenContext } from 'vs/workbench/common/editor';
 import { ViewContainerLocation } from 'vs/workbench/common/views';
@@ -58,13 +59,12 @@ import {
 	InstallDropdownAction, InstallingLabelAction,
 	LocalInstallAction,
 	MigrateDeprecatedExtensionAction,
-	ReloadAction,
+	ExtensionRuntimeStateAction,
 	RemoteInstallAction,
 	SetColorThemeAction,
 	SetFileIconThemeAction,
 	SetLanguageAction,
 	SetProductIconThemeAction,
-	ToggleAutoUpdateForExtensionAction,
 	UninstallAction,
 	UpdateAction,
 	WebInstallAction,
@@ -75,11 +75,16 @@ import { ExtensionData, ExtensionsGridView, ExtensionsTree, getExtensions } from
 import { ExtensionRecommendationWidget, ExtensionStatusWidget, ExtensionWidget, InstallCountWidget, RatingsWidget, RemoteBadgeWidget, SponsorWidget, VerifiedPublisherWidget, onClick } from 'vs/workbench/contrib/extensions/browser/extensionsWidgets';
 import { ExtensionContainers, ExtensionEditorTab, ExtensionState, IExtension, IExtensionContainer, IExtensionsViewPaneContainer, IExtensionsWorkbenchService, VIEWLET_ID } from 'vs/workbench/contrib/extensions/common/extensions';
 import { ExtensionsInput, IExtensionEditorOptions } from 'vs/workbench/contrib/extensions/common/extensionsInput';
+import { IExplorerService } from 'vs/workbench/contrib/files/browser/files';
 import { DEFAULT_MARKDOWN_STYLES, renderMarkdownDocument } from 'vs/workbench/contrib/markdown/browser/markdownDocumentRenderer';
 import { IWebview, IWebviewService, KEYBINDING_CONTEXT_WEBVIEW_FIND_WIDGET_FOCUSED } from 'vs/workbench/contrib/webview/browser/webview';
+import { IEditorGroup } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
 import { IPaneCompositePartService } from 'vs/workbench/services/panecomposite/browser/panecomposite';
+import { IViewsService } from 'vs/workbench/services/views/common/viewsService';
+import { VIEW_ID as EXPLORER_VIEW_ID } from 'vs/workbench/contrib/files/common/files';
+import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 
 class NavBar extends Disposable {
 
@@ -149,6 +154,7 @@ interface IExtensionEditorTemplate {
 	builtin: HTMLElement;
 	publisher: HTMLElement;
 	publisherDisplayName: HTMLElement;
+	resource: HTMLElement;
 	installCount: HTMLElement;
 	rating: HTMLElement;
 	description: HTMLElement;
@@ -185,7 +191,8 @@ class VersionWidget extends ExtensionWithDifferentGalleryVersionWidget {
 	private readonly element: HTMLElement;
 	constructor(container: HTMLElement) {
 		super();
-		this.element = append(container, $('code.version', { title: localize('extension version', "Extension Version") }));
+		this.element = append(container, $('code.version'));
+		this._register(setupCustomHover(getDefaultHoverDelegate('mouse'), this.element, localize('extension version', "Extension Version")));
 		this.render();
 	}
 	render(): void {
@@ -222,6 +229,7 @@ export class ExtensionEditor extends EditorPane {
 	private showPreReleaseVersionContextKey: IContextKey<boolean> | undefined;
 
 	constructor(
+		group: IEditorGroup,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IPaneCompositePartService private readonly paneCompositeService: IPaneCompositePartService,
 		@IExtensionsWorkbenchService private readonly extensionsWorkbenchService: IExtensionsWorkbenchService,
@@ -235,8 +243,12 @@ export class ExtensionEditor extends EditorPane {
 		@ILanguageService private readonly languageService: ILanguageService,
 		@IContextMenuService private readonly contextMenuService: IContextMenuService,
 		@IContextKeyService private readonly contextKeyService: IContextKeyService,
+		@IWorkspaceContextService private readonly contextService: IWorkspaceContextService,
+		@IExplorerService private readonly explorerService: IExplorerService,
+		@IViewsService private readonly viewsService: IViewsService,
+		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService,
 	) {
-		super(ExtensionEditor.ID, themeService, storageService);
+		super(ExtensionEditor.ID, group, themeService, storageService);
 		this.extensionReadme = null;
 		this.extensionChangelog = null;
 		this.extensionManifest = null;
@@ -263,25 +275,33 @@ export class ExtensionEditor extends EditorPane {
 
 		const details = append(header, $('.details'));
 		const title = append(details, $('.title'));
-		const name = append(title, $('span.name.clickable', { title: localize('name', "Extension name"), role: 'heading', tabIndex: 0 }));
+		const name = append(title, $('span.name.clickable', { role: 'heading', tabIndex: 0 }));
+		this._register(setupCustomHover(getDefaultHoverDelegate('mouse'), name, localize('name', "Extension name")));
 		const versionWidget = new VersionWidget(title);
 
-		const preview = append(title, $('span.preview', { title: localize('preview', "Preview") }));
+		const preview = append(title, $('span.preview'));
+		this._register(setupCustomHover(getDefaultHoverDelegate('mouse'), preview, localize('preview', "Preview")));
 		preview.textContent = localize('preview', "Preview");
 
 		const builtin = append(title, $('span.builtin'));
 		builtin.textContent = localize('builtin', "Built-in");
 
 		const subtitle = append(details, $('.subtitle'));
-		const publisher = append(append(subtitle, $('.subtitle-entry')), $('.publisher.clickable', { title: localize('publisher', "Publisher"), tabIndex: 0 }));
+		const publisher = append(append(subtitle, $('.subtitle-entry')), $('.publisher.clickable', { tabIndex: 0 }));
+		this._register(setupCustomHover(getDefaultHoverDelegate('mouse'), publisher, localize('publisher', "Publisher")));
 		publisher.setAttribute('role', 'button');
 		const publisherDisplayName = append(publisher, $('.publisher-name'));
 		const verifiedPublisherWidget = this.instantiationService.createInstance(VerifiedPublisherWidget, append(publisher, $('.verified-publisher')), false);
 
-		const installCount = append(append(subtitle, $('.subtitle-entry')), $('span.install', { title: localize('install count', "Install count"), tabIndex: 0 }));
+		const resource = append(append(subtitle, $('.subtitle-entry.resource')), $('', { tabIndex: 0 }));
+		resource.setAttribute('role', 'button');
+
+		const installCount = append(append(subtitle, $('.subtitle-entry')), $('span.install', { tabIndex: 0 }));
+		this._register(setupCustomHover(getDefaultHoverDelegate('mouse'), installCount, localize('install count', "Install count")));
 		const installCountWidget = this.instantiationService.createInstance(InstallCountWidget, installCount, false);
 
-		const rating = append(append(subtitle, $('.subtitle-entry')), $('span.rating.clickable', { title: localize('rating', "Rating"), tabIndex: 0 }));
+		const rating = append(append(subtitle, $('.subtitle-entry')), $('span.rating.clickable', { tabIndex: 0 }));
+		this._register(setupCustomHover(getDefaultHoverDelegate('mouse'), rating, localize('rating', "Rating")));
 		rating.setAttribute('role', 'link'); // #132645
 		const ratingsWidget = this.instantiationService.createInstance(RatingsWidget, rating, false);
 
@@ -300,10 +320,10 @@ export class ExtensionEditor extends EditorPane {
 
 		const installAction = this.instantiationService.createInstance(InstallDropdownAction);
 		const actions = [
-			this.instantiationService.createInstance(ReloadAction),
+			this.instantiationService.createInstance(ExtensionRuntimeStateAction),
 			this.instantiationService.createInstance(ExtensionStatusLabelAction),
 			this.instantiationService.createInstance(ActionWithDropDownAction, 'extensions.updateActions', '',
-				[[this.instantiationService.createInstance(UpdateAction, true)], [this.instantiationService.createInstance(ToggleAutoUpdateForExtensionAction, true, [true, 'onlyEnabledExtensions'])]]),
+				[[this.instantiationService.createInstance(UpdateAction, true)]]),
 			this.instantiationService.createInstance(SetColorThemeAction),
 			this.instantiationService.createInstance(SetFileIconThemeAction),
 			this.instantiationService.createInstance(SetProductIconThemeAction),
@@ -325,21 +345,17 @@ export class ExtensionEditor extends EditorPane {
 				]
 			]),
 			this.instantiationService.createInstance(TogglePreReleaseExtensionAction),
-			this.instantiationService.createInstance(ToggleAutoUpdateForExtensionAction, false, [false, 'onlySelectedExtensions']),
 			new ExtensionEditorManageExtensionAction(this.scopedContextKeyService || this.contextKeyService, this.instantiationService),
 		];
 
 		const actionsAndStatusContainer = append(details, $('.actions-status-container'));
 		const extensionActionBar = this._register(new ActionBar(actionsAndStatusContainer, {
-			actionViewItemProvider: (action: IAction) => {
+			actionViewItemProvider: (action: IAction, options) => {
 				if (action instanceof ExtensionDropDownAction) {
-					return action.createActionViewItem();
+					return action.createActionViewItem(options);
 				}
 				if (action instanceof ActionWithDropDownAction) {
-					return new ExtensionActionWithDropdownActionViewItem(action, { icon: true, label: true, menuActionsOrProvider: { getActions: () => action.menuActions }, menuActionClassNames: (action.class || '').split(' ') }, this.contextMenuService);
-				}
-				if (action instanceof ToggleAutoUpdateForExtensionAction) {
-					return new CheckboxActionViewItem(undefined, action, { icon: true, label: true, checkboxStyles: defaultCheckboxStyles });
+					return new ExtensionActionWithDropdownActionViewItem(action, { ...options, icon: true, label: true, menuActionsOrProvider: { getActions: () => action.menuActions }, menuActionClassNames: (action.class || '').split(' ') }, this.contextMenuService);
 				}
 				return undefined;
 			},
@@ -404,6 +420,7 @@ export class ExtensionEditor extends EditorPane {
 			preview,
 			publisher,
 			publisherDisplayName,
+			resource,
 			rating,
 			actionsAndStatusContainer,
 			extensionActionBar,
@@ -458,6 +475,12 @@ export class ExtensionEditor extends EditorPane {
 	}
 
 	private async getGalleryVersionToShow(extension: IExtension, preRelease?: boolean): Promise<IGalleryExtension | null> {
+		if (extension.resourceExtension) {
+			return null;
+		}
+		if (extension.local?.source === 'resource') {
+			return null;
+		}
 		if (isUndefined(preRelease)) {
 			return null;
 		}
@@ -506,6 +529,25 @@ export class ExtensionEditor extends EditorPane {
 		// subtitle
 		template.publisher.classList.toggle('clickable', !!extension.url);
 		template.publisherDisplayName.textContent = extension.publisherDisplayName;
+		template.publisher.parentElement?.classList.toggle('hide', !!extension.resourceExtension || extension.local?.source === 'resource');
+
+		const location = extension.resourceExtension?.location ?? (extension.local?.source === 'resource' ? extension.local?.location : undefined);
+		template.resource.parentElement?.classList.toggle('hide', !location);
+		if (location) {
+			const workspaceFolder = this.contextService.getWorkspaceFolder(location);
+			if (workspaceFolder && extension.isWorkspaceScoped) {
+				template.resource.parentElement?.classList.add('clickable');
+				this.transientDisposables.add(setupCustomHover(getDefaultHoverDelegate('mouse'), template.resource, this.uriIdentityService.extUri.relativePath(workspaceFolder.uri, location)));
+				template.resource.textContent = localize('workspace extension', "Workspace Extension");
+				this.transientDisposables.add(onClick(template.resource, () => {
+					this.viewsService.openView(EXPLORER_VIEW_ID, true).then(() => this.explorerService.select(location, true));
+				}));
+			} else {
+				template.resource.parentElement?.classList.remove('clickable');
+				this.transientDisposables.add(setupCustomHover(getDefaultHoverDelegate('mouse'), template.resource, location.path));
+				template.resource.textContent = localize('local extension', "Local Extension");
+			}
+		}
 
 		template.installCount.parentElement?.classList.toggle('hide', !extension.url);
 		template.rating.parentElement?.classList.toggle('hide', !extension.url);
@@ -643,14 +685,14 @@ export class ExtensionEditor extends EditorPane {
 
 			webview.initialScrollProgress = this.initialScrollProgress.get(webviewIndex) || 0;
 
-			webview.claim(this, this.scopedContextKeyService);
+			webview.claim(this, this.window, this.scopedContextKeyService);
 			setParentFlowTo(webview.container, container);
 			webview.layoutWebviewOverElement(container);
 
 			webview.setHtml(body);
-			webview.claim(this, undefined);
+			webview.claim(this, this.window, undefined);
 
-			this.contentDisposables.add(webview.onDidFocus(() => this.fireOnDidFocus()));
+			this.contentDisposables.add(webview.onDidFocus(() => this._onDidFocus?.fire()));
 
 			this.contentDisposables.add(webview.onDidScroll(() => this.initialScrollProgress.set(webviewIndex, webview.initialScrollProgress)));
 
@@ -888,7 +930,9 @@ export class ExtensionEditor extends EditorPane {
 			append(extensionResourcesContainer, $('.additional-details-title', undefined, localize('resources', "Resources")));
 			const resourcesElement = append(extensionResourcesContainer, $('.resources'));
 			for (const [label, uri] of resources) {
-				this.transientDisposables.add(onClick(append(resourcesElement, $('a.resource', { title: uri.toString(), tabindex: '0' }, label)), () => this.openerService.open(uri)));
+				const resource = append(resourcesElement, $('a.resource', { tabindex: '0' }, label));
+				this.transientDisposables.add(onClick(resource, () => this.openerService.open(uri)));
+				this.transientDisposables.add(setupCustomHover(getDefaultHoverDelegate('mouse'), resource, uri.toString()));
 			}
 		}
 	}

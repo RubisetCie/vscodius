@@ -12,7 +12,7 @@ import { BaseBinaryResourceEditor } from 'vs/workbench/browser/parts/editor/bina
 import { IStorageService } from 'vs/platform/storage/common/storage';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { ITextResourceConfigurationService } from 'vs/editor/common/services/textResourceConfiguration';
-import { IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
+import { IEditorGroup, IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 
 /**
@@ -23,6 +23,7 @@ export class BinaryResourceDiffEditor extends SideBySideEditor {
 	static override readonly ID = BINARY_DIFF_EDITOR_ID;
 
 	constructor(
+		group: IEditorGroup,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IThemeService themeService: IThemeService,
 		@IStorageService storageService: IStorageService,
@@ -31,7 +32,7 @@ export class BinaryResourceDiffEditor extends SideBySideEditor {
 		@IEditorService editorService: IEditorService,
 		@IEditorGroupsService editorGroupService: IEditorGroupsService
 	) {
-		super(instantiationService, themeService, storageService, configurationService, textResourceConfigurationService, editorService, editorGroupService);
+		super(group, instantiationService, themeService, storageService, configurationService, textResourceConfigurationService, editorService, editorGroupService);
 	}
 
 	getMetadata(): string | undefined {

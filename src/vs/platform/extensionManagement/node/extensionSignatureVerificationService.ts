@@ -47,7 +47,7 @@ export class ExtensionSignatureVerificationService implements IExtensionSignatur
 	private moduleLoadingPromise: Promise<typeof vsceSign> | undefined;
 
 	constructor(
-		@ILogService private readonly logService: ILogService
+		@ILogService private readonly logService: ILogService,
 	) { }
 
 	private vsceSign(): Promise<typeof vsceSign> {
@@ -75,6 +75,13 @@ export class ExtensionSignatureVerificationService implements IExtensionSignatur
 			return false;
 		}
 
-		return module.verify(vsixFilePath, signatureArchiveFilePath, verbose);
+		let verified: boolean | undefined;
+
+		try {
+			verified = await module.verify(vsixFilePath, signatureArchiveFilePath, verbose);
+			return verified;
+		} catch (e) {
+			throw e;
+		}
 	}
 }

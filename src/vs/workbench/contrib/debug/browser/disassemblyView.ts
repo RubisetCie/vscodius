@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { PixelRatio } from 'vs/base/browser/pixelRatio';
-import { $, Dimension, addStandardDisposableListener, append, getWindowById } from 'vs/base/browser/dom';
+import { $, Dimension, addStandardDisposableListener, append } from 'vs/base/browser/dom';
 import { IListAccessibilityProvider } from 'vs/base/browser/ui/list/listWidget';
 import { ITableRenderer, ITableVirtualDelegate } from 'vs/base/browser/ui/table/table';
 import { binarySearch2 } from 'vs/base/common/arrays';
@@ -41,6 +41,7 @@ import { InstructionBreakpoint } from 'vs/workbench/contrib/debug/common/debugMo
 import { getUriFromSource } from 'vs/workbench/contrib/debug/common/debugSource';
 import { isUri, sourcesEqual } from 'vs/workbench/contrib/debug/common/debugUtils';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
+import { IEditorGroup } from 'vs/workbench/services/editor/common/editorGroupsService';
 
 interface IDisassembledInstructionEntry {
 	allowBreakpoint: boolean;
@@ -91,13 +92,14 @@ export class DisassemblyView extends EditorPane {
 	private readonly _referenceToMemoryAddress = new Map<string, bigint>();
 
 	constructor(
+		group: IEditorGroup,
 		@IThemeService themeService: IThemeService,
 		@IStorageService storageService: IStorageService,
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 		@IDebugService private readonly _debugService: IDebugService,
 	) {
-		super(DISASSEMBLY_VIEW_ID, themeService, storageService);
+		super(DISASSEMBLY_VIEW_ID, group, themeService, storageService);
 
 		this._disassembledInstructions = undefined;
 		this._onDidChangeStackFrame = this._register(new Emitter<void>({ leakWarningThreshold: 1000 }));
@@ -131,8 +133,7 @@ export class DisassemblyView extends EditorPane {
 	}
 
 	private createFontInfo() {
-		const window = getWindowById(this.group?.windowId, true).window;
-		return BareFontInfo.createFromRawSettings(this._configurationService.getValue('editor'), PixelRatio.getInstance(window).value);
+		return BareFontInfo.createFromRawSettings(this._configurationService.getValue('editor'), PixelRatio.getInstance(this.window).value);
 	}
 
 	get currentInstructionAddresses() {

@@ -46,7 +46,8 @@
 			const interval = 250;
 			let isFocused = document.hasFocus();
 			setInterval(() => {
-				const isCurrentlyFocused = document.hasFocus();
+				const target = getActiveFrame();
+				const isCurrentlyFocused = document.hasFocus() || !!(target && target.contentDocument && target.contentDocument.body.classList.contains('vscode-context-menu-visible'));
 				if (isCurrentlyFocused === isFocused) {
 					return;
 				}
@@ -128,6 +129,10 @@
 				border-radius: 4px;
 			}
 
+			pre code {
+				padding: 0;
+			}
+
 			blockquote {
 				background: var(--vscode-textBlockQuote-background);
 				border-color: var(--vscode-textBlockQuote-border);
@@ -191,7 +196,7 @@
 
 						return () => {
 							if (acquired && !${allowMultipleAPIAcquire}) {
-								throw new Error('An instance of the VS Code API has already been acquired');
+								throw new Error('An instance of the VSCodius API has already been acquired');
 							}
 							acquired = true;
 							return Object.freeze({

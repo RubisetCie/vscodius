@@ -394,7 +394,7 @@ function processCoreBundleFormat(fileHeader: string, languages: Language[], json
 
 	const languageDirectory = path.join(__dirname, '..', '..', '..', 'vscode-loc', 'i18n');
 	if (!fs.existsSync(languageDirectory)) {
-		log(`No VS Code localization repository found. Looking at ${languageDirectory}`);
+		log(`No VSCodius localization repository found. Looking at ${languageDirectory}`);
 		log(`To bundle translations please check out the vscode-loc repository as a sibling of the vscode repository.`);
 	}
 	const sortedLanguages = sortLanguages(languages);

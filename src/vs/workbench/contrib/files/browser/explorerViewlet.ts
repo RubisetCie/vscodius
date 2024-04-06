@@ -93,11 +93,11 @@ export class ExplorerViewletViewsContribution extends Disposable implements IWor
 			}
 		}
 
-		if (viewDescriptorsToRegister.length) {
-			viewsRegistry.registerViews(viewDescriptorsToRegister, VIEW_CONTAINER);
-		}
 		if (viewDescriptorsToDeregister.length) {
 			viewsRegistry.deregisterViews(viewDescriptorsToDeregister, VIEW_CONTAINER);
+		}
+		if (viewDescriptorsToRegister.length) {
+			viewsRegistry.registerViews(viewDescriptorsToRegister, VIEW_CONTAINER);
 		}
 
 		mark('code/didRegisterExplorerViews');

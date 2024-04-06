@@ -388,6 +388,14 @@ export class BackLayerWebView<T extends ICommonCellInfo> extends Themable {
 						background-color: var(--theme-notebook-symbol-highlight-background);
 					}
 
+					#container .nb-symbolHighlight .output_container .output {
+						background-color: var(--theme-notebook-symbol-highlight-background);
+					}
+
+					#container .nb-chatGenerationHighlight .output_container .output {
+						background-color: var(--vscode-notebook-selectedCellBackground);
+					}
+
 					#container > div.nb-cellDeleted .output_container {
 						background-color: var(--theme-notebook-diff-removed-background);
 					}
@@ -510,10 +518,10 @@ export class BackLayerWebView<T extends ICommonCellInfo> extends Themable {
 		return !!this.webview;
 	}
 
-	createWebview(codeWindow: CodeWindow): Promise<void> {
+	createWebview(targetWindow: CodeWindow): Promise<void> {
 		const baseUrl = this.asWebviewUri(this.getNotebookBaseUri(), undefined);
 		const htmlContent = this.generateContent(baseUrl.toString());
-		return this._initialize(htmlContent, codeWindow);
+		return this._initialize(htmlContent, targetWindow);
 	}
 
 	private getNotebookBaseUri() {
@@ -548,16 +556,16 @@ export class BackLayerWebView<T extends ICommonCellInfo> extends Themable {
 		];
 	}
 
-	private _initialize(content: string, codeWindow: CodeWindow): Promise<void> {
+	private _initialize(content: string, targetWindow: CodeWindow): Promise<void> {
 		if (!getWindow(this.element).document.body.contains(this.element)) {
 			throw new Error('Element is already detached from the DOM tree');
 		}
 
-		this.webview = this._createInset(this.webviewService, content, codeWindow);
-		this.webview.mountTo(this.element);
+		this.webview = this._createInset(this.webviewService, content);
+		this.webview.mountTo(this.element, targetWindow);
 		this._register(this.webview);
 
-		this._register(new WebviewWindowDragMonitor(() => this.webview));
+		this._register(new WebviewWindowDragMonitor(targetWindow, () => this.webview));
 
 		const initializePromise = new DeferredPromise<void>();
 
@@ -675,6 +683,7 @@ export class BackLayerWebView<T extends ICommonCellInfo> extends Themable {
 						const latestCell = this.notebookEditor.getCellByInfo(resolvedResult.cellInfo);
 						if (latestCell) {
 							latestCell.outputIsFocused = false;
+							latestCell.inputInOutputIsFocused = false;
 						}
 					}
 					break;
@@ -897,6 +906,13 @@ export class BackLayerWebView<T extends ICommonCellInfo> extends Themable {
 					break;
 				}
 				case 'outputInputFocus': {
+					const resolvedResult = this.resolveOutputId(data.id);
+					if (resolvedResult) {
+						const latestCell = this.notebookEditor.getCellByInfo(resolvedResult.cellInfo);
+						if (latestCell) {
+							latestCell.inputInOutputIsFocused = data.inputFocused;
+						}
+					}
 					this.notebookEditor.didFocusOutputInputChange(data.inputFocused);
 				}
 			}
@@ -1117,7 +1133,7 @@ export class BackLayerWebView<T extends ICommonCellInfo> extends Themable {
 		await this.openerService.open(newFileUri);
 	}
 
-	private _createInset(webviewService: IWebviewService, content: string, codeWindow: CodeWindow) {
+	private _createInset(webviewService: IWebviewService, content: string) {
 		this.localResourceRootsCache = this._getResourceRootsCache();
 		const webview = webviewService.createWebviewElement({
 			origin: BackLayerWebView.getOriginStore(this.storageService).getOrigin(this.notebookViewType, undefined),
@@ -1133,8 +1149,7 @@ export class BackLayerWebView<T extends ICommonCellInfo> extends Themable {
 				localResourceRoots: this.localResourceRootsCache,
 			},
 			extension: undefined,
-			providedViewType: 'notebook.output',
-			codeWindow: codeWindow
+			providedViewType: 'notebook.output'
 		});
 
 		webview.setHtml(content);
@@ -1666,6 +1681,30 @@ export class BackLayerWebView<T extends ICommonCellInfo> extends Themable {
 		}
 
 		this.webview?.focus();
+	}
+
+	selectOutputContents(cell: ICellViewModel) {
+		if (this._disposed) {
+			return;
+		}
+		const output = cell.outputsViewModels.find(o => o.model.outputId === cell.focusedOutputId);
+		const outputId = output ? this.insetMapping.get(output)?.outputId : undefined;
+		this._sendMessageToWebview({
+			type: 'select-output-contents',
+			cellOrOutputId: outputId || cell.id
+		});
+	}
+
+	selectInputContents(cell: ICellViewModel) {
+		if (this._disposed) {
+			return;
+		}
+		const output = cell.outputsViewModels.find(o => o.model.outputId === cell.focusedOutputId);
+		const outputId = output ? this.insetMapping.get(output)?.outputId : undefined;
+		this._sendMessageToWebview({
+			type: 'select-input-contents',
+			cellOrOutputId: outputId || cell.id
+		});
 	}
 
 	focusOutput(cellOrOutputId: string, alternateId: string | undefined, viewFocused: boolean) {

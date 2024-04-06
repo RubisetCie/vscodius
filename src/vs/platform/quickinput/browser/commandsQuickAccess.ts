@@ -18,6 +18,7 @@ import { IConfigurationChangeEvent, IConfigurationService } from 'vs/platform/co
 import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
+import { ILogService } from 'vs/platform/log/common/log';
 import { FastAndSlowPicks, IPickerQuickAccessItem, IPickerQuickAccessProviderOptions, PickerQuickAccessProvider, Picks } from 'vs/platform/quickinput/browser/pickerQuickAccess';
 import { IQuickAccessProviderRunOptions } from 'vs/platform/quickinput/common/quickAccess';
 import { IQuickPickSeparator } from 'vs/platform/quickinput/common/quickInput';
@@ -323,6 +324,7 @@ export class CommandsHistory extends Disposable {
 	constructor(
 		@IStorageService private readonly storageService: IStorageService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
+		@ILogService private readonly logService: ILogService
 	) {
 		super();
 
@@ -364,7 +366,7 @@ export class CommandsHistory extends Disposable {
 			try {
 				serializedCache = JSON.parse(raw);
 			} catch (error) {
-				// invalid data
+				this.logService.error(`[CommandsHistory] invalid data: ${error}`);
 			}
 		}
 

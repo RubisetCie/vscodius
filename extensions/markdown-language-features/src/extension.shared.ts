@@ -54,7 +54,7 @@ function registerMarkdownLanguageFeatures(
 		// Language features
 		registerDiagnosticSupport(selector, commandManager),
 		registerFindFileReferenceSupport(commandManager, client),
-		registerResourceDropOrPasteSupport(selector),
+		registerResourceDropOrPasteSupport(selector, parser),
 		registerPasteUrlSupport(selector, parser),
 		registerUpdateLinksOnRename(client),
 	);

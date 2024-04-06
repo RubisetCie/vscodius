@@ -5,14 +5,14 @@
 
 import * as nls from 'vs/nls';
 import { Action } from 'vs/base/common/actions';
-import { ILoggerService, LogLevel, isLogLevel } from 'vs/platform/log/common/log';
+import { ILoggerService, LogLevel, LogLevelToLocalizedString, isLogLevel } from 'vs/platform/log/common/log';
 import { IQuickInputButton, IQuickInputService, IQuickPickItem, IQuickPickSeparator } from 'vs/platform/quickinput/common/quickInput';
 import { URI } from 'vs/base/common/uri';
 import { IFileService } from 'vs/platform/files/common/files';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
 import { dirname, basename, isEqual } from 'vs/base/common/resources';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { IOutputService } from 'vs/workbench/services/output/common/output';
+import { IOutputChannelDescriptor, IOutputService } from 'vs/workbench/services/output/common/output';
 import { IDefaultLogLevelsService } from 'vs/workbench/contrib/logs/common/defaultLogLevels';
 import { Codicon } from 'vs/base/common/codicons';
 import { ThemeIcon } from 'vs/base/common/themables';
@@ -51,7 +51,7 @@ export class SetLogLevelAction extends Action {
 		const extensionLogs: LogChannelQuickPickItem[] = [], logs: LogChannelQuickPickItem[] = [];
 		const logLevel = this.loggerService.getLogLevel();
 		for (const channel of this.outputService.getChannelDescriptors()) {
-			if (!channel.log || !channel.file) {
+			if (!SetLogLevelAction.isLevelSettable(channel) || !channel.file) {
 				continue;
 			}
 			const channelLogLevel = this.loggerService.getLogLevel(channel.file) ?? logLevel;
@@ -93,6 +93,10 @@ export class SetLogLevelAction extends Action {
 			}));
 			quickPick.show();
 		});
+	}
+
+	static isLevelSettable(channel: IOutputChannelDescriptor): boolean {
+		return channel.log && channel.file !== undefined;
 	}
 
 	private async setLogLevelForChannel(logChannel: LogChannelQuickPickItem): Promise<void> {
@@ -140,15 +144,7 @@ export class SetLogLevelAction extends Action {
 	}
 
 	private getLabel(level: LogLevel, current?: LogLevel): string {
-		let label: string;
-		switch (level) {
-			case LogLevel.Trace: label = nls.localize('trace', "Trace"); break;
-			case LogLevel.Debug: label = nls.localize('debug', "Debug"); break;
-			case LogLevel.Info: label = nls.localize('info', "Info"); break;
-			case LogLevel.Warning: label = nls.localize('warn', "Warning"); break;
-			case LogLevel.Error: label = nls.localize('err', "Error"); break;
-			case LogLevel.Off: label = nls.localize('off', "Off"); break;
-		}
+		const label = LogLevelToLocalizedString(level).value;
 		return level === current ? `$(check) ${label}` : label;
 	}
 

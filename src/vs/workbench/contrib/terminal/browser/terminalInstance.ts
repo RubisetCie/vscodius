@@ -812,10 +812,29 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 	}
 
 	async runCommand(commandLine: string, shouldExecute: boolean): Promise<void> {
+		let commandDetection = this.capabilities.get(TerminalCapability.CommandDetection);
+
+		// Await command detection if the terminal is starting up
+		if (!commandDetection && (this._processManager.processState === ProcessState.Uninitialized || this._processManager.processState === ProcessState.Launching)) {
+			const store = new DisposableStore();
+			await Promise.race([
+				new Promise<void>(r => {
+					store.add(this.capabilities.onDidAddCapabilityType(e => {
+						if (e === TerminalCapability.CommandDetection) {
+							commandDetection = this.capabilities.get(TerminalCapability.CommandDetection);
+							r();
+						}
+					}));
+				}),
+				timeout(2000),
+			]);
+			store.dispose();
+		}
+
 		// Determine whether to send ETX (ctrl+c) before running the command. This should always
 		// happen unless command detection can reliably say that a command is being entered and
 		// there is no content in the prompt
-		if (this.capabilities.get(TerminalCapability.CommandDetection)?.hasInput !== false) {
+		if (commandDetection?.hasInput !== false) {
 			await this.sendText('\x03', false);
 			// Wait a little before running the command to avoid the sequences being echoed while the ^C
 			// is being evaluated
@@ -1447,21 +1466,20 @@ export class TerminalInstance extends Disposable implements ITerminalInstance {
 	}
 
 	private _onProcessData(ev: IProcessDataEvent): void {
-		const messageId = ++this._latestXtermWriteData;
 		if (ev.trackCommit) {
-			ev.writePromise = new Promise<void>(r => {
-				this.xterm?.raw.write(ev.data, () => {
-					this._latestXtermParseData = messageId;
-					this._processManager.acknowledgeDataEvent(ev.data.length);
-					r();
-				});
-			});
+			ev.writePromise = new Promise<void>(r => this._writeProcessData(ev, r));
 		} else {
-			this.xterm?.raw.write(ev.data, () => {
-				this._latestXtermParseData = messageId;
-				this._processManager.acknowledgeDataEvent(ev.data.length);
-			});
+			this._writeProcessData(ev);
 		}
+	}
+
+	private _writeProcessData(ev: IProcessDataEvent, cb?: () => void) {
+		const messageId = ++this._latestXtermWriteData;
+		this.xterm?.raw.write(ev.data, () => {
+			this._latestXtermParseData = messageId;
+			this._processManager.acknowledgeDataEvent(ev.data.length);
+			cb?.();
+		});
 	}
 
 	/**

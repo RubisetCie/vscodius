@@ -25,7 +25,7 @@ import { WorkbenchList } from 'vs/platform/list/browser/listService';
 import { IListVirtualDelegate, IListRenderer, IListContextMenuEvent, IListDragAndDrop, IListDragOverReaction, ListDragOverEffectPosition, ListDragOverEffectType } from 'vs/base/browser/ui/list/list';
 import { ResourceLabels, IResourceLabel } from 'vs/workbench/browser/labels';
 import { ActionBar } from 'vs/base/browser/ui/actionbar/actionbar';
-import { IDisposable, dispose } from 'vs/base/common/lifecycle';
+import { DisposableMap, IDisposable, dispose } from 'vs/base/common/lifecycle';
 import { MenuId, Action2, registerAction2, MenuRegistry } from 'vs/platform/actions/common/actions';
 import { OpenEditorsDirtyEditorContext, OpenEditorsGroupContext, OpenEditorsReadonlyEditorContext, SAVE_ALL_LABEL, SAVE_ALL_COMMAND_ID, NEW_UNTITLED_FILE_COMMAND_ID } from 'vs/workbench/contrib/files/browser/fileConstants';
 import { ResourceContextKey, MultipleEditorGroupsContext } from 'vs/workbench/common/contextkeys';
@@ -116,7 +116,7 @@ export class OpenEditorsView extends ViewPane {
 			this.listRefreshScheduler?.schedule(this.structuralRefreshDelay);
 		};
 
-		const groupDisposables = new Map<number, IDisposable>();
+		const groupDisposables = this._register(new DisposableMap<number>());
 		const addGroupListener = (group: IEditorGroup) => {
 			const groupModelChangeListener = group.onDidModelChange(e => {
 				if (this.listRefreshScheduler?.isScheduled()) {
@@ -154,7 +154,6 @@ export class OpenEditorsView extends ViewPane {
 				}
 			});
 			groupDisposables.set(group.id, groupModelChangeListener);
-			this._register(groupDisposables.get(group.id)!);
 		};
 
 		this.editorGroupService.groups.forEach(g => addGroupListener(g));
@@ -165,7 +164,7 @@ export class OpenEditorsView extends ViewPane {
 		this._register(this.editorGroupService.onDidMoveGroup(() => updateWholeList()));
 		this._register(this.editorGroupService.onDidChangeActiveGroup(() => this.focusActiveEditor()));
 		this._register(this.editorGroupService.onDidRemoveGroup(group => {
-			dispose(groupDisposables.get(group.id));
+			groupDisposables.deleteAndDispose(group.id);
 			updateWholeList();
 		}));
 	}
