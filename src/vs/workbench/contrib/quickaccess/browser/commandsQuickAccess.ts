@@ -31,7 +31,7 @@ import { IStorageService } from 'vs/platform/storage/common/storage';
 import { IWorkbenchQuickAccessConfiguration } from 'vs/workbench/browser/quickaccess';
 import { CHAT_OPEN_ACTION_ID } from 'vs/workbench/contrib/chat/browser/actions/chatActions';
 import { ASK_QUICK_QUESTION_ACTION_ID } from 'vs/workbench/contrib/chat/browser/actions/chatQuickInputActions';
-import { IChatAgentService } from 'vs/workbench/contrib/chat/common/chatAgents';
+import { ChatAgentLocation, IChatAgentService } from 'vs/workbench/contrib/chat/common/chatAgents';
 import { CommandInformationResult, IAiRelatedInformationService, RelatedInformationType } from 'vs/workbench/services/aiRelatedInformation/common/aiRelatedInformation';
 import { IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
@@ -170,7 +170,7 @@ export class CommandsQuickAccessProvider extends AbstractEditorCommandsQuickAcce
 			});
 		}
 
-		const defaultAgent = this.chatAgentService.getDefaultAgent();
+		const defaultAgent = this.chatAgentService.getDefaultAgent(ChatAgentLocation.Panel);
 		if (defaultAgent) {
 			additionalPicks.push({
 				label: localize('askXInChat', "Ask {0}: {1}", defaultAgent.metadata.fullName, filter),

@@ -16,7 +16,6 @@ import { IAction } from 'vs/base/common/actions';
 import { IClipboardService } from 'vs/platform/clipboard/common/clipboardService';
 
 const codeSettingRegex = /^<code (codesetting)="([^\s"\:]+)(?::([^"]+))?">/;
-const codeFeatureRegex = /^<span (codefeature)="([^\s"\:]+)(?::([^"]+))?">/;
 
 export class SimpleSettingRenderer {
 	private _defaultSettings: DefaultSettings;
@@ -43,10 +42,10 @@ export class SimpleSettingRenderer {
 
 	getHtmlRenderer(): (html: string) => string {
 		return (html): string => {
-			const match = codeSettingRegex.exec(html) ?? codeFeatureRegex.exec(html);
+			const match = codeSettingRegex.exec(html);
 			if (match && match.length === 4) {
 				const settingId = match[2];
-				const rendered = this.render(settingId, match[3], match[1] === 'codefeature');
+				const rendered = this.render(settingId, match[3]);
 				if (rendered) {
 					html = html.replace(codeSettingRegex, rendered);
 				}
@@ -57,10 +56,6 @@ export class SimpleSettingRenderer {
 
 	settingToUriString(settingId: string, value?: any): string {
 		return `${Schemas.codeSetting}://${settingId}${value ? `/${value}` : ''}`;
-	}
-
-	featureToUriString(settingId: string, value?: any): string {
-		return `${Schemas.codeFeature}://${settingId}${value ? `/${value}` : ''}`;
 	}
 
 	private settingsGroups: ISettingsGroup[] | undefined = undefined;
@@ -104,16 +99,13 @@ export class SimpleSettingRenderer {
 		}
 	}
 
-	private render(settingId: string, newValue: string, asFeature: boolean): string | undefined {
+	private render(settingId: string, newValue: string): string | undefined {
 		const setting = this.getSetting(settingId);
 		if (!setting) {
 			return '';
 		}
-		if (asFeature) {
-			return this.renderFeature(setting, newValue);
-		} else {
-			return this.renderSetting(setting, newValue);
-		}
+
+		return this.renderSetting(setting, newValue);
 	}
 
 	private viewInSettingsMessage(settingId: string, alreadyDisplayed: boolean) {
@@ -172,15 +164,6 @@ export class SimpleSettingRenderer {
 			<span class="separator"></span>
 			<span class="setting-name">${setting.key}</span>
 		</a></code><code>`;
-	}
-
-	private renderFeature(setting: ISetting, newValue: string): string | undefined {
-		const href = this.featureToUriString(setting.key, newValue);
-		const parsedValue = this.parseValue(setting.key, newValue);
-		const isChecked = this._configurationService.getValue(setting.key) === parsedValue;
-		this._featuredSettings.set(setting.key, parsedValue);
-		const title = nls.localize('changeFeatureTitle', "Toggle feature with setting {0}", setting.key);
-		return `<span><div class="codefeature-container"><input id="${setting.key}" class="hiddenCheck" type="checkbox" ${isChecked ? 'checked' : ''}><span class="codefeature"><a href="${href}" class="toggle" title="${title}" role="checkbox" aria-checked="${isChecked ? 'true' : 'false'}"></a></span><span class="title"></span></div>`;
 	}
 
 	private getSettingMessage(setting: ISetting, newValue: boolean | string | number): string | undefined {
@@ -287,26 +270,9 @@ export class SimpleSettingRenderer {
 		});
 	}
 
-	private async setFeatureState(uri: URI) {
-		const settingId = uri.authority;
-		const newSettingValue = this.parseValue(uri.authority, uri.path.substring(1));
-		let valueToSetSetting: any;
-		if (this._updatedSettings.has(settingId)) {
-			valueToSetSetting = this._updatedSettings.get(settingId);
-			this._updatedSettings.delete(settingId);
-		} else if (newSettingValue !== this._configurationService.getValue(settingId)) {
-			valueToSetSetting = newSettingValue;
-		} else {
-			valueToSetSetting = undefined;
-		}
-		await this._configurationService.updateValue(settingId, valueToSetSetting, ConfigurationTarget.USER);
-	}
-
 	async updateSetting(uri: URI, x: number, y: number) {
 		if (uri.scheme === Schemas.codeSetting) {
 			return this.showContextMenu(uri, x, y);
-		} else if (uri.scheme === Schemas.codeFeature) {
-			return this.setFeatureState(uri);
 		}
 	}
 }

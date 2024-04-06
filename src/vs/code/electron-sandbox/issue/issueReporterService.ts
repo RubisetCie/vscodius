@@ -74,10 +74,18 @@ export class IssueReporter extends Disposable {
 			selectedExtension: targetExtension
 		});
 
+		const fileOnMarketplace = configuration.data.issueSource === IssueSource.Marketplace;
+		const fileOnProduct = configuration.data.issueSource === IssueSource.VSCode;
+		this.issueReporterModel.update({ fileOnMarketplace, fileOnProduct });
+
 		//TODO: Handle case where extension is not activated
 		const issueReporterElement = this.getElementById('issue-reporter');
 		if (issueReporterElement) {
 			this.previewButton = new Button(issueReporterElement, unthemedButtonStyles);
+			const issueRepoName = document.createElement('a');
+			issueReporterElement.appendChild(issueRepoName);
+			issueRepoName.id = 'show-repo-name';
+			issueRepoName.classList.add('hidden');
 			this.updatePreviewButtonState();
 		}
 
@@ -119,7 +127,7 @@ export class IssueReporter extends Disposable {
 		codiconStyleSheet.id = 'codiconStyles';
 
 		// TODO: Is there a way to use the IThemeService here instead
-		const iconsStyleSheet = getIconsStyleSheet(undefined);
+		const iconsStyleSheet = this._register(getIconsStyleSheet(undefined));
 		function updateAll() {
 			codiconStyleSheet.textContent = iconsStyleSheet.getCSS();
 		}
@@ -158,6 +166,7 @@ export class IssueReporter extends Disposable {
 		}
 	}
 
+	// TODO @justschen: After migration to Aux Window, switch to dedicated css.
 	private applyStyles(styles: IssueReporterStyles) {
 		const styleTag = document.createElement('style');
 		const content: string[] = [];
@@ -501,6 +510,31 @@ export class IssueReporter extends Disposable {
 			this.previewButton.enabled = false;
 			this.previewButton.label = localize('loadingData', "Loading data...");
 		}
+
+		const issueRepoName = this.getElementById('show-repo-name')! as HTMLAnchorElement;
+		const selectedExtension = this.issueReporterModel.getData().selectedExtension;
+		if (selectedExtension && selectedExtension.uri) {
+			const urlString = URI.revive(selectedExtension.uri).toString();
+			issueRepoName.href = urlString;
+			issueRepoName.addEventListener('click', (e) => this.openLink(e));
+			issueRepoName.addEventListener('auxclick', (e) => this.openLink(<MouseEvent>e));
+			const gitHubInfo = this.parseGitHubUrl(urlString);
+			issueRepoName.textContent = gitHubInfo ? gitHubInfo.owner + '/' + gitHubInfo.repositoryName : urlString;
+			Object.assign(issueRepoName.style, {
+				alignSelf: 'flex-end',
+				display: 'block',
+				fontSize: '13px',
+				marginBottom: '10px',
+				padding: '4px 0px',
+				textDecoration: 'none',
+				width: 'auto'
+			});
+			show(issueRepoName);
+		} else {
+			// clear styles
+			issueRepoName.removeAttribute('style');
+			hide(issueRepoName);
+		}
 	}
 
 	private isPreviewEnabled() {
@@ -743,12 +777,16 @@ export class IssueReporter extends Disposable {
 
 	private setSourceOptions(): void {
 		const sourceSelect = this.getElementById('issue-source')! as HTMLSelectElement;
-		const { issueType, fileOnExtension, selectedExtension } = this.issueReporterModel.getData();
+		const { issueType, fileOnExtension, selectedExtension, fileOnMarketplace, fileOnProduct } = this.issueReporterModel.getData();
 		let selected = sourceSelect.selectedIndex;
 		if (selected === -1) {
 			if (fileOnExtension !== undefined) {
 				selected = fileOnExtension ? 2 : 1;
 			} else if (selectedExtension?.isBuiltin) {
+				selected = 1;
+			} else if (fileOnMarketplace) {
+				selected = 3;
+			} else if (fileOnProduct) {
 				selected = 1;
 			}
 		}
@@ -815,7 +853,7 @@ export class IssueReporter extends Disposable {
 		if (fileOnExtension && selectedExtension?.hasIssueUriRequestHandler && !selectedExtension.hasIssueDataProviders) {
 			hide(titleTextArea);
 			hide(descriptionTextArea);
-			reset(descriptionTitle, localize('handlesIssuesElsewhere', "This extension handles issues outside of VS Code"));
+			reset(descriptionTitle, localize('handlesIssuesElsewhere', "This extension handles issues outside of VSCodius"));
 			reset(descriptionSubtitle, localize('elsewhereDescription', "The '{0}' extension prefers to use an external issue reporter. To be taken to that issue reporting experience, click the button below.", selectedExtension.displayName));
 			this.previewButton.label = localize('openIssueReporter', "Open External Issue Reporter");
 			return;
@@ -886,13 +924,24 @@ export class IssueReporter extends Disposable {
 	private validateInput(inputId: string): boolean {
 		const inputElement = (<HTMLInputElement>this.getElementById(inputId));
 		const inputValidationMessage = this.getElementById(`${inputId}-empty-error`);
+		const descriptionShortMessage = this.getElementById(`description-short-error`);
 		if (!inputElement.value) {
 			inputElement.classList.add('invalid-input');
 			inputValidationMessage?.classList.remove('hidden');
+			descriptionShortMessage?.classList.add('hidden');
 			return false;
-		} else {
+		} else if (inputId === 'description' && inputElement.value.length < 10) {
+			inputElement.classList.add('invalid-input');
+			descriptionShortMessage?.classList.remove('hidden');
+			inputValidationMessage?.classList.add('hidden');
+			return false;
+		}
+		else {
 			inputElement.classList.remove('invalid-input');
 			inputValidationMessage?.classList.add('hidden');
+			if (inputId === 'description') {
+				descriptionShortMessage?.classList.add('hidden');
+			}
 			return true;
 		}
 	}

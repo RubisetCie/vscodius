@@ -37,7 +37,7 @@ import { ITextModelService } from 'vs/editor/common/services/resolverService';
 import { ILifecycleService } from 'vs/workbench/services/lifecycle/common/lifecycle';
 import { IDialogService, IPrompt } from 'vs/platform/dialogs/common/dialogs';
 import { IEditorService, ISaveAllEditorsOptions } from 'vs/workbench/services/editor/common/editorService';
-import { CancellationTokenSource } from 'vs/base/common/cancellation';
+import { CancellationToken } from 'vs/base/common/cancellation';
 import { IRemoteAgentService } from 'vs/workbench/services/remote/common/remoteAgentService';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
 import { IEditSessionIdentityService } from 'vs/platform/workspace/common/editSessions';
@@ -210,7 +210,7 @@ suite('Edit session sync', () => {
 		// Create root folder
 		await fileService.createFolder(folderUri);
 
-		await editSessionsContribution.storeEditSession(true, new CancellationTokenSource().token);
+		await editSessionsContribution.storeEditSession(true, CancellationToken.None);
 
 		// Verify that we did not attempt to write the edit session
 		assert.equal(writeStub.called, false);

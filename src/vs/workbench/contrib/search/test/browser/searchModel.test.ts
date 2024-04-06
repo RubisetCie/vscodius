@@ -13,7 +13,7 @@ import { ModelService } from 'vs/editor/common/services/modelService';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { TestConfigurationService } from 'vs/platform/configuration/test/common/testConfigurationService';
 import { TestInstantiationService } from 'vs/platform/instantiation/test/common/instantiationServiceMock';
-import { IFileMatch, IFileQuery, IFolderQuery, ISearchComplete, ISearchProgressItem, ISearchQuery, ISearchService, ITextQuery, ITextSearchMatch, OneLineRange, QueryType, TextSearchMatch } from 'vs/workbench/services/search/common/search';
+import { IAITextQuery, IFileMatch, IFileQuery, IFolderQuery, ISearchComplete, ISearchProgressItem, ISearchQuery, ISearchService, ITextQuery, ITextSearchMatch, OneLineRange, QueryType, TextSearchMatch } from 'vs/workbench/services/search/common/search';
 import { CellMatch, MatchInNotebook, SearchModel } from 'vs/workbench/contrib/search/browser/searchModel';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { TestThemeService } from 'vs/platform/theme/test/common/testThemeService';
@@ -86,6 +86,14 @@ suite('SearchModel', () => {
 
 				});
 			},
+			aiTextSearch(query: ISearchQuery, token?: CancellationToken, onProgress?: (result: ISearchProgressItem) => void, notebookURIs?: ResourceSet): Promise<ISearchComplete> {
+				return new Promise(resolve => {
+					queueMicrotask(() => {
+						results.forEach(onProgress!);
+						resolve(complete!);
+					});
+				});
+			},
 			textSearchSplitSyncAsync(query: ITextQuery, token?: CancellationToken | undefined, onProgress?: ((result: ISearchProgressItem) => void) | undefined): { syncResults: ISearchComplete; asyncResults: Promise<ISearchComplete> } {
 				return {
 					syncResults: {
@@ -122,6 +130,17 @@ suite('SearchModel', () => {
 					queueMicrotask(() => {
 						resolve(<any>{});
 					});
+				});
+			},
+			aiTextSearch(query: IAITextQuery, token?: CancellationToken, onProgress?: (result: ISearchProgressItem) => void, notebookURIs?: ResourceSet): Promise<ISearchComplete> {
+				const disposable = token?.onCancellationRequested(() => tokenSource.cancel());
+				if (disposable) {
+					store.add(disposable);
+				}
+
+				return Promise.resolve({
+					results: [],
+					messages: []
 				});
 			},
 			textSearchSplitSyncAsync(query: ITextQuery, token?: CancellationToken | undefined, onProgress?: ((result: ISearchProgressItem) => void) | undefined): { syncResults: ISearchComplete; asyncResults: Promise<ISearchComplete> } {

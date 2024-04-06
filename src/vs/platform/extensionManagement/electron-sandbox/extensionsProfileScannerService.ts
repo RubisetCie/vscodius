@@ -6,10 +6,11 @@
 import { ILogService } from 'vs/platform/log/common/log';
 import { IUserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
-import { AbstractExtensionsProfileScannerService } from 'vs/platform/extensionManagement/common/extensionsProfileScannerService';
+import { AbstractExtensionsProfileScannerService, IExtensionsProfileScannerService } from 'vs/platform/extensionManagement/common/extensionsProfileScannerService';
 import { IFileService } from 'vs/platform/files/common/files';
 import { INativeEnvironmentService } from 'vs/platform/environment/common/environment';
 import { URI } from 'vs/base/common/uri';
+import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
 
 export class ExtensionsProfileScannerService extends AbstractExtensionsProfileScannerService {
 	constructor(
@@ -22,3 +23,5 @@ export class ExtensionsProfileScannerService extends AbstractExtensionsProfileSc
 		super(URI.file(environmentService.extensionsPath), fileService, userDataProfilesService, uriIdentityService, logService);
 	}
 }
+
+registerSingleton(IExtensionsProfileScannerService, ExtensionsProfileScannerService, InstantiationType.Delayed);

@@ -241,7 +241,8 @@ export class XtermTerminal extends Disposable implements IXtermTerminal, IDetach
 			scrollSensitivity: config.mouseWheelScrollSensitivity,
 			wordSeparator: config.wordSeparators,
 			overviewRulerWidth: 10,
-			ignoreBracketedPasteMode: config.ignoreBracketedPasteMode
+			ignoreBracketedPasteMode: config.ignoreBracketedPasteMode,
+			rescaleOverlappingGlyphs: config.rescaleOverlappingGlyphs,
 		}));
 		this._updateSmoothScrolling();
 		this._core = (this.raw as any)._core as IXtermCore;
@@ -401,6 +402,7 @@ export class XtermTerminal extends Disposable implements IXtermTerminal, IDetach
 		this.raw.options.wordSeparator = config.wordSeparators;
 		this.raw.options.customGlyphs = config.customGlyphs;
 		this.raw.options.ignoreBracketedPasteMode = config.ignoreBracketedPasteMode;
+		this.raw.options.rescaleOverlappingGlyphs = config.rescaleOverlappingGlyphs;
 		this._updateSmoothScrolling();
 		if (this._attached?.options.enableGpu) {
 			if (this._shouldLoadWebgl()) {

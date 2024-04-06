@@ -33,13 +33,8 @@ import { DisposableStore, IDisposable } from 'vs/base/common/lifecycle';
 import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
 import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { ILogService } from 'vs/platform/log/common/log';
+import { ChatModel } from 'vs/workbench/contrib/chat/common/chatModel';
 
-
-export enum ExpansionState {
-	EXPANDED = 'expanded',
-	CROPPED = 'cropped',
-	NOT_CROPPED = 'not_cropped'
-}
 
 export class SessionWholeRange {
 
@@ -110,7 +105,6 @@ export class SessionWholeRange {
 export class Session {
 
 	private _lastInput: SessionPrompt | undefined;
-	private _lastExpansionState: ExpansionState | undefined;
 	private _isUnstashed: boolean = false;
 	private readonly _exchange: SessionExchange[] = [];
 	private readonly _startTime = new Date();
@@ -136,6 +130,7 @@ export class Session {
 		readonly session: IInlineChatSession,
 		readonly wholeRange: SessionWholeRange,
 		readonly hunkData: HunkData,
+		readonly chatModel: ChatModel,
 	) {
 		this.textModelNAltVersion = textModelN.getAlternativeVersionId();
 	}
@@ -154,14 +149,6 @@ export class Session {
 
 	markUnstashed() {
 		this._isUnstashed = true;
-	}
-
-	get lastExpansionState(): ExpansionState | undefined {
-		return this._lastExpansionState;
-	}
-
-	set lastExpansionState(state: ExpansionState) {
-		this._lastExpansionState = state;
 	}
 
 	get textModelNSnapshotAltVersion(): number | undefined {
@@ -223,21 +210,11 @@ export class Session {
 
 export class SessionPrompt {
 
-	private _attempt: number = 0;
-
 	constructor(
 		readonly value: string,
+		readonly attempt: number,
+		readonly withIntentDetection: boolean,
 	) { }
-
-	get attempt() {
-		return this._attempt;
-	}
-
-	retry() {
-		const result = new SessionPrompt(this.value);
-		result._attempt = this._attempt + 1;
-		return result;
-	}
 }
 
 export class SessionExchange {

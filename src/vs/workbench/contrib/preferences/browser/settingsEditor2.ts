@@ -65,6 +65,7 @@ import { IProductService } from 'vs/platform/product/common/productService';
 import { registerNavigableContainer } from 'vs/workbench/browser/actions/widgetNavigationCommands';
 import { IEditorProgressService } from 'vs/platform/progress/common/progress';
 import { IExtensionManifest } from 'vs/platform/extensions/common/extensions';
+import { CodeWindow } from 'vs/base/browser/window';
 
 
 export const enum SettingsFocusContext {
@@ -217,6 +218,7 @@ export class SettingsEditor2 extends EditorPane {
 	private installedExtensionIds: string[] = [];
 
 	constructor(
+		group: IEditorGroup,
 		@IWorkbenchConfigurationService private readonly configurationService: IWorkbenchConfigurationService,
 		@ITextResourceConfigurationService textResourceConfigurationService: ITextResourceConfigurationService,
 		@IThemeService themeService: IThemeService,
@@ -237,7 +239,7 @@ export class SettingsEditor2 extends EditorPane {
 		@IExtensionGalleryService private readonly extensionGalleryService: IExtensionGalleryService,
 		@IEditorProgressService private readonly editorProgressService: IEditorProgressService,
 	) {
-		super(SettingsEditor2.ID, themeService, storageService);
+		super(SettingsEditor2.ID, group, themeService, storageService);
 		this.delayedFilterLogging = new Delayer<void>(1000);
 		this.localSearchDelayer = new Delayer(300);
 		this.remoteSearchThrottle = new ThrottledDelayer(200);
@@ -395,7 +397,7 @@ export class SettingsEditor2 extends EditorPane {
 	}
 
 	private restoreCachedState(): ISettingsEditor2State | null {
-		const cachedState = this.group && this.input && this.editorMemento.loadEditorState(this.group, this.input);
+		const cachedState = this.input && this.editorMemento.loadEditorState(this.group, this.input);
 		if (cachedState && typeof cachedState.target === 'object') {
 			cachedState.target = URI.revive(cachedState.target);
 		}
@@ -496,8 +498,8 @@ export class SettingsEditor2 extends EditorPane {
 		}
 	}
 
-	protected override setEditorVisible(visible: boolean, group: IEditorGroup | undefined): void {
-		super.setEditorVisible(visible, group);
+	protected override setEditorVisible(visible: boolean): void {
+		super.setEditorVisible(visible);
 
 		if (!visible) {
 			// Wait for editor to be removed from DOM #106303
@@ -642,7 +644,7 @@ export class SettingsEditor2 extends EditorPane {
 		}));
 
 		if (this.userDataSyncWorkbenchService.enabled && this.userDataSyncEnablementService.canToggleEnablement()) {
-			const syncControls = this._register(this.instantiationService.createInstance(SyncControls, headerControlsContainer));
+			const syncControls = this._register(this.instantiationService.createInstance(SyncControls, this.window, headerControlsContainer));
 			this._register(syncControls.onDidChangeLastSyncedLabel(lastSyncedLabel => {
 				this.lastSyncedLabel = lastSyncedLabel;
 				this.updateInputAriaLabel();
@@ -652,9 +654,9 @@ export class SettingsEditor2 extends EditorPane {
 		this.controlsElement = DOM.append(searchContainer, DOM.$('.settings-clear-widget'));
 
 		const actionBar = this._register(new ActionBar(this.controlsElement, {
-			actionViewItemProvider: (action) => {
+			actionViewItemProvider: (action, options) => {
 				if (action.id === filterAction.id) {
-					return this.instantiationService.createInstance(SettingsSearchFilterDropdownMenuActionViewItem, action, this.actionRunner, this.searchWidget);
+					return this.instantiationService.createInstance(SettingsSearchFilterDropdownMenuActionViewItem, action, options, this.actionRunner, this.searchWidget);
 				}
 				return undefined;
 			}
@@ -1353,7 +1355,7 @@ export class SettingsEditor2 extends EditorPane {
 
 		// If the context view is focused, delay rendering settings
 		if (this.contextViewFocused()) {
-			const element = DOM.getWindow(this.settingsTree.getHTMLElement()).document.querySelector('.context-view');
+			const element = this.window.document.querySelector('.context-view');
 			if (element) {
 				this.scheduleRefresh(element as HTMLElement, key);
 			}
@@ -1715,10 +1717,10 @@ export class SettingsEditor2 extends EditorPane {
 		if (this.isVisible()) {
 			const searchQuery = this.searchWidget.getValue().trim();
 			const target = this.settingsTargetsWidget.settingsTarget as SettingsTarget;
-			if (this.group && this.input) {
+			if (this.input) {
 				this.editorMemento.saveEditorState(this.group, this.input, { searchQuery, target });
 			}
-		} else if (this.group && this.input) {
+		} else if (this.input) {
 			this.editorMemento.clearEditorState(this.input, this.group);
 		}
 
@@ -1734,6 +1736,7 @@ class SyncControls extends Disposable {
 	public readonly onDidChangeLastSyncedLabel = this._onDidChangeLastSyncedLabel.event;
 
 	constructor(
+		window: CodeWindow,
 		container: HTMLElement,
 		@ICommandService private readonly commandService: ICommandService,
 		@IUserDataSyncService private readonly userDataSyncService: IUserDataSyncService,
@@ -1761,7 +1764,7 @@ class SyncControls extends Disposable {
 		}));
 
 		const updateLastSyncedTimer = this._register(new DOM.WindowIntervalTimer());
-		updateLastSyncedTimer.cancelAndSet(() => this.updateLastSyncedTime(), 60 * 1000, DOM.getWindow(container));
+		updateLastSyncedTimer.cancelAndSet(() => this.updateLastSyncedTime(), 60 * 1000, window);
 
 		this.update();
 		this._register(this.userDataSyncService.onDidChangeStatus(() => {

@@ -24,6 +24,7 @@ import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { IProgress, Progress } from 'vs/platform/progress/common/progress';
 import { CodeActionFilter, CodeActionItem, CodeActionKind, CodeActionSet, CodeActionTrigger, CodeActionTriggerSource, filtersAction, mayIncludeActionsOfKind } from '../common/types';
+import { HierarchicalKind } from 'vs/base/common/hierarchicalKind';
 
 export const codeActionCommandId = 'editor.action.codeAction';
 export const quickFixCommandId = 'editor.action.quickFix';
@@ -78,7 +79,7 @@ class ManagedCodeActionSet extends Disposable implements CodeActionSet {
 	}
 
 	public get hasAutoFix() {
-		return this.validActions.some(({ action: fix }) => !!fix.kind && CodeActionKind.QuickFix.contains(new CodeActionKind(fix.kind)) && !!fix.isPreferred);
+		return this.validActions.some(({ action: fix }) => !!fix.kind && CodeActionKind.QuickFix.contains(new HierarchicalKind(fix.kind)) && !!fix.isPreferred);
 	}
 
 	public get hasAIFix() {
@@ -177,7 +178,7 @@ function getCodeActionProviders(
 				// We don't know what type of actions this provider will return.
 				return true;
 			}
-			return provider.providedCodeActionKinds.some(kind => mayIncludeActionsOfKind(filter, new CodeActionKind(kind)));
+			return provider.providedCodeActionKinds.some(kind => mayIncludeActionsOfKind(filter, new HierarchicalKind(kind)));
 		});
 }
 
@@ -199,16 +200,16 @@ function* getAdditionalDocumentationForShowingActions(
 function getDocumentationFromProvider(
 	provider: languages.CodeActionProvider,
 	providedCodeActions: readonly languages.CodeAction[],
-	only?: CodeActionKind
+	only?: HierarchicalKind
 ): languages.Command | undefined {
 	if (!provider.documentation) {
 		return undefined;
 	}
 
-	const documentation = provider.documentation.map(entry => ({ kind: new CodeActionKind(entry.kind), command: entry.command }));
+	const documentation = provider.documentation.map(entry => ({ kind: new HierarchicalKind(entry.kind), command: entry.command }));
 
 	if (only) {
-		let currentBest: { readonly kind: CodeActionKind; readonly command: languages.Command } | undefined;
+		let currentBest: { readonly kind: HierarchicalKind; readonly command: languages.Command } | undefined;
 		for (const entry of documentation) {
 			if (entry.kind.contains(only)) {
 				if (!currentBest) {
@@ -233,7 +234,7 @@ function getDocumentationFromProvider(
 		}
 
 		for (const entry of documentation) {
-			if (entry.kind.contains(new CodeActionKind(action.kind))) {
+			if (entry.kind.contains(new HierarchicalKind(action.kind))) {
 				return entry.command;
 			}
 		}
@@ -323,7 +324,7 @@ CommandsRegistry.registerCommand('_executeCodeActionProvider', async function (a
 		throw illegalArgument();
 	}
 
-	const include = typeof kind === 'string' ? new CodeActionKind(kind) : undefined;
+	const include = typeof kind === 'string' ? new HierarchicalKind(kind) : undefined;
 	const codeActionSet = await getCodeActions(
 		codeActionProvider,
 		model,

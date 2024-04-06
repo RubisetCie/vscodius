@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Disposable, ExtensionContext, OutputChannel, window, workspace, l10n, env } from 'vscode';
+import { Disposable, ExtensionContext, LogOutputChannel, window, l10n, env, LogLevel } from 'vscode';
 import { startClient, LanguageClientConstructor, SchemaRequestService, languageServerDescription, AsyncDisposable } from '../jsonClient';
 import { ServerOptions, TransportKind, LanguageClientOptions, LanguageClient } from 'vscode-languageclient/node';
 
@@ -19,7 +19,8 @@ let client: AsyncDisposable | undefined;
 export async function activate(context: ExtensionContext) {
 	const clientPackageJSON = await getPackageInfo(context);
 
-	const outputChannel = window.createOutputChannel(languageServerDescription);
+	const logOutputChannel = window.createOutputChannel(languageServerDescription, { log: true });
+	context.subscriptions.push(logOutputChannel);
 
 	const serverMain = `./server/${clientPackageJSON.main.indexOf('/dist/') !== -1 ? 'dist' : 'out'}/node/jsonServerMain`;
 	const serverModule = context.asAbsolutePath(serverMain);
@@ -35,11 +36,8 @@ export async function activate(context: ExtensionContext) {
 	};
 
 	const newLanguageClient: LanguageClientConstructor = (id: string, name: string, clientOptions: LanguageClientOptions) => {
-		clientOptions.outputChannel = outputChannel;
 		return new LanguageClient(id, name, serverOptions, clientOptions);
 	};
-	const log = getLog(outputChannel);
-	context.subscriptions.push(log);
 
 	const timer = {
 		setTimeout(callback: (...args: any[]) => void, ms: number, ...args: any[]): Disposable {
@@ -51,9 +49,9 @@ export async function activate(context: ExtensionContext) {
 	// pass the location of the localization bundle to the server
 	process.env['VSCODE_L10N_BUNDLE_LOCATION'] = l10n.uri?.toString() ?? '';
 
-	const schemaRequests = await getSchemaRequestService(context, log);
+	const schemaRequests = await getSchemaRequestService(context, logOutputChannel);
 
-	client = await startClient(context, newLanguageClient, { schemaRequests, timer });
+	client = await startClient(context, newLanguageClient, { schemaRequests, timer, logOutputChannel });
 }
 
 export async function deactivate(): Promise<any> {
@@ -80,36 +78,9 @@ async function getPackageInfo(context: ExtensionContext): Promise<IPackageInfo> 
 	}
 }
 
-interface Log {
-	trace(message: string): void;
-	isTrace(): boolean;
-	dispose(): void;
-}
-
-const traceSetting = 'json.trace.server';
-function getLog(outputChannel: OutputChannel): Log {
-	let trace = workspace.getConfiguration().get(traceSetting) === 'verbose';
-	const configListener = workspace.onDidChangeConfiguration(e => {
-		if (e.affectsConfiguration(traceSetting)) {
-			trace = workspace.getConfiguration().get(traceSetting) === 'verbose';
-		}
-	});
-	return {
-		trace(message: string) {
-			if (trace) {
-				outputChannel.appendLine(message);
-			}
-		},
-		isTrace() {
-			return trace;
-		},
-		dispose: () => configListener.dispose()
-	};
-}
-
 const retryTimeoutInHours = 2 * 24; // 2 days
 
-async function getSchemaRequestService(context: ExtensionContext, log: Log): Promise<SchemaRequestService> {
+async function getSchemaRequestService(context: ExtensionContext, log: LogOutputChannel): Promise<SchemaRequestService> {
 	let cache: JSONSchemaCache | undefined = undefined;
 	const globalStorage = context.globalStorageUri;
 
@@ -187,7 +158,7 @@ async function getSchemaRequestService(context: ExtensionContext, log: Log): Pro
 			if (cache && /^https?:\/\/json\.schemastore\.org\//.test(uri)) {
 				const content = await cache.getSchemaIfUpdatedSince(uri, retryTimeoutInHours);
 				if (content) {
-					if (log.isTrace()) {
+					if (log.logLevel === LogLevel.Trace) {
 						log.trace(`[json schema cache] Schema ${uri} from cache without request (last accessed ${cache.getLastUpdatedInHours(uri)} hours ago)`);
 					}
 

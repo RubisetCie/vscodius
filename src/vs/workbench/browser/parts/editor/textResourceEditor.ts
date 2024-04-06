@@ -17,7 +17,7 @@ import { ITextResourceConfigurationService } from 'vs/editor/common/services/tex
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { ScrollType, ICodeEditorViewState } from 'vs/editor/common/editorCommon';
-import { IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
+import { IEditorGroup, IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
 import { IModelService } from 'vs/editor/common/services/model';
@@ -36,6 +36,7 @@ export abstract class AbstractTextResourceEditor extends AbstractTextCodeEditor<
 
 	constructor(
 		id: string,
+		group: IEditorGroup,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IStorageService storageService: IStorageService,
 		@ITextResourceConfigurationService textResourceConfigurationService: ITextResourceConfigurationService,
@@ -44,7 +45,7 @@ export abstract class AbstractTextResourceEditor extends AbstractTextCodeEditor<
 		@IEditorService editorService: IEditorService,
 		@IFileService fileService: IFileService
 	) {
-		super(id, instantiationService, storageService, textResourceConfigurationService, themeService, editorService, editorGroupService, fileService);
+		super(id, group, instantiationService, storageService, textResourceConfigurationService, themeService, editorService, editorGroupService, fileService);
 	}
 
 	override async setInput(input: AbstractTextResourceEditorInput, options: ITextEditorOptions | undefined, context: IEditorOpenContext, token: CancellationToken): Promise<void> {
@@ -128,6 +129,7 @@ export class TextResourceEditor extends AbstractTextResourceEditor {
 	static readonly ID = 'workbench.editors.textResourceEditor';
 
 	constructor(
+		group: IEditorGroup,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IStorageService storageService: IStorageService,
 		@ITextResourceConfigurationService textResourceConfigurationService: ITextResourceConfigurationService,
@@ -138,7 +140,7 @@ export class TextResourceEditor extends AbstractTextResourceEditor {
 		@ILanguageService private readonly languageService: ILanguageService,
 		@IFileService fileService: IFileService
 	) {
-		super(TextResourceEditor.ID, instantiationService, storageService, textResourceConfigurationService, themeService, editorGroupService, editorService, fileService);
+		super(TextResourceEditor.ID, group, instantiationService, storageService, textResourceConfigurationService, themeService, editorGroupService, editorService, fileService);
 	}
 
 	protected override createEditorControl(parent: HTMLElement, configuration: ICodeEditorOptions): void {

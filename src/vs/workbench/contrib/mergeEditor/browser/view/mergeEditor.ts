@@ -107,6 +107,7 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 	private readonly scrollSynchronizer = this._register(new ScrollSynchronizer(this._viewModel, this.input1View, this.input2View, this.baseView, this.inputResultView, this._layoutModeObs));
 
 	constructor(
+		group: IEditorGroup,
 		@IInstantiationService instantiation: IInstantiationService,
 		@IContextKeyService private readonly contextKeyService: IContextKeyService,
 		@IStorageService storageService: IStorageService,
@@ -119,7 +120,7 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 		@ICodeEditorService private readonly _codeEditorService: ICodeEditorService,
 		@IConfigurationService private readonly configurationService: IConfigurationService
 	) {
-		super(MergeEditor.ID, instantiation, storageService, textResourceConfigurationService, themeService, editorService, editorGroupService, fileService);
+		super(MergeEditor.ID, group, instantiation, storageService, textResourceConfigurationService, themeService, editorService, editorGroupService, fileService);
 	}
 
 	override dispose(): void {
@@ -342,7 +343,7 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 				// all empty -> replace this editor with a normal editor for result
 				that.editorService.replaceEditors(
 					[{ editor: input, replacement: { resource: input.result, options: { preserveFocus: true } }, forceReplaceDirty: true }],
-					that.group ?? that.editorGroupService.activeGroup
+					that.group
 				);
 			}
 		});
@@ -455,8 +456,8 @@ export class MergeEditor extends AbstractTextEditor<IMergeEditorViewState> {
 		return super.hasFocus();
 	}
 
-	protected override setEditorVisible(visible: boolean, group: IEditorGroup | undefined): void {
-		super.setEditorVisible(visible, group);
+	protected override setEditorVisible(visible: boolean): void {
+		super.setEditorVisible(visible);
 
 		for (const { editor } of [this.input1View, this.input2View, this.inputResultView]) {
 			if (visible) {

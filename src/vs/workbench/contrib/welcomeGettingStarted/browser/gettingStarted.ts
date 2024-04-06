@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { $, Dimension, addDisposableListener, append, clearNode, getWindow, reset } from 'vs/base/browser/dom';
+import { $, Dimension, addDisposableListener, append, clearNode, reset } from 'vs/base/browser/dom';
 import { renderFormattedText } from 'vs/base/browser/formattedTextRenderer';
 import { StandardKeyboardEvent } from 'vs/base/browser/keyboardEvent';
 import { Button } from 'vs/base/browser/ui/button/button';
@@ -59,10 +59,10 @@ import 'vs/workbench/contrib/welcomeGettingStarted/browser/gettingStartedColors'
 import { GettingStartedDetailsRenderer } from 'vs/workbench/contrib/welcomeGettingStarted/browser/gettingStartedDetailsRenderer';
 import { gettingStartedCheckedCodicon, gettingStartedUncheckedCodicon } from 'vs/workbench/contrib/welcomeGettingStarted/browser/gettingStartedIcons';
 import { GettingStartedInput } from 'vs/workbench/contrib/welcomeGettingStarted/browser/gettingStartedInput';
-import { IResolvedWalkthrough, IResolvedWalkthroughStep, IWalkthroughsService, hiddenEntriesConfigurationKey } from 'vs/workbench/contrib/welcomeGettingStarted/browser/gettingStartedService';
+import { IResolvedWalkthrough, IResolvedWalkthroughStep, IWalkthroughsService, hiddenEntriesConfigurationKey, parseDescription } from 'vs/workbench/contrib/welcomeGettingStarted/browser/gettingStartedService';
 import { RestoreWalkthroughsConfigurationValue, restoreWalkthroughsConfigurationKey } from 'vs/workbench/contrib/welcomeGettingStarted/browser/startupPage';
 import { startEntries } from 'vs/workbench/contrib/welcomeGettingStarted/common/gettingStartedContent';
-import { GroupDirection, GroupsOrder, IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
+import { GroupDirection, GroupsOrder, IEditorGroup, IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
 import { IHostService } from 'vs/workbench/services/host/browser/host';
 import { ThemeSettings } from 'vs/workbench/services/themes/common/workbenchThemeService';
@@ -145,6 +145,7 @@ export class GettingStartedPage extends EditorPane {
 	private categoriesSlideDisposables: DisposableStore;
 
 	constructor(
+		group: IEditorGroup,
 		@ICommandService private readonly commandService: ICommandService,
 		@IProductService private readonly productService: IProductService,
 		@IKeybindingService private readonly keybindingService: IKeybindingService,
@@ -166,9 +167,10 @@ export class GettingStartedPage extends EditorPane {
 		@IHostService private readonly hostService: IHostService,
 		@IWebviewService private readonly webviewService: IWebviewService,
 		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
-		@IAccessibilityService private readonly accessibilityService: IAccessibilityService) {
+		@IAccessibilityService private readonly accessibilityService: IAccessibilityService,
+	) {
 
-		super(GettingStartedPage.ID, themeService, storageService);
+		super(GettingStartedPage.ID, group, themeService, storageService);
 
 		this.container = $('.gettingStartedContainer',
 			{
@@ -248,7 +250,7 @@ export class GettingStartedPage extends EditorPane {
 			ourStep.done = step.done;
 
 			if (category.id === this.currentWalkthrough?.id) {
-				const badgeelements = assertIsDefined(getWindow(this.container).document.querySelectorAll(`[data-done-step-id="${step.id}"]`));
+				const badgeelements = assertIsDefined(this.window.document.querySelectorAll(`[data-done-step-id="${step.id}"]`));
 				badgeelements.forEach(badgeelement => {
 					if (step.done) {
 						badgeelement.setAttribute('aria-checked', 'true');
@@ -326,7 +328,13 @@ export class GettingStartedPage extends EditorPane {
 		this.dispatchListeners.clear();
 
 		this.container.querySelectorAll('[x-dispatch]').forEach(element => {
-			const [command, argument] = (element.getAttribute('x-dispatch') ?? '').split(':');
+			const dispatch = element.getAttribute('x-dispatch') ?? '';
+			let command, argument;
+			if (dispatch.startsWith('openLink:https')) {
+				[command, argument] = ['openLink', dispatch.replace('openLink:', '')];
+			} else {
+				[command, argument] = dispatch.split(':');
+			}
 			if (command) {
 				this.dispatchListeners.add(addDisposableListener(element, 'click', (e) => {
 					e.stopPropagation();
@@ -413,12 +421,8 @@ export class GettingStartedPage extends EditorPane {
 				}
 				break;
 			}
-			case 'openExtensionPage': {
-				this.commandService.executeCommand('extension.open', argument);
-				break;
-			}
-			case 'hideExtension': {
-				this.hideExtension(argument);
+			case 'openLink': {
+				this.openerService.open(argument);
 				break;
 			}
 			default: {
@@ -433,11 +437,6 @@ export class GettingStartedPage extends EditorPane {
 		if (!selectedCategory) { throw Error('Could not find category with ID ' + categoryId); }
 		this.setHiddenCategories([...this.getHiddenCategories().add(categoryId)]);
 		this.gettingStartedList?.rerender();
-	}
-
-	private hideExtension(extensionId: string) {
-		this.setHiddenCategories([...this.getHiddenCategories().add(extensionId)]);
-		this.registerDispatchListeners();
 	}
 
 	private markAllStepsComplete() {
@@ -491,13 +490,13 @@ export class GettingStartedPage extends EditorPane {
 
 	private currentMediaComponent: string | undefined = undefined;
 	private currentMediaType: string | undefined = undefined;
-	private async buildMediaComponent(stepId: string) {
+	private async buildMediaComponent(stepId: string, forceRebuild: boolean = false) {
 		if (!this.currentWalkthrough) {
 			throw Error('no walkthrough selected');
 		}
 		const stepToExpand = assertIsDefined(this.currentWalkthrough.steps.find(step => step.id === stepId));
 
-		if (this.currentMediaComponent === stepId) { return; }
+		if (!forceRebuild && this.currentMediaComponent === stepId) { return; }
 		this.currentMediaComponent = stepId;
 
 		this.stepDisposables.clear();
@@ -520,10 +519,10 @@ export class GettingStartedPage extends EditorPane {
 
 			if (stepToExpand.media.type === 'svg') {
 				this.webview = this.mediaDisposables.add(this.webviewService.createWebviewElement({ title: undefined, options: { disableServiceWorker: true }, contentOptions: {}, extension: undefined }));
-				this.webview.mountTo(this.stepMediaComponent);
+				this.webview.mountTo(this.stepMediaComponent, this.window);
 			} else if (stepToExpand.media.type === 'markdown') {
 				this.webview = this.mediaDisposables.add(this.webviewService.createWebviewElement({ options: {}, contentOptions: { localResourceRoots: [stepToExpand.media.root], allowScripts: true }, title: '', extension: undefined }));
-				this.webview.mountTo(this.stepMediaComponent);
+				this.webview.mountTo(this.stepMediaComponent, this.window);
 			}
 		}
 
@@ -704,7 +703,7 @@ export class GettingStartedPage extends EditorPane {
 
 			stepElement.classList.add('expanded');
 			stepElement.setAttribute('aria-expanded', 'true');
-			this.buildMediaComponent(id);
+			this.buildMediaComponent(id, true);
 			this.gettingStartedService.progressByEvent('stepSelected:' + id);
 		} else {
 			this.editorInput.selectedStep = undefined;
@@ -799,14 +798,13 @@ export class GettingStartedPage extends EditorPane {
 			else {
 				this.container.classList.add('noWalkthroughs');
 				reset(rightColumn);
-
 			}
 			setTimeout(() => this.categoriesPageScrollbar?.scanDomNode(), 50);
 			layoutRecentList();
 		};
 
 		const layoutRecentList = () => {
-			if (this.container.classList.contains('noWalkthroughs') && this.container.classList.contains('noExtensions')) {
+			if (this.container.classList.contains('noWalkthroughs')) {
 				recentList.setLimit(10);
 				reset(leftColumn, startList.getDomElement());
 				reset(rightColumn, recentList.getDomElement());
@@ -1083,7 +1081,7 @@ export class GettingStartedPage extends EditorPane {
 	}
 
 	private updateCategoryProgress() {
-		getWindow(this.container).document.querySelectorAll('.category-progress').forEach(element => {
+		this.window.document.querySelectorAll('.category-progress').forEach(element => {
 			const categoryID = element.getAttribute('x-data-category-id');
 			const category = this.gettingStartedCategories.find(category => category.id === categoryID);
 			if (!category) { throw Error('Could not find category with ID ' + categoryID); }
@@ -1124,7 +1122,7 @@ export class GettingStartedPage extends EditorPane {
 			this.editorInput.selectedCategory = categoryID;
 			this.editorInput.selectedStep = stepId;
 			this.currentWalkthrough = ourCategory;
-			this.buildCategorySlide(categoryID);
+			this.buildCategorySlide(categoryID, stepId);
 			this.setSlide('details');
 		});
 	}
@@ -1136,7 +1134,7 @@ export class GettingStartedPage extends EditorPane {
 	}
 
 	private focusSideEditorGroup() {
-		const fullSize = this.group ? this.groupsService.getPart(this.group).contentDimension : undefined;
+		const fullSize = this.groupsService.getPart(this.group).contentDimension;
 		if (!fullSize || fullSize.width <= 700) { return; }
 		if (this.groupsService.count === 1) {
 			const sideGroup = this.groupsService.addGroup(this.groupsService.groups[0], GroupDirection.RIGHT);
@@ -1227,7 +1225,7 @@ export class GettingStartedPage extends EditorPane {
 		}
 	}
 
-	private buildStepMarkdownDescription(container: HTMLElement, text: LinkedText[]) {
+	private buildMarkdownDescription(container: HTMLElement, text: LinkedText[]) {
 		while (container.firstChild) { container.removeChild(container.firstChild); }
 
 		for (const linkedText of text) {
@@ -1297,12 +1295,15 @@ export class GettingStartedPage extends EditorPane {
 			throw Error('could not find category with ID ' + categoryID);
 		}
 
+		const descriptionContainer = $('.category-description.description.max-lines-3', { 'x-category-description-for': category.id });
+		this.buildMarkdownDescription(descriptionContainer, parseDescription(category.description));
+
 		const categoryDescriptorComponent =
 			$('.getting-started-category',
 				{},
 				$('.category-description-container', {},
 					$('h2.category-title.max-lines-3', { 'x-category-title-for': category.id }, ...renderLabelWithIcons(category.title)),
-					$('.category-description.description.max-lines-3', { 'x-category-description-for': category.id }, ...renderLabelWithIcons(category.description))));
+					descriptionContainer));
 
 		const stepListContainer = $('.step-list-container');
 
@@ -1353,7 +1354,7 @@ export class GettingStartedPage extends EditorPane {
 						});
 
 					const container = $('.step-description-container', { 'x-step-description-for': step.id });
-					this.buildStepMarkdownDescription(container, step.description);
+					this.buildMarkdownDescription(container, step.description);
 
 					const stepTitle = $('h3.step-title.max-lines-3', { 'x-step-title-for': step.id });
 					reset(stepTitle, ...renderLabelWithIcons(step.title));

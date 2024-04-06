@@ -30,6 +30,7 @@ export abstract class AbstractEditorWithViewState<T extends object> extends Edit
 
 	constructor(
 		id: string,
+		group: IEditorGroup,
 		viewStateStorageKey: string,
 		@IInstantiationService protected readonly instantiationService: IInstantiationService,
 		@IStorageService storageService: IStorageService,
@@ -38,17 +39,17 @@ export abstract class AbstractEditorWithViewState<T extends object> extends Edit
 		@IEditorService protected readonly editorService: IEditorService,
 		@IEditorGroupsService protected readonly editorGroupService: IEditorGroupsService
 	) {
-		super(id, themeService, storageService);
+		super(id, group, themeService, storageService);
 
 		this.viewState = this.getEditorMemento<T>(editorGroupService, textResourceConfigurationService, viewStateStorageKey, 100);
 	}
 
-	protected override setEditorVisible(visible: boolean, group: IEditorGroup | undefined): void {
+	protected override setEditorVisible(visible: boolean): void {
 
 		// Listen to close events to trigger `onWillCloseEditorInGroup`
-		this.groupListener.value = group?.onWillCloseEditor(e => this.onWillCloseEditor(e));
+		this.groupListener.value = this.group.onWillCloseEditor(e => this.onWillCloseEditor(e));
 
-		super.setEditorVisible(visible, group);
+		super.setEditorVisible(visible);
 	}
 
 	private onWillCloseEditor(e: IEditorCloseEvent): void {
@@ -108,7 +109,7 @@ export abstract class AbstractEditorWithViewState<T extends object> extends Edit
 		// - the user configured to not restore view state unless the editor is still opened in the group
 		if (
 			(input.isDisposed() && !this.tracksDisposedEditorViewState()) ||
-			(!this.shouldRestoreEditorViewState(input) && (!this.group || !this.group.contains(input)))
+			(!this.shouldRestoreEditorViewState(input) && !this.group.contains(input))
 		) {
 			this.clearEditorViewState(resource, this.group);
 		}
@@ -145,10 +146,6 @@ export abstract class AbstractEditorWithViewState<T extends object> extends Edit
 	}
 
 	private saveEditorViewState(resource: URI): void {
-		if (!this.group) {
-			return;
-		}
-
 		const editorViewState = this.computeEditorViewState(resource);
 		if (!editorViewState) {
 			return;
@@ -158,7 +155,7 @@ export abstract class AbstractEditorWithViewState<T extends object> extends Edit
 	}
 
 	protected loadEditorViewState(input: EditorInput | undefined, context?: IEditorOpenContext): T | undefined {
-		if (!input || !this.group) {
+		if (!input) {
 			return undefined; // we need valid input
 		}
 
