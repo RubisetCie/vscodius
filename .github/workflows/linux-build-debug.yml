@@ -29,8 +29,10 @@ jobs:
       - name: Packaging
         run: yarn gulp vscode-linux-${{github.event.inputs.pkg_arch}}
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: VSCodius-Linux-${{github.event.inputs.pkg_arch}}-Debug
           path: '~/work/${{github.event.repository.name}}/VSCode-linux-${{github.event.inputs.pkg_arch}}'
+          overwrite: true
+          compression-level: 9
           if-no-files-found: error

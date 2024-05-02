@@ -49,8 +49,10 @@ jobs:
         if: ${{github.event.inputs.patch_resources == 'true'}}
         run: node build\win32-resources-patch ..\VSCode-win32-${{github.event.inputs.pkg_arch}}/VSCodius.exe
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: VSCodius-Win32-${{github.event.inputs.pkg_arch}}-${{github.event.inputs.pkg_version}}-Release
           path: 'D:\a\${{github.event.repository.name}}\VSCode-win32-${{github.event.inputs.pkg_arch}}'
+          overwrite: true
+          compression-level: 9
           if-no-files-found: error

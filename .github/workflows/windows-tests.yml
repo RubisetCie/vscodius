@@ -29,7 +29,8 @@ jobs:
       - name: Testing
         run: ./scripts/test.bat > output.txt
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: VSCodius-Win32-Testing-Logs.zip
           path: 'output.txt'
+          overwrite: true
