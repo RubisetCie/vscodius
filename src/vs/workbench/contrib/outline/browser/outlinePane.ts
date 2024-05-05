@@ -35,6 +35,7 @@ import { AbstractTreeViewState, IAbstractTreeViewState, TreeFindMode } from 'vs/
 import { URI } from 'vs/base/common/uri';
 import { ctxAllCollapsed, ctxFilterOnType, ctxFollowsCursor, ctxSortMode, IOutlinePane, OutlineSortOrder } from 'vs/workbench/contrib/outline/browser/outline';
 import { defaultProgressBarStyles } from 'vs/platform/theme/browser/defaultStyles';
+import { IHoverService } from 'vs/platform/hover/browser/hover';
 
 class OutlineTreeSorter<E> implements ITreeSorter<E> {
 
@@ -92,8 +93,9 @@ export class OutlinePane extends ViewPane implements IOutlinePane {
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@IOpenerService openerService: IOpenerService,
 		@IThemeService themeService: IThemeService,
+		@IHoverService hoverService: IHoverService,
 	) {
-		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, _instantiationService, openerService, themeService);
+		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, _instantiationService, openerService, themeService, hoverService);
 		this._outlineViewState.restore(this._storageService);
 		this._disposables.add(this._outlineViewState);
 
@@ -262,7 +264,7 @@ export class OutlinePane extends ViewPane implements IOutlinePane {
 				multipleSelectionSupport: false,
 				hideTwistiesOfChildlessElements: true,
 				defaultFindMode: this._outlineViewState.filterOnType ? TreeFindMode.Filter : TreeFindMode.Highlight,
-				overrideStyles: { listBackground: this.getBackgroundColor() }
+				overrideStyles: this.getLocationBasedColors().listOverrideStyles
 			}
 		);
 
@@ -293,7 +295,7 @@ export class OutlinePane extends ViewPane implements IOutlinePane {
 		// feature: apply panel background to tree
 		this._editorControlDisposables.add(this.viewDescriptorService.onDidChangeLocation(({ views }) => {
 			if (views.some(v => v.id === this.id)) {
-				tree.updateOptions({ overrideStyles: { listBackground: this.getBackgroundColor() } });
+				tree.updateOptions({ overrideStyles: this.getLocationBasedColors().listOverrideStyles });
 			}
 		}));
 

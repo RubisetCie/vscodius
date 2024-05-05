@@ -117,6 +117,7 @@ interface BacklayerWebviewOptions {
 	readonly outputWordWrap: boolean;
 	readonly outputLineLimit: number;
 	readonly outputLinkifyFilePaths: boolean;
+	readonly minimalError: boolean;
 }
 
 
@@ -246,6 +247,7 @@ export class BackLayerWebView<T extends ICommonCellInfo> extends Themable {
 				outputScrolling: this.options.outputScrolling,
 				outputWordWrap: this.options.outputWordWrap,
 				linkifyFilePaths: this.options.outputLinkifyFilePaths,
+				minimalError: this.options.minimalError
 			}
 		});
 	}
@@ -284,7 +286,8 @@ export class BackLayerWebView<T extends ICommonCellInfo> extends Themable {
 			lineLimit: this.options.outputLineLimit,
 			outputScrolling: this.options.outputScrolling,
 			outputWordWrap: this.options.outputWordWrap,
-			linkifyFilePaths: this.options.outputLinkifyFilePaths
+			linkifyFilePaths: this.options.outputLinkifyFilePaths,
+			minimalError: this.options.minimalError
 		};
 		const preloadScript = preloadsScriptStr(
 			{
@@ -1720,6 +1723,16 @@ export class BackLayerWebView<T extends ICommonCellInfo> extends Themable {
 			type: 'focus-output',
 			cellOrOutputId: cellOrOutputId,
 			alternateId: alternateId
+		});
+	}
+
+	blurOutput() {
+		if (this._disposed) {
+			return;
+		}
+
+		this._sendMessageToWebview({
+			type: 'blur-output'
 		});
 	}
 

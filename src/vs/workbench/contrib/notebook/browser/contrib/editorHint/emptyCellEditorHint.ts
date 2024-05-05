@@ -8,6 +8,7 @@ import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
 import { EditorContributionInstantiation, registerEditorContribution } from 'vs/editor/browser/editorExtensions';
 import { ICommandService } from 'vs/platform/commands/common/commands';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
+import { IHoverService } from 'vs/platform/hover/browser/hover';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { EmptyTextEditorHintContribution, IEmptyTextEditorHintOptions } from 'vs/workbench/contrib/codeEditor/browser/emptyTextEditorHint/emptyTextEditorHint';
@@ -25,6 +26,7 @@ export class EmptyCellEditorHintContribution extends EmptyTextEditorHintContribu
 		@IEditorGroupsService editorGroupsService: IEditorGroupsService,
 		@ICommandService commandService: ICommandService,
 		@IConfigurationService configurationService: IConfigurationService,
+		@IHoverService hoverService: IHoverService,
 		@IKeybindingService keybindingService: IKeybindingService,
 		@IInlineChatSessionService inlineChatSessionService: IInlineChatSessionService,
 		@IInlineChatService inlineChatService: IInlineChatService,
@@ -35,6 +37,7 @@ export class EmptyCellEditorHintContribution extends EmptyTextEditorHintContribu
 			editorGroupsService,
 			commandService,
 			configurationService,
+			hoverService,
 			keybindingService,
 			inlineChatSessionService,
 			inlineChatService,

@@ -318,7 +318,8 @@ export class NotebookEditorWorkbenchToolbar extends Disposable {
 
 		const context = {
 			ui: true,
-			notebookEditor: this.notebookEditor
+			notebookEditor: this.notebookEditor,
+			source: 'notebookToolbar'
 		};
 
 		const actionProvider = (action: IAction, options: IActionViewItemOptions) => {

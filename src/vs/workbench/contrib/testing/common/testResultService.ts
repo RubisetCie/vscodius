@@ -147,7 +147,7 @@ export class TestResultService extends Disposable implements ITestResultService 
 		}
 
 		const resolved: ResolvedTestRunRequest = {
-			isUiTriggered: false,
+			preserveFocus: req.preserveFocus,
 			targets: [],
 			exclude: req.exclude,
 			continuous: req.continuous,

@@ -25,6 +25,8 @@ import { INotificationService } from 'vs/platform/notification/common/notificati
 import { Codicon } from 'vs/base/common/codicons';
 import { IUserDataProfile, IUserDataProfilesService, reviveProfile } from 'vs/platform/userDataProfile/common/userDataProfile';
 import { DEFAULT_EDITOR_ASSOCIATION } from 'vs/workbench/common/editor';
+import { IHoverService } from 'vs/platform/hover/browser/hover';
+import { IAccessibleViewInformationService } from 'vs/workbench/services/accessibility/common/accessibleViewInformationService';
 
 type UserDataSyncConflictResource = IUserDataSyncResource & IResourcePreview;
 
@@ -42,12 +44,14 @@ export class UserDataSyncConflictsViewPane extends TreeViewPane implements IUser
 		@IOpenerService openerService: IOpenerService,
 		@IThemeService themeService: IThemeService,
 		@INotificationService notificationService: INotificationService,
+		@IHoverService hoverService: IHoverService,
 		@IUserDataSyncService private readonly userDataSyncService: IUserDataSyncService,
 		@IUserDataSyncWorkbenchService private readonly userDataSyncWorkbenchService: IUserDataSyncWorkbenchService,
 		@IUserDataSyncEnablementService private readonly userDataSyncEnablementService: IUserDataSyncEnablementService,
 		@IUserDataProfilesService private readonly userDataProfilesService: IUserDataProfilesService,
+		@IAccessibleViewInformationService accessibleViewVisibilityService: IAccessibleViewInformationService,
 	) {
-		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, notificationService);
+		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, notificationService, hoverService, accessibleViewVisibilityService);
 		this._register(this.userDataSyncService.onDidChangeConflicts(() => this.treeView.refresh()));
 		this.registerActions();
 	}

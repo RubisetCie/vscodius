@@ -296,7 +296,7 @@ export class ExtensionHostManager extends Disposable implements IExtensionHostMa
 		this._resolvedActivationEvents.add(activationEvent);
 	}
 
-	public async getInspectPort(tryEnableInspector: boolean): Promise<number> {
+	public async getInspectPort(tryEnableInspector: boolean): Promise<{ port: number; host: string } | undefined> {
 		if (this._extensionHost) {
 			if (tryEnableInspector) {
 				await this._extensionHost.enableInspectPort();
@@ -306,7 +306,8 @@ export class ExtensionHostManager extends Disposable implements IExtensionHostMa
 				return port;
 			}
 		}
-		return 0;
+
+		return undefined;
 	}
 
 	public async resolveAuthority(remoteAuthority: string, resolveAttempt: number): Promise<IResolveAuthorityResult> {

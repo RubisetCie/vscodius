@@ -105,6 +105,7 @@ export class CodeActionController extends Disposable implements IEditorContribut
 	}
 
 	private async showCodeActionsFromLightbulb(actions: CodeActionSet, at: IAnchor | IPosition): Promise<void> {
+
 		if (actions.allAIFixes && actions.validActions.length === 1) {
 			const actionItem = actions.validActions[0];
 			const command = actionItem.action.command;
@@ -280,11 +281,11 @@ export class CodeActionController extends Disposable implements IEditorContribut
 
 		const delegate: IActionListDelegate<CodeActionItem> = {
 			onSelect: async (action: CodeActionItem, preview?: boolean) => {
-				this._applyCodeAction(action, /* retrigger */ true, !!preview, ApplyCodeActionReason.FromCodeActions);
-				this._actionWidgetService.hide();
+				this._applyCodeAction(action, /* retrigger */ true, !!preview, options.fromLightbulb ? ApplyCodeActionReason.FromAILightbulb : ApplyCodeActionReason.FromCodeActions);
+				this._actionWidgetService.hide(false);
 				currentDecorations.clear();
 			},
-			onHide: () => {
+			onHide: (didCancel?) => {
 				this._editor?.focus();
 				currentDecorations.clear();
 			},
@@ -301,7 +302,9 @@ export class CodeActionController extends Disposable implements IEditorContribut
 					const refactorKinds = [
 						CodeActionKind.RefactorExtract,
 						CodeActionKind.RefactorInline,
-						CodeActionKind.RefactorRewrite
+						CodeActionKind.RefactorRewrite,
+						CodeActionKind.RefactorMove,
+						CodeActionKind.Source
 					];
 
 					canPreview = refactorKinds.some(refactorKind => refactorKind.contains(hierarchicalKind));

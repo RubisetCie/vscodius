@@ -154,7 +154,7 @@ export class SettingsEditor2 extends EditorPane {
 
 	// (!) Lots of props that are set once on the first render
 	private defaultSettingsEditorModel!: Settings2EditorModel;
-	private modelDisposables: DisposableStore;
+	private readonly modelDisposables: DisposableStore;
 
 	private rootElement!: HTMLElement;
 	private headerContainer!: HTMLElement;
@@ -333,6 +333,7 @@ export class SettingsEditor2 extends EditorPane {
 		this.updateStyles();
 
 		this._register(registerNavigableContainer({
+			name: 'settingsEditor2',
 			focusNotifiers: [this],
 			focusNextWidget: () => {
 				if (this.searchWidget.inputWidget.hasWidgetFocus()) {

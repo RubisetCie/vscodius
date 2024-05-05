@@ -22,7 +22,7 @@ suite('Workbench - Test Result Storage', () => {
 		const t = ds.add(new LiveTestResult(
 			'',
 			true,
-			{ targets: [] }
+			{ targets: [] },
 		));
 
 		t.addTask({ id: taskName, name: undefined, running: true });

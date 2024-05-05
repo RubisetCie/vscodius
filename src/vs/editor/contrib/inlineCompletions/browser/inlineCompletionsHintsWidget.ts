@@ -77,7 +77,7 @@ export class InlineCompletionsHintsWidget extends Disposable {
 				this.position,
 				model.selectedInlineCompletionIndex,
 				model.inlineCompletionsCount,
-				model.selectedInlineCompletion.map(v => /** @description commands */ v?.inlineCompletion.source.inlineCompletions.commands ?? []),
+				model.activeCommands,
 			));
 			editor.addContentWidget(contentWidget);
 			store.add(toDisposable(() => editor.removeContentWidget(contentWidget)));
@@ -150,8 +150,6 @@ export class InlineSuggestionHintsContentWidget extends Disposable implements IC
 		this.previousAction.enabled = this.nextAction.enabled = false;
 	}, 100));
 
-	private lastCommands: Command[] = [];
-
 	constructor(
 		private readonly editor: ICodeEditor,
 		private readonly withBorder: boolean,
@@ -223,13 +221,6 @@ export class InlineSuggestionHintsContentWidget extends Disposable implements IC
 		this._register(autorun(reader => {
 			/** @description extra commands */
 			const extraCommands = this._extraCommands.read(reader);
-			if (equals(this.lastCommands, extraCommands)) {
-				// nothing to update
-				return;
-			}
-
-			this.lastCommands = extraCommands;
-
 			const extraActions = extraCommands.map<IAction>(c => ({
 				class: undefined,
 				id: c.id,
@@ -326,8 +317,9 @@ export class CustomizedMenuWorkbenchToolBar extends WorkbenchToolBar {
 		@IContextKeyService private readonly contextKeyService: IContextKeyService,
 		@IContextMenuService contextMenuService: IContextMenuService,
 		@IKeybindingService keybindingService: IKeybindingService,
+		@ICommandService commandService: ICommandService,
 	) {
-		super(container, { resetMenu: menuId, ...options2 }, menuService, contextKeyService, contextMenuService, keybindingService);
+		super(container, { resetMenu: menuId, ...options2 }, menuService, contextKeyService, contextMenuService, keybindingService, commandService);
 
 		this._store.add(this.menu.onDidChange(() => this.updateToolbar()));
 		this.updateToolbar();
