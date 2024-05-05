@@ -15,6 +15,7 @@ import { ICommandService } from 'vs/platform/commands/common/commands';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
+import { IHoverService } from 'vs/platform/hover/browser/hover';
 
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
@@ -61,9 +62,10 @@ export class NotebookVariablesView extends ViewPane {
 		@IQuickInputService protected quickInputService: IQuickInputService,
 		@ICommandService protected commandService: ICommandService,
 		@IThemeService themeService: IThemeService,
+		@IHoverService hoverService: IHoverService,
 		@IMenuService private readonly menuService: IMenuService
 	) {
-		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
+		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, hoverService);
 
 		this._register(this.editorService.onDidActiveEditorChange(this.handleActiveEditorChange.bind(this)));
 		this._register(this.notebookKernelService.onDidNotebookVariablesUpdate(this.handleVariablesChanged.bind(this)));
@@ -84,7 +86,7 @@ export class NotebookVariablesView extends ViewPane {
 			'notebookVariablesTree',
 			container,
 			new NotebookVariablesDelegate(),
-			[new NotebookVariableRenderer()],
+			[new NotebookVariableRenderer(this.hoverService)],
 			this.dataSource,
 			{
 				accessibilityProvider: new NotebookVariableAccessibilityProvider(),

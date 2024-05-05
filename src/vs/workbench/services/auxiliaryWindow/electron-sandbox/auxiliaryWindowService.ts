@@ -6,7 +6,7 @@
 import { localize } from 'vs/nls';
 import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
 import { IWorkbenchLayoutService } from 'vs/workbench/services/layout/browser/layoutService';
-import { AuxiliaryWindow, BrowserAuxiliaryWindowService, IAuxiliaryWindowOpenOptions, IAuxiliaryWindowService } from 'vs/workbench/services/auxiliaryWindow/browser/auxiliaryWindowService';
+import { AuxiliaryWindow, AuxiliaryWindowMode, BrowserAuxiliaryWindowService, IAuxiliaryWindowOpenOptions, IAuxiliaryWindowService } from 'vs/workbench/services/auxiliaryWindow/browser/auxiliaryWindowService';
 import { ISandboxGlobals } from 'vs/base/parts/sandbox/electron-sandbox/globals';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { DisposableStore } from 'vs/base/common/lifecycle';
@@ -19,9 +19,10 @@ import { ShutdownReason } from 'vs/workbench/services/lifecycle/common/lifecycle
 import { Barrier } from 'vs/base/common/async';
 import { IHostService } from 'vs/workbench/services/host/browser/host';
 import { applyZoom } from 'vs/platform/window/electron-sandbox/window';
-import { getZoomLevel } from 'vs/base/browser/browser';
+import { getZoomLevel, isFullscreen } from 'vs/base/browser/browser';
 import { getActiveWindow } from 'vs/base/browser/dom';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
+import { isMacintosh } from 'vs/base/common/platform';
 
 type NativeCodeWindow = CodeWindow & {
 	readonly vscode: ISandboxGlobals;
@@ -30,6 +31,8 @@ type NativeCodeWindow = CodeWindow & {
 export class NativeAuxiliaryWindow extends AuxiliaryWindow {
 
 	private skipUnloadConfirmation = false;
+
+	private maximized = false;
 
 	constructor(
 		window: CodeWindow,
@@ -43,6 +46,30 @@ export class NativeAuxiliaryWindow extends AuxiliaryWindow {
 		@IDialogService private readonly dialogService: IDialogService
 	) {
 		super(window, container, stylesHaveLoaded, configurationService, hostService, environmentService);
+
+		if (!isMacintosh) {
+			// For now, limit this to platforms that have clear maximised
+			// transitions (Windows, Linux) via window buttons.
+			this.handleMaximizedState();
+		}
+	}
+
+	private handleMaximizedState(): void {
+		(async () => {
+			this.maximized = await this.nativeHostService.isMaximized({ targetWindowId: this.window.vscodeWindowId });
+		})();
+
+		this._register(this.nativeHostService.onDidMaximizeWindow(windowId => {
+			if (windowId === this.window.vscodeWindowId) {
+				this.maximized = true;
+			}
+		}));
+
+		this._register(this.nativeHostService.onDidUnmaximizeWindow(windowId => {
+			if (windowId === this.window.vscodeWindowId) {
+				this.maximized = false;
+			}
+		}));
 	}
 
 	protected override async handleVetoBeforeClose(e: BeforeUnloadEvent, veto: string): Promise<void> {
@@ -68,6 +95,16 @@ export class NativeAuxiliaryWindow extends AuxiliaryWindow {
 	protected override preventUnload(e: BeforeUnloadEvent): void {
 		e.preventDefault();
 		e.returnValue = true;
+	}
+
+	override createState(): IAuxiliaryWindowOpenOptions {
+		const state = super.createState();
+		const fullscreen = isFullscreen(this.window);
+		return {
+			...state,
+			bounds: state.bounds,
+			mode: this.maximized ? AuxiliaryWindowMode.Maximized : fullscreen ? AuxiliaryWindowMode.Fullscreen : AuxiliaryWindowMode.Normal
+		};
 	}
 }
 

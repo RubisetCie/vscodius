@@ -5,7 +5,7 @@
 
 import * as dom from 'vs/base/browser/dom';
 import { IActionViewItem } from 'vs/base/browser/ui/actionbar/actionbar';
-import { IAction } from 'vs/base/common/actions';
+import { Action, IAction } from 'vs/base/common/actions';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { DropdownWithPrimaryActionViewItem } from 'vs/platform/actions/browser/dropdownWithPrimaryActionViewItem';
 import { IMenu, IMenuService, MenuId, MenuItemAction } from 'vs/platform/actions/common/actions';
@@ -17,18 +17,19 @@ import { IStorageService } from 'vs/platform/storage/common/storage';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
 import { EditorPane } from 'vs/workbench/browser/parts/editor/editorPane';
 import { IEditorOpenContext } from 'vs/workbench/common/editor';
-import { ITerminalEditorService, ITerminalService, terminalEditorId } from 'vs/workbench/contrib/terminal/browser/terminal';
+import { ITerminalConfigurationService, ITerminalEditorService, ITerminalService, terminalEditorId } from 'vs/workbench/contrib/terminal/browser/terminal';
 import { TerminalEditorInput } from 'vs/workbench/contrib/terminal/browser/terminalEditorInput';
 import { getTerminalActionBarArgs } from 'vs/workbench/contrib/terminal/browser/terminalMenus';
 import { ITerminalProfileResolverService, ITerminalProfileService, TerminalCommandId } from 'vs/workbench/contrib/terminal/common/terminal';
 import { IEditorGroup } from 'vs/workbench/services/editor/common/editorGroupsService';
-import { isLinux, isMacintosh } from 'vs/base/common/platform';
+import { isMacintosh } from 'vs/base/common/platform';
 import { BrowserFeatures } from 'vs/base/browser/canIUse';
 import { INotificationService } from 'vs/platform/notification/common/notification';
 import { openContextMenu } from 'vs/workbench/contrib/terminal/browser/terminalContextMenu';
 import { ACTIVE_GROUP } from 'vs/workbench/services/editor/common/editorService';
 import { IWorkbenchLayoutService, Parts } from 'vs/workbench/services/layout/browser/layoutService';
 import { IBaseActionViewItemOptions } from 'vs/base/browser/ui/actionbar/actionViewItems';
+import { DisposableStore } from 'vs/base/common/lifecycle';
 
 export class TerminalEditor extends EditorPane {
 
@@ -45,6 +46,8 @@ export class TerminalEditor extends EditorPane {
 
 	private _cancelContextMenu: boolean = false;
 
+	private readonly _disposableStore = this._register(new DisposableStore());
+
 	constructor(
 		group: IEditorGroup,
 		@IThemeService themeService: IThemeService,
@@ -52,6 +55,7 @@ export class TerminalEditor extends EditorPane {
 		@ITerminalEditorService private readonly _terminalEditorService: ITerminalEditorService,
 		@ITerminalProfileResolverService private readonly _terminalProfileResolverService: ITerminalProfileResolverService,
 		@ITerminalService private readonly _terminalService: ITerminalService,
+		@ITerminalConfigurationService private readonly _terminalConfigurationService: ITerminalConfigurationService,
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IMenuService menuService: IMenuService,
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
@@ -117,17 +121,25 @@ export class TerminalEditor extends EditorPane {
 			return;
 		}
 		this._register(dom.addDisposableListener(this._editorInstanceElement, 'mousedown', async (event: MouseEvent) => {
-			if (this._terminalEditorService.instances.length === 0) {
+			const terminal = this._terminalEditorService.activeInstance;
+			if (this._terminalEditorService.instances.length === 0 || !terminal) {
 				return;
 			}
 
-			if (event.which === 2 && isLinux) {
-				// Drop selection and focus terminal on Linux to enable middle button paste when click
-				// occurs on the selection itself.
-				const terminal = this._terminalEditorService.activeInstance;
-				terminal?.focus();
+			if (event.which === 2) {
+				switch (this._terminalConfigurationService.config.middleClickBehavior) {
+					case 'paste':
+						terminal.paste();
+						break;
+					case 'default':
+					default:
+						// Drop selection and focus terminal on Linux to enable middle button paste
+						// when click occurs on the selection itself.
+						terminal.focus();
+						break;
+				}
 			} else if (event.which === 3) {
-				const rightClickBehavior = this._terminalService.configHelper.config.rightClickBehavior;
+				const rightClickBehavior = this._terminalConfigurationService.config.rightClickBehavior;
 				if (rightClickBehavior === 'nothing') {
 					if (!event.shiftKey) {
 						this._cancelContextMenu = true;
@@ -135,11 +147,6 @@ export class TerminalEditor extends EditorPane {
 					return;
 				}
 				else if (rightClickBehavior === 'copyPaste' || rightClickBehavior === 'paste') {
-					const terminal = this._terminalEditorService.activeInstance;
-					if (!terminal) {
-						return;
-					}
-
 					// copyPaste: Shift+right click should open context menu
 					if (rightClickBehavior === 'copyPaste' && event.shiftKey) {
 						openContextMenu(this.window, event, this._editorInput?.terminalInstance, this._instanceMenu, this._contextMenuService);
@@ -170,7 +177,7 @@ export class TerminalEditor extends EditorPane {
 			}
 		}));
 		this._register(dom.addDisposableListener(this._editorInstanceElement, 'contextmenu', (event: MouseEvent) => {
-			const rightClickBehavior = this._terminalService.configHelper.config.rightClickBehavior;
+			const rightClickBehavior = this._terminalConfigurationService.config.rightClickBehavior;
 			if (rightClickBehavior === 'nothing' && !event.shiftKey) {
 				event.preventDefault();
 				event.stopImmediatePropagation();
@@ -209,12 +216,24 @@ export class TerminalEditor extends EditorPane {
 				if (action instanceof MenuItemAction) {
 					const location = { viewColumn: ACTIVE_GROUP };
 					const actions = getTerminalActionBarArgs(location, this._terminalProfileService.availableProfiles, this._getDefaultProfileName(), this._terminalProfileService.contributedProfiles, this._terminalService, this._dropdownMenu);
+					this._registerDisposableActions(actions.dropdownAction, actions.dropdownMenuActions);
 					const button = this._instantiationService.createInstance(DropdownWithPrimaryActionViewItem, action, actions.dropdownAction, actions.dropdownMenuActions, actions.className, this._contextMenuService, { hoverDelegate: options.hoverDelegate });
 					return button;
 				}
 			}
 		}
 		return super.getActionViewItem(action, options);
+	}
+
+	/**
+	 * Actions might be of type Action (disposable) or Separator or SubmenuAction, which don't extend Disposable
+	 */
+	private _registerDisposableActions(dropdownAction: IAction, dropdownMenuActions: IAction[]): void {
+		this._disposableStore.clear();
+		if (dropdownAction instanceof Action) {
+			this._disposableStore.add(dropdownAction);
+		}
+		dropdownMenuActions.filter(a => a instanceof Action).forEach(a => this._disposableStore.add(a));
 	}
 
 	private _getDefaultProfileName(): string {

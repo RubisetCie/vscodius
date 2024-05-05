@@ -16,7 +16,6 @@ import { IWorkingCopyBackupService } from 'vs/workbench/services/workingCopy/com
 import { ILifecycleService, LifecyclePhase, StartupKind } from 'vs/workbench/services/lifecycle/common/lifecycle';
 import { IFileService } from 'vs/platform/files/common/files';
 import { joinPath } from 'vs/base/common/resources';
-import { IEditorOptions } from 'vs/platform/editor/common/editor';
 import { IWorkbenchLayoutService } from 'vs/workbench/services/layout/browser/layoutService';
 import { GettingStartedEditorOptions, GettingStartedInput, gettingStartedInputTypeId } from 'vs/workbench/contrib/welcomeGettingStarted/browser/gettingStartedInput';
 import { IWorkbenchEnvironmentService } from 'vs/workbench/services/environment/common/environmentService';
@@ -139,9 +138,10 @@ export class StartupPageRunnerContribution implements IWorkbenchContribution {
 			const restoreData: RestoreWalkthroughsConfigurationValue = JSON.parse(toRestore);
 			const currentWorkspace = this.contextService.getWorkspace();
 			if (restoreData.folder === UNKNOWN_EMPTY_WINDOW_WORKSPACE.id || restoreData.folder === currentWorkspace.folders[0].uri.toString()) {
+				const options: GettingStartedEditorOptions = { selectedCategory: restoreData.category, selectedStep: restoreData.step, pinned: false };
 				this.editorService.openEditor({
 					resource: GettingStartedInput.RESOURCE,
-					options: <GettingStartedEditorOptions>{ selectedCategory: restoreData.category, selectedStep: restoreData.step, pinned: false },
+					options
 				});
 				this.storageService.remove(restoreWalkthroughsConfigurationKey, StorageScope.PROFILE);
 				return true;
@@ -187,11 +187,11 @@ export class StartupPageRunnerContribution implements IWorkbenchContribution {
 			return;
 		}
 
-		const options: IEditorOptions = editor ? { pinned: false, index: 0 } : { pinned: false };
+		const options: GettingStartedEditorOptions = editor ? { pinned: false, index: 0 } : { pinned: false };
 		if (startupEditorTypeID === gettingStartedInputTypeId) {
 			this.editorService.openEditor({
 				resource: GettingStartedInput.RESOURCE,
-				options: <GettingStartedEditorOptions>{ ...options },
+				options,
 			});
 		}
 	}

@@ -8,7 +8,7 @@ import { Emitter, Event } from 'vs/base/common/event';
 import { ResourceEdit, ResourceFileEdit, ResourceTextEdit } from 'vs/editor/browser/services/bulkEditService';
 import { IWorkspaceTextEdit, TextEdit, WorkspaceEdit } from 'vs/editor/common/languages';
 import { IIdentifiedSingleEditOperation, IModelDecorationOptions, IModelDeltaDecoration, ITextModel, IValidEditOperation, TrackedRangeStickiness } from 'vs/editor/common/model';
-import { EditMode, IInlineChatSessionProvider, IInlineChatSession, IInlineChatBulkEditResponse, IInlineChatEditResponse, InlineChatResponseType, InlineChatResponseTypes, CTX_INLINE_CHAT_HAS_STASHED_SESSION } from 'vs/workbench/contrib/inlineChat/common/inlineChat';
+import { EditMode, IInlineChatSessionProvider, IInlineChatSession, IInlineChatBulkEditResponse, IInlineChatEditResponse, InlineChatResponseType, CTX_INLINE_CHAT_HAS_STASHED_SESSION } from 'vs/workbench/contrib/inlineChat/common/inlineChat';
 import { IRange, Range } from 'vs/editor/common/core/range';
 import { ModelDecorationOptions } from 'vs/editor/common/model/textModel';
 import { toErrorMessage } from 'vs/base/common/errorMessage';
@@ -25,7 +25,6 @@ import { isEqual } from 'vs/base/common/resources';
 import { IInlineChatSessionService, Recording } from './inlineChatSessionService';
 import { LineRange } from 'vs/editor/common/core/lineRange';
 import { IEditorWorkerService } from 'vs/editor/common/services/editorWorker';
-import { asRange } from 'vs/workbench/contrib/inlineChat/browser/utils';
 import { coalesceInPlace } from 'vs/base/common/arrays';
 import { Iterable } from 'vs/base/common/iterator';
 import { IModelContentChangedEvent } from 'vs/editor/common/textModelEvents';
@@ -33,7 +32,7 @@ import { DisposableStore, IDisposable } from 'vs/base/common/lifecycle';
 import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
 import { IContextKey, IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
 import { ILogService } from 'vs/platform/log/common/log';
-import { ChatModel } from 'vs/workbench/contrib/chat/common/chatModel';
+import { ChatModel, IChatResponseModel } from 'vs/workbench/contrib/chat/common/chatModel';
 
 
 export class SessionWholeRange {
@@ -164,10 +163,6 @@ export class Session {
 		this._exchange.push(exchange);
 	}
 
-	get exchanges(): Iterable<SessionExchange> {
-		return this._exchange;
-	}
-
 	get lastExchange(): SessionExchange | undefined {
 		return this._exchange[this._exchange.length - 1];
 	}
@@ -212,8 +207,6 @@ export class SessionPrompt {
 
 	constructor(
 		readonly value: string,
-		readonly attempt: number,
-		readonly withIntentDetection: boolean,
 	) { }
 }
 
@@ -248,7 +241,6 @@ export class ReplyResponse {
 	readonly untitledTextModel: IUntitledTextEditorModel | undefined;
 	readonly workspaceEdit: WorkspaceEdit | undefined;
 
-	readonly responseType: InlineChatResponseTypes;
 
 	constructor(
 		readonly raw: IInlineChatBulkEditResponse | IInlineChatEditResponse,
@@ -257,6 +249,7 @@ export class ReplyResponse {
 		readonly modelAltVersionId: number,
 		progressEdits: TextEdit[][],
 		readonly requestId: string,
+		readonly chatResponse: IChatResponseModel | undefined,
 		@ITextFileService private readonly _textFileService: ITextFileService,
 		@ILanguageService private readonly _languageService: ILanguageService,
 	) {
@@ -313,11 +306,7 @@ export class ReplyResponse {
 					languageId: langSelection.languageId
 				});
 				this.untitledTextModel = untitledTextModel;
-
-				untitledTextModel.resolve().then(async () => {
-					const model = untitledTextModel.textEditorModel!;
-					model.applyEdits(flatEdits.map(edit => EditOperation.replace(Range.lift(edit.range), edit.text)));
-				});
+				untitledTextModel.resolve();
 			}
 		}
 
@@ -331,19 +320,6 @@ export class ReplyResponse {
 				}
 			}
 			this.workspaceEdit = { edits: workspaceEdits };
-		}
-
-
-		const hasEdits = editsMap.size > 0;
-		const hasMessage = mdContent.value.length > 0;
-		if (hasEdits && hasMessage) {
-			this.responseType = InlineChatResponseTypes.Mixed;
-		} else if (hasEdits) {
-			this.responseType = InlineChatResponseTypes.OnlyEdits;
-		} else if (hasMessage) {
-			this.responseType = InlineChatResponseTypes.OnlyMessages;
-		} else {
-			this.responseType = InlineChatResponseTypes.Empty;
 		}
 	}
 }
@@ -586,8 +562,8 @@ export class HunkData {
 					const textModelNDecorations: string[] = [];
 					const textModel0Decorations: string[] = [];
 
-					textModelNDecorations.push(accessorN.addDecoration(asRange(hunk.modified, this._textModelN), HunkData._HUNK_TRACKED_RANGE));
-					textModel0Decorations.push(accessor0.addDecoration(asRange(hunk.original, this._textModel0), HunkData._HUNK_TRACKED_RANGE));
+					textModelNDecorations.push(accessorN.addDecoration(LineRange.asRange(hunk.modified, this._textModelN), HunkData._HUNK_TRACKED_RANGE));
+					textModel0Decorations.push(accessor0.addDecoration(LineRange.asRange(hunk.original, this._textModel0), HunkData._HUNK_TRACKED_RANGE));
 
 					for (const change of hunk.changes) {
 						textModelNDecorations.push(accessorN.addDecoration(change.modifiedRange, HunkData._HUNK_TRACKED_RANGE));

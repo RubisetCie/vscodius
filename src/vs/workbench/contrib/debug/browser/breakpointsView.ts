@@ -10,7 +10,6 @@ import { ActionBar } from 'vs/base/browser/ui/actionbar/actionbar';
 import { AriaRole } from 'vs/base/browser/ui/aria/aria';
 import { getDefaultHoverDelegate } from 'vs/base/browser/ui/hover/hoverDelegateFactory';
 import { IconLabel } from 'vs/base/browser/ui/iconLabel/iconLabel';
-import { setupCustomHover } from 'vs/base/browser/ui/hover/updatableHoverWidget';
 import { InputBox } from 'vs/base/browser/ui/inputbox/inputBox';
 import { IListContextMenuEvent, IListRenderer, IListVirtualDelegate } from 'vs/base/browser/ui/list/list';
 import { IListAccessibilityProvider } from 'vs/base/browser/ui/list/listWidget';
@@ -112,10 +111,10 @@ export class BreakpointsView extends ViewPane {
 		@IOpenerService openerService: IOpenerService,
 		@ILabelService private readonly labelService: ILabelService,
 		@IMenuService menuService: IMenuService,
-		@IHoverService private readonly hoverService: IHoverService,
+		@IHoverService hoverService: IHoverService,
 		@ILanguageService private readonly languageService: ILanguageService,
 	) {
-		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
+		super(options, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, hoverService);
 
 		this.menu = menuService.createMenu(MenuId.DebugBreakpointsContext, contextKeyService);
 		this._register(this.menu);
@@ -139,21 +138,19 @@ export class BreakpointsView extends ViewPane {
 
 		this.list = this.instantiationService.createInstance(WorkbenchList, 'Breakpoints', container, delegate, [
 			this.instantiationService.createInstance(BreakpointsRenderer, this.menu, this.breakpointHasMultipleModes, this.breakpointSupportsCondition, this.breakpointItemType),
-			new ExceptionBreakpointsRenderer(this.menu, this.breakpointHasMultipleModes, this.breakpointSupportsCondition, this.breakpointItemType, this.debugService),
+			new ExceptionBreakpointsRenderer(this.menu, this.breakpointHasMultipleModes, this.breakpointSupportsCondition, this.breakpointItemType, this.debugService, this.hoverService),
 			new ExceptionBreakpointInputRenderer(this, this.debugService, this.contextViewService),
 			this.instantiationService.createInstance(FunctionBreakpointsRenderer, this.menu, this.breakpointSupportsCondition, this.breakpointItemType),
-			new FunctionBreakpointInputRenderer(this, this.debugService, this.contextViewService, this.labelService),
+			new FunctionBreakpointInputRenderer(this, this.debugService, this.contextViewService, this.hoverService, this.labelService),
 			this.instantiationService.createInstance(DataBreakpointsRenderer, this.menu, this.breakpointHasMultipleModes, this.breakpointSupportsCondition, this.breakpointItemType, this.breakpointIsDataBytes),
-			new DataBreakpointInputRenderer(this, this.debugService, this.contextViewService, this.labelService),
+			new DataBreakpointInputRenderer(this, this.debugService, this.contextViewService, this.hoverService, this.labelService),
 			this.instantiationService.createInstance(InstructionBreakpointsRenderer),
 		], {
 			identityProvider: { getId: (element: IEnablement) => element.getId() },
 			multipleSelectionSupport: false,
 			keyboardNavigationLabelProvider: { getKeyboardNavigationLabel: (e: IEnablement) => e },
 			accessibilityProvider: new BreakpointsAccessibilityProvider(this.debugService, this.labelService),
-			overrideStyles: {
-				listBackground: this.getBackgroundColor()
-			}
+			overrideStyles: this.getLocationBasedColors().listOverrideStyles
 		}) as WorkbenchList<BreakpointItem>;
 
 		CONTEXT_BREAKPOINTS_FOCUSED.bindTo(this.list.contextKeyService);
@@ -497,6 +494,7 @@ class BreakpointsRenderer implements IListRenderer<IBreakpoint, IBreakpointTempl
 		private breakpointSupportsCondition: IContextKey<boolean>,
 		private breakpointItemType: IContextKey<string | undefined>,
 		@IDebugService private readonly debugService: IDebugService,
+		@IHoverService private readonly hoverService: IHoverService,
 		@ILabelService private readonly labelService: ILabelService
 	) {
 		// noop
@@ -553,7 +551,7 @@ class BreakpointsRenderer implements IListRenderer<IBreakpoint, IBreakpointTempl
 
 		const { message, icon } = getBreakpointMessageAndIcon(this.debugService.state, this.debugService.getModel().areBreakpointsActivated(), breakpoint, this.labelService, this.debugService.getModel());
 		data.icon.className = ThemeIcon.asClassName(icon);
-		data.toDispose.push(setupCustomHover(getDefaultHoverDelegate('mouse'), data.breakpoint, breakpoint.message || message || ''));
+		data.toDispose.push(this.hoverService.setupUpdatableHover(getDefaultHoverDelegate('mouse'), data.breakpoint, breakpoint.message || message || ''));
 
 		const debugActive = this.debugService.state === State.Running || this.debugService.state === State.Stopped;
 		if (debugActive && !breakpoint.verified) {
@@ -583,7 +581,8 @@ class ExceptionBreakpointsRenderer implements IListRenderer<IExceptionBreakpoint
 		private breakpointHasMultipleModes: IContextKey<boolean>,
 		private breakpointSupportsCondition: IContextKey<boolean>,
 		private breakpointItemType: IContextKey<string | undefined>,
-		private debugService: IDebugService
+		private debugService: IDebugService,
+		private readonly hoverService: IHoverService,
 	) {
 		// noop
 	}
@@ -622,11 +621,11 @@ class ExceptionBreakpointsRenderer implements IListRenderer<IExceptionBreakpoint
 		data.context = exceptionBreakpoint;
 		data.name.textContent = exceptionBreakpoint.label || `${exceptionBreakpoint.filter} exceptions`;
 		const exceptionBreakpointtitle = exceptionBreakpoint.verified ? (exceptionBreakpoint.description || data.name.textContent) : exceptionBreakpoint.message || localize('unverifiedExceptionBreakpoint', "Unverified Exception Breakpoint");
-		data.toDispose.push(setupCustomHover(getDefaultHoverDelegate('mouse'), data.breakpoint, exceptionBreakpointtitle));
+		data.toDispose.push(this.hoverService.setupUpdatableHover(getDefaultHoverDelegate('mouse'), data.breakpoint, exceptionBreakpointtitle));
 		data.breakpoint.classList.toggle('disabled', !exceptionBreakpoint.verified);
 		data.checkbox.checked = exceptionBreakpoint.enabled;
 		data.condition.textContent = exceptionBreakpoint.condition || '';
-		data.toDispose.push(setupCustomHover(getDefaultHoverDelegate('mouse'), data.condition, localize('expressionCondition', "Expression condition: {0}", exceptionBreakpoint.condition)));
+		data.toDispose.push(this.hoverService.setupUpdatableHover(getDefaultHoverDelegate('mouse'), data.condition, localize('expressionCondition', "Expression condition: {0}", exceptionBreakpoint.condition)));
 
 		if (exceptionBreakpoint.modeLabel) {
 			data.badge.textContent = exceptionBreakpoint.modeLabel;
@@ -657,6 +656,7 @@ class FunctionBreakpointsRenderer implements IListRenderer<FunctionBreakpoint, I
 		private breakpointSupportsCondition: IContextKey<boolean>,
 		private breakpointItemType: IContextKey<string | undefined>,
 		@IDebugService private readonly debugService: IDebugService,
+		@IHoverService private readonly hoverService: IHoverService,
 		@ILabelService private readonly labelService: ILabelService
 	) {
 		// noop
@@ -698,9 +698,9 @@ class FunctionBreakpointsRenderer implements IListRenderer<FunctionBreakpoint, I
 		data.name.textContent = functionBreakpoint.name;
 		const { icon, message } = getBreakpointMessageAndIcon(this.debugService.state, this.debugService.getModel().areBreakpointsActivated(), functionBreakpoint, this.labelService, this.debugService.getModel());
 		data.icon.className = ThemeIcon.asClassName(icon);
-		data.toDispose.push(setupCustomHover(getDefaultHoverDelegate('mouse'), data.icon, message ? message : ''));
+		data.toDispose.push(this.hoverService.setupUpdatableHover(getDefaultHoverDelegate('mouse'), data.icon, message ? message : ''));
 		data.checkbox.checked = functionBreakpoint.enabled;
-		data.toDispose.push(setupCustomHover(getDefaultHoverDelegate('mouse'), data.breakpoint, message ? message : ''));
+		data.toDispose.push(this.hoverService.setupUpdatableHover(getDefaultHoverDelegate('mouse'), data.breakpoint, message ? message : ''));
 		if (functionBreakpoint.condition && functionBreakpoint.hitCondition) {
 			data.condition.textContent = localize('expressionAndHitCount', "Condition: {0} | Hit Count: {1}", functionBreakpoint.condition, functionBreakpoint.hitCondition);
 		} else {
@@ -718,7 +718,7 @@ class FunctionBreakpointsRenderer implements IListRenderer<FunctionBreakpoint, I
 		const session = this.debugService.getViewModel().focusedSession;
 		data.breakpoint.classList.toggle('disabled', (session && !session.capabilities.supportsFunctionBreakpoints) || !this.debugService.getModel().areBreakpointsActivated());
 		if (session && !session.capabilities.supportsFunctionBreakpoints) {
-			data.toDispose.push(setupCustomHover(getDefaultHoverDelegate('mouse'), data.breakpoint, localize('functionBreakpointsNotSupported', "Function breakpoints are not supported by this debug type")));
+			data.toDispose.push(this.hoverService.setupUpdatableHover(getDefaultHoverDelegate('mouse'), data.breakpoint, localize('functionBreakpointsNotSupported', "Function breakpoints are not supported by this debug type")));
 		}
 
 		const primary: IAction[] = [];
@@ -744,6 +744,7 @@ class DataBreakpointsRenderer implements IListRenderer<DataBreakpoint, IDataBrea
 		private breakpointItemType: IContextKey<string | undefined>,
 		private breakpointIsDataBytes: IContextKey<boolean | undefined>,
 		@IDebugService private readonly debugService: IDebugService,
+		@IHoverService private readonly hoverService: IHoverService,
 		@ILabelService private readonly labelService: ILabelService
 	) {
 		// noop
@@ -786,9 +787,9 @@ class DataBreakpointsRenderer implements IListRenderer<DataBreakpoint, IDataBrea
 		data.name.textContent = dataBreakpoint.description;
 		const { icon, message } = getBreakpointMessageAndIcon(this.debugService.state, this.debugService.getModel().areBreakpointsActivated(), dataBreakpoint, this.labelService, this.debugService.getModel());
 		data.icon.className = ThemeIcon.asClassName(icon);
-		data.toDispose.push(setupCustomHover(getDefaultHoverDelegate('mouse'), data.icon, message ? message : ''));
+		data.toDispose.push(this.hoverService.setupUpdatableHover(getDefaultHoverDelegate('mouse'), data.icon, message ? message : ''));
 		data.checkbox.checked = dataBreakpoint.enabled;
-		data.toDispose.push(setupCustomHover(getDefaultHoverDelegate('mouse'), data.breakpoint, message ? message : ''));
+		data.toDispose.push(this.hoverService.setupUpdatableHover(getDefaultHoverDelegate('mouse'), data.breakpoint, message ? message : ''));
 
 		if (dataBreakpoint.modeLabel) {
 			data.badge.textContent = dataBreakpoint.modeLabel;
@@ -801,7 +802,7 @@ class DataBreakpointsRenderer implements IListRenderer<DataBreakpoint, IDataBrea
 		const session = this.debugService.getViewModel().focusedSession;
 		data.breakpoint.classList.toggle('disabled', (session && !session.capabilities.supportsDataBreakpoints) || !this.debugService.getModel().areBreakpointsActivated());
 		if (session && !session.capabilities.supportsDataBreakpoints) {
-			data.toDispose.push(setupCustomHover(getDefaultHoverDelegate('mouse'), data.breakpoint, localize('dataBreakpointsNotSupported', "Data breakpoints are not supported by this debug type")));
+			data.toDispose.push(this.hoverService.setupUpdatableHover(getDefaultHoverDelegate('mouse'), data.breakpoint, localize('dataBreakpointsNotSupported', "Data breakpoints are not supported by this debug type")));
 		}
 		if (dataBreakpoint.accessType) {
 			const accessType = dataBreakpoint.accessType === 'read' ? localize('read', "Read") : dataBreakpoint.accessType === 'write' ? localize('write', "Write") : localize('access', "Access");
@@ -836,6 +837,7 @@ class InstructionBreakpointsRenderer implements IListRenderer<IInstructionBreakp
 
 	constructor(
 		@IDebugService private readonly debugService: IDebugService,
+		@IHoverService private readonly hoverService: IHoverService,
 		@ILabelService private readonly labelService: ILabelService
 	) {
 		// noop
@@ -877,12 +879,12 @@ class InstructionBreakpointsRenderer implements IListRenderer<IInstructionBreakp
 		data.breakpoint.classList.toggle('disabled', !this.debugService.getModel().areBreakpointsActivated());
 
 		data.name.textContent = '0x' + breakpoint.address.toString(16);
-		data.toDispose.push(setupCustomHover(getDefaultHoverDelegate('mouse'), data.name, `Decimal address: breakpoint.address.toString()`));
+		data.toDispose.push(this.hoverService.setupUpdatableHover(getDefaultHoverDelegate('mouse'), data.name, `Decimal address: breakpoint.address.toString()`));
 		data.checkbox.checked = breakpoint.enabled;
 
 		const { message, icon } = getBreakpointMessageAndIcon(this.debugService.state, this.debugService.getModel().areBreakpointsActivated(), breakpoint, this.labelService, this.debugService.getModel());
 		data.icon.className = ThemeIcon.asClassName(icon);
-		data.toDispose.push(setupCustomHover(getDefaultHoverDelegate('mouse'), data.breakpoint, breakpoint.message || message || ''));
+		data.toDispose.push(this.hoverService.setupUpdatableHover(getDefaultHoverDelegate('mouse'), data.breakpoint, breakpoint.message || message || ''));
 
 		const debugActive = this.debugService.state === State.Running || this.debugService.state === State.Stopped;
 		if (debugActive && !breakpoint.verified) {
@@ -908,6 +910,7 @@ class FunctionBreakpointInputRenderer implements IListRenderer<IFunctionBreakpoi
 		private view: BreakpointsView,
 		private debugService: IDebugService,
 		private contextViewService: IContextViewService,
+		private readonly hoverService: IHoverService,
 		private labelService: ILabelService
 	) { }
 
@@ -987,7 +990,7 @@ class FunctionBreakpointInputRenderer implements IListRenderer<IFunctionBreakpoi
 		const { icon, message } = getBreakpointMessageAndIcon(this.debugService.state, this.debugService.getModel().areBreakpointsActivated(), functionBreakpoint, this.labelService, this.debugService.getModel());
 
 		data.icon.className = ThemeIcon.asClassName(icon);
-		data.toDispose.push(setupCustomHover(getDefaultHoverDelegate('mouse'), data.icon, message ? message : ''));
+		data.toDispose.push(this.hoverService.setupUpdatableHover(getDefaultHoverDelegate('mouse'), data.icon, message ? message : ''));
 		data.checkbox.checked = functionBreakpoint.enabled;
 		data.checkbox.disabled = true;
 		data.inputBox.value = functionBreakpoint.name || '';
@@ -1023,6 +1026,7 @@ class DataBreakpointInputRenderer implements IListRenderer<IDataBreakpoint, IDat
 		private view: BreakpointsView,
 		private debugService: IDebugService,
 		private contextViewService: IContextViewService,
+		private readonly hoverService: IHoverService,
 		private labelService: ILabelService
 	) { }
 
@@ -1095,7 +1099,7 @@ class DataBreakpointInputRenderer implements IListRenderer<IDataBreakpoint, IDat
 		const { icon, message } = getBreakpointMessageAndIcon(this.debugService.state, this.debugService.getModel().areBreakpointsActivated(), dataBreakpoint, this.labelService, this.debugService.getModel());
 
 		data.icon.className = ThemeIcon.asClassName(icon);
-		data.toDispose.push(setupCustomHover(getDefaultHoverDelegate('mouse'), data.icon, message ?? ''));
+		data.toDispose.push(this.hoverService.setupUpdatableHover(getDefaultHoverDelegate('mouse'), data.icon, message ?? ''));
 		data.checkbox.checked = dataBreakpoint.enabled;
 		data.checkbox.disabled = true;
 		data.inputBox.value = '';

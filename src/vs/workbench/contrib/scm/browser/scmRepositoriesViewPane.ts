@@ -26,6 +26,7 @@ import { Orientation } from 'vs/base/browser/ui/sash/sash';
 import { Iterable } from 'vs/base/common/iterator';
 import { DisposableStore } from 'vs/base/common/lifecycle';
 import { MenuId } from 'vs/platform/actions/common/actions';
+import { IHoverService } from 'vs/platform/hover/browser/hover';
 
 class ListDelegate implements IListVirtualDelegate<ISCMRepository> {
 
@@ -54,8 +55,9 @@ export class SCMRepositoriesViewPane extends ViewPane {
 		@IConfigurationService configurationService: IConfigurationService,
 		@IOpenerService openerService: IOpenerService,
 		@IThemeService themeService: IThemeService,
+		@IHoverService hoverService: IHoverService
 	) {
-		super({ ...options, titleMenuId: MenuId.SCMSourceControlTitle }, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
+		super({ ...options, titleMenuId: MenuId.SCMSourceControlTitle }, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, hoverService);
 	}
 
 	protected override renderBody(container: HTMLElement): void {

@@ -531,6 +531,10 @@ export interface IStackFrame extends ITreeElement {
 	equals(other: IStackFrame): boolean;
 }
 
+export function isFrameDeemphasized(frame: IStackFrame): boolean {
+	return frame.source.presentationHint === 'deemphasize' || frame.presentationHint === 'deemphasize' || frame.presentationHint === 'subtle';
+}
+
 export interface IEnablement extends ITreeElement {
 	readonly enabled: boolean;
 }

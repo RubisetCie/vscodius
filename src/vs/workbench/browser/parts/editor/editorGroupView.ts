@@ -1785,8 +1785,14 @@ export class EditorGroupView extends Themable implements IEditorGroupView {
 			return true;
 		}
 
+		// Apply the `excludeConfirming` filter if present
+		let editors = this.model.getEditors(EditorsOrder.MOST_RECENTLY_ACTIVE, options);
+		if (options?.excludeConfirming) {
+			editors = editors.filter(editor => !this.shouldConfirmClose(editor));
+		}
+
 		// Check for confirmation and veto
-		const veto = await this.handleCloseConfirmation(this.model.getEditors(EditorsOrder.MOST_RECENTLY_ACTIVE, options));
+		const veto = await this.handleCloseConfirmation(editors);
 		if (veto) {
 			return false;
 		}
@@ -1798,10 +1804,14 @@ export class EditorGroupView extends Themable implements IEditorGroupView {
 	}
 
 	private doCloseAllEditors(options?: ICloseAllEditorsOptions): void {
+		let editors = this.model.getEditors(EditorsOrder.SEQUENTIAL, options);
+		if (options?.excludeConfirming) {
+			editors = editors.filter(editor => !this.shouldConfirmClose(editor));
+		}
 
 		// Close all inactive editors first
 		const editorsToClose: EditorInput[] = [];
-		for (const editor of this.model.getEditors(EditorsOrder.SEQUENTIAL, options)) {
+		for (const editor of editors) {
 			if (!this.isActive(editor)) {
 				this.doCloseInactiveEditor(editor);
 			}

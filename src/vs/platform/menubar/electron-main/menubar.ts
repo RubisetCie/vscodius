@@ -240,7 +240,7 @@ export class Menubar {
 		}
 
 		const focusedWindow = BrowserWindow.getFocusedWindow();
-		this.noActiveMainWindow = !focusedWindow || !!this.auxiliaryWindowsMainService.getWindowById(focusedWindow.id);
+		this.noActiveMainWindow = !focusedWindow || !!this.auxiliaryWindowsMainService.getWindowByWebContents(focusedWindow.webContents);
 		this.scheduleUpdateMenu();
 	}
 
@@ -698,7 +698,7 @@ export class Menubar {
 		// actions via the main window.
 		let activeBrowserWindow = BrowserWindow.getFocusedWindow();
 		if (activeBrowserWindow) {
-			const auxiliaryWindowCandidate = this.auxiliaryWindowsMainService.getWindowById(activeBrowserWindow.id);
+			const auxiliaryWindowCandidate = this.auxiliaryWindowsMainService.getWindowByWebContents(activeBrowserWindow.webContents);
 			if (auxiliaryWindowCandidate) {
 				activeBrowserWindow = this.windowsMainService.getWindowById(auxiliaryWindowCandidate.parentId)?.win ?? null;
 			}

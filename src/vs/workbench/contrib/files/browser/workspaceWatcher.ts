@@ -18,6 +18,8 @@ import { IHostService } from 'vs/workbench/services/host/browser/host';
 
 export class WorkspaceWatcher extends Disposable {
 
+	static readonly ID = 'workbench.contrib.workspaceWatcher';
+
 	private readonly watchedWorkspaces = new ResourceMap<IDisposable>(resource => this.uriIdentityService.extUri.getComparisonKey(resource));
 
 	constructor(
@@ -27,7 +29,7 @@ export class WorkspaceWatcher extends Disposable {
 		@INotificationService private readonly notificationService: INotificationService,
 		@IOpenerService private readonly openerService: IOpenerService,
 		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService,
-		@IHostService private readonly hostService: IHostService
+		@IHostService private readonly hostService: IHostService,
 	) {
 		super();
 

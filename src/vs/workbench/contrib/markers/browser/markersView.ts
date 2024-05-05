@@ -53,6 +53,8 @@ import { ITableContextMenuEvent, ITableEvent } from 'vs/base/browser/ui/table/ta
 import { MarkersTable } from 'vs/workbench/contrib/markers/browser/markersTable';
 import { Markers, MarkersContextKeys, MarkersViewMode } from 'vs/workbench/contrib/markers/common/markers';
 import { registerNavigableContainer } from 'vs/workbench/browser/actions/widgetNavigationCommands';
+import { IHoverService } from 'vs/platform/hover/browser/hover';
+import { ResultKind } from 'vs/platform/keybinding/common/keybindingResolver';
 
 function createResourceMarkersIterator(resourceMarkers: ResourceMarkers): Iterable<ITreeElement<MarkerElement>> {
 	return Iterable.map(resourceMarkers.markers, m => {
@@ -101,7 +103,7 @@ export class MarkersView extends FilterViewPane implements IMarkersView {
 	private readonly onVisibleDisposables = this._register(new DisposableStore());
 
 	private widget!: IProblemsWidget;
-	private widgetDisposables = this._register(new DisposableStore());
+	private readonly widgetDisposables = this._register(new DisposableStore());
 	private widgetContainer!: HTMLElement;
 	private widgetIdentityProvider: IIdentityProvider<MarkerElement | MarkerTableItem>;
 	private widgetAccessibilityProvider: MarkersWidgetAccessibilityProvider;
@@ -136,6 +138,7 @@ export class MarkersView extends FilterViewPane implements IMarkersView {
 		@IStorageService storageService: IStorageService,
 		@IOpenerService openerService: IOpenerService,
 		@IThemeService themeService: IThemeService,
+		@IHoverService hoverService: IHoverService,
 	) {
 		const memento = new Memento(Markers.MARKERS_VIEW_STORAGE_ID, storageService);
 		const panelState = memento.getMemento(StorageScope.WORKSPACE, StorageTarget.MACHINE);
@@ -148,7 +151,7 @@ export class MarkersView extends FilterViewPane implements IMarkersView {
 				text: panelState['filter'] || '',
 				history: panelState['filterHistory'] || []
 			}
-		}, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService);
+		}, keybindingService, contextMenuService, configurationService, contextKeyService, viewDescriptorService, instantiationService, openerService, themeService, hoverService);
 		this.memento = memento;
 		this.panelState = panelState;
 
@@ -185,6 +188,7 @@ export class MarkersView extends FilterViewPane implements IMarkersView {
 	override render(): void {
 		super.render();
 		this._register(registerNavigableContainer({
+			name: 'markersView',
 			focusNotifiers: [this, this.filterWidget],
 			focusNextWidget: () => {
 				if (this.filterWidget.hasFocus()) {
@@ -204,9 +208,15 @@ export class MarkersView extends FilterViewPane implements IMarkersView {
 
 		parent.classList.add('markers-panel');
 		this._register(dom.addDisposableListener(parent, 'keydown', e => {
-			if (this.keybindingService.mightProducePrintableCharacter(new StandardKeyboardEvent(e))) {
-				this.focusFilter();
+			const event = new StandardKeyboardEvent(e);
+			if (!this.keybindingService.mightProducePrintableCharacter(event)) {
+				return;
 			}
+			const result = this.keybindingService.softDispatch(event, event.target);
+			if (result.kind === ResultKind.MoreChordsNeeded || result.kind === ResultKind.KbFound) {
+				return;
+			}
+			this.focusFilter();
 		}));
 
 		const panelContainer = dom.append(parent, dom.$('.markers-panel-container'));
@@ -496,9 +506,7 @@ export class MarkersView extends FilterViewPane implements IMarkersView {
 					return null;
 				}),
 				expandOnlyOnTwistieClick: (e: MarkerElement) => e instanceof Marker && e.relatedInformation.length > 0,
-				overrideStyles: {
-					listBackground: this.getBackgroundColor()
-				},
+				overrideStyles: this.getLocationBasedColors().listOverrideStyles,
 				selectionNavigation: true,
 				multipleSelectionSupport: true,
 			},

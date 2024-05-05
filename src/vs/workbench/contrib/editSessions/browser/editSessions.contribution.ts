@@ -123,7 +123,7 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 	private readonly pendingEditSessionsContext: IContextKey<boolean>;
 
 	private static APPLICATION_LAUNCHED_VIA_CONTINUE_ON_STORAGE_KEY = 'applicationLaunchedViaContinueOn';
-	private accountsMenuBadgeDisposable = this._register(new MutableDisposable());
+	private readonly accountsMenuBadgeDisposable = this._register(new MutableDisposable());
 
 	private registeredCommands = new Set<string>();
 

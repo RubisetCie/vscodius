@@ -34,19 +34,18 @@ class EntitlementsContribution extends Disposable implements IWorkbenchContribut
 	private isInitialized = false;
 	private showAccountsBadgeContextKey = new RawContextKey<boolean>(accountsBadgeConfigKey, false).bindTo(this.contextService);
 	private showChatWelcomeViewContextKey = new RawContextKey<boolean>(chatWelcomeViewConfigKey, false).bindTo(this.contextService);
-	private accountsMenuBadgeDisposable = this._register(new MutableDisposable());
+	private readonly accountsMenuBadgeDisposable = this._register(new MutableDisposable());
 
 	constructor(
-		@IContextKeyService readonly contextService: IContextKeyService,
-		@ICommandService readonly commandService: ICommandService,
-		@IAuthenticationService readonly authenticationService: IAuthenticationService,
-		@IProductService readonly productService: IProductService,
-		@IStorageService readonly storageService: IStorageService,
-		@IExtensionManagementService readonly extensionManagementService: IExtensionManagementService,
-		@IActivityService readonly activityService: IActivityService,
-		@IExtensionService readonly extensionService: IExtensionService,
-		@IConfigurationService readonly configurationService: IConfigurationService,
-		@IRequestService readonly requestService: IRequestService) {
+		@IContextKeyService private readonly contextService: IContextKeyService,
+		@IAuthenticationService private readonly authenticationService: IAuthenticationService,
+		@IProductService private readonly productService: IProductService,
+		@IStorageService private readonly storageService: IStorageService,
+		@IExtensionManagementService private readonly extensionManagementService: IExtensionManagementService,
+		@IActivityService private readonly activityService: IActivityService,
+		@IExtensionService private readonly extensionService: IExtensionService,
+		@IConfigurationService private readonly configurationService: IConfigurationService,
+		@IRequestService private readonly requestService: IRequestService) {
 		super();
 
 		if (!this.productService.gitHubEntitlement || isWeb) {
@@ -64,6 +63,11 @@ class EntitlementsContribution extends Disposable implements IWorkbenchContribut
 	}
 
 	private registerListeners() {
+
+		if (this.storageService.getBoolean(accountsBadgeConfigKey, StorageScope.APPLICATION) === false) {
+			// we have already shown the entitlements. Do not show again
+			return;
+		}
 
 		this._register(this.extensionService.onDidChangeExtensions(async (result) => {
 			for (const ext of result.added) {
@@ -126,8 +130,8 @@ class EntitlementsContribution extends Disposable implements IWorkbenchContribut
 			return [false, ''];
 		}
 		this.isInitialized = true;
-		const orgs = parsedResult['organization_login_list'] as any[];
-		return [true, orgs ? orgs[orgs.length - 1] : undefined];
+		const orgs: { login: string; name: string }[] = parsedResult['organization_list'] as { login: string; name: string }[];
+		return [true, orgs && orgs.length > 0 ? (orgs[0].name ? orgs[0].name : orgs[0].login) : undefined];
 	}
 
 	private async enableEntitlements(session: AuthenticationSession) {
@@ -159,7 +163,15 @@ class EntitlementsContribution extends Disposable implements IWorkbenchContribut
 		const menuTitle = org ? this.productService.gitHubEntitlement!.command.title.replace('{{org}}', org) : this.productService.gitHubEntitlement!.command.titleWithoutPlaceHolder;
 
 		const badge = new NumberBadge(1, () => menuTitle);
-		this.accountsMenuBadgeDisposable.value = this.activityService.showAccountsActivity({ badge, });
+		this.accountsMenuBadgeDisposable.value = this.activityService.showAccountsActivity({ badge });
+
+		this.contextService.onDidChangeContext(e => {
+			if (e.affectsSome(new Set([accountsBadgeConfigKey]))) {
+				if (!this.contextService.getContextKeyValue<boolean>(accountsBadgeConfigKey)) {
+					this.accountsMenuBadgeDisposable.clear();
+				}
+			}
+		});
 
 		this._register(registerAction2(class extends Action2 {
 			constructor() {
@@ -194,7 +206,7 @@ class EntitlementsContribution extends Disposable implements IWorkbenchContribut
 					commandService.executeCommand(productService.gitHubEntitlement!.command.action, productService.gitHubEntitlement!.extensionId!);
 				}
 
-				const contextKey = new RawContextKey<boolean>(accountsBadgeConfigKey, true).bindTo(contextKeyService);
+				const contextKey = new RawContextKey<boolean>(accountsBadgeConfigKey, false).bindTo(contextKeyService);
 				contextKey.set(false);
 				storageService.store(accountsBadgeConfigKey, false, StorageScope.APPLICATION, StorageTarget.MACHINE);
 			}

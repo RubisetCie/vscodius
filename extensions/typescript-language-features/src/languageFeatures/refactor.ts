@@ -391,7 +391,7 @@ class MoveToFileCodeAction extends vscode.CodeAction {
 		this.command = {
 			title: action.description,
 			command: MoveToFileRefactorCommand.ID,
-			arguments: [<MoveToFileRefactorCommand.Args>{ action, document, range }]
+			arguments: [{ action, document, range } satisfies MoveToFileRefactorCommand.Args]
 		};
 	}
 }
@@ -400,13 +400,13 @@ class SelectCodeAction extends vscode.CodeAction {
 	constructor(
 		info: Proto.ApplicableRefactorInfo,
 		document: vscode.TextDocument,
-		rangeOrSelection: vscode.Range | vscode.Selection
+		rangeOrSelection: vscode.Range | vscode.Selection,
 	) {
 		super(info.description, vscode.CodeActionKind.Refactor);
 		this.command = {
 			title: info.description,
 			command: SelectRefactorCommand.ID,
-			arguments: [<SelectRefactorCommand.Args>{ action: this, document, refactor: info, rangeOrSelection }]
+			arguments: [{ document, refactor: info, rangeOrSelection } satisfies SelectRefactorCommand.Args]
 		};
 	}
 }

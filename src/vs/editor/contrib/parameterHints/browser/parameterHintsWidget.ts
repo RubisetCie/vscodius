@@ -278,6 +278,7 @@ export class ParameterHintsWidget extends Disposable implements IContentWidget {
 			}
 		}));
 		renderedContents.element.classList.add('markdown-docs');
+
 		return renderedContents;
 	}
 
