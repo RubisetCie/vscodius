@@ -11,7 +11,7 @@ use crate::util::errors::{
 	WrappedError,
 };
 use crate::util::input::prompt_placeholder;
-use crate::{debug, info, log, spanf, trace, warning};
+use crate::{debug, info, log, trace, warning};
 use async_trait::async_trait;
 use futures::future::BoxFuture;
 use futures::{FutureExt, TryFutureExt};
@@ -156,17 +156,13 @@ impl AccessTokenProvider for LookupAccessTokenProvider {
 			return Ok(token);
 		}
 
-		let tunnel_lookup = spanf!(
-			self.log,
-			self.log.span("dev-tunnel.tag.get"),
-			self.client.get_tunnel(
+		let tunnel_lookup = self.client.get_tunnel(
 				&self.locator,
 				&TunnelRequestOptions {
 					token_scopes: vec!["host".to_string()],
 					..Default::default()
 				}
-			)
-		);
+			).await;
 
 		trace!(self.log, "Successfully refreshed access token");
 
@@ -364,13 +360,9 @@ impl DevTunnels {
 			}
 		};
 
-		spanf!(
-			self.log,
-			self.log.span("dev-tunnel.delete"),
-			self.client
+		self.client
 				.delete_tunnel(&tunnel.into_locator(), NO_REQUEST_OPTIONS)
-		)
-		.map_err(|e| wrap(e, "failed to execute `tunnel delete`"))?;
+				.map_err(|e| wrap(e, "failed to execute `tunnel delete`")).await?;
 
 		self.launcher_tunnel.save(None)?;
 		Ok(())
@@ -418,12 +410,8 @@ impl DevTunnels {
 
 		full_tunnel.labels = desired_tags;
 
-		let updated_tunnel = spanf!(
-			self.log,
-			self.log.span("dev-tunnel.tag.update"),
-			self.client.update_tunnel(&full_tunnel, NO_REQUEST_OPTIONS)
-		)
-		.map_err(|e| wrap(e, "failed to rename tunnel"))?;
+		let updated_tunnel = self.client.update_tunnel(&full_tunnel, NO_REQUEST_OPTIONS)
+				.map_err(|e| wrap(e, "failed to rename tunnel")).await?;
 
 		persisted.name = name;
 		self.launcher_tunnel.save(Some(persisted.clone()))?;
@@ -440,11 +428,7 @@ impl DevTunnels {
 		create_with_new_name: Option<&str>,
 		options: &TunnelRequestOptions,
 	) -> Result<(Tunnel, PersistedTunnel, /* is_new */ bool), AnyError> {
-		let tunnel_lookup = spanf!(
-			self.log,
-			self.log.span("dev-tunnel.tag.get"),
-			self.client.get_tunnel(&persisted.locator(), options)
-		);
+		let tunnel_lookup = self.client.get_tunnel(&persisted.locator(), options).await;
 
 		match tunnel_lookup {
 			Ok(ft) => Ok((ft, persisted, false)),
@@ -518,12 +502,7 @@ impl DevTunnels {
 				port_to_delete.port_number,
 				NO_REQUEST_OPTIONS,
 			);
-			spanf!(
-				self.log,
-				self.log.span("dev-tunnel.port.delete"),
-				output_fut
-			)
-			.map_err(|e| wrap(e, "failed to delete port"))?;
+			output_fut.map_err(|e| wrap(e, "failed to delete port")).await?;
 		}
 
 		// cleanup any old trailing tunnel endpoints
@@ -534,8 +513,7 @@ impl DevTunnels {
 				NO_REQUEST_OPTIONS,
 			);
 
-			spanf!(self.log, self.log.span("dev-tunnel.endpoint.prune"), fut)
-				.map_err(|e| wrap(e, "failed to prune tunnel endpoint"))?;
+			fut.map_err(|e| wrap(e, "failed to prune tunnel endpoint")).await?;
 		}
 
 		self.start_tunnel(
@@ -568,25 +546,17 @@ impl DevTunnels {
 
 				let loc = TunnelLocator::try_from(&e).unwrap();
 				info!(self.log, "Adopting existing tunnel (ID={:?})", loc);
-				spanf!(
-					self.log,
-					self.log.span("dev-tunnel.tag.get"),
-					self.client.get_tunnel(&loc, &HOST_TUNNEL_REQUEST_OPTIONS)
-				)
-				.map_err(|e| wrap(e, "failed to lookup tunnel"))?
+				self.client.get_tunnel(&loc, &HOST_TUNNEL_REQUEST_OPTIONS)
+						.map_err(|e| wrap(e, "failed to lookup tunnel")).await?
 			}
 			None => loop {
-				let result = spanf!(
-					self.log,
-					self.log.span("dev-tunnel.create"),
-					self.client.create_tunnel(
+				let result = self.client.create_tunnel(
 						Tunnel {
 							labels: self.get_labels(name),
 							..Default::default()
 						},
 						options
-					)
-				);
+					).await;
 
 				match result {
 					Err(HttpError::ResponseError(e))
@@ -670,11 +640,7 @@ impl DevTunnels {
 			..Default::default()
 		};
 
-		let result = spanf!(
-			self.log,
-			self.log.span("dev-tunnel.protocol-tag-update"),
-			client.update_tunnel(&tunnel_update, options)
-		);
+		let result = client.update_tunnel(&tunnel_update, options).await;
 
 		result.map_err(|e| wrap(e, "tunnel tag update failed").into())
 	}
@@ -697,13 +663,9 @@ impl DevTunnels {
 		match recyclable {
 			Some(tunnel) => {
 				trace!(self.log, "Recycling tunnel ID {:?}", tunnel.tunnel_id);
-				spanf!(
-					self.log,
-					self.log.span("dev-tunnel.delete"),
-					self.client
+				self.client
 						.delete_tunnel(&tunnel.try_into().unwrap(), NO_REQUEST_OPTIONS)
-				)
-				.map_err(|e| wrap(e, "failed to execute `tunnel delete`"))?;
+						.map_err(|e| wrap(e, "failed to execute `tunnel delete`")).await?;
 				Ok(true)
 			}
 			None => {
@@ -717,24 +679,17 @@ impl DevTunnels {
 		&mut self,
 		tags: &[&'static str],
 	) -> Result<Vec<Tunnel>, AnyError> {
-		let tunnels = spanf!(
-			self.log,
-			self.log.span("dev-tunnel.listall"),
-			self.client.list_all_tunnels(&TunnelRequestOptions {
+		let tunnels = self.client.list_all_tunnels(&TunnelRequestOptions {
 				labels: tags.iter().map(|t| t.to_string()).collect(),
 				..Default::default()
 			})
-		)
-		.map_err(|e| wrap(e, "error listing current tunnels"))?;
+			.map_err(|e| wrap(e, "error listing current tunnels")).await?;
 
 		Ok(tunnels)
 	}
 
 	async fn get_existing_tunnel_with_name(&self, name: &str) -> Result<Option<Tunnel>, AnyError> {
-		let existing: Vec<Tunnel> = spanf!(
-			self.log,
-			self.log.span("dev-tunnel.rename.search"),
-			self.client.list_all_tunnels(&TunnelRequestOptions {
+		let existing: Vec<Tunnel> = self.client.list_all_tunnels(&TunnelRequestOptions {
 				labels: vec![self.tag.to_string(), name.to_string()],
 				require_all_labels: true,
 				limit: 1,
@@ -742,8 +697,7 @@ impl DevTunnels {
 				token_scopes: vec!["host".to_string()],
 				..Default::default()
 			})
-		)
-		.map_err(|e| wrap(e, "failed to list existing tunnels"))?;
+			.map_err(|e| wrap(e, "failed to list existing tunnels")).await?;
 
 		Ok(existing.into_iter().next())
 	}
@@ -869,11 +823,7 @@ impl DevTunnels {
 	) -> Result<ActiveTunnel, AnyError> {
 		let mut manager = ActiveTunnelManager::new(self.log.clone(), client, locator, access_token);
 
-		let endpoint_result = spanf!(
-			self.log,
-			self.log.span("dev-tunnel.serve.callback"),
-			manager.get_endpoint()
-		);
+		let endpoint_result = manager.get_endpoint().await;
 
 		let endpoint = match endpoint_result {
 			Ok(endpoint) => endpoint,

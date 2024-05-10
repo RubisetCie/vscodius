@@ -5,7 +5,7 @@
 
 use std::{fmt, path::PathBuf};
 
-use crate::{constants, log, options, tunnels::code_server::CodeServerArgs};
+use crate::{constants, log, tunnels::code_server::CodeServerArgs};
 use clap::{Args, Parser, Subcommand, ValueEnum};
 use const_format::concatcp;
 
@@ -136,12 +136,6 @@ impl<'a> From<&'a CliCore> for CodeServerArgs {
 
 		if cli.global_options.verbose {
 			args.verbose = true;
-		}
-
-		if cli.global_options.disable_telemetry {
-			args.telemetry_level = Some(options::TelemetryLevel::Off);
-		} else if cli.global_options.telemetry_level.is_some() {
-			args.telemetry_level = cli.global_options.telemetry_level;
 		}
 
 		args
@@ -502,15 +496,6 @@ pub struct GlobalOptions {
 	/// Log level to use.
 	#[clap(long, value_enum, value_name = "level", global = true)]
 	pub log: Option<log::Level>,
-
-	/// Disable telemetry for the current command, even if it was previously
-	/// accepted as part of the license prompt or specified in '--telemetry-level'
-	#[clap(long, global = true, hide = true)]
-	pub disable_telemetry: bool,
-
-	/// Sets the initial telemetry level
-	#[clap(value_enum, long, global = true, hide = true)]
-	pub telemetry_level: Option<options::TelemetryLevel>,
 }
 
 impl GlobalOptions {
@@ -520,12 +505,6 @@ impl GlobalOptions {
 		}
 		if let Some(log) = self.log {
 			target.push(format!("--log={}", log));
-		}
-		if self.disable_telemetry {
-			target.push("--disable-telemetry".to_string());
-		}
-		if let Some(telemetry_level) = &self.telemetry_level {
-			target.push(format!("--telemetry-level={}", telemetry_level));
 		}
 	}
 }
@@ -560,10 +539,6 @@ pub struct EditorTroubleshooting {
 	/// Disable GPU hardware acceleration.
 	#[clap(long)]
 	pub disable_gpu: bool,
-
-	/// Shows all telemetry events which the editor collects.
-	#[clap(long)]
-	pub telemetry: bool,
 }
 
 impl EditorTroubleshooting {
@@ -588,9 +563,6 @@ impl EditorTroubleshooting {
 		}
 		if self.disable_gpu {
 			target.push("--disable-gpu".to_string());
-		}
-		if self.telemetry {
-			target.push("--telemetry".to_string());
 		}
 	}
 }

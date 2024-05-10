@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
 	constants::VSCODE_CLI_UPDATE_ENDPOINT,
-	debug, log, options, spanf,
+	debug, log, options,
 	util::{
 		errors::{AnyError, CodeError, WrappedError},
 		http::{BoxedHttp, SimpleResponse},
@@ -83,11 +83,7 @@ impl UpdateService {
 			quality_download_segment(quality),
 		);
 
-		let mut response = spanf!(
-			self.log,
-			self.log.span("server.version.resolve"),
-			self.client.make_request("GET", download_url)
-		)?;
+		let mut response = self.client.make_request("GET", download_url).await?;
 
 		if !response.status_code.is_success() {
 			return Err(response.into_err().await.into());
@@ -123,11 +119,7 @@ impl UpdateService {
 			quality_download_segment(quality),
 		);
 
-		let mut response = spanf!(
-			self.log,
-			self.log.span("server.version.resolve"),
-			self.client.make_request("GET", download_url)
-		)?;
+		let mut response = self.client.make_request("GET", download_url).await?;
 
 		if !response.status_code.is_success() {
 			return Err(response.into_err().await.into());

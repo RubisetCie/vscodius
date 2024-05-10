@@ -634,9 +634,6 @@ const METHOD_STREAMS_STARTED: &str = "streams_started";
 const METHOD_STREAM_DATA: &str = "stream_data";
 const METHOD_STREAM_ENDED: &str = "stream_ended";
 
-trait AssertIsSync: Sync {}
-impl<S: Serialization, C: Send + Sync> AssertIsSync for RpcDispatcher<S, C> {}
-
 /// Approximate shape that is used to determine what kind of data is incoming.
 #[derive(Deserialize, Debug)]
 pub struct PartialIncoming {

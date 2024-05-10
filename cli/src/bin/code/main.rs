@@ -19,8 +19,6 @@ use cli::{
 	},
 };
 use legacy_args::try_parse_legacy;
-use opentelemetry::sdk::trace::TracerProvider as SdkTracerProvider;
-use opentelemetry::trace::TracerProvider;
 
 #[tokio::main]
 async fn main() -> Result<(), std::convert::Infallible> {
@@ -139,8 +137,7 @@ fn make_logger(core: &args::CliCore) -> log::Logger {
 		core.global_options.log.unwrap_or(log::Level::Info)
 	};
 
-	let tracer = SdkTracerProvider::builder().build().tracer("codecli");
-	let mut log = log::Logger::new(tracer, log_level);
+	let mut log = log::Logger::new(log_level);
 	if let Some(f) = &core.global_options.log_to_file {
 		log = log
 			.with_sink(log::FileLogSink::new(log_level, f).expect("expected to make file logger"))

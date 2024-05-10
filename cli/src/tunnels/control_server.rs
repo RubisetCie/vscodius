@@ -28,8 +28,6 @@ use crate::util::sync::{new_barrier, Barrier, BarrierOpener};
 
 use futures::stream::FuturesUnordered;
 use futures::FutureExt;
-use opentelemetry::trace::SpanKind;
-use opentelemetry::KeyValue;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::process::Stdio;
@@ -40,7 +38,6 @@ use tokio_util::codec::Decoder;
 
 use std::sync::atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering};
 use std::sync::Arc;
-use std::time::Instant;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt, BufReader, DuplexStream};
 use tokio::sync::{mpsc, Mutex};
 
@@ -251,33 +248,17 @@ pub async fn serve(
 				let own_forwarding = forwarding.handle();
 
 				tokio::spawn(async move {
-					use opentelemetry::trace::{FutureExt, TraceContextExt};
-
-					let span = own_log.span("server.socket").with_kind(SpanKind::Consumer).start(own_log.tracer());
-					let cx = opentelemetry::Context::current_with_span(span);
-					let serve_at = Instant::now();
-
 					debug!(own_log, "Serving new connection");
 
 					let (writehalf, readhalf) = socket.into_split();
-					let stats = process_socket(readhalf, writehalf, own_tx, Some(own_forwarding), ServeStreamParams {
+					process_socket(readhalf, writehalf, own_tx, Some(own_forwarding), ServeStreamParams {
 						log: own_log,
 						launcher_paths: own_paths,
 						code_server_args: own_code_server_args,
 						platform,
 						exit_barrier: own_exit,
 						requires_auth: AuthRequired::None,
-					}).with_context(cx.clone()).await;
-
-					cx.span().add_event(
-						"socket.bandwidth",
-						vec![
-							KeyValue::new("tx", stats.tx as f64),
-							KeyValue::new("rx", stats.rx as f64),
-							KeyValue::new("duration_ms", serve_at.elapsed().as_millis() as f64),
-						],
-					);
-					cx.span().end();
+					}).await;
 				});
 			}
 		}
@@ -305,18 +286,13 @@ pub async fn serve_stream(
 	readhalf: impl AsyncRead + Send + Unpin + 'static,
 	writehalf: impl AsyncWrite + Unpin,
 	params: ServeStreamParams,
-) -> SocketStats {
+) {
 	// Currently the only server signal is respawn, that doesn't have much meaning
 	// when serving a stream, so make an ignored channel.
 	let (server_rx, server_tx) = mpsc::channel(1);
 	drop(server_tx);
 
 	process_socket(readhalf, writehalf, server_rx, None, params).await
-}
-
-pub struct SocketStats {
-	rx: usize,
-	tx: usize,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -523,7 +499,7 @@ async fn process_socket(
 	server_tx: mpsc::Sender<ServerSignal>,
 	port_forwarding: Option<PortForwarding>,
 	params: ServeStreamParams,
-) -> SocketStats {
+) {
 	let ServeStreamParams {
 		mut exit_barrier,
 		log,
@@ -586,8 +562,6 @@ async fn process_socket(
 		});
 	}
 
-	let mut tx_counter = 0;
-
 	loop {
 		tokio::select! {
 			_ = exit_barrier.wait() => {
@@ -608,7 +582,6 @@ async fn process_socket(
 
 				http_requests.lock().unwrap().insert(id, r);
 
-				tx_counter += serialized.len();
 				if let Err(e) = writehalf.write_all(&serialized).await {
 					debug!(log, "Closing connection: {}", e);
 					break;
@@ -618,7 +591,6 @@ async fn process_socket(
 				None => break,
 				Some(message) => match message {
 					SocketSignal::Send(bytes) => {
-						tx_counter += bytes.len();
 						if let Err(e) = writehalf.write_all(&bytes).await {
 							debug!(log, "Closing connection: {}", e);
 							break;
@@ -631,11 +603,6 @@ async fn process_socket(
 				}
 			}
 		}
-	}
-
-	SocketStats {
-		tx: tx_counter,
-		rx: rx_counter.load(Ordering::Acquire),
 	}
 }
 

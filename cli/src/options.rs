@@ -76,22 +76,3 @@ impl TryFrom<&str> for Quality {
 		}
 	}
 }
-
-#[derive(clap::ValueEnum, Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub enum TelemetryLevel {
-	Off,
-	Crash,
-	Error,
-	All,
-}
-
-impl fmt::Display for TelemetryLevel {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		match self {
-			TelemetryLevel::Off => write!(f, "off"),
-			TelemetryLevel::Crash => write!(f, "crash"),
-			TelemetryLevel::Error => write!(f, "error"),
-			TelemetryLevel::All => write!(f, "all"),
-		}
-	}
-}

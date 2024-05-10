@@ -8,7 +8,7 @@ use crate::constants::{
 	APPLICATION_NAME, EDITOR_WEB_URL, QUALITYLESS_PRODUCT_NAME, QUALITYLESS_SERVER_NAME,
 };
 use crate::download_cache::DownloadCache;
-use crate::options::{Quality, TelemetryLevel};
+use crate::options::Quality;
 use crate::state::LauncherPaths;
 use crate::tunnels::paths::{get_server_folder_name, SERVER_FOLDER_NAME};
 use crate::update_service::{
@@ -23,9 +23,8 @@ use crate::util::http::{self, BoxedHttp};
 use crate::util::io::SilentCopyProgress;
 use crate::util::machine::process_exists;
 use crate::util::prereqs::skip_requirements_check;
-use crate::{debug, info, log, spanf, trace, warning};
+use crate::{debug, info, log, trace, warning};
 use lazy_static::lazy_static;
-use opentelemetry::KeyValue;
 use regex::Regex;
 use serde::Deserialize;
 use std::fs;
@@ -53,7 +52,6 @@ pub struct CodeServerArgs {
 	pub socket_path: Option<String>,
 
 	// common argument
-	pub telemetry_level: Option<TelemetryLevel>,
 	pub log: Option<log::Level>,
 	pub accept_server_license_terms: bool,
 	pub verbose: bool,
@@ -84,10 +82,6 @@ impl CodeServerArgs {
 		}
 	}
 
-	pub fn telemetry_disabled(&self) -> bool {
-		self.telemetry_level == Some(TelemetryLevel::Off)
-	}
-
 	pub fn command_arguments(&self) -> Vec<String> {
 		let mut args = Vec::new();
 		if let Some(i) = &self.socket_path {
@@ -112,9 +106,6 @@ impl CodeServerArgs {
 		}
 		if self.accept_server_license_terms {
 			args.push(String::from("--accept-server-license-terms"));
-		}
-		if let Some(i) = self.telemetry_level {
-			args.push(format!("--telemetry-level={}", i));
 		}
 		if let Some(i) = self.log {
 			args.push(format!("--log={}", i));
@@ -545,14 +536,7 @@ impl<'a> ServerBuilder<'a> {
 	}
 
 	pub async fn listen_on_socket(&self, socket: &Path) -> Result<SocketCodeServer, AnyError> {
-		Ok(spanf!(
-			self.logger,
-			self.logger.span("server.start").with_attributes(vec! {
-				KeyValue::new("commit_id", self.server_params.release.commit.to_string()),
-				KeyValue::new("quality", format!("{}", self.server_params.release.quality)),
-			}),
-			self._listen_on_socket(socket)
-		)?)
+		Ok(self._listen_on_socket(socket).await?)
 	}
 
 	async fn _listen_on_socket(&self, socket: &Path) -> Result<SocketCodeServer, AnyError> {
