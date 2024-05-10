@@ -591,6 +591,25 @@ impl<'a> ServerBuilder<'a> {
 		})
 	}
 
+	/// Starts with a given opaque set of args. Does not set up any port or
+	/// socket, but does return one if present, in the form of a channel.
+	pub async fn start_opaque_with_args<M, R>(
+		&self,
+		args: &[String],
+	) -> Result<(CodeServerOrigin, Receiver<R>), AnyError>
+	where
+		M: ServerOutputMatcher<R>,
+		R: 'static + Send + std::fmt::Debug,
+	{
+		let mut cmd = self.get_base_command();
+		cmd.args(args);
+
+		let child = self.spawn_server_process(cmd).await?;
+		let plog = self.logger.prefixed(&log::new_code_server_prefix());
+
+		Ok(monitor_server::<M, R>(child, None, plog, true))
+	}
+
 	async fn spawn_server_process(&self, mut cmd: Command) -> Result<Child, AnyError> {
 		info!(self.logger, "Starting server...");
 
