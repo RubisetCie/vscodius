@@ -1,0 +1,73 @@
+name: Build Tools CLI
+on:
+  workflow_dispatch:
+    inputs:
+      pkg_version:
+        description: 'Arbitrary release version'
+        required: false
+        default: '1.0.0'
+      pkg_arch:
+        description: 'Target package architecture (x86_64-pc-windows-gnu, x86_64-unknown-linux-gnu, etc)'
+        required: true
+        default: 'x86_64-pc-windows-gnu'
+      mingw_arch:
+        description: 'Target MinGW architecture (x64, x86)'
+        required: true
+        default: 'x64'
+      mingw_version:
+        description: 'MinGW version'
+        required: false
+        default: 'any'
+jobs:
+  build-win:
+    if: contains('${{github.event.inputs.pkg_arch}}', '-windows-')
+    runs-on: ubuntu-latest
+#    outputs:
+#      mingw-prefix: ${{ steps.setup-mingw.outputs.prefix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{github.event.inputs.pkg_arch}}
+      - id: setup-mingw
+        name: Setup MinGW
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          platform: '${{github.event.inputs.mingw_arch}}'
+          version: '${{github.event.inputs.mingw_version}}'
+      - name: Setup OpenSSL
+        run: choco install openssl
+      - name: Build
+        run: export OPENSSL_DIR=~/work/openssl-build && cargo build --release --target ${{github.event.inputs.pkg_arch}}
+        working-directory: ./cli
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: codius-${{github.event.inputs.pkg_arch}}-${{github.event.inputs.pkg_version}}.exe
+          path: './cli/target/${{github.event.inputs.pkg_arch}}/release/code.exe'
+          overwrite: true
+          if-no-files-found: error
+  build-linux:
+    if: contains('${{github.event.inputs.pkg_arch}}', '-linux-')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{github.event.inputs.pkg_arch}}
+      - name: Build
+        run: cargo build --release --target ${{github.event.inputs.pkg_arch}}
+        working-directory: ./cli
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: codius-${{github.event.inputs.pkg_arch}}-${{github.event.inputs.pkg_version}}
+          path: './cli/target/${{github.event.inputs.pkg_arch}}/release/code'
+          overwrite: true
+          if-no-files-found: error
