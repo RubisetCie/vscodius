@@ -13,7 +13,6 @@
 	"serverLicensePrompt": "",
 	"serverApplicationName": "codius-server",
 	"serverDataFolderName": ".vscodius-server",
-	"tunnelApplicationName": "code-tunnel",
 	"tipsAndTricksUrl": "https://go.microsoft.com/fwlink/?linkid=852118",
 	"documentationUrl": "https://go.microsoft.com/fwlink/?LinkID=533484#vscode",
 	"keyboardShortcutsUrlWin": "https://go.microsoft.com/fwlink/?linkid=832145",
@@ -43,9 +42,10 @@
 	"extensionsGallery": {
 		"nlsBaseUrl": "https://www.vscode-unpkg.net/_lp/",
 		"serviceUrl": "https://marketplace.visualstudio.com/_apis/public/gallery",
-		"cacheUrl": "https://vscode.blob.core.windows.net/gallery/index",
+		"itemUrl": "https://marketplace.visualstudio.com/items",
 		"publisherUrl": "https://marketplace.visualstudio.com/publishers",
-		"itemUrl": "https://marketplace.visualstudio.com/items"
+		"resourceUrlTemplate": "https://{publisher}.vscode-unpkg.net/{publisher}/{name}/{version}/{path}",
+		"controlUrl": "https://az764295.vo.msecnd.net/extensions/marketplace.json"
 	},
 	"linkProtectionTrustedDomains": [
 		"https://*.visualstudio.com",
@@ -59,6 +59,18 @@
 		"https://aka.ms",
 		"https://gh.io"
 	],
+	"tunnelApplicationName": "codius-tunnel",
+	"tunnelApplicationConfig": {
+		"extension": {
+			"friendlyName": "Remote - Tunnels",
+			"extensionId": "ms-vscode.remote-server"
+		},
+		"authenticationProviders": {
+			"github": {
+				"scopes": ["user:email", "read:org"]
+			}
+		}
+	},
 	"builtInExtensions": [
 		{
 			"name": "ms-vscode.js-debug-companion",
