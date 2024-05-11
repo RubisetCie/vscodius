@@ -33,4 +33,5 @@ jobs:
         with:
           name: VSCodius-Win32-Testing-Logs.zip
           path: 'output.txt'
+          compression-level: 9
           overwrite: true

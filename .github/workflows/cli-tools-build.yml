@@ -7,23 +7,17 @@ on:
         required: false
         default: '1.0.0'
       pkg_arch:
-        description: 'Target package architecture (x86_64-pc-windows-gnu, x86_64-unknown-linux-gnu, etc)'
+        description: 'Target triplet (x86_64-pc-windows-gnu, x86_64-unknown-linux-gnu, etc)'
         required: true
         default: 'x86_64-pc-windows-gnu'
       mingw_arch:
-        description: 'Target MinGW architecture (x64, x86)'
+        description: 'Target MinGW architecture (x86-64, i686)'
         required: true
-        default: 'x64'
-      mingw_version:
-        description: 'MinGW version'
-        required: false
-        default: 'any'
+        default: 'x86-64'
 jobs:
   build-win:
-    if: contains('${{github.event.inputs.pkg_arch}}', '-windows-')
+    if: ${{ contains(github.event.inputs.pkg_arch, '-windows-') }}
     runs-on: ubuntu-latest
-#    outputs:
-#      mingw-prefix: ${{ steps.setup-mingw.outputs.prefix }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,26 +26,31 @@ jobs:
         with:
           toolchain: stable
           target: ${{github.event.inputs.pkg_arch}}
-      - id: setup-mingw
-        name: Setup MinGW
-        uses: egor-tensin/setup-mingw@v2
-        with:
-          platform: '${{github.event.inputs.mingw_arch}}'
-          version: '${{github.event.inputs.mingw_version}}'
-      - name: Setup OpenSSL
-        run: choco install openssl
+      - name: Setup MinGW
+        run: sudo apt-get install -y gcc-mingw-w64-${{github.event.inputs.mingw_arch}}
+      - name: Setup OpenSSL (64-bits)
+        if: ${{github.event.inputs.mingw_arch == 'x86-64'}}
+        run: |
+          git clone --depth 1 https://github.com/openssl/openssl.git && cd openssl
+          ./Configure mingw64 --release --prefix="$PWD/../openssl-build" --cross-compile-prefix=x86_64-w64-mingw32- no-filenames no-docs no-tests && make && make install
+      - name: Setup OpenSSL (32-bits)
+        if: ${{github.event.inputs.mingw_arch == 'i686'}}
+        run: |
+          git clone --depth 1 https://github.com/openssl/openssl.git && cd openssl
+          ./Configure mingw --release --prefix="$PWD/../openssl-build" --cross-compile-prefix=i686-w64-mingw32- no-filenames no-docs no-tests && make && make install
       - name: Build
-        run: export OPENSSL_DIR=~/work/openssl-build && cargo build --release --target ${{github.event.inputs.pkg_arch}}
+        run: export OPENSSL_DIR="$PWD/../openssl-build" && cargo build --release --target ${{github.event.inputs.pkg_arch}}
         working-directory: ./cli
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: codius-${{github.event.inputs.pkg_arch}}-${{github.event.inputs.pkg_version}}.exe
+          name: codius-${{github.event.inputs.pkg_arch}}-${{github.event.inputs.pkg_version}}
           path: './cli/target/${{github.event.inputs.pkg_arch}}/release/code.exe'
           overwrite: true
+          compression-level: 9
           if-no-files-found: error
   build-linux:
-    if: contains('${{github.event.inputs.pkg_arch}}', '-linux-')
+    if: ${{ contains(github.event.inputs.pkg_arch, '-linux-') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -70,4 +69,5 @@ jobs:
           name: codius-${{github.event.inputs.pkg_arch}}-${{github.event.inputs.pkg_version}}
           path: './cli/target/${{github.event.inputs.pkg_arch}}/release/code'
           overwrite: true
+          compression-level: 9
           if-no-files-found: error
