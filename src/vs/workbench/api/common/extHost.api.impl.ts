@@ -6,7 +6,7 @@
 import { CancellationToken, CancellationTokenSource } from 'vs/base/common/cancellation';
 import * as errors from 'vs/base/common/errors';
 import { Emitter, Event } from 'vs/base/common/event';
-import { combinedDisposable } from 'vs/base/common/lifecycle';
+import { combinedDisposable, Disposable } from 'vs/base/common/lifecycle';
 import { Schemas, matchesScheme } from 'vs/base/common/network';
 import Severity from 'vs/base/common/severity';
 import { URI } from 'vs/base/common/uri';
@@ -105,6 +105,12 @@ import { checkProposedApiEnabled, isProposedApiEnabled } from 'vs/workbench/serv
 import { ProxyIdentifier } from 'vs/workbench/services/extensions/common/proxyIdentifier';
 import { TextSearchCompleteMessageType } from 'vs/workbench/services/search/common/searchExtTypes';
 import type * as vscode from 'vscode';
+
+// Dummy implementation for extension compatibility!
+class TelemetryTrustedValue<T> {
+	public readonly isTrustedTelemetryValue = true;
+	constructor(public readonly value: T) { }
+}
 
 export interface IExtensionRegistries {
 	mine: ExtensionDescriptionRegistry;
@@ -347,6 +353,8 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 			}
 		};
 
+		var _telemetryLogger: vscode.TelemetryLogger | undefined;  // Dummy logger for extension compatibility!
+
 		// namespace: env
 		const env: typeof vscode.env = {
 			get machineId() { return ''; },
@@ -363,8 +371,28 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 			get onDidChangeShell() {
 				return _asExtensionEvent(extHostTerminalService.onDidChangeShell);
 			},
+			get isTelemetryEnabled() {  // Extension compatibility!
+				return false;
+			},
+			get onDidChangeTelemetryEnabled(): vscode.Event<boolean> {  // Extension compatibility!
+				return (callback, thisArgs, disposables) => { return Disposable.None; };
+			},
 			get isNewAppInstall() {
 				return false;
+			},
+			createTelemetryLogger(sender: vscode.TelemetrySender, options?: vscode.TelemetryLoggerOptions): vscode.TelemetryLogger {
+				// Create dummy logger for extension compatibility!
+				if (!_telemetryLogger) {
+					_telemetryLogger = {
+						logUsage: (eventName, data) => {},
+						logError: (eventName, data) => {},
+						onDidChangeEnableStates: (callback, thisArgs, disposables) => { return Disposable.None; },
+						get isUsageEnabled() { return false; },
+						get isErrorsEnabled() { return false; },
+						dispose: () => {}
+					};
+				}
+				return _telemetryLogger;
 			},
 			openExternal(uri: URI, options?: { allowContributedOpeners?: boolean | string }) {
 				return extHostWindow.openUri(uri, {
@@ -1665,6 +1693,7 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 			TabInputInteractiveWindow: extHostTypes.InteractiveWindowInput,
 			TabInputChat: extHostTypes.ChatEditorTabInput,
 			TabInputTextMultiDiff: extHostTypes.TextMultiDiffTabInput,
+			TelemetryTrustedValue: TelemetryTrustedValue,
 			LogLevel: LogLevel,
 			EditSessionIdentityMatch: EditSessionIdentityMatch,
 			InteractiveSessionVoteDirection: extHostTypes.InteractiveSessionVoteDirection,
