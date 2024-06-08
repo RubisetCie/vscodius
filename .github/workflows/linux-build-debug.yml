@@ -9,7 +9,7 @@ on:
       node_version:
         description: 'Node.js version'
         required: true
-        default: '18'
+        default: '20'
 jobs:
   build:
     runs-on: ubuntu-latest

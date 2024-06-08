@@ -542,7 +542,7 @@ export class ExtensionHoverWidget extends ExtensionWidget {
 		if (this.extension) {
 			this.hover.value = this.hoverService.setupUpdatableHover({
 				delay: this.configurationService.getValue<number>('workbench.hover.delay'),
-				showHover: (options) => {
+				showHover: (options, focus) => {
 					return this.hoverService.showHover({
 						...options,
 						additionalClasses: ['extension-hover'],
@@ -550,7 +550,10 @@ export class ExtensionHoverWidget extends ExtensionWidget {
 							hoverPosition: this.options.position(),
 							forcePosition: true,
 						},
-					});
+						persistence: {
+							hideOnKeyDown: true,
+						}
+					}, focus);
 				},
 				placement: 'element'
 			}, this.options.target, { markdown: () => Promise.resolve(this.getHoverMarkdown()), markdownNotSupportedFallback: undefined });

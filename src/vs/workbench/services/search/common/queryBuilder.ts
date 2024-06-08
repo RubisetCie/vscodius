@@ -109,7 +109,7 @@ export class QueryBuilder {
 		});
 
 		const commonQuery = this.commonQuery(folderResources?.map(toWorkspaceFolder), options);
-		return <ITextQuery>{
+		return {
 			...commonQuery,
 			type: QueryType.Text,
 			contentPattern,
@@ -179,7 +179,7 @@ export class QueryBuilder {
 
 	file(folders: (IWorkspaceFolderData | URI)[], options: IFileQueryBuilderOptions = {}): IFileQuery {
 		const commonQuery = this.commonQuery(folders, options);
-		return <IFileQuery>{
+		return {
 			...commonQuery,
 			type: QueryType.File,
 			filePattern: options.filePattern
@@ -538,7 +538,7 @@ export class QueryBuilder {
 		};
 
 		const folderName = URI.isUri(folder) ? basename(folder) : folder.name;
-		return <IFolderQuery>{
+		return {
 			folder: folderUri,
 			folderName: includeFolderName ? folderName : undefined,
 			excludePattern: Object.keys(excludePattern).length > 0 ? excludePattern : undefined,

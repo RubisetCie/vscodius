@@ -11,9 +11,9 @@ import { IConfigurationService } from 'vs/platform/configuration/common/configur
 import { IHoverService } from 'vs/platform/hover/browser/hover';
 import { IKeybindingService } from 'vs/platform/keybinding/common/keybinding';
 import { IProductService } from 'vs/platform/product/common/productService';
+import { IChatAgentService } from 'vs/workbench/contrib/chat/common/chatAgents';
 import { EmptyTextEditorHintContribution, IEmptyTextEditorHintOptions } from 'vs/workbench/contrib/codeEditor/browser/emptyTextEditorHint/emptyTextEditorHint';
 import { IInlineChatSessionService } from 'vs/workbench/contrib/inlineChat/browser/inlineChatSessionService';
-import { IInlineChatService } from 'vs/workbench/contrib/inlineChat/common/inlineChat';
 import { getNotebookEditorFromEditorPane } from 'vs/workbench/contrib/notebook/browser/notebookBrowser';
 import { IEditorGroupsService } from 'vs/workbench/services/editor/common/editorGroupsService';
 import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
@@ -29,7 +29,7 @@ export class EmptyCellEditorHintContribution extends EmptyTextEditorHintContribu
 		@IHoverService hoverService: IHoverService,
 		@IKeybindingService keybindingService: IKeybindingService,
 		@IInlineChatSessionService inlineChatSessionService: IInlineChatSessionService,
-		@IInlineChatService inlineChatService: IInlineChatService,
+		@IChatAgentService chatAgentService: IChatAgentService,
 		@IProductService productService: IProductService
 	) {
 		super(
@@ -40,7 +40,7 @@ export class EmptyCellEditorHintContribution extends EmptyTextEditorHintContribu
 			hoverService,
 			keybindingService,
 			inlineChatSessionService,
-			inlineChatService,
+			chatAgentService,
 			productService
 		);
 

@@ -749,7 +749,7 @@ export class TunnelPanel extends ViewPane {
 	static readonly TITLE: ILocalizedString = nls.localize2('remote.tunnel', "Ports");
 
 	private panelContainer: HTMLElement | undefined;
-	private table!: WorkbenchTable<ITunnelItem>;
+	private table: WorkbenchTable<ITunnelItem> | undefined;
 	private readonly tableDisposables: DisposableStore = this._register(new DisposableStore());
 	private tunnelTypeContext: IContextKey<TunnelType>;
 	private tunnelCloseableContext: IContextKey<boolean>;
@@ -828,7 +828,7 @@ export class TunnelPanel extends ViewPane {
 				updateActions();
 				this.registerPrivacyActions();
 				this.createTable();
-				this.table.layout(this.height, this.width);
+				this.table?.layout(this.height, this.width);
 			}
 		}));
 	}
@@ -911,7 +911,7 @@ export class TunnelPanel extends ViewPane {
 		this.tableDisposables.add(this.table.onDidFocus(() => this.tunnelViewFocusContext.set(true)));
 		this.tableDisposables.add(this.table.onDidBlur(() => this.tunnelViewFocusContext.set(false)));
 
-		const rerender = () => this.table.splice(0, Number.POSITIVE_INFINITY, this.viewModel.all);
+		const rerender = () => this.table?.splice(0, Number.POSITIVE_INFINITY, this.viewModel.all);
 
 		rerender();
 		let lastPortCount = this.portCount;
@@ -925,7 +925,7 @@ export class TunnelPanel extends ViewPane {
 		}));
 
 		this.tableDisposables.add(this.table.onMouseClick(e => {
-			if (this.hasOpenLinkModifier(e.browserEvent)) {
+			if (this.hasOpenLinkModifier(e.browserEvent) && this.table) {
 				const selection = this.table.getSelectedElements();
 				if ((selection.length === 0) ||
 					((selection.length === 1) && (selection[0] === e.element))) {
@@ -957,11 +957,11 @@ export class TunnelPanel extends ViewPane {
 				widgetContainer.classList.add('highlight');
 				if (!e) {
 					// When we are in editing mode for a new forward, rather than updating an existing one we need to reveal the input box since it might be out of view.
-					this.table.reveal(this.table.indexOf(this.viewModel.input));
+					this.table?.reveal(this.table.indexOf(this.viewModel.input));
 				}
 			} else {
 				if (e && (e.tunnel.tunnelType !== TunnelType.Add)) {
-					this.table.setFocus(this.lastFocus);
+					this.table?.setFocus(this.lastFocus);
 				}
 				this.focus();
 			}
@@ -981,7 +981,7 @@ export class TunnelPanel extends ViewPane {
 
 	override focus(): void {
 		super.focus();
-		this.table.domFocus();
+		this.table?.domFocus();
 	}
 
 	private onFocusChanged(event: ITableEvent<ITunnelItem>) {
@@ -1043,7 +1043,7 @@ export class TunnelPanel extends ViewPane {
 		const node: TunnelItem | undefined = event.element;
 
 		if (node) {
-			this.table.setFocus([this.table.indexOf(node)]);
+			this.table?.setFocus([this.table.indexOf(node)]);
 			this.tunnelTypeContext.set(node.tunnelType);
 			this.tunnelCloseableContext.set(!!node.closeable);
 			this.tunnelPrivacyContext.set(node.privacy.id);
@@ -1060,7 +1060,7 @@ export class TunnelPanel extends ViewPane {
 		this.contextMenuService.showContextMenu({
 			menuId: MenuId.TunnelContext,
 			menuActionOptions: { shouldForwardArgs: true },
-			contextKeyService: this.table.contextKeyService,
+			contextKeyService: this.table?.contextKeyService,
 			getAnchor: () => event.anchor,
 			getActionViewItem: (action) => {
 				const keybinding = this.keybindingService.lookupKeybinding(action.id);
@@ -1071,7 +1071,7 @@ export class TunnelPanel extends ViewPane {
 			},
 			onHide: (wasCancelled?: boolean) => {
 				if (wasCancelled) {
-					this.table.domFocus();
+					this.table?.domFocus();
 				}
 			},
 			getActionsContext: () => node?.strip(),
@@ -1091,7 +1091,7 @@ export class TunnelPanel extends ViewPane {
 		this.height = height;
 		this.width = width;
 		super.layoutBody(height, width);
-		this.table.layout(height, width);
+		this.table?.layout(height, width);
 	}
 }
 

@@ -63,7 +63,7 @@ export class LightBulbWidget extends Disposable implements IContentWidget {
 	constructor(
 		private readonly _editor: ICodeEditor,
 		@IKeybindingService private readonly _keybindingService: IKeybindingService,
-		@ICommandService commandService: ICommandService,
+		@ICommandService commandService: ICommandService
 	) {
 		super();
 

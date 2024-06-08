@@ -1063,6 +1063,10 @@ class StandaloneAccessbilitySignalService implements IAccessibilitySignalService
 		return ValueWithChangeEvent.const(false);
 	}
 
+	getDelayMs(signal: AccessibilitySignal, modality: AccessibilityModality): number {
+		return 0;
+	}
+
 	isSoundEnabled(cue: AccessibilitySignal): boolean {
 		return false;
 	}

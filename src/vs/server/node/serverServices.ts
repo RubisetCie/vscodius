@@ -125,7 +125,7 @@ export async function setupServerServices(connectionToken: ServerConnectionToken
 		configurationService.initialize(),
 		userDataProfilesService.init(),
 		getMachineId(logService.error.bind(logService)),
-		getSqmMachineId(logService.error.bind(logService))
+		getSqmMachineId(logService.error.bind(logService)),
 	]);
 
 	const extensionHostStatusService = new ExtensionHostStatusService();

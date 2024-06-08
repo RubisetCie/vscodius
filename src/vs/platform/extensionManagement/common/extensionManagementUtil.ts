@@ -41,7 +41,7 @@ export class ExtensionKey {
 	readonly id: string;
 
 	constructor(
-		identifier: IExtensionIdentifier,
+		readonly identifier: IExtensionIdentifier,
 		readonly version: string,
 		readonly targetPlatform: TargetPlatform = TargetPlatform.UNDEFINED,
 	) {

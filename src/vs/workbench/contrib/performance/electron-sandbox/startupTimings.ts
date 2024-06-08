@@ -18,6 +18,25 @@ import { VSBuffer } from 'vs/base/common/buffer';
 import { IWorkspaceTrustManagementService } from 'vs/platform/workspace/common/workspaceTrust';
 import { IPaneCompositePartService } from 'vs/workbench/services/panecomposite/browser/panecomposite';
 import { StartupTimings } from 'vs/workbench/contrib/performance/browser/startupTimings';
+import { coalesce } from 'vs/base/common/arrays';
+
+interface ITracingData {
+	readonly args?: {
+		readonly usedHeapSizeAfter?: number;
+		readonly usedHeapSizeBefore?: number;
+	};
+	readonly dur: number; 	// in microseconds
+	readonly name: string;	// e.g. MinorGC or MajorGC
+	readonly pid: number;
+}
+
+interface IHeapStatistics {
+	readonly used: number;
+	readonly garbage: number;
+	readonly majorGCs: number;
+	readonly minorGCs: number;
+	readonly duration: number;
+}
 
 export class NativeStartupTimings extends StartupTimings implements IWorkbenchContribution {
 
@@ -30,7 +49,7 @@ export class NativeStartupTimings extends StartupTimings implements IWorkbenchCo
 		@ILifecycleService lifecycleService: ILifecycleService,
 		@INativeWorkbenchEnvironmentService private readonly _environmentService: INativeWorkbenchEnvironmentService,
 		@IProductService private readonly _productService: IProductService,
-		@IWorkspaceTrustManagementService workspaceTrustService: IWorkspaceTrustManagementService,
+		@IWorkspaceTrustManagementService workspaceTrustService: IWorkspaceTrustManagementService
 	) {
 		super(editorService, paneCompositeService, lifecycleService, workspaceTrustService);
 
@@ -58,10 +77,18 @@ export class NativeStartupTimings extends StartupTimings implements IWorkbenchCo
 			]);
 
 			const perfBaseline = await this._timerService.perfBaseline;
+			const heapStatistics = await this._resolveStartupHeapStatistics();
 
 			if (appendTo) {
-				const content = `${this._timerService.startupMetrics.ellapsed}\t${this._productService.nameShort}\t${(this._productService.commit || '').slice(0, 10) || '0000000000'}\t${standardStartupError === undefined ? 'standard_start' : 'NO_standard_start : ' + standardStartupError}\t${String(perfBaseline).padStart(4, '0')}ms\n`;
-				await this.appendContent(URI.file(appendTo), content);
+				const content = coalesce([
+					this._timerService.startupMetrics.ellapsed,
+					this._productService.nameShort,
+					(this._productService.commit || '').slice(0, 10) || '0000000000',
+					standardStartupError === undefined ? 'standard_start' : `NO_standard_start : ${standardStartupError}`,
+					`${String(perfBaseline).padStart(4, '0')}ms`,
+					heapStatistics ? this._printStartupHeapStatistics(heapStatistics) : undefined
+				]).join('\t') + '\n';
+				await this._appendContent(URI.file(appendTo), content);
 			}
 
 			if (durationMarkers?.length) {
@@ -84,7 +111,7 @@ export class NativeStartupTimings extends StartupTimings implements IWorkbenchCo
 
 				const durationsContent = `${durations.join('\t')}\n`;
 				if (durationMarkersFile) {
-					await this.appendContent(URI.file(durationMarkersFile), durationsContent);
+					await this._appendContent(URI.file(durationMarkersFile), durationsContent);
 				} else {
 					console.log(durationsContent);
 				}
@@ -105,12 +132,71 @@ export class NativeStartupTimings extends StartupTimings implements IWorkbenchCo
 		return super._isStandardStartup();
 	}
 
-	private async appendContent(file: URI, content: string): Promise<void> {
+	private async _appendContent(file: URI, content: string): Promise<void> {
 		const chunks: VSBuffer[] = [];
 		if (await this._fileService.exists(file)) {
 			chunks.push((await this._fileService.readFile(file)).value);
 		}
 		chunks.push(VSBuffer.fromString(content));
 		await this._fileService.writeFile(file, VSBuffer.concat(chunks));
+	}
+
+	private async _resolveStartupHeapStatistics(): Promise<IHeapStatistics | undefined> {
+		if (
+			!this._environmentService.args['enable-tracing'] ||
+			!this._environmentService.args['trace-startup-file'] ||
+			this._environmentService.args['trace-startup-format'] !== 'json' ||
+			!this._environmentService.args['trace-startup-duration']
+		) {
+			return undefined; // unexpected arguments for startup heap statistics
+		}
+
+		const windowProcessId = await this._nativeHostService.getProcessId();
+		const used = (performance as unknown as { memory?: { usedJSHeapSize?: number } }).memory?.usedJSHeapSize ?? 0; // https://developer.mozilla.org/en-US/docs/Web/API/Performance/memory
+
+		let minorGCs = 0;
+		let majorGCs = 0;
+		let garbage = 0;
+		let duration = 0;
+
+		try {
+			const traceContents: { traceEvents: ITracingData[] } = JSON.parse((await this._fileService.readFile(URI.file(this._environmentService.args['trace-startup-file']))).value.toString());
+			for (const event of traceContents.traceEvents) {
+				if (event.pid !== windowProcessId) {
+					continue;
+				}
+
+				switch (event.name) {
+
+					// Major/Minor GC Events
+					case 'MinorGC':
+						minorGCs++;
+					case 'MajorGC':
+						majorGCs++;
+						if (event.args && typeof event.args.usedHeapSizeAfter === 'number' && typeof event.args.usedHeapSizeBefore === 'number') {
+							garbage += (event.args.usedHeapSizeBefore - event.args.usedHeapSizeAfter);
+						}
+						break;
+
+					// GC Events that block the main thread
+					// Refs: https://v8.dev/blog/trash-talk
+					case 'V8.GCFinalizeMC':
+					case 'V8.GCScavenger':
+						duration += event.dur;
+						break;
+				}
+			}
+
+			return { minorGCs, majorGCs, used, garbage, duration: Math.round(duration / 1000) };
+		} catch (error) {
+			console.error(error);
+		}
+
+		return undefined;
+	}
+
+	private _printStartupHeapStatistics({ used, garbage, majorGCs, minorGCs, duration }: IHeapStatistics) {
+		const MB = 1024 * 1024;
+		return `Heap: ${Math.round(used / MB)}MB (used) ${Math.round(garbage / MB)}MB (garbage) ${majorGCs} (MajorGC) ${minorGCs} (MinorGC) ${duration}ms (GC duration)`;
 	}
 }

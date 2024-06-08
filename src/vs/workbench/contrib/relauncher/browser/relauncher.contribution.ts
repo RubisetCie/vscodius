@@ -27,7 +27,6 @@ interface IConfiguration extends IWindowsConfiguration {
 	editor?: { accessibilitySupport?: 'on' | 'off' | 'auto' };
 	security?: { workspace?: { trust?: { enabled?: boolean } }; restrictUNCAccess?: boolean };
 	window: IWindowSettings;
-	workbench?: { enableExperiments?: boolean };
 	_extensionsGallery?: { enablePPE?: boolean };
 }
 
@@ -41,7 +40,6 @@ export class SettingsChangeRelauncher extends Disposable implements IWorkbenchCo
 		'update.mode',
 		'editor.accessibilitySupport',
 		'security.workspace.trust.enabled',
-		'workbench.enableExperiments',
 		'_extensionsGallery.enablePPE',
 		'security.restrictUNCAccess'
 	];
@@ -53,7 +51,6 @@ export class SettingsChangeRelauncher extends Disposable implements IWorkbenchCo
 	private readonly updateMode = new ChangeObserver('string');
 	private accessibilitySupport: 'on' | 'off' | 'auto' | undefined;
 	private readonly workspaceTrustEnabled = new ChangeObserver('boolean');
-	private readonly experimentsEnabled = new ChangeObserver('boolean');
 	private readonly enablePPEExtensionsGallery = new ChangeObserver('boolean');
 	private readonly restrictUNCAccess = new ChangeObserver('boolean');
 
@@ -113,9 +110,6 @@ export class SettingsChangeRelauncher extends Disposable implements IWorkbenchCo
 			// UNC host access restrictions
 			processChanged(this.restrictUNCAccess.handleChange(config?.security?.restrictUNCAccess));
 		}
-
-		// Experiments
-		processChanged(this.experimentsEnabled.handleChange(config.workbench?.enableExperiments));
 
 		// Profiles
 		processChanged(this.productService.quality !== 'stable' && this.enablePPEExtensionsGallery.handleChange(config._extensionsGallery?.enablePPE));
