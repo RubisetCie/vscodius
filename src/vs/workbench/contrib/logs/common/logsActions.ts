@@ -170,7 +170,7 @@ export class OpenWindowSessionLogFileAction extends Action {
 
 	override async run(): Promise<void> {
 		const sessionResult = await this.quickInputService.pick(
-			this.getSessions().then(sessions => sessions.map((s, index) => (<IQuickPickItem>{
+			this.getSessions().then(sessions => sessions.map((s, index): IQuickPickItem => ({
 				id: s.toString(),
 				label: basename(s),
 				description: index === 0 ? nls.localize('current', "Current") : undefined
@@ -181,7 +181,7 @@ export class OpenWindowSessionLogFileAction extends Action {
 			});
 		if (sessionResult) {
 			const logFileResult = await this.quickInputService.pick(
-				this.getLogFiles(URI.parse(sessionResult.id!)).then(logFiles => logFiles.map(s => (<IQuickPickItem>{
+				this.getLogFiles(URI.parse(sessionResult.id!)).then(logFiles => logFiles.map((s): IQuickPickItem => ({
 					id: s.toString(),
 					label: basename(s)
 				}))),

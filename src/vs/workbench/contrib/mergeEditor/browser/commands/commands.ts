@@ -485,7 +485,7 @@ async function mergeEditorCompare(viewModel: MergeEditorViewModel, editorService
 			},
 			revealIfOpened: true,
 			revealIfVisible: true,
-		} as ITextEditorOptions
+		} satisfies ITextEditorOptions
 	});
 }
 

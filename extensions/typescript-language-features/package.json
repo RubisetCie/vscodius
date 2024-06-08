@@ -13,7 +13,8 @@
     "multiDocumentHighlightProvider",
     "mappedEditsProvider",
     "codeActionAI",
-    "codeActionRanges"
+    "codeActionRanges",
+    "documentPaste"
   ],
   "capabilities": {
     "virtualWorkspaces": {
@@ -48,7 +49,7 @@
     "vscode-uri": "^3.0.3"
   },
   "devDependencies": {
-    "@types/node": "18.x",
+    "@types/node": "20.x",
     "@types/semver": "^5.5.0"
   },
   "scripts": {
@@ -137,6 +138,10 @@
       {
         "fileMatch": "jsconfig.*.json",
         "url": "./schemas/jsconfig.schema.json"
+      },
+      {
+        "fileMatch": ".swcrc",
+        "url": "https://swc.rs/schema.json"
       },
       {
         "fileMatch": "typedoc.json",
@@ -1170,10 +1175,7 @@
         "typescript.tsserver.experimental.useVsCodeWatcher": {
           "type": "boolean",
           "description": "%configuration.tsserver.useVsCodeWatcher%",
-          "default": false,
-          "tags": [
-            "experimental"
-          ]
+          "default": true
         },
         "typescript.tsserver.watchOptions": {
           "type": "object",
@@ -1282,17 +1284,16 @@
           "description": "%configuration.tsserver.web.projectWideIntellisense.suppressSemanticErrors%",
           "scope": "window"
         },
+        "typescript.tsserver.web.typeAcquisition.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "%configuration.tsserver.web.typeAcquisition.enabled%",
+          "scope": "window"
+        },
         "typescript.tsserver.nodePath": {
           "type": "string",
           "description": "%configuration.tsserver.nodePath%",
           "scope": "window"
-        },
-        "typescript.experimental.tsserver.web.typeAcquisition.enabled": {
-          "type": "boolean",
-          "default": false,
-          "description": "%configuration.experimental.tsserver.web.typeAcquisition.enabled%",
-          "scope": "window",
-          "tags": ["experimental"]
         },
         "typescript.preferGoToSourceDefinition": {
           "type": "boolean",
@@ -1311,6 +1312,20 @@
           "default": true,
           "markdownDescription": "%typescript.workspaceSymbols.excludeLibrarySymbols%",
           "scope": "window"
+        },
+        "javascript.experimental.updateImportsOnPaste": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": false,
+          "description": "%configuration.updateImportsOnPaste%",
+          "tags": ["experimental"]
+        },
+        "typescript.experimental.updateImportsOnPaste": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": false,
+          "description": "%configuration.updateImportsOnPaste%",
+          "tags": ["experimental"]
         }
       }
     },

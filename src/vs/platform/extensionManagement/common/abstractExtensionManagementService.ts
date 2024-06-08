@@ -16,7 +16,7 @@ import {
 	ExtensionManagementError, IExtensionGalleryService, IExtensionIdentifier, IExtensionManagementParticipant, IGalleryExtension, ILocalExtension, InstallOperation,
 	IExtensionsControlManifest, StatisticType, isTargetPlatformCompatible, TargetPlatformToString, ExtensionManagementErrorCode,
 	InstallOptions, UninstallOptions, Metadata, InstallExtensionEvent, DidUninstallExtensionEvent, InstallExtensionResult, UninstallExtensionEvent, IExtensionManagementService, InstallExtensionInfo, EXTENSION_INSTALL_DEP_PACK_CONTEXT, ExtensionGalleryError,
-	IProductVersion
+	IProductVersion, ExtensionGalleryErrorCode,
 } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { areSameExtensions, ExtensionKey, getGalleryExtensionId } from 'vs/platform/extensionManagement/common/extensionManagementUtil';
 import { ExtensionType, IExtensionManifest, isApplicationScopedExtension, TargetPlatform } from 'vs/platform/extensions/common/extensions';
@@ -34,7 +34,6 @@ export interface IInstallExtensionTask {
 	readonly identifier: IExtensionIdentifier;
 	readonly source: IGalleryExtension | URI;
 	readonly operation: InstallOperation;
-	readonly profileLocation: URI;
 	readonly options: InstallExtensionTaskOptions;
 	readonly verificationStatus?: ExtensionVerificationStatus;
 	run(): Promise<ILocalExtension>;
@@ -202,7 +201,7 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 			const key = `${getGalleryExtensionId(manifest.publisher, manifest.name)}-${options.profileLocation.toString()}`;
 			installingExtensionsMap.set(key, { task: installExtensionTask, root });
 			this._onInstallExtension.fire({ identifier: installExtensionTask.identifier, source: extension, profileLocation: options.profileLocation });
-			this.logService.info('Installing extension:', installExtensionTask.identifier.id);
+			this.logService.info('Installing extension:', installExtensionTask.identifier.id, options.profileLocation.toString());
 			// only cache gallery extensions tasks
 			if (!URI.isUri(extension)) {
 				this.installingExtensions.set(getInstallExtensionTaskKey(extension, options.profileLocation), { task: installExtensionTask, waitingTasks: [] });
@@ -223,7 +222,7 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 
 				const existingInstallExtensionTask = !URI.isUri(extension) ? this.installingExtensions.get(getInstallExtensionTaskKey(extension, installExtensionTaskOptions.profileLocation)) : undefined;
 				if (existingInstallExtensionTask) {
-					this.logService.info('Extension is already requested to install', existingInstallExtensionTask.task.identifier.id);
+					this.logService.info('Extension is already requested to install', existingInstallExtensionTask.task.identifier.id, installExtensionTaskOptions.profileLocation.toString());
 					alreadyRequestedInstallations.push(existingInstallExtensionTask.task.waitUntilTaskIsFinished());
 				} else {
 					createInstallExtensionTask(manifest, extension, installExtensionTaskOptions, undefined);
@@ -247,14 +246,14 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 							if (existingInstallingExtension) {
 								if (this.canWaitForTask(task, existingInstallingExtension.task)) {
 									const identifier = existingInstallingExtension.task.identifier;
-									this.logService.info('Waiting for already requested installing extension', identifier.id, task.identifier.id);
+									this.logService.info('Waiting for already requested installing extension', identifier.id, task.identifier.id, options.profileLocation.toString());
 									existingInstallingExtension.waitingTasks.push(task);
 									// add promise that waits until the extension is completely installed, ie., onDidInstallExtensions event is triggered for this extension
 									alreadyRequestedInstallations.push(
 										Event.toPromise(
 											Event.filter(this.onDidInstallExtensions, results => results.some(result => areSameExtensions(result.identifier, identifier)))
 										).then(results => {
-											this.logService.info('Finished waiting for already requested installing extension', identifier.id, task.identifier.id);
+											this.logService.info('Finished waiting for already requested installing extension', identifier.id, task.identifier.id, options.profileLocation.toString());
 											const result = results.find(result => areSameExtensions(result.identifier, identifier));
 											if (!result?.local) {
 												// Extension failed to install
@@ -286,24 +285,27 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 
 			// Install extensions in parallel and wait until all extensions are installed / failed
 			await this.joinAllSettled([...installingExtensionsMap.entries()].map(async ([key, { task }]) => {
+				let local: ILocalExtension;
 				try {
-					const local = await task.run();
-					await this.joinAllSettled(this.participants.map(participant => participant.postInstall(local, task.source, task.options, CancellationToken.None)));
-					if (!URI.isUri(task.source)) {
-						// In web, report extension install statistics explicitly. In Desktop, statistics are automatically updated while downloading the VSIX.
-						if (isWeb && task.operation !== InstallOperation.Update) {
-							try {
-								await this.galleryService.reportStatistic(local.manifest.publisher, local.manifest.name, local.manifest.version, StatisticType.Install);
-							} catch (error) { /* ignore */ }
-						}
-					}
-					installExtensionResultsMap.set(key, { local, identifier: task.identifier, operation: task.operation, source: task.source, context: task.options.context, profileLocation: task.profileLocation, applicationScoped: local.isApplicationScoped });
+					local = await task.run();
+					await this.joinAllSettled(this.participants.map(participant => participant.postInstall(local, task.source, task.options, CancellationToken.None)), ExtensionManagementErrorCode.PostInstall);
 				} catch (e) {
 					const error = toExtensionManagementError(e);
-					installExtensionResultsMap.set(key, { error, identifier: task.identifier, operation: task.operation, source: task.source, context: task.options.context, profileLocation: task.profileLocation, applicationScoped: task.options.isApplicationScoped });
-					this.logService.error('Error while installing the extension', task.identifier.id, getErrorMessage(error));
+					if (!URI.isUri(task.source)) {
+					}
+					installExtensionResultsMap.set(key, { error, identifier: task.identifier, operation: task.operation, source: task.source, context: task.options.context, profileLocation: task.options.profileLocation, applicationScoped: task.options.isApplicationScoped });
+					this.logService.error('Error while installing the extension', task.identifier.id, getErrorMessage(error), task.options.profileLocation.toString());
 					throw error;
 				}
+				if (!URI.isUri(task.source)) {
+					// In web, report extension install statistics explicitly. In Desktop, statistics are automatically updated while downloading the VSIX.
+					if (isWeb && task.operation !== InstallOperation.Update) {
+						try {
+							await this.galleryService.reportStatistic(local.manifest.publisher, local.manifest.name, local.manifest.version, StatisticType.Install);
+						} catch (error) { /* ignore */ }
+					}
+				}
+				installExtensionResultsMap.set(key, { local, identifier: task.identifier, operation: task.operation, source: task.source, context: task.options.context, profileLocation: task.options.profileLocation, applicationScoped: local.isApplicationScoped });
 			}));
 
 			if (alreadyRequestedInstallations.length) {
@@ -331,7 +333,7 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 				}
 				return allDepsOrPacks;
 			};
-			const getErrorResult = (task: IInstallExtensionTask) => ({ identifier: task.identifier, operation: InstallOperation.Install, source: task.source, context: task.options.context, profileLocation: task.profileLocation, error });
+			const getErrorResult = (task: IInstallExtensionTask) => ({ identifier: task.identifier, operation: InstallOperation.Install, source: task.source, context: task.options.context, profileLocation: task.options.profileLocation, error });
 
 			const rollbackTasks: IUninstallExtensionTask[] = [];
 			for (const [key, { task, root }] of installingExtensionsMap) {
@@ -341,8 +343,8 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 					installExtensionResultsMap.set(key, getErrorResult(task));
 				}
 				// If the extension is installed by a root task and the root task is failed, then uninstall the extension
-				else if (result.local && root && !installExtensionResultsMap.get(`${root.identifier.id.toLowerCase()}-${task.profileLocation.toString()}`)?.local) {
-					rollbackTasks.push(this.createUninstallExtensionTask(result.local, { versionOnly: true, profileLocation: task.profileLocation }));
+				else if (result.local && root && !installExtensionResultsMap.get(`${root.identifier.id.toLowerCase()}-${task.options.profileLocation.toString()}`)?.local) {
+					rollbackTasks.push(this.createUninstallExtensionTask(result.local, { versionOnly: true, profileLocation: task.options.profileLocation }));
 					installExtensionResultsMap.set(key, getErrorResult(task));
 				}
 			}
@@ -354,9 +356,9 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 				if (task.options.donotIncludePackAndDependencies) {
 					continue;
 				}
-				const depsOrPacks = getAllDepsAndPacks(result.local, task.profileLocation, [result.local.identifier.id.toLowerCase()]).slice(1);
-				if (depsOrPacks.some(depOrPack => installingExtensionsMap.has(`${depOrPack.toLowerCase()}-${task.profileLocation.toString()}`) && !installExtensionResultsMap.get(`${depOrPack.toLowerCase()}-${task.profileLocation.toString()}`)?.local)) {
-					rollbackTasks.push(this.createUninstallExtensionTask(result.local, { versionOnly: true, profileLocation: task.profileLocation }));
+				const depsOrPacks = getAllDepsAndPacks(result.local, task.options.profileLocation, [result.local.identifier.id.toLowerCase()]).slice(1);
+				if (depsOrPacks.some(depOrPack => installingExtensionsMap.has(`${depOrPack.toLowerCase()}-${task.options.profileLocation.toString()}`) && !installExtensionResultsMap.get(`${depOrPack.toLowerCase()}-${task.options.profileLocation.toString()}`)?.local)) {
+					rollbackTasks.push(this.createUninstallExtensionTask(result.local, { versionOnly: true, profileLocation: task.options.profileLocation }));
 					installExtensionResultsMap.set(key, getErrorResult(task));
 				}
 			}
@@ -377,14 +379,14 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 			// Finally, remove all the tasks from the cache
 			for (const { task } of installingExtensionsMap.values()) {
 				if (task.source && !URI.isUri(task.source)) {
-					this.installingExtensions.delete(getInstallExtensionTaskKey(task.source, task.profileLocation));
+					this.installingExtensions.delete(getInstallExtensionTaskKey(task.source, task.options.profileLocation));
 				}
 			}
 			if (installExtensionResultsMap.size) {
 				const results = [...installExtensionResultsMap.values()];
 				for (const result of results) {
 					if (result.local) {
-						this.logService.info(`Extension installed successfully:`, result.identifier.id);
+						this.logService.info(`Extension installed successfully:`, result.identifier.id, result.profileLocation.toString());
 					}
 				}
 				this._onDidInstallExtensions.fire(results);
@@ -413,36 +415,35 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 		return true;
 	}
 
-	private async joinAllSettled<T>(promises: Promise<T>[]): Promise<T[]> {
+	private async joinAllSettled<T>(promises: Promise<T>[], errorCode?: ExtensionManagementErrorCode): Promise<T[]> {
 		const results: T[] = [];
-		const errors: any[] = [];
+		const errors: ExtensionManagementError[] = [];
 		const promiseResults = await Promise.allSettled(promises);
 		for (const r of promiseResults) {
 			if (r.status === 'fulfilled') {
 				results.push(r.value);
 			} else {
-				errors.push(r.reason);
+				errors.push(toExtensionManagementError(r.reason, errorCode));
 			}
+		}
+
+		if (!errors.length) {
+			return results;
 		}
 
 		// Throw if there are errors
-		if (errors.length) {
-			if (errors.length === 1) {
-				throw errors[0];
-			}
-
-			let error = new ExtensionManagementError('', ExtensionManagementErrorCode.Unknown);
-			for (const current of errors) {
-				const code = current instanceof ExtensionManagementError ? current.code : ExtensionManagementErrorCode.Unknown;
-				error = new ExtensionManagementError(
-					current.message ? `${current.message}, ${error.message}` : error.message,
-					code !== ExtensionManagementErrorCode.Unknown && code !== ExtensionManagementErrorCode.Internal ? code : error.code
-				);
-			}
-			throw error;
+		if (errors.length === 1) {
+			throw errors[0];
 		}
 
-		return results;
+		let error = new ExtensionManagementError('', ExtensionManagementErrorCode.Unknown);
+		for (const current of errors) {
+			error = new ExtensionManagementError(
+				error.message ? `${error.message}, ${current.message}` : current.message,
+				current.code !== ExtensionManagementErrorCode.Unknown && current.code !== ExtensionManagementErrorCode.Internal ? current.code : error.code
+			);
+		}
+		throw error;
 	}
 
 	private async getAllDepsAndPackExtensions(extensionIdentifier: IExtensionIdentifier, manifest: IExtensionManifest, getOnlyNewlyAddedFromExtensionPack: boolean, installPreRelease: boolean, profile: URI | undefined, productVersion: IProductVersion): Promise<{ gallery: IGalleryExtension; manifest: IExtensionManifest }[]> {
@@ -771,18 +772,18 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 	protected abstract copyExtension(extension: ILocalExtension, fromProfileLocation: URI, toProfileLocation: URI, metadata?: Partial<Metadata>): Promise<ILocalExtension>;
 }
 
-export function toExtensionManagementError(error: Error): ExtensionManagementError {
+export function toExtensionManagementError(error: Error, code?: ExtensionManagementErrorCode): ExtensionManagementError {
 	if (error instanceof ExtensionManagementError) {
 		return error;
 	}
+	let extensionManagementError: ExtensionManagementError;
 	if (error instanceof ExtensionGalleryError) {
-		const e = new ExtensionManagementError(error.message, ExtensionManagementErrorCode.Gallery);
-		e.stack = error.stack;
-		return e;
+		extensionManagementError = new ExtensionManagementError(error.message, error.code === ExtensionGalleryErrorCode.DownloadFailedWriting ? ExtensionManagementErrorCode.DownloadFailedWriting : ExtensionManagementErrorCode.Gallery);
+	} else {
+		extensionManagementError = new ExtensionManagementError(error.message, isCancellationError(error) ? ExtensionManagementErrorCode.Cancelled : (code ?? ExtensionManagementErrorCode.Internal));
 	}
-	const e = new ExtensionManagementError(error.message, isCancellationError(error) ? ExtensionManagementErrorCode.Cancelled : ExtensionManagementErrorCode.Internal);
-	e.stack = error.stack;
-	return e;
+	extensionManagementError.stack = error.stack;
+	return extensionManagementError;
 }
 
 export abstract class AbstractExtensionTask<T> {

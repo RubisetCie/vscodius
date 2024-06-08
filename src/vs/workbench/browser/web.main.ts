@@ -169,7 +169,7 @@ export class BrowserMain extends Disposable {
 
 			let logger: DelayedLogChannel | undefined = undefined;
 
-			return <IWorkbench>{
+			return {
 				commands: {
 					executeCommand: (command, ...args) => commandService.executeCommand(command, ...args)
 				},
@@ -240,7 +240,7 @@ export class BrowserMain extends Disposable {
 					}
 				},
 				shutdown: () => lifecycleService.shutdown()
-			};
+			} satisfies IWorkbench;
 		});
 	}
 

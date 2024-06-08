@@ -1092,6 +1092,9 @@ export class WorkspaceService extends Disposable implements IWorkbenchConfigurat
 		if (inspect.userLocalValue !== undefined) {
 			definedTargets.push(ConfigurationTarget.USER_LOCAL);
 		}
+		if (inspect.applicationValue !== undefined) {
+			definedTargets.push(ConfigurationTarget.APPLICATION);
+		}
 
 		if (value === undefined) {
 			// Remove the setting in all defined targets
@@ -1113,6 +1116,9 @@ export class WorkspaceService extends Disposable implements IWorkbenchConfigurat
 	}
 
 	private toEditableConfigurationTarget(target: ConfigurationTarget, key: string): EditableConfigurationTarget | null {
+		if (target === ConfigurationTarget.APPLICATION) {
+			return EditableConfigurationTarget.USER_LOCAL;
+		}
 		if (target === ConfigurationTarget.USER) {
 			if (this.remoteUserConfiguration) {
 				const scope = this.configurationRegistry.getConfigurationProperties()[key]?.scope;
