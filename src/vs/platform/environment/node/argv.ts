@@ -202,6 +202,8 @@ export const OPTIONS: OptionDescriptions<Required<NativeParsedArgs>> = {
 	'trace-startup-format': { type: 'string' },
 	'trace-startup-file': { type: 'string' },
 	'trace-startup-duration': { type: 'string' },
+	'use-gl': { type: 'string' },
+	'use-angle': { type: 'string' },
 
 	_: { type: 'string[]' } // main arguments
 };
