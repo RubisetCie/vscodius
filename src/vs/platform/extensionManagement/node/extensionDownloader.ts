@@ -190,11 +190,12 @@ export class ExtensionsDownloader extends Disposable {
 		}
 	}
 
-	private async doDownload(extension: IGalleryExtension, name: string, downloadFn: () => Promise<void>, retries: number): Promise<void> {
+	private async doDownload(extension: IGalleryExtension, name: string, downloadFn: () => Promise<void>, retries: number): Promise<number> {
 		let attempts = 1;
 		while (true) {
 			try {
 				await downloadFn();
+				return attempts;
 			} catch (e) {
 				if (attempts++ > retries) {
 					throw e;
@@ -206,6 +207,7 @@ export class ExtensionsDownloader extends Disposable {
 
 	protected async validate(zipPath: string, filePath: string): Promise<void> {
 		try {
+			this.logService.info('buffer', zipPath, filePath);
 			await buffer(zipPath, filePath);
 		} catch (e) {
 			throw fromExtractError(e);
