@@ -9,18 +9,15 @@ import { Disposable } from 'vs/base/common/lifecycle';
 import { Schemas } from 'vs/base/common/network';
 import { joinPath } from 'vs/base/common/resources';
 import * as semver from 'vs/base/common/semver/semver';
-import { isBoolean } from 'vs/base/common/types';
 import { URI } from 'vs/base/common/uri';
 import { generateUuid } from 'vs/base/common/uuid';
 import { Promises as FSPromises } from 'vs/base/node/pfs';
-import { buffer, CorruptZipMessage } from 'vs/base/node/zip';
-import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
+import { buffer } from 'vs/base/node/zip';
 import { INativeEnvironmentService } from 'vs/platform/environment/common/environment';
-import { ExtensionVerificationStatus, toExtensionManagementError } from 'vs/platform/extensionManagement/common/abstractExtensionManagementService';
-import { ExtensionManagementError, ExtensionManagementErrorCode, IExtensionGalleryService, IGalleryExtension, InstallOperation } from 'vs/platform/extensionManagement/common/extensionManagement';
+import { toExtensionManagementError } from 'vs/platform/extensionManagement/common/abstractExtensionManagementService';
+import { ExtensionManagementErrorCode, IExtensionGalleryService, IGalleryExtension, InstallOperation } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { ExtensionKey, groupByExtension } from 'vs/platform/extensionManagement/common/extensionManagementUtil';
 import { fromExtractError } from 'vs/platform/extensionManagement/node/extensionManagementUtil';
-import { ExtensionSignatureVerificationError, ExtensionSignatureVerificationCode, IExtensionSignatureVerificationService } from 'vs/platform/extensionManagement/node/extensionSignatureVerificationService';
 import { TargetPlatform } from 'vs/platform/extensions/common/extensions';
 import { IFileService, IFileStatWithMetadata } from 'vs/platform/files/common/files';
 import { ILogService } from 'vs/platform/log/common/log';
@@ -37,8 +34,6 @@ export class ExtensionsDownloader extends Disposable {
 		@INativeEnvironmentService environmentService: INativeEnvironmentService,
 		@IFileService private readonly fileService: IFileService,
 		@IExtensionGalleryService private readonly extensionGalleryService: IExtensionGalleryService,
-		@IConfigurationService private readonly configurationService: IConfigurationService,
-		@IExtensionSignatureVerificationService private readonly extensionSignatureVerificationService: IExtensionSignatureVerificationService,
 		@ILogService private readonly logService: ILogService,
 	) {
 		super();
@@ -47,62 +42,10 @@ export class ExtensionsDownloader extends Disposable {
 		this.cleanUpPromise = this.cleanUp();
 	}
 
-	async download(extension: IGalleryExtension, operation: InstallOperation, verifySignature: boolean, clientTargetPlatform?: TargetPlatform): Promise<{ readonly location: URI; readonly verificationStatus: ExtensionVerificationStatus }> {
+	async download(extension: IGalleryExtension, operation: InstallOperation, clientTargetPlatform?: TargetPlatform): Promise<URI> {
 		await this.cleanUpPromise;
 
-		const location = await this.downloadVSIX(extension, operation);
-
-		let verificationStatus: ExtensionVerificationStatus = false;
-
-		if (verifySignature && this.shouldVerifySignature(extension)) {
-
-			let signatureArchiveLocation;
-			try {
-				signatureArchiveLocation = await this.downloadSignatureArchive(extension);
-			} catch (error) {
-				try {
-					// Delete the downloaded VSIX if signature archive download fails
-					await this.delete(location);
-				} catch (error) {
-					this.logService.error(error);
-				}
-				throw error;
-			}
-
-			try {
-				verificationStatus = await this.extensionSignatureVerificationService.verify(extension, location.fsPath, signatureArchiveLocation.fsPath, clientTargetPlatform);
-			} catch (error) {
-				verificationStatus = (error as ExtensionSignatureVerificationError).code;
-				if (verificationStatus === ExtensionSignatureVerificationCode.PackageIsInvalidZip || verificationStatus === ExtensionSignatureVerificationCode.SignatureArchiveIsInvalidZip) {
-					try {
-						// Delete the downloaded vsix if VSIX or signature archive is invalid
-						await this.delete(location);
-					} catch (error) {
-						this.logService.error(error);
-					}
-					throw new ExtensionManagementError(CorruptZipMessage, ExtensionManagementErrorCode.CorruptZip);
-				}
-			} finally {
-				try {
-					// Delete signature archive always
-					await this.delete(signatureArchiveLocation);
-				} catch (error) {
-					this.logService.error(error);
-				}
-			}
-		}
-
-		return { location, verificationStatus };
-	}
-
-	private shouldVerifySignature(extension: IGalleryExtension): boolean {
-		if (!extension.isSigned) {
-			this.logService.info(`Extension is not signed: ${extension.identifier.id}`);
-			return false;
-		}
-
-		const value = this.configurationService.getValue('extensions.verifySignature');
-		return isBoolean(value) ? value : true;
+		return await this.downloadVSIX(extension, operation);
 	}
 
 	private async downloadVSIX(extension: IGalleryExtension, operation: InstallOperation): Promise<URI> {
@@ -125,29 +68,6 @@ export class ExtensionsDownloader extends Disposable {
 			return location;
 		} catch (e) {
 			throw toExtensionManagementError(e, ExtensionManagementErrorCode.Download);
-		}
-	}
-
-	private async downloadSignatureArchive(extension: IGalleryExtension): Promise<URI> {
-		try {
-			const location = joinPath(this.extensionsDownloadDir, `.${generateUuid()}`);
-			await this.doDownload(extension, 'sigzip', async () => {
-				await this.extensionGalleryService.downloadSignatureArchive(extension, location);
-				try {
-					await this.validate(location.fsPath, '.signature.p7s');
-				} catch (error) {
-					try {
-						await this.fileService.del(location);
-					} catch (e) {
-						this.logService.warn(`Error while deleting: ${location.path}`, getErrorMessage(e));
-					}
-					throw error;
-				}
-			}, 2);
-
-			return location;
-		} catch (e) {
-			throw toExtensionManagementError(e, ExtensionManagementErrorCode.DownloadSignature);
 		}
 	}
 

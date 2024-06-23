@@ -25,7 +25,7 @@ import { extract, IFile, zip } from 'vs/base/node/zip';
 import * as nls from 'vs/nls';
 import { IDownloadService } from 'vs/platform/download/common/download';
 import { INativeEnvironmentService } from 'vs/platform/environment/common/environment';
-import { AbstractExtensionManagementService, AbstractExtensionTask, ExtensionVerificationStatus, IInstallExtensionTask, InstallExtensionTaskOptions, IUninstallExtensionTask, toExtensionManagementError, UninstallExtensionTaskOptions } from 'vs/platform/extensionManagement/common/abstractExtensionManagementService';
+import { AbstractExtensionManagementService, AbstractExtensionTask, IInstallExtensionTask, InstallExtensionTaskOptions, IUninstallExtensionTask, toExtensionManagementError, UninstallExtensionTaskOptions } from 'vs/platform/extensionManagement/common/abstractExtensionManagementService';
 import {
 	ExtensionManagementError, ExtensionManagementErrorCode, IExtensionGalleryService, IExtensionIdentifier, IExtensionManagementService, IGalleryExtension, ILocalExtension, InstallOperation,
 	Metadata, InstallOptions,
@@ -57,8 +57,6 @@ export interface INativeServerExtensionManagementService extends IExtensionManag
 	markAsUninstalled(...extensions: IExtension[]): Promise<void>;
 }
 
-type ExtractExtensionResult = { readonly local: ILocalExtension; readonly verificationStatus?: ExtensionVerificationStatus };
-
 const DELETED_FOLDER_POSTFIX = '.vsctmp';
 
 export class ExtensionManagementService extends AbstractExtensionManagementService implements INativeServerExtensionManagementService {
@@ -67,7 +65,7 @@ export class ExtensionManagementService extends AbstractExtensionManagementServi
 	private readonly manifestCache: ExtensionsManifestCache;
 	private readonly extensionsDownloader: ExtensionsDownloader;
 
-	private readonly extractingGalleryExtensions = new Map<string, Promise<ExtractExtensionResult>>();
+	private readonly extractingGalleryExtensions = new Map<string, Promise<ILocalExtension>>();
 
 	constructor(
 		@IExtensionGalleryService galleryService: IExtensionGalleryService,
@@ -248,8 +246,8 @@ export class ExtensionManagementService extends AbstractExtensionManagementServi
 		}
 	}
 
-	async download(extension: IGalleryExtension, operation: InstallOperation, donotVerifySignature: boolean): Promise<URI> {
-		const { location } = await this.extensionsDownloader.download(extension, operation, !donotVerifySignature);
+	async download(extension: IGalleryExtension, operation: InstallOperation): Promise<URI> {
+		const location = await this.extensionsDownloader.download(extension, operation);
 		return location;
 	}
 
@@ -294,8 +292,8 @@ export class ExtensionManagementService extends AbstractExtensionManagementServi
 		return new UninstallExtensionInProfileTask(extension, options.profileLocation, this.extensionsProfileScannerService);
 	}
 
-	private async downloadAndExtractGalleryExtension(extensionKey: ExtensionKey, gallery: IGalleryExtension, operation: InstallOperation, options: InstallExtensionTaskOptions, token: CancellationToken): Promise<ExtractExtensionResult> {
-		const { verificationStatus, location } = await this.extensionsDownloader.download(gallery, operation, !options.donotVerifySignature, options.context?.[EXTENSION_INSTALL_CLIENT_TARGET_PLATFORM_CONTEXT]);
+	private async downloadAndExtractGalleryExtension(extensionKey: ExtensionKey, gallery: IGalleryExtension, operation: InstallOperation, options: InstallExtensionTaskOptions, token: CancellationToken): Promise<ILocalExtension> {
+		const location = await this.extensionsDownloader.download(gallery, operation, options.context?.[EXTENSION_INSTALL_CLIENT_TARGET_PLATFORM_CONTEXT]);
 		try {
 
 			if (token.isCancellationRequested) {
@@ -327,7 +325,7 @@ export class ExtensionManagementService extends AbstractExtensionManagementServi
 				},
 				false,
 				token);
-			return { local, verificationStatus };
+			return local;
 		} catch (error) {
 			try {
 				await this.extensionsDownloader.delete(location);
@@ -339,7 +337,7 @@ export class ExtensionManagementService extends AbstractExtensionManagementServi
 		}
 	}
 
-	private async extractVSIX(extensionKey: ExtensionKey, location: URI, options: InstallExtensionTaskOptions, token: CancellationToken): Promise<ExtractExtensionResult> {
+	private async extractVSIX(extensionKey: ExtensionKey, location: URI, options: InstallExtensionTaskOptions, token: CancellationToken): Promise<ILocalExtension> {
 		const local = await this.extensionsScanner.extractUserExtension(
 			extensionKey,
 			path.resolve(location.fsPath),
@@ -353,7 +351,7 @@ export class ExtensionManagementService extends AbstractExtensionManagementServi
 			},
 			true,
 			token);
-		return { local };
+		return local;
 	}
 
 	private async collectFiles(extension: ILocalExtension): Promise<IFile[]> {
@@ -887,9 +885,6 @@ class InstallExtensionInProfileTask extends AbstractExtensionTask<ILocalExtensio
 	private _operation = InstallOperation.Install;
 	get operation() { return this.options.operation ?? this._operation; }
 
-	private _verificationStatus: ExtensionVerificationStatus | undefined;
-	get verificationStatus() { return this._verificationStatus; }
-
 	readonly identifier: IExtensionIdentifier;
 
 	constructor(
@@ -897,7 +892,7 @@ class InstallExtensionInProfileTask extends AbstractExtensionTask<ILocalExtensio
 		readonly manifest: IExtensionManifest,
 		readonly source: IGalleryExtension | URI,
 		readonly options: InstallExtensionTaskOptions,
-		private readonly extractExtensionFn: (operation: InstallOperation, token: CancellationToken) => Promise<ExtractExtensionResult>,
+		private readonly extractExtensionFn: (operation: InstallOperation, token: CancellationToken) => Promise<ILocalExtension>,
 		private readonly extensionsScanner: ExtensionsScanner,
 		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService,
 		@IExtensionGalleryService private readonly galleryService: IExtensionGalleryService,
@@ -984,9 +979,7 @@ class InstallExtensionInProfileTask extends AbstractExtensionTask<ILocalExtensio
 		}
 
 		if (!local) {
-			const result = await this.extractExtensionFn(this.operation, token);
-			local = result.local;
-			this._verificationStatus = result.verificationStatus;
+			local = await this.extractExtensionFn(this.operation, token);
 		}
 
 		if (this.uriIdentityService.extUri.isEqual(this.userDataProfilesService.defaultProfile.extensionsResource, this.options.profileLocation)) {

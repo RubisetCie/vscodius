@@ -25,7 +25,6 @@ import { IProductService } from 'vs/platform/product/common/productService';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { IUserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
 
-export type ExtensionVerificationStatus = boolean | string;
 export type InstallableExtension = { readonly manifest: IExtensionManifest; extension: IGalleryExtension | URI; options: InstallOptions };
 
 export type InstallExtensionTaskOptions = InstallOptions & { readonly profileLocation: URI; readonly productVersion: IProductVersion };
@@ -35,7 +34,6 @@ export interface IInstallExtensionTask {
 	readonly source: IGalleryExtension | URI;
 	readonly operation: InstallOperation;
 	readonly options: InstallExtensionTaskOptions;
-	readonly verificationStatus?: ExtensionVerificationStatus;
 	run(): Promise<ILocalExtension>;
 	waitUntilTaskIsFinished(): Promise<ILocalExtension>;
 	cancel(): void;

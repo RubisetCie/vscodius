@@ -13,7 +13,6 @@ import { RequestService } from 'vs/platform/request/node/requestService';
 import { IExtensionGalleryService, InstallOptions } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { ExtensionGalleryServiceWithNoStorageService } from 'vs/platform/extensionManagement/common/extensionGalleryService';
 import { ExtensionManagementService, INativeServerExtensionManagementService } from 'vs/platform/extensionManagement/node/extensionManagementService';
-import { ExtensionSignatureVerificationService, IExtensionSignatureVerificationService } from 'vs/platform/extensionManagement/node/extensionSignatureVerificationService';
 import { InstantiationService } from 'vs/platform/instantiation/common/instantiationService';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import product from 'vs/platform/product/common/product';
@@ -131,7 +130,6 @@ class CliMain extends Disposable {
 		services.set(IExtensionGalleryService, new SyncDescriptor(ExtensionGalleryServiceWithNoStorageService));
 		services.set(IExtensionsProfileScannerService, new SyncDescriptor(ExtensionsProfileScannerService));
 		services.set(IExtensionsScannerService, new SyncDescriptor(ExtensionsScannerService));
-		services.set(IExtensionSignatureVerificationService, new SyncDescriptor(ExtensionSignatureVerificationService));
 		services.set(INativeServerExtensionManagementService, new SyncDescriptor(ExtensionManagementService));
 		services.set(ILanguagePackService, new SyncDescriptor(NativeLanguagePackService));
 

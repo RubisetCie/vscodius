@@ -30,7 +30,6 @@ import { INativeEnvironmentService } from 'vs/platform/environment/common/enviro
 import { GlobalExtensionEnablementService } from 'vs/platform/extensionManagement/common/extensionEnablementService';
 import { ExtensionGalleryService } from 'vs/platform/extensionManagement/common/extensionGalleryService';
 import { IExtensionGalleryService, IExtensionManagementService, IExtensionTipsService, IGlobalExtensionEnablementService } from 'vs/platform/extensionManagement/common/extensionManagement';
-import { ExtensionSignatureVerificationService, IExtensionSignatureVerificationService } from 'vs/platform/extensionManagement/node/extensionSignatureVerificationService';
 import { ExtensionManagementChannel, ExtensionTipsChannel } from 'vs/platform/extensionManagement/common/extensionManagementIpc';
 import { ExtensionManagementService, INativeServerExtensionManagementService } from 'vs/platform/extensionManagement/node/extensionManagementService';
 import { IExtensionRecommendationNotificationService } from 'vs/platform/extensionRecommendations/common/extensionRecommendations';
@@ -274,7 +273,6 @@ class SharedProcessMain extends Disposable implements IClientConnectionFilter {
 		// Extension Management
 		services.set(IExtensionsProfileScannerService, new SyncDescriptor(ExtensionsProfileScannerService, undefined, true));
 		services.set(IExtensionsScannerService, new SyncDescriptor(ExtensionsScannerService, undefined, true));
-		services.set(IExtensionSignatureVerificationService, new SyncDescriptor(ExtensionSignatureVerificationService, undefined, true));
 		services.set(INativeServerExtensionManagementService, new SyncDescriptor(ExtensionManagementService, undefined, true));
 
 		// Extension Gallery
