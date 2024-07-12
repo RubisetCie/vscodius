@@ -17,14 +17,17 @@ import {
 	IExtensionsControlManifest, StatisticType, isTargetPlatformCompatible, TargetPlatformToString, ExtensionManagementErrorCode,
 	InstallOptions, UninstallOptions, Metadata, InstallExtensionEvent, DidUninstallExtensionEvent, InstallExtensionResult, UninstallExtensionEvent, IExtensionManagementService, InstallExtensionInfo, EXTENSION_INSTALL_DEP_PACK_CONTEXT, ExtensionGalleryError,
 	IProductVersion, ExtensionGalleryErrorCode,
+	DidUpdateExtensionMetadata
 } from 'vs/platform/extensionManagement/common/extensionManagement';
 import { areSameExtensions, ExtensionKey, getGalleryExtensionId } from 'vs/platform/extensionManagement/common/extensionManagementUtil';
 import { ExtensionType, IExtensionManifest, isApplicationScopedExtension, TargetPlatform } from 'vs/platform/extensions/common/extensions';
+import { areApiProposalsCompatible } from 'vs/platform/extensions/common/extensionValidator';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IProductService } from 'vs/platform/product/common/productService';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { IUserDataProfilesService } from 'vs/platform/userDataProfile/common/userDataProfile';
 
+export type ExtensionVerificationStatus = boolean | string;
 export type InstallableExtension = { readonly manifest: IExtensionManifest; extension: IGalleryExtension | URI; options: InstallOptions };
 
 export type InstallExtensionTaskOptions = InstallOptions & { readonly profileLocation: URI; readonly productVersion: IProductVersion };
@@ -68,7 +71,7 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 	protected _onDidUninstallExtension = this._register(new Emitter<DidUninstallExtensionEvent>());
 	get onDidUninstallExtension() { return this._onDidUninstallExtension.event; }
 
-	protected readonly _onDidUpdateExtensionMetadata = this._register(new Emitter<ILocalExtension>());
+	protected readonly _onDidUpdateExtensionMetadata = this._register(new Emitter<DidUpdateExtensionMetadata>());
 	get onDidUpdateExtensionMetadata() { return this._onDidUpdateExtensionMetadata.event; }
 
 	private readonly participants: IExtensionManagementParticipant[] = [];
@@ -123,7 +126,7 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 				const compatible = await this.checkAndGetCompatibleVersion(extension, !!options?.installGivenVersion, !!options?.installPreReleaseVersion, options.productVersion ?? { version: this.productService.version, date: this.productService.date });
 				installableExtensions.push({ ...compatible, options });
 			} catch (error) {
-				results.push({ identifier: extension.identifier, operation: InstallOperation.Install, source: extension, error });
+				results.push({ identifier: extension.identifier, operation: InstallOperation.Install, source: extension, error, profileLocation: options.profileLocation ?? this.getCurrentExtensionsManifestLocation() });
 			}
 		}));
 
@@ -154,7 +157,7 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 				const existing = (await this.getInstalled(ExtensionType.User, profile.extensionsResource))
 					.find(e => areSameExtensions(e.identifier, extension.identifier));
 				if (existing) {
-					this._onDidUpdateExtensionMetadata.fire(existing);
+					this._onDidUpdateExtensionMetadata.fire({ local: existing, profileLocation: profile.extensionsResource });
 				} else {
 					this._onDidUninstallExtension.fire({ identifier: extension.identifier, profileLocation: profile.extensionsResource });
 				}
@@ -199,7 +202,7 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 			const key = `${getGalleryExtensionId(manifest.publisher, manifest.name)}-${options.profileLocation.toString()}`;
 			installingExtensionsMap.set(key, { task: installExtensionTask, root });
 			this._onInstallExtension.fire({ identifier: installExtensionTask.identifier, source: extension, profileLocation: options.profileLocation });
-			this.logService.info('Installing extension:', installExtensionTask.identifier.id, options.profileLocation.toString());
+			this.logService.info('Installing extension:', installExtensionTask.identifier.id, options);
 			// only cache gallery extensions tasks
 			if (!URI.isUri(extension)) {
 				this.installingExtensions.set(getInstallExtensionTaskKey(extension, options.profileLocation), { task: installExtensionTask, waitingTasks: [] });
@@ -526,6 +529,10 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 
 			compatibleExtension = await this.getCompatibleVersion(extension, sameVersion, installPreRelease, productVersion);
 			if (!compatibleExtension) {
+				const incompatibleApiProposalsMessages: string[] = [];
+				if (!areApiProposalsCompatible(extension.properties.enabledApiProposals ?? [], incompatibleApiProposalsMessages)) {
+					throw new ExtensionManagementError(nls.localize('incompatibleAPI', "Can't install '{0}' extension. {1}", extension.displayName ?? extension.identifier.id, incompatibleApiProposalsMessages[0]), ExtensionManagementErrorCode.IncompatibleApi);
+				}
 				/** If no compatible release version is found, check if the extension has a release version or not and throw relevant error */
 				if (!installPreRelease && extension.properties.isPreReleaseVersion && (await this.galleryService.getExtensions([extension.identifier], CancellationToken.None))[0]) {
 					throw new ExtensionManagementError(nls.localize('notFoundReleaseExtension', "Can't install release version of '{0}' extension because it has no release version.", extension.displayName ?? extension.identifier.id), ExtensionManagementErrorCode.ReleaseVersionNotFound);
@@ -762,7 +769,7 @@ export abstract class AbstractExtensionManagementService extends Disposable impl
 	abstract reinstallFromGallery(extension: ILocalExtension): Promise<ILocalExtension>;
 	abstract cleanUp(): Promise<void>;
 
-	abstract updateMetadata(local: ILocalExtension, metadata: Partial<Metadata>, profileLocation?: URI): Promise<ILocalExtension>;
+	abstract updateMetadata(local: ILocalExtension, metadata: Partial<Metadata>, profileLocation: URI): Promise<ILocalExtension>;
 
 	protected abstract getCurrentExtensionsManifestLocation(): URI;
 	protected abstract createInstallExtensionTask(manifest: IExtensionManifest, extension: URI | IGalleryExtension, options: InstallExtensionTaskOptions): IInstallExtensionTask;

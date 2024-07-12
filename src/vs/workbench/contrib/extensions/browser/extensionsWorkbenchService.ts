@@ -9,7 +9,7 @@ import { Event, Emitter } from 'vs/base/common/event';
 import { firstOrDefault, index } from 'vs/base/common/arrays';
 import { CancelablePromise, createCancelablePromise } from 'vs/base/common/async';
 import { CancellationError, isCancellationError } from 'vs/base/common/errors';
-import { Disposable } from 'vs/base/common/lifecycle';
+import { Disposable, MutableDisposable } from 'vs/base/common/lifecycle';
 import { IPager, singlePagePager } from 'vs/base/common/paging';
 import {
 	IExtensionGalleryService, ILocalExtension, IGalleryExtension, IQueryOptions,
@@ -17,19 +17,19 @@ import {
 	IExtensionsControlManifest, IExtensionInfo, IExtensionQueryOptions, IDeprecationInfo, isTargetPlatformCompatible, InstallExtensionInfo,
 	InstallOptions, IProductVersion
 } from 'vs/platform/extensionManagement/common/extensionManagement';
-import { IWorkbenchExtensionEnablementService, EnablementState, IExtensionManagementServerService, IExtensionManagementServer, IWorkbenchExtensionManagementService, DefaultIconPath, IResourceExtension } from 'vs/workbench/services/extensionManagement/common/extensionManagement';
+import { IWorkbenchExtensionEnablementService, EnablementState, IExtensionManagementServerService, IExtensionManagementServer, IWorkbenchExtensionManagementService, DefaultIconPath, IResourceExtension, extensionsConfigurationNodeBase } from 'vs/workbench/services/extensionManagement/common/extensionManagement';
 import { areSameExtensions, groupByExtension, getGalleryExtensionId } from 'vs/platform/extensionManagement/common/extensionManagementUtil';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IHostService } from 'vs/workbench/services/host/browser/host';
 import { URI } from 'vs/base/common/uri';
-import { IExtension, ExtensionState, IExtensionsWorkbenchService, HasOutdatedExtensionsContext, InstallExtensionOptions, ExtensionRuntimeState, ExtensionRuntimeActionType } from 'vs/workbench/contrib/extensions/common/extensions';
+import { IExtension, ExtensionState, IExtensionsWorkbenchService, HasOutdatedExtensionsContext, InstallExtensionOptions, ExtensionRuntimeState, ExtensionRuntimeActionType, AutoRestartConfigurationKey } from 'vs/workbench/contrib/extensions/common/extensions';
 import { IEditorService, SIDE_GROUP, ACTIVE_GROUP } from 'vs/workbench/services/editor/common/editorService';
 import { IURLService, IURLHandler, IOpenURLOptions } from 'vs/platform/url/common/url';
 import { ExtensionsInput, IExtensionEditorOptions } from 'vs/workbench/contrib/extensions/common/extensionsInput';
 import { ILogService } from 'vs/platform/log/common/log';
 import { IProgressOptions, IProgressService, ProgressLocation } from 'vs/platform/progress/common/progress';
-import { INotificationService, Severity } from 'vs/platform/notification/common/notification';
+import { INotificationService, NotificationPriority, Severity } from 'vs/platform/notification/common/notification';
 import * as resources from 'vs/base/common/resources';
 import { CancellationToken } from 'vs/base/common/cancellation';
 import { IFileService } from 'vs/platform/files/common/files';
@@ -52,6 +52,8 @@ import { mainWindow } from 'vs/base/browser/window';
 import { IDialogService, IPromptButton } from 'vs/platform/dialogs/common/dialogs';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
+import { Registry } from 'vs/platform/registry/common/platform';
+import { IConfigurationRegistry, Extensions as ConfigurationExtensions } from 'vs/platform/configuration/common/configurationRegistry';
 
 interface IExtensionStateProvider<T> {
 	(extension: Extension): T;
@@ -309,8 +311,9 @@ export class Extension implements IExtension {
 		return !!this.gallery?.properties.isPreReleaseVersion;
 	}
 
+	private _extensionEnabledWithPreRelease: boolean | undefined;
 	get hasPreReleaseVersion(): boolean {
-		return !!this.gallery?.hasPreReleaseVersion || !!this.local?.hasPreReleaseVersion;
+		return !!this.gallery?.hasPreReleaseVersion || !!this.local?.hasPreReleaseVersion || !!this._extensionEnabledWithPreRelease;
 	}
 
 	get hasReleaseVersion(): boolean {
@@ -467,6 +470,12 @@ ${this.description}
 		return [];
 	}
 
+	setExtensionsControlManifest(extensionsControlManifest: IExtensionsControlManifest): void {
+		this.isMalicious = extensionsControlManifest.malicious.some(identifier => areSameExtensions(this.identifier, identifier));
+		this.deprecationInfo = extensionsControlManifest.deprecated ? extensionsControlManifest.deprecated[this.identifier.id.toLowerCase()] : undefined;
+		this._extensionEnabledWithPreRelease = extensionsControlManifest?.extensionsEnabledWithPreRelease?.includes(this.identifier.id.toLowerCase());
+	}
+
 	private getManifestFromLocalOrResource(): IExtensionManifest | null {
 		if (this.local) {
 			return this.local.manifest;
@@ -479,11 +488,6 @@ ${this.description}
 }
 
 class Extensions extends Disposable {
-
-	static updateExtensionFromControlManifest(extension: Extension, extensionsControlManifest: IExtensionsControlManifest): void {
-		extension.isMalicious = extensionsControlManifest.malicious.some(identifier => areSameExtensions(extension.identifier, identifier));
-		extension.deprecationInfo = extensionsControlManifest.deprecated ? extensionsControlManifest.deprecated[extension.identifier.id.toLowerCase()] : undefined;
-	}
 
 	private readonly _onChange = this._register(new Emitter<{ extension: Extension; operation?: InstallOperation } | undefined>());
 	get onChange() { return this._onChange.event; }
@@ -503,6 +507,7 @@ class Extensions extends Disposable {
 		@IExtensionGalleryService private readonly galleryService: IExtensionGalleryService,
 		@IWorkbenchExtensionEnablementService private readonly extensionEnablementService: IWorkbenchExtensionEnablementService,
 		@IWorkbenchExtensionManagementService private readonly workbenchExtensionManagementService: IWorkbenchExtensionManagementService,
+		@IUserDataProfileService private readonly userDataProfileService: IUserDataProfileService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService
 	) {
 		super();
@@ -510,7 +515,7 @@ class Extensions extends Disposable {
 		this._register(server.extensionManagementService.onDidInstallExtensions(e => this.onDidInstallExtensions(e)));
 		this._register(server.extensionManagementService.onUninstallExtension(e => this.onUninstallExtension(e.identifier)));
 		this._register(server.extensionManagementService.onDidUninstallExtension(e => this.onDidUninstallExtension(e)));
-		this._register(server.extensionManagementService.onDidUpdateExtensionMetadata(e => this.onDidUpdateExtensionMetadata(e)));
+		this._register(server.extensionManagementService.onDidUpdateExtensionMetadata(e => this.onDidUpdateExtensionMetadata(e.local)));
 		this._register(server.extensionManagementService.onDidChangeProfile(() => this.reset()));
 		this._register(extensionEnablementService.onEnablementChanged(e => this.onEnablementChanged(e)));
 		this._register(Event.any(this.onChange, this.onReset)(() => this._local = undefined));
@@ -627,7 +632,7 @@ class Extensions extends Disposable {
 			const galleryWithLocalVersion: IGalleryExtension | undefined = (await this.galleryService.getExtensions([{ ...localExtension.identifier, version: localExtension.manifest.version }], CancellationToken.None))[0];
 			isPreReleaseVersion = !!galleryWithLocalVersion?.properties?.isPreReleaseVersion;
 		}
-		return this.server.extensionManagementService.updateMetadata(localExtension, { id: gallery.identifier.uuid, publisherDisplayName: gallery.publisherDisplayName, publisherId: gallery.publisherId, isPreReleaseVersion });
+		return this.server.extensionManagementService.updateMetadata(localExtension, { id: gallery.identifier.uuid, publisherDisplayName: gallery.publisherDisplayName, publisherId: gallery.publisherId, isPreReleaseVersion }, this.userDataProfileService.currentProfile.extensionsResource);
 	}
 
 	canInstall(galleryExtension: IGalleryExtension): Promise<boolean> {
@@ -681,7 +686,7 @@ class Extensions extends Disposable {
 			const extension = byId[local.identifier.id] || this.instantiationService.createInstance(Extension, this.stateProvider, this.runtimeStateProvider, this.server, local, undefined, undefined);
 			extension.local = local;
 			extension.enablementState = this.extensionEnablementService.getEnablementState(local);
-			Extensions.updateExtensionFromControlManifest(extension, extensionsControlManifest);
+			extension.setExtensionsControlManifest(extensionsControlManifest);
 			return extension;
 		});
 	}
@@ -717,7 +722,7 @@ class Extensions extends Disposable {
 					if (!extension.gallery) {
 						extension.gallery = gallery;
 					}
-					Extensions.updateExtensionFromControlManifest(extension, await this.server.extensionManagementService.getExtensionsControlManifest());
+					extension.setExtensionsControlManifest(await this.server.extensionManagementService.getExtensionsControlManifest());
 					extension.enablementState = this.extensionEnablementService.getEnablementState(local);
 				}
 			}
@@ -825,7 +830,7 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 		@IEditorService private readonly editorService: IEditorService,
 		@IWorkbenchExtensionManagementService private readonly extensionManagementService: IWorkbenchExtensionManagementService,
 		@IExtensionGalleryService private readonly galleryService: IExtensionGalleryService,
-		@IConfigurationService configurationService: IConfigurationService,
+		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@INotificationService private readonly notificationService: INotificationService,
 		@IURLService urlService: IURLService,
 		@IWorkbenchExtensionEnablementService private readonly extensionEnablementService: IWorkbenchExtensionEnablementService,
@@ -891,7 +896,25 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 
 		urlService.registerHandler(this);
 
+		if (this.productService.quality !== 'stable') {
+			this.registerAutoRestartConfig();
+		}
+
 		this.whenInitialized = this.initialize();
+	}
+
+	private registerAutoRestartConfig(): void {
+		Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration)
+			.registerConfiguration({
+				...extensionsConfigurationNodeBase,
+				properties: {
+					[AutoRestartConfigurationKey]: {
+						type: 'boolean',
+						description: nls.localize('autoRestart', "If activated, extensions will automatically restart following an update if the window is not in focus."),
+						default: false,
+					}
+				}
+			});
 	}
 
 	private async initialize(): Promise<void> {
@@ -910,6 +933,25 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 		// Update AutoUpdate Contexts
 		this.hasOutdatedExtensionsContextKey.set(this.outdated.length > 0);
 		this._register(Event.debounce(this.onChange, () => undefined, 100)(() => this.reportProgressFromOtherSources()));
+
+		this.registerAutoRestartListener();
+		this._register(this.configurationService.onDidChangeConfiguration(e => {
+			if (e.affectsConfiguration(AutoRestartConfigurationKey)) {
+				this.registerAutoRestartListener();
+			}
+		}));
+	}
+
+	private readonly autoRestartListenerDisposable = this._register(new MutableDisposable());
+	private registerAutoRestartListener(): void {
+		this.autoRestartListenerDisposable.value = undefined;
+		if (this.configurationService.getValue(AutoRestartConfigurationKey) === true) {
+			this.autoRestartListenerDisposable.value = this.hostService.onDidChangeFocus(focus => {
+				if (!focus && this.configurationService.getValue(AutoRestartConfigurationKey) === true) {
+					this.updateRunningExtensions(true);
+				}
+			});
+		}
 	}
 
 	private async onDidChangeRunningExtensions(added: ReadonlyArray<IExtensionDescription>, removed: ReadonlyArray<IExtensionDescription>): Promise<void> {
@@ -1107,7 +1149,7 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 		let extension = this.getInstalledExtensionMatchingGallery(gallery);
 		if (!extension) {
 			extension = this.instantiationService.createInstance(Extension, ext => this.getExtensionState(ext), ext => this.getRuntimeState(ext), undefined, undefined, gallery, undefined);
-			Extensions.updateExtensionFromControlManifest(<Extension>extension, extensionsControlManifest);
+			(<Extension>extension).setExtensionsControlManifest(extensionsControlManifest);
 		}
 		return extension;
 	}
@@ -1152,7 +1194,7 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 		return undefined;
 	}
 
-	async updateRunningExtensions(): Promise<void> {
+	async updateRunningExtensions(auto: boolean = false): Promise<void> {
 		const toAdd: ILocalExtension[] = [];
 		const toRemove: string[] = [];
 
@@ -1193,8 +1235,15 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 		}
 
 		if (toAdd.length || toRemove.length) {
-			if (await this.extensionService.stopExtensionHosts(nls.localize('restart', "Enable or Disable extensions"))) {
+			if (await this.extensionService.stopExtensionHosts(nls.localize('restart', "Enable or Disable extensions"), auto)) {
 				await this.extensionService.startExtensionHosts({ toAdd, toRemove });
+				if (auto) {
+					this.notificationService.notify({
+						severity: Severity.Info,
+						message: nls.localize('extensionsAutoRestart', "Extensions were auto restarted to enable updates."),
+						priority: NotificationPriority.SILENT
+					});
+				}
 			}
 		}
 	}
@@ -1469,6 +1518,7 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 						operation: InstallOperation.Update,
 						installPreReleaseVersion: extension.local?.isPreReleaseVersion,
 						profileLocation: this.userDataProfileService.currentProfile.extensionsResource,
+						isApplicationScoped: extension.local?.isApplicationScoped,
 					}
 				});
 			}
@@ -1566,7 +1616,7 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 			}
 			if (!extension && gallery) {
 				extension = this.instantiationService.createInstance(Extension, ext => this.getExtensionState(ext), ext => this.getRuntimeState(ext), undefined, undefined, gallery, undefined);
-				Extensions.updateExtensionFromControlManifest(extension as Extension, await this.extensionManagementService.getExtensionsControlManifest());
+				(<Extension>extension).setExtensionsControlManifest(await this.extensionManagementService.getExtensionsControlManifest());
 			}
 			if (extension?.isMalicious) {
 				throw new Error(nls.localize('malicious', "This extension is reported to be problematic."));

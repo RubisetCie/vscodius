@@ -15,6 +15,7 @@ import { assertType } from 'vs/base/common/types';
 import { URI } from 'vs/base/common/uri';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
 import { IWriteFileOptions, IFileStatWithMetadata } from 'vs/platform/files/common/files';
+import { ILogService } from 'vs/platform/log/common/log';
 import { IRevertOptions, ISaveOptions, IUntypedEditorInput } from 'vs/workbench/common/editor';
 import { EditorModel } from 'vs/workbench/common/editor/editorModel';
 import { NotebookTextModel } from 'vs/workbench/contrib/notebook/common/model/notebookTextModel';
@@ -196,6 +197,7 @@ export class NotebookFileWorkingCopyModel extends Disposable implements IStoredF
 		private readonly _notebookModel: NotebookTextModel,
 		private readonly _notebookService: INotebookService,
 		private readonly _configurationService: IConfigurationService,
+		private readonly _logService: ILogService
 	) {
 		super();
 
@@ -235,13 +237,22 @@ export class NotebookFileWorkingCopyModel extends Disposable implements IStoredF
 	}
 
 	private async setSaveDelegate() {
-		const serializer = await this.getNotebookSerializer();
-		this.save = async (options: IWriteFileOptions, token: CancellationToken) => {
-			if (token.isCancellationRequested) {
-				throw new CancellationError();
-			}
+		// make sure we wait for a serializer to resolve before we try to handle saves in the EH
+		await this.getNotebookSerializer();
 
+		this.save = async (options: IWriteFileOptions, token: CancellationToken) => {
 			try {
+				let serializer = this._notebookService.tryGetDataProviderSync(this.notebookModel.viewType)?.serializer;
+
+				if (!serializer) {
+					this._logService.warn('No serializer found for notebook model, checking if provider still needs to be resolved');
+					serializer = await this.getNotebookSerializer();
+				}
+
+				if (token.isCancellationRequested) {
+					throw new CancellationError();
+				}
+
 				const stat = await serializer.save(this._notebookModel.uri, this._notebookModel.versionId, options, token);
 				return stat;
 			} catch (error) {
@@ -339,6 +350,7 @@ export class NotebookFileWorkingCopyModelFactory implements IStoredFileWorkingCo
 		private readonly _viewType: string,
 		@INotebookService private readonly _notebookService: INotebookService,
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
+		@ILogService private readonly _logService: ILogService
 	) { }
 
 	async createModel(resource: URI, stream: VSBufferReadableStream, token: CancellationToken): Promise<NotebookFileWorkingCopyModel> {
@@ -356,7 +368,7 @@ export class NotebookFileWorkingCopyModelFactory implements IStoredFileWorkingCo
 		}
 
 		const notebookModel = this._notebookService.createNotebookTextModel(info.viewType, resource, data, info.serializer.options);
-		return new NotebookFileWorkingCopyModel(notebookModel, this._notebookService, this._configurationService);
+		return new NotebookFileWorkingCopyModel(notebookModel, this._notebookService, this._configurationService, this._logService);
 	}
 }
 

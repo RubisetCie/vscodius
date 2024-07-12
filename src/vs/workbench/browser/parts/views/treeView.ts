@@ -36,7 +36,7 @@ import { createActionViewItem, createAndFillInContextMenuActions } from 'vs/plat
 import { Action2, IMenuService, MenuId, MenuRegistry, registerAction2 } from 'vs/platform/actions/common/actions';
 import { CommandsRegistry, ICommandService } from 'vs/platform/commands/common/commands';
 import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { ContextKeyExpr, IContextKey, IContextKeyService, RawContextKey } from 'vs/platform/contextkey/common/contextkey';
+import { ContextKeyExpr, ContextKeyExpression, IContextKey, IContextKeyService, RawContextKey } from 'vs/platform/contextkey/common/contextkey';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 import { FileKind } from 'vs/platform/files/common/files';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
@@ -68,11 +68,12 @@ import { AriaRole } from 'vs/base/browser/ui/aria/aria';
 import { ITreeViewsDnDService } from 'vs/editor/common/services/treeViewsDndService';
 import { DraggedTreeItemsIdentifier } from 'vs/editor/common/services/treeViewsDnd';
 import { IMarkdownRenderResult, MarkdownRenderer } from 'vs/editor/browser/widget/markdownRenderer/browser/markdownRenderer';
-import type { IUpdatableHoverTooltipMarkdownString } from 'vs/base/browser/ui/hover/hover';
+import type { IManagedHoverTooltipMarkdownString } from 'vs/base/browser/ui/hover/hover';
 import { parseLinkedText } from 'vs/base/common/linkedText';
 import { Button } from 'vs/base/browser/ui/button/button';
 import { defaultButtonStyles } from 'vs/platform/theme/browser/defaultStyles';
 import { IAccessibleViewInformationService } from 'vs/workbench/services/accessibility/common/accessibleViewInformationService';
+import { Command } from 'vs/editor/common/languages';
 
 export class TreeViewPane extends ViewPane {
 
@@ -172,15 +173,22 @@ class Root implements ITreeItem {
 	children: ITreeItem[] | undefined = undefined;
 }
 
-function isTreeCommandEnabled(treeCommand: TreeCommand, contextKeyService: IContextKeyService): boolean {
-	const command = CommandsRegistry.getCommand(treeCommand.originalId ? treeCommand.originalId : treeCommand.id);
+function commandPreconditions(commandId: string): ContextKeyExpression | undefined {
+	const command = CommandsRegistry.getCommand(commandId);
 	if (command) {
 		const commandAction = MenuRegistry.getCommand(command.id);
-		const precondition = commandAction && commandAction.precondition;
-		if (precondition) {
-			return contextKeyService.contextMatchesRules(precondition);
-		}
+		return commandAction && commandAction.precondition;
 	}
+	return undefined;
+}
+
+function isTreeCommandEnabled(treeCommand: TreeCommand | Command, contextKeyService: IContextKeyService): boolean {
+	const commandId: string = (treeCommand as TreeCommand).originalId ? (treeCommand as TreeCommand).originalId! : treeCommand.id;
+	const precondition = commandPreconditions(commandId);
+	if (precondition) {
+		return contextKeyService.contextMatchesRules(precondition);
+	}
+
 	return true;
 }
 
@@ -860,6 +868,20 @@ abstract class AbstractTreeView extends Disposable implements ITreeView {
 				button.onDidClick(_ => {
 					this.openerService.open(node.href, { allowCommands: true });
 				}, null, disposables);
+
+				const href = URI.parse(node.href);
+				if (href.scheme === Schemas.command) {
+					const preConditions = commandPreconditions(href.path);
+					if (preConditions) {
+						button.enabled = this.contextKeyService.contextMatchesRules(preConditions);
+						disposables.add(this.contextKeyService.onDidChangeContext(e => {
+							if (e.affectsSome(new Set(preConditions.keys()))) {
+								button.enabled = this.contextKeyService.contextMatchesRules(preConditions);
+							}
+						}));
+					}
+				}
+
 				disposables.add(button);
 				hasFoundButton = true;
 				result.push(buttonContainer);
@@ -1199,7 +1221,7 @@ class TreeRenderer extends Disposable implements ITreeRenderer<ITreeItem, FuzzyS
 		return { resourceLabel, icon, checkboxContainer, actionBar, container, elementDisposable: new DisposableStore() };
 	}
 
-	private getHover(label: string | undefined, resource: URI | null, node: ITreeItem): string | IUpdatableHoverTooltipMarkdownString | undefined {
+	private getHover(label: string | undefined, resource: URI | null, node: ITreeItem): string | IManagedHoverTooltipMarkdownString | undefined {
 		if (!(node instanceof ResolvableTreeItem) || !node.hasResolve) {
 			if (resource && !node.tooltip) {
 				return undefined;

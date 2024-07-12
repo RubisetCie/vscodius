@@ -40,7 +40,6 @@ import { CodeActionAutoApply, CodeActionFilter, CodeActionItem, CodeActionKind, 
 import { CodeActionModel, CodeActionsState } from 'vs/editor/contrib/codeAction/browser/codeActionModel';
 import { HierarchicalKind } from 'vs/base/common/hierarchicalKind';
 
-
 interface IActionShowOptions {
 	readonly includeDisabledActions?: boolean;
 	readonly fromLightbulb?: boolean;
@@ -78,7 +77,7 @@ export class CodeActionController extends Disposable implements IEditorContribut
 		@ICommandService private readonly _commandService: ICommandService,
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
 		@IActionWidgetService private readonly _actionWidgetService: IActionWidgetService,
-		@IInstantiationService private readonly _instantiationService: IInstantiationService,
+		@IInstantiationService private readonly _instantiationService: IInstantiationService
 	) {
 		super();
 
@@ -105,7 +104,6 @@ export class CodeActionController extends Disposable implements IEditorContribut
 	}
 
 	private async showCodeActionsFromLightbulb(actions: CodeActionSet, at: IAnchor | IPosition): Promise<void> {
-
 		if (actions.allAIFixes && actions.validActions.length === 1) {
 			const actionItem = actions.validActions[0];
 			const command = actionItem.action.command;

@@ -41,7 +41,7 @@ import { KeyCode } from 'vs/base/common/keyCodes';
 import { defaultCountBadgeStyles } from 'vs/platform/theme/browser/defaultStyles';
 import { getDefaultHoverDelegate } from 'vs/base/browser/ui/hover/hoverDelegateFactory';
 import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
-import type { IUpdatableHover } from 'vs/base/browser/ui/hover/hover';
+import type { IManagedHover } from 'vs/base/browser/ui/hover/hover';
 
 export abstract class ExtensionWidget extends Disposable implements IExtensionContainer {
 	private _extension: IExtension | null = null;
@@ -125,7 +125,7 @@ export class InstallCountWidget extends ExtensionWidget {
 
 export class RatingsWidget extends ExtensionWidget {
 
-	private readonly containerHover: IUpdatableHover;
+	private readonly containerHover: IManagedHover;
 
 	constructor(
 		private container: HTMLElement,
@@ -139,7 +139,7 @@ export class RatingsWidget extends ExtensionWidget {
 			container.classList.add('small');
 		}
 
-		this.containerHover = this._register(hoverService.setupUpdatableHover(getDefaultHoverDelegate('mouse'), container, ''));
+		this.containerHover = this._register(hoverService.setupManagedHover(getDefaultHoverDelegate('mouse'), container, ''));
 
 		this.render();
 	}
@@ -191,7 +191,7 @@ export class RatingsWidget extends ExtensionWidget {
 export class VerifiedPublisherWidget extends ExtensionWidget {
 
 	private readonly disposables = this._register(new DisposableStore());
-	private readonly containerHover: IUpdatableHover;
+	private readonly containerHover: IManagedHover;
 
 	constructor(
 		private container: HTMLElement,
@@ -200,7 +200,7 @@ export class VerifiedPublisherWidget extends ExtensionWidget {
 		@IOpenerService private readonly openerService: IOpenerService,
 	) {
 		super();
-		this.containerHover = this._register(hoverService.setupUpdatableHover(getDefaultHoverDelegate('mouse'), container, ''));
+		this.containerHover = this._register(hoverService.setupManagedHover(getDefaultHoverDelegate('mouse'), container, ''));
 		this.render();
 	}
 
@@ -256,7 +256,7 @@ export class SponsorWidget extends ExtensionWidget {
 		}
 
 		const sponsor = append(this.container, $('span.sponsor.clickable', { tabIndex: 0 }));
-		this.disposables.add(this.hoverService.setupUpdatableHover(getDefaultHoverDelegate('mouse'), sponsor, this.extension?.publisherSponsorLink.toString() ?? ''));
+		this.disposables.add(this.hoverService.setupManagedHover(getDefaultHoverDelegate('mouse'), sponsor, this.extension?.publisherSponsorLink.toString() ?? ''));
 		sponsor.setAttribute('role', 'link'); // #132645
 		const sponsorIconElement = renderIcon(sponsorIcon);
 		const label = $('span', undefined, localize('sponsor', "Sponsor"));
@@ -283,9 +283,7 @@ export class RecommendationWidget extends ExtensionWidget {
 	}
 
 	private clear(): void {
-		if (this.element) {
-			this.parent.removeChild(this.element);
-		}
+		this.element?.remove();
 		this.element = undefined;
 		this.disposables.clear();
 	}
@@ -319,9 +317,7 @@ export class PreReleaseBookmarkWidget extends ExtensionWidget {
 	}
 
 	private clear(): void {
-		if (this.element) {
-			this.parent.removeChild(this.element);
-		}
+		this.element?.remove();
 		this.element = undefined;
 		this.disposables.clear();
 	}
@@ -356,9 +352,7 @@ export class RemoteBadgeWidget extends ExtensionWidget {
 	}
 
 	private clear(): void {
-		if (this.remoteBadge.value) {
-			this.element.removeChild(this.remoteBadge.value.element);
-		}
+		this.remoteBadge.value?.element.remove();
 		this.remoteBadge.clear();
 	}
 
@@ -375,7 +369,7 @@ export class RemoteBadgeWidget extends ExtensionWidget {
 class RemoteBadge extends Disposable {
 
 	readonly element: HTMLElement;
-	readonly elementHover: IUpdatableHover;
+	readonly elementHover: IManagedHover;
 
 	constructor(
 		private readonly tooltip: boolean,
@@ -386,7 +380,7 @@ class RemoteBadge extends Disposable {
 	) {
 		super();
 		this.element = $('div.extension-badge.extension-remote-badge');
-		this.elementHover = this._register(hoverService.setupUpdatableHover(getDefaultHoverDelegate('mouse'), this.element, ''));
+		this.elementHover = this._register(hoverService.setupManagedHover(getDefaultHoverDelegate('mouse'), this.element, ''));
 		this.render();
 	}
 
@@ -467,7 +461,7 @@ export class SyncIgnoredWidget extends ExtensionWidget {
 
 		if (this.extension && this.extension.state === ExtensionState.Installed && this.userDataSyncEnablementService.isEnabled() && this.extensionsWorkbenchService.isExtensionIgnoredToSync(this.extension)) {
 			const element = append(this.container, $('span.extension-sync-ignored' + ThemeIcon.asCSSSelector(syncIgnoredIcon)));
-			this.disposables.add(this.hoverService.setupUpdatableHover(getDefaultHoverDelegate('mouse'), element, localize('syncingore.label', "This extension is ignored during sync.")));
+			this.disposables.add(this.hoverService.setupManagedHover(getDefaultHoverDelegate('mouse'), element, localize('syncingore.label', "This extension is ignored during sync.")));
 			element.classList.add(...ThemeIcon.asClassNameArray(syncIgnoredIcon));
 		}
 	}
@@ -540,7 +534,7 @@ export class ExtensionHoverWidget extends ExtensionWidget {
 	render(): void {
 		this.hover.value = undefined;
 		if (this.extension) {
-			this.hover.value = this.hoverService.setupUpdatableHover({
+			this.hover.value = this.hoverService.setupManagedHover({
 				delay: this.configurationService.getValue<number>('workbench.hover.delay'),
 				showHover: (options, focus) => {
 					return this.hoverService.showHover({
@@ -819,7 +813,7 @@ export class ExtensionRecommendationWidget extends ExtensionWidget {
 }
 
 export const extensionRatingIconColor = registerColor('extensionIcon.starForeground', { light: '#DF6100', dark: '#FF8E00', hcDark: '#FF8E00', hcLight: textLinkForeground }, localize('extensionIconStarForeground', "The icon color for extension ratings."), true);
-export const extensionVerifiedPublisherIconColor = registerColor('extensionIcon.verifiedForeground', { dark: textLinkForeground, light: textLinkForeground, hcDark: textLinkForeground, hcLight: textLinkForeground }, localize('extensionIconVerifiedForeground', "The icon color for extension verified publisher."), true);
+export const extensionVerifiedPublisherIconColor = registerColor('extensionIcon.verifiedForeground', textLinkForeground, localize('extensionIconVerifiedForeground', "The icon color for extension verified publisher."), true);
 export const extensionPreReleaseIconColor = registerColor('extensionIcon.preReleaseForeground', { dark: '#1d9271', light: '#1d9271', hcDark: '#1d9271', hcLight: textLinkForeground }, localize('extensionPreReleaseForeground', "The icon color for pre-release extension."), true);
 export const extensionSponsorIconColor = registerColor('extensionIcon.sponsorForeground', { light: '#B51E78', dark: '#D758B3', hcDark: null, hcLight: '#B51E78' }, localize('extensionIcon.sponsorForeground', "The icon color for extension sponsor."), true);
 

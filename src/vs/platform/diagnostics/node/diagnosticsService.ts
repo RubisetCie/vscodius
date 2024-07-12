@@ -9,6 +9,7 @@ import { Schemas } from 'vs/base/common/network';
 import { basename, join } from 'vs/base/common/path';
 import { isLinux, isWindows } from 'vs/base/common/platform';
 import { ProcessItem } from 'vs/base/common/processes';
+import { StopWatch } from 'vs/base/common/stopwatch';
 import { URI } from 'vs/base/common/uri';
 import { virtualMachineHint } from 'vs/base/node/id';
 import { IDirent, Promises as pfs } from 'vs/base/node/pfs';
@@ -59,11 +60,13 @@ export async function collectWorkspaceStats(folder: string, filter: string[]): P
 
 	const MAX_FILES = 20000;
 
-	function collect(root: string, dir: string, filter: string[], token: { count: number; maxReached: boolean }): Promise<void> {
+	function collect(root: string, dir: string, filter: string[], token: { count: number; maxReached: boolean; readdirCount: number }): Promise<void> {
 		const relativePath = dir.substring(root.length + 1);
 
 		return Promises.withAsyncBody(async resolve => {
 			let files: IDirent[];
+
+			token.readdirCount++;
 			try {
 				files = await pfs.readdir(dir, { withFileTypes: true });
 			} catch (error) {
@@ -129,8 +132,8 @@ export async function collectWorkspaceStats(folder: string, filter: string[]): P
 	}
 
 	const statsPromise = Promises.withAsyncBody<WorkspaceStats>(async (resolve) => {
-		const token: { count: number; maxReached: boolean } = { count: 0, maxReached: false };
-
+		const token: { count: number; maxReached: boolean; readdirCount: number } = { count: 0, maxReached: false, readdirCount: 0 };
+		const sw = new StopWatch(true);
 		await collect(folder, folder, filter, token);
 		const launchConfigs = await collectLaunchConfigs(folder);
 		resolve({
@@ -138,7 +141,9 @@ export async function collectWorkspaceStats(folder: string, filter: string[]): P
 			fileTypes: asSortedItems(fileTypes),
 			fileCount: token.count,
 			maxFilesReached: token.maxReached,
-			launchConfigFiles: launchConfigs
+			launchConfigFiles: launchConfigs,
+			totalScanTime: sw.elapsed(),
+			totalReaddirCount: token.readdirCount
 		});
 	});
 

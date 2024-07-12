@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as assert from 'assert';
+import assert from 'assert';
 import { range } from 'vs/base/common/arrays';
 import { DisposableStore } from 'vs/base/common/lifecycle';
 import { ensureNoDisposablesAreLeakedInTestSuite } from 'vs/base/test/common/utils';
@@ -11,6 +11,7 @@ import { NullLogService } from 'vs/platform/log/common/log';
 import { IUriIdentityService } from 'vs/platform/uriIdentity/common/uriIdentity';
 import { ITestResult, LiveTestResult } from 'vs/workbench/contrib/testing/common/testResult';
 import { InMemoryResultStorage, RETAIN_MAX_RESULTS } from 'vs/workbench/contrib/testing/common/testResultStorage';
+import { TestRunProfileBitset } from 'vs/workbench/contrib/testing/common/testTypes';
 import { testStubs } from 'vs/workbench/contrib/testing/test/common/testStubs';
 import { TestStorageService } from 'vs/workbench/test/common/workbenchTestServices';
 
@@ -22,7 +23,7 @@ suite('Workbench - Test Result Storage', () => {
 		const t = ds.add(new LiveTestResult(
 			'',
 			true,
-			{ targets: [] },
+			{ targets: [], group: TestRunProfileBitset.Run },
 		));
 
 		t.addTask({ id: taskName, name: undefined, running: true });
