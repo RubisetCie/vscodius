@@ -151,6 +151,7 @@ import 'vs/workbench/contrib/tags/browser/workspaceTagsService';
 // Issues
 import 'vs/workbench/contrib/issue/browser/issue.contribution';
 
+
 // Splash
 import 'vs/workbench/contrib/splash/browser/splash.contribution';
 

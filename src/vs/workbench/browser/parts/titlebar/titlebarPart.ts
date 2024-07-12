@@ -633,7 +633,7 @@ export class BrowserTitlebarPart extends Part implements ITitlebarPart {
 				this.editorToolbarMenuDisposables.add(this.actionToolBar.actionRunner);
 			} else {
 				this.actionToolBar.actionRunner = new ActionRunner();
-				this.actionToolBar.context = {};
+				this.actionToolBar.context = undefined;
 
 				this.editorToolbarMenuDisposables.add(this.actionToolBar.actionRunner);
 			}

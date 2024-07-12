@@ -156,6 +156,7 @@ export const enum ExtensionEditorTab {
 
 export const ConfigurationKey = 'extensions';
 export const CloseExtensionDetailsOnViewChangeKey = 'extensions.closeExtensionDetailsOnViewChange';
+export const AutoRestartConfigurationKey = 'extensions.autoRestart';
 
 export interface IExtensionsConfiguration {
 	autoUpdate: boolean;
