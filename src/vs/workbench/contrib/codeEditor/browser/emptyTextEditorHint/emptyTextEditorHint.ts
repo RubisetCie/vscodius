@@ -335,7 +335,7 @@ class EmptyTextEditorHintContentWidget implements IContentWidget {
 			e.stopPropagation();
 			// Need to focus editor before so current editor becomes active and the command is properly executed
 			this.editor.focus();
-			await this.commandService.executeCommand(ChangeLanguageAction.ID, { from: 'hint' });
+			await this.commandService.executeCommand(ChangeLanguageAction.ID);
 			this.editor.focus();
 		};
 
