@@ -72,7 +72,6 @@
 		}
 	},
 	"extensionEnabledApiProposals": {
-		"ms-vscode.vscode-selfhost-test-provider": ["testObserver", "attributableCoverage"],
 		"VisualStudioExptTeam.vscodeintellicode-completions": ["inlineCompletionsAdditions"],
 		"ms-vsliveshare.vsliveshare": ["contribMenuBarHome", "contribShareMenu", "contribStatusBarItems", "diffCommand", "documentFiltersExclusive", "fileSearchProvider", "findTextInFiles", "notebookCellExecutionState", "notebookLiveShare", "terminalDimensions", "terminalDataWriteEvent", "textSearchProvider"],
 		"ms-vscode.js-debug": ["portsAttributes", "findTextInFiles", "workspaceTrust", "tunnels"],
