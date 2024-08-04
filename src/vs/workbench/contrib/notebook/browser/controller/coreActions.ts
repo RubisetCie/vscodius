@@ -16,6 +16,7 @@ import { IEditorService } from 'vs/workbench/services/editor/common/editorServic
 import { INotebookEditorService } from 'vs/workbench/contrib/notebook/browser/services/notebookEditorService';
 import { TypeConstraint } from 'vs/base/common/types';
 import { IJSONSchema } from 'vs/base/common/jsonSchema';
+import { MarshalledId } from 'vs/base/common/marshallingIds';
 import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
 import { isEqual } from 'vs/base/common/resources';
 
@@ -206,6 +207,10 @@ export abstract class NotebookMultiCellAction extends Action2 {
 
 	abstract runWithContext(accessor: ServicesAccessor, context: INotebookCommandContext | INotebookCellToolbarActionContext): Promise<void>;
 
+	private isCellToolbarContext(context?: unknown): context is INotebookCellToolbarActionContext {
+		return !!context && !!(context as INotebookActionContext).notebookEditor && (context as any).$mid === MarshalledId.NotebookCellActionContext;
+	}
+
 	/**
 	 * The action/command args are resolved in following order
 	 * `run(accessor, cellToolbarContext)` from cell toolbar
@@ -213,6 +218,15 @@ export abstract class NotebookMultiCellAction extends Action2 {
 	 * `run(accessor, undefined)` from keyboard shortcuts, command palatte, etc
 	 */
 	async run(accessor: ServicesAccessor, ...additionalArgs: any[]): Promise<void> {
+		const context = additionalArgs[0];
+		const isFromCellToolbar = this.isCellToolbarContext(context);
+
+		if (isFromCellToolbar) {
+			return this.runWithContext(accessor, context);
+		}
+
+		// handle parsed args
+
 		const parsedArgs = this.parseArgs(accessor, ...additionalArgs);
 		if (parsedArgs) {
 			return this.runWithContext(accessor, parsedArgs);
@@ -221,10 +235,12 @@ export abstract class NotebookMultiCellAction extends Action2 {
 		// no parsed args, try handle active editor
 		const editor = getEditorFromArgsOrActivePane(accessor);
 		if (editor) {
+			const selectedCellRange: ICellRange[] = editor.getSelections().length === 0 ? [editor.getFocus()] : editor.getSelections();
+
 			return this.runWithContext(accessor, {
 				ui: false,
 				notebookEditor: editor,
-				selectedCells: cellRangeToViewCells(editor, editor.getSelections())
+				selectedCells: cellRangeToViewCells(editor, selectedCellRange)
 			});
 		}
 	}

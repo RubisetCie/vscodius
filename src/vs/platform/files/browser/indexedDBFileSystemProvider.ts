@@ -15,14 +15,6 @@ import { createFileSystemProviderError, FileChangeType, IFileDeleteOptions, IFil
 import { DBClosedError, IndexedDB } from 'vs/base/browser/indexedDB';
 import { BroadcastDataChannel } from 'vs/base/browser/broadcast';
 
-export type IndexedDBFileSystemProviderErrorDataClassification = {
-	owner: 'sandy081';
-	comment: 'Information about errors that occur in the IndexedDB file system provider';
-	readonly scheme: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'IndexedDB file system provider scheme for which this error occurred' };
-	readonly operation: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'operation during which this error occurred' };
-	readonly code: { classification: 'SystemMetaData'; purpose: 'PerformanceAndHealth'; comment: 'error code' };
-};
-
 export type IndexedDBFileSystemProviderErrorData = {
 	readonly scheme: string;
 	readonly operation: string;

@@ -6,7 +6,6 @@
 import { isWeb } from 'vs/base/common/platform';
 import { format2 } from 'vs/base/common/strings';
 import { URI } from 'vs/base/common/uri';
-import { IHeaders } from 'vs/base/parts/request/common/request';
 import { IFileService } from 'vs/platform/files/common/files';
 import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
 import { IProductService } from 'vs/platform/product/common/productService';
@@ -101,8 +100,8 @@ export abstract class AbstractExtensionResourceLoaderService implements IExtensi
 		return !!this._extensionGalleryAuthority && this._extensionGalleryAuthority === this._getExtensionGalleryAuthority(uri);
 	}
 
-	protected async getExtensionGalleryRequestHeaders(): Promise<IHeaders> {
-		const headers: IHeaders = {
+	protected async getExtensionGalleryRequestHeaders(): Promise<Record<string, string>> {
+		const headers: Record<string, string> = {
 			'X-Client-Name': `${this._productService.applicationName}${isWeb ? '-web' : ''}`,
 			'X-Client-Version': this._productService.version
 		};

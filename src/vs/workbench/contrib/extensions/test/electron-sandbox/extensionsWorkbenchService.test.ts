@@ -53,6 +53,7 @@ import { FileService } from 'vs/platform/files/common/fileService';
 import { UserDataProfileService } from 'vs/workbench/services/userDataProfile/common/userDataProfileService';
 import { IUserDataProfileService } from 'vs/workbench/services/userDataProfile/common/userDataProfile';
 import { toUserDataProfile } from 'vs/platform/userDataProfile/common/userDataProfile';
+import { IDialogService } from 'vs/platform/dialogs/common/dialogs';
 
 suite('ExtensionsWorkbenchServiceTest', () => {
 
@@ -104,7 +105,8 @@ suite('ExtensionsWorkbenchServiceTest', () => {
 				return local;
 			},
 			async canInstall() { return true; },
-			getTargetPlatform: async () => getTargetPlatform(platform, arch)
+			getTargetPlatform: async () => getTargetPlatform(platform, arch),
+			async resetPinnedStateForAllUserExtensions(pinned: boolean) { }
 		});
 
 		instantiationService.stub(IExtensionManagementServerService, anExtensionManagementServerService({
@@ -715,10 +717,9 @@ suite('ExtensionsWorkbenchServiceTest', () => {
 		const extensionB = aLocalExtension('b');
 		const extensionC = aLocalExtension('c');
 
-		instantiationService.stub(INotificationService, {
-			prompt(severity, message, choices, options) {
-				choices[0].run();
-				return null!;
+		instantiationService.stub(IDialogService, {
+			prompt() {
+				return Promise.resolve({ result: true });
 			}
 		});
 		return instantiationService.get(IWorkbenchExtensionEnablementService).setEnablement([extensionA], EnablementState.EnabledGlobally)
@@ -1482,6 +1483,7 @@ suite('ExtensionsWorkbenchServiceTest', () => {
 			},
 			getTargetPlatform: async () => getTargetPlatform(platform, arch),
 			async getExtensionsControlManifest() { return <IExtensionsControlManifest>{ malicious: [], deprecated: {}, search: [] }; },
+			async resetPinnedStateForAllUserExtensions(pinned: boolean) { }
 		};
 	}
 });

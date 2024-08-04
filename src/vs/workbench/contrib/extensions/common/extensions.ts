@@ -62,6 +62,7 @@ export interface IExtension {
 	readonly publisherUrl?: URI;
 	readonly publisherDomain?: { link: string; verified: boolean };
 	readonly publisherSponsorLink?: URI;
+	readonly pinned: boolean;
 	readonly version: string;
 	readonly latestVersion: string;
 	readonly preRelease: boolean;

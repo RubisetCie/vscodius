@@ -3,10 +3,12 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+// ESM-comment-begin
 import * as http from 'http';
 import * as https from 'https';
 import * as tls from 'tls';
 import * as net from 'net';
+// ESM-comment-end
 
 import { IExtHostWorkspaceProvider } from 'vs/workbench/api/common/extHostWorkspace';
 import { ExtHostConfigProvider } from 'vs/workbench/api/common/extHostConfiguration';
@@ -16,6 +18,16 @@ import { URI } from 'vs/base/common/uri';
 import { ILogService, LogLevel as LogServiceLevel } from 'vs/platform/log/common/log';
 import { IExtensionDescription } from 'vs/platform/extensions/common/extensions';
 import { LogLevel, createHttpPatch, createProxyResolver, createTlsPatch, ProxySupportSetting, ProxyAgentParams, createNetPatch, loadSystemCertificates } from '@vscode/proxy-agent';
+import { AuthInfo } from 'vs/platform/request/common/request';
+
+// ESM-uncomment-begin
+// import { createRequire } from 'node:module';
+// const require = createRequire(import.meta.url);
+// const http = require('http');
+// const https = require('https');
+// const tls = require('tls');
+// const net = require('net');
+// ESM-uncomment-end
 
 const systemCertificatesV2Default = false;
 
@@ -30,7 +42,7 @@ export function connectProxyResolver(
 	const doUseHostProxy = typeof useHostProxy === 'boolean' ? useHostProxy : !initData.remote.isRemote;
 	const params: ProxyAgentParams = {
 		resolveProxy: url => extHostWorkspace.resolveProxy(url),
-		lookupProxyAuthorization: lookupProxyAuthorization.bind(undefined, extHostLogService, configProvider, {}, initData.remote.isRemote),
+		lookupProxyAuthorization: lookupProxyAuthorization.bind(undefined, extHostWorkspace, extHostLogService, configProvider, {}, {}, initData.remote.isRemote, doUseHostProxy),
 		getProxyURL: () => configProvider.getConfiguration('http').get('proxy'),
 		getProxySupport: () => configProvider.getConfiguration('http').get<ProxySupportSetting>('proxySupport') || 'off',
 		getNoProxyConfig: () => configProvider.getConfiguration('http').get<string[]>('noProxy') || [],
@@ -138,13 +150,16 @@ function configureModuleLoading(extensionService: ExtHostExtensionService, looku
 }
 
 async function lookupProxyAuthorization(
+	extHostWorkspace: IExtHostWorkspaceProvider,
 	extHostLogService: ILogService,
 	configProvider: ExtHostConfigProvider,
 	proxyAuthenticateCache: Record<string, string | string[] | undefined>,
+	basicAuthCache: Record<string, string | undefined>,
 	isRemote: boolean,
+	useHostProxy: boolean,
 	proxyURL: string,
 	proxyAuthenticate: string | string[] | undefined,
-	state: { kerberosRequested?: boolean }
+	state: { kerberosRequested?: boolean; basicAuthCacheUsed?: boolean; basicAuthAttempt?: number }
 ): Promise<string | undefined> {
 	const cached = proxyAuthenticateCache[proxyURL];
 	if (proxyAuthenticate) {
@@ -154,8 +169,9 @@ async function lookupProxyAuthorization(
 	const header = proxyAuthenticate || cached;
 	const authenticate = Array.isArray(header) ? header : typeof header === 'string' ? [header] : [];
 	if (authenticate.some(a => /^(Negotiate|Kerberos)( |$)/i.test(a)) && !state.kerberosRequested) {
+		state.kerberosRequested = true;
+
 		try {
-			state.kerberosRequested = true;
 			const kerberos = await import('kerberos');
 			const url = new URL(proxyURL);
 			const spn = configProvider.getConfiguration('http').get<string>('proxyKerberosServicePrincipal')
@@ -165,7 +181,54 @@ async function lookupProxyAuthorization(
 			const response = await client.step('');
 			return 'Negotiate ' + response;
 		} catch (err) {
-			extHostLogService.error('ProxyResolver#lookupProxyAuthorization Kerberos authentication failed', err);
+			extHostLogService.debug('ProxyResolver#lookupProxyAuthorization Kerberos authentication failed', err);
+		}
+
+		if (isRemote && useHostProxy) {
+			extHostLogService.debug('ProxyResolver#lookupProxyAuthorization Kerberos authentication lookup on host', `proxyURL:${proxyURL}`);
+			const auth = await extHostWorkspace.lookupKerberosAuthorization(proxyURL);
+			if (auth) {
+				return 'Negotiate ' + auth;
+			}
+		}
+	}
+	const basicAuthHeader = authenticate.find(a => /^Basic( |$)/i.test(a));
+	if (basicAuthHeader) {
+		try {
+			const cachedAuth = basicAuthCache[proxyURL];
+			if (cachedAuth) {
+				if (state.basicAuthCacheUsed) {
+					extHostLogService.debug('ProxyResolver#lookupProxyAuthorization Basic authentication deleting cached credentials', `proxyURL:${proxyURL}`);
+					delete basicAuthCache[proxyURL];
+				} else {
+					extHostLogService.debug('ProxyResolver#lookupProxyAuthorization Basic authentication using cached credentials', `proxyURL:${proxyURL}`);
+					state.basicAuthCacheUsed = true;
+					return cachedAuth;
+				}
+			}
+			state.basicAuthAttempt = (state.basicAuthAttempt || 0) + 1;
+			const realm = / realm="([^"]+)"/i.exec(basicAuthHeader)?.[1];
+			extHostLogService.debug('ProxyResolver#lookupProxyAuthorization Basic authentication lookup', `proxyURL:${proxyURL}`, `realm:${realm}`);
+			const url = new URL(proxyURL);
+			const authInfo: AuthInfo = {
+				scheme: 'basic',
+				host: url.hostname,
+				port: Number(url.port),
+				realm: realm || '',
+				isProxy: true,
+				attempt: state.basicAuthAttempt,
+			};
+			const credentials = await extHostWorkspace.lookupAuthorization(authInfo);
+			if (credentials) {
+				extHostLogService.debug('ProxyResolver#lookupProxyAuthorization Basic authentication received credentials', `proxyURL:${proxyURL}`, `realm:${realm}`);
+				const auth = 'Basic ' + Buffer.from(`${credentials.username}:${credentials.password}`).toString('base64');
+				basicAuthCache[proxyURL] = auth;
+				return auth;
+			} else {
+				extHostLogService.debug('ProxyResolver#lookupProxyAuthorization Basic authentication received no credentials', `proxyURL:${proxyURL}`, `realm:${realm}`);
+			}
+		} catch (err) {
+			extHostLogService.error('ProxyResolver#lookupProxyAuthorization Basic authentication failed', err);
 		}
 	}
 	return undefined;

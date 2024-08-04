@@ -20,16 +20,6 @@ import { IExtensionService } from 'vs/workbench/services/extensions/common/exten
 import { IHostService } from 'vs/workbench/services/host/browser/host';
 import { DidChangeUserDataProfileEvent, IProfileTemplateInfo, IUserDataProfileManagementService, IUserDataProfileService } from 'vs/workbench/services/userDataProfile/common/userDataProfile';
 
-export type ProfileManagementActionExecutedClassification = {
-	owner: 'sandy081';
-	comment: 'Logged when profile management action is excuted';
-	id: { classification: 'SystemMetaData'; purpose: 'FeatureInsight'; comment: 'The identifier of the action that was run.' };
-};
-
-export type ProfileManagementActionExecutedEvent = {
-	id: string;
-};
-
 export class UserDataProfileManagementService extends Disposable implements IUserDataProfileManagementService {
 	readonly _serviceBrand: undefined;
 

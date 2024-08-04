@@ -1258,9 +1258,9 @@ class RegisterConfigurationSchemasContribution extends Disposable implements IWo
 			type: 'object',
 			description: localize('configurationDefaults.description', 'Contribute defaults for configurations'),
 			properties: Object.assign({},
-				machineOverridableSettings.properties,
-				windowSettings.properties,
-				resourceSettings.properties
+				this.filterDefaultOverridableProperties(machineOverridableSettings.properties),
+				this.filterDefaultOverridableProperties(windowSettings.properties),
+				this.filterDefaultOverridableProperties(resourceSettings.properties)
 			),
 			patternProperties: {
 				[OVERRIDE_PROPERTY_PATTERN]: {
@@ -1309,6 +1309,16 @@ class RegisterConfigurationSchemasContribution extends Disposable implements IWo
 		const result: IStringDictionary<IConfigurationPropertySchema> = {};
 		Object.entries(properties).forEach(([key, value]) => {
 			if (!value.restricted) {
+				result[key] = value;
+			}
+		});
+		return result;
+	}
+
+	private filterDefaultOverridableProperties(properties: IStringDictionary<IConfigurationPropertySchema>): IStringDictionary<IConfigurationPropertySchema> {
+		const result: IStringDictionary<IConfigurationPropertySchema> = {};
+		Object.entries(properties).forEach(([key, value]) => {
+			if (!value.disallowConfigurationDefault) {
 				result[key] = value;
 			}
 		});

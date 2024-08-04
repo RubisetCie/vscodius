@@ -9,8 +9,7 @@ import { CommandManager } from './commands/commandManager';
 import { registerBaseCommands } from './commands/index';
 import { TypeScriptServiceConfiguration } from './configuration/configuration';
 import { BrowserServiceConfigurationProvider } from './configuration/configuration.browser';
-import { AutoInstallerFs } from './filesystems/autoInstallerFs';
-import { MemFs } from './filesystems/memFs';
+import { registerAtaSupport } from './filesystems/ata';
 import { createLazyClientHost, lazilyActivateClient } from './lazyClientHost';
 import { Logger } from './logging/logger';
 import RemoteRepositories from './remoteRepositories.browser';
@@ -22,7 +21,7 @@ import { WorkerServerProcessFactory } from './tsServer/serverProcess.browser';
 import { ITypeScriptVersionProvider, TypeScriptVersion, TypeScriptVersionSource } from './tsServer/versionProvider';
 import { ActiveJsTsEditorTracker } from './ui/activeJsTsEditorTracker';
 import { Disposable } from './utils/dispose';
-import { isWebAndHasSharedArrayBuffers, supportsReadableByteStreams } from './utils/platform';
+import { isWebAndHasSharedArrayBuffers } from './utils/platform';
 
 class StaticVersionProvider implements ITypeScriptVersionProvider {
 
@@ -59,7 +58,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 		new TypeScriptVersion(
 			TypeScriptVersionSource.Bundled,
 			vscode.Uri.joinPath(context.extensionUri, 'dist/browser/typescript/tsserver.web.js').toString(),
-			API.fromSimpleString('5.4.5')));
+			API.fromSimpleString('5.5.4')));
 
 	const logger = new Logger();
 
@@ -89,16 +88,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<Api> {
 		await startPreloadWorkspaceContentsIfNeeded(context, logger);
 	}));
 
-	if (supportsReadableByteStreams()) {
-		context.subscriptions.push(vscode.workspace.registerFileSystemProvider('vscode-global-typings', new MemFs(), {
-			isCaseSensitive: true,
-			isReadonly: false
-		}));
-		context.subscriptions.push(vscode.workspace.registerFileSystemProvider('vscode-node-modules', new AutoInstallerFs(), {
-			isCaseSensitive: true,
-			isReadonly: false
-		}));
-	}
+	context.subscriptions.push(registerAtaSupport());
 
 	return getExtensionApi(onCompletionAccepted.event, pluginManager);
 }

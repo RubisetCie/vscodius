@@ -828,7 +828,8 @@ suite('ExtHost Testing', () => {
 					expected: undefined,
 					contextValue: undefined,
 					actual: undefined,
-					location: convert.location.from(message1.location)
+					location: convert.location.from(message1.location),
+					stackTrace: undefined,
 				}]
 			]);
 
@@ -845,6 +846,7 @@ suite('ExtHost Testing', () => {
 					expected: undefined,
 					actual: undefined,
 					location: convert.location.from({ uri: test2.uri!, range: test2.range }),
+					stackTrace: undefined,
 				}]
 			]);
 

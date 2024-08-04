@@ -138,7 +138,7 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 
 	constructor(
 		private readonly context: vscode.ExtensionContext,
-		onCaseInsenitiveFileSystem: boolean,
+		onCaseInsensitiveFileSystem: boolean,
 		services: {
 			pluginManager: PluginManager;
 			logDirectoryProvider: ILogDirectoryProvider;
@@ -187,7 +187,7 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 			this.restartTsServer();
 		}));
 
-		this.bufferSyncSupport = new BufferSyncSupport(this, allModeIds, onCaseInsenitiveFileSystem);
+		this.bufferSyncSupport = new BufferSyncSupport(this, allModeIds, onCaseInsensitiveFileSystem);
 		this.onReady(() => { this.bufferSyncSupport.listen(); });
 
 		this.bufferSyncSupport.onDelete(resource => {
@@ -219,7 +219,8 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 			}
 		}, this, this._disposables);
 
-		this.diagnosticsManager = new DiagnosticsManager('typescript', onCaseInsenitiveFileSystem);
+
+		this.diagnosticsManager = new DiagnosticsManager('typescript', onCaseInsensitiveFileSystem);
 		this.typescriptServerSpawner = new TypeScriptServerSpawner(this.versionProvider, this._versionManager, this._nodeVersionManager, this.logDirectoryProvider, this.pluginPathsProvider, this.logger, this.tracer, this.processFactory);
 
 		this._register(this.pluginManager.onDidUpdateConfig(update => {
@@ -611,7 +612,7 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 				if (!this._isPromptingAfterCrash) {
 					if (this.pluginManager.plugins.length) {
 						prompt = vscode.window.showWarningMessage<vscode.MessageItem>(
-							vscode.l10n.t("The JS/TS language service crashed.\nThis may be caused by a plugin contributed by one of these extensions: {0}.\nPlease try disabling these extensions before filing an issue against VSCodius.", pluginExtensionList), reportIssueItem);
+							vscode.l10n.t("The JS/TS language service crashed.\nThis may be caused by a plugin contributed by one of these extensions: {0}.\nPlease try disabling these extensions before filing an issue against VSCodius.", pluginExtensionList));
 					} else {
 						prompt = vscode.window.showWarningMessage(
 							vscode.l10n.t("The JS/TS language service crashed."),

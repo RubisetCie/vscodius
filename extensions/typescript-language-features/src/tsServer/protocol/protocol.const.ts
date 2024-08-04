@@ -91,6 +91,7 @@ export enum EventName {
 	createFileWatcher = 'createFileWatcher',
 	createDirectoryWatcher = 'createDirectoryWatcher',
 	closeFileWatcher = 'closeFileWatcher',
+	requestCompleted = 'requestCompleted',
 }
 
 export enum OrganizeImportsMode {
