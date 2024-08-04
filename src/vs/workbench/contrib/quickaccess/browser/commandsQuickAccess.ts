@@ -212,8 +212,8 @@ export class CommandsQuickAccessProvider extends AbstractEditorCommandsQuickAcce
 	private getGlobalCommandPicks(): ICommandQuickPick[] {
 		const globalCommandPicks: ICommandQuickPick[] = [];
 		const scopedContextKeyService = this.editorService.activeEditorPane?.scopedContextKeyService || this.editorGroupService.activeGroup.scopedContextKeyService;
-		const globalCommandsMenu = this.menuService.createMenu(MenuId.CommandPalette, scopedContextKeyService);
-		const globalCommandsMenuActions = globalCommandsMenu.getActions()
+		const globalCommandsMenu = this.menuService.getMenuActions(MenuId.CommandPalette, scopedContextKeyService);
+		const globalCommandsMenuActions = globalCommandsMenu
 			.reduce((r, [, actions]) => [...r, ...actions], <Array<MenuItemAction | SubmenuItemAction | string>>[])
 			.filter(action => action instanceof MenuItemAction && action.enabled) as MenuItemAction[];
 
@@ -248,9 +248,6 @@ export class CommandsQuickAccessProvider extends AbstractEditorCommandsQuickAcce
 				commandDescription,
 			});
 		}
-
-		// Cleanup
-		globalCommandsMenu.dispose();
 
 		return globalCommandPicks;
 	}

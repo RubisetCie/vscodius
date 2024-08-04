@@ -68,7 +68,6 @@ import {
 	UpdateAction,
 	WebInstallAction,
 	TogglePreReleaseExtensionAction,
-	ExtensionAction,
 } from 'vs/workbench/contrib/extensions/browser/extensionsActions';
 import { Delegate } from 'vs/workbench/contrib/extensions/browser/extensionsList';
 import { ExtensionData, ExtensionsGridView, ExtensionsTree, getExtensions } from 'vs/workbench/contrib/extensions/browser/extensionsViewer';
@@ -327,8 +326,7 @@ export class ExtensionEditor extends EditorPane {
 		const actions = [
 			this.instantiationService.createInstance(ExtensionRuntimeStateAction),
 			this.instantiationService.createInstance(ExtensionStatusLabelAction),
-			this.instantiationService.createInstance(ButtonWithDropDownExtensionAction, 'extensions.updateActions', ExtensionAction.PROMINENT_LABEL_ACTION_CLASS,
-				[[this.instantiationService.createInstance(UpdateAction, true)]]),
+			this.instantiationService.createInstance(UpdateAction, true),
 			this.instantiationService.createInstance(SetColorThemeAction),
 			this.instantiationService.createInstance(SetFileIconThemeAction),
 			this.instantiationService.createInstance(SetProductIconThemeAction),
@@ -462,9 +460,16 @@ export class ExtensionEditor extends EditorPane {
 		const currentOptions: IExtensionEditorOptions | undefined = this.options;
 		super.setOptions(options);
 		this.updatePreReleaseVersionContext();
+
 		if (this.input && this.template && currentOptions?.showPreReleaseVersion !== options?.showPreReleaseVersion) {
 			this.render((this.input as ExtensionsInput).extension, this.template, !!options?.preserveFocus);
+			return;
 		}
+
+		if (options?.tab) {
+			this.template?.navbar.switch(options.tab);
+		}
+
 	}
 
 	private updatePreReleaseVersionContext(): void {

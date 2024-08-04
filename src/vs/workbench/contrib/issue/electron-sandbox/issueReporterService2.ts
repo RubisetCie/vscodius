@@ -3,7 +3,6 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 import { $, isHTMLInputElement, isHTMLTextAreaElement, reset, windowOpenNoOpener } from 'vs/base/browser/dom';
-import { mainWindow } from 'vs/base/browser/window';
 import { Codicon } from 'vs/base/common/codicons';
 import { groupBy } from 'vs/base/common/collections';
 import { CancellationError } from 'vs/base/common/errors';
@@ -12,11 +11,12 @@ import { ThemeIcon } from 'vs/base/common/themables';
 import { URI } from 'vs/base/common/uri';
 import { localize } from 'vs/nls';
 import { isRemoteDiagnosticError } from 'vs/platform/diagnostics/common/diagnostics';
-import { IIssueMainService, IProcessMainService, IssueReporterData, IssueReporterExtensionData, IssueReporterWindowConfiguration, IssueType } from 'vs/platform/issue/common/issue';
+import { IProcessMainService } from 'vs/platform/issue/common/issue';
 import { INativeHostService } from 'vs/platform/native/common/native';
-import { applyZoom, zoomIn, zoomOut } from 'vs/platform/window/electron-sandbox/window';
+import { applyZoom } from 'vs/platform/window/electron-sandbox/window';
 import { BaseIssueReporterService, hide, show } from 'vs/workbench/contrib/issue/browser/issue';
 import { IssueReporterData as IssueReporterModelData } from 'vs/workbench/contrib/issue/browser/issueReporterModel';
+import { IIssueFormService, IssueReporterData, IssueReporterExtensionData, IssueReporterWindowConfiguration, IssueType } from 'vs/workbench/contrib/issue/common/issue';
 
 // GitHub has let us know that we could up our limit here to 8k. We chose 7500 to play it safe.
 // ref https://github.com/microsoft/vscode/issues/159191
@@ -27,11 +27,12 @@ export class IssueReporter2 extends BaseIssueReporterService {
 	private readonly processMainService: IProcessMainService;
 	constructor(
 		private readonly configuration: IssueReporterWindowConfiguration,
+		public override readonly window: Window,
 		@INativeHostService private readonly nativeHostService: INativeHostService,
-		@IIssueMainService issueMainService: IIssueMainService,
+		@IIssueFormService issueFormService: IIssueFormService,
 		@IProcessMainService processMainService: IProcessMainService
 	) {
-		super(configuration.disableExtensions, configuration.data, configuration.os, configuration.product, mainWindow, false, issueMainService);
+		super(configuration.disableExtensions, configuration.data, configuration.os, configuration.product, window, false, issueFormService);
 
 		this.processMainService = processMainService;
 		this.processMainService.$getSystemInfo().then(info => {
@@ -48,7 +49,7 @@ export class IssueReporter2 extends BaseIssueReporterService {
 		}
 
 		this.setEventHandlers();
-		applyZoom(configuration.data.zoomLevel, mainWindow);
+		applyZoom(configuration.data.zoomLevel, this.window);
 		this.handleExtensionData(configuration.data.enabledExtensions);
 		this.updateRestrictedMode(configuration.data.restrictedMode);
 		this.updateUnsupportedMode(configuration.data.isUnsupported);
@@ -72,7 +73,7 @@ export class IssueReporter2 extends BaseIssueReporterService {
 
 	private async sendReporterMenu(extension: IssueReporterExtensionData): Promise<IssueReporterData | undefined> {
 		try {
-			const data = await this.issueMainService.$sendReporterMenu(extension.id, extension.name);
+			const data = await this.issueFormService.sendReporterMenu(extension.id, extension.name);
 			return data;
 		} catch (e) {
 			console.error(e);
@@ -111,7 +112,7 @@ export class IssueReporter2 extends BaseIssueReporterService {
 		});
 
 		this.addEventListener('disableExtensions', 'click', () => {
-			this.issueMainService.$reloadWithExtensionsDisabled();
+			this.issueFormService.reloadWithExtensionsDisabled();
 		});
 
 		this.addEventListener('extensionBugsLink', 'click', (e: Event) => {
@@ -122,13 +123,13 @@ export class IssueReporter2 extends BaseIssueReporterService {
 		this.addEventListener('disableExtensions', 'keydown', (e: Event) => {
 			e.stopPropagation();
 			if ((e as KeyboardEvent).keyCode === 13 || (e as KeyboardEvent).keyCode === 32) {
-				this.issueMainService.$reloadWithExtensionsDisabled();
+				this.issueFormService.reloadWithExtensionsDisabled();
 			}
 		});
 
 
 		// THIS IS THE MAIN IMPORTANT PART
-		mainWindow.document.onkeydown = async (e: KeyboardEvent) => {
+		this.window.document.onkeydown = async (e: KeyboardEvent) => {
 			const cmdOrCtrlKey = isMacintosh ? e.metaKey : e.ctrlKey;
 			// Cmd/Ctrl+Enter previews issue and closes window
 			if (cmdOrCtrlKey && e.key === 'Enter') {
@@ -148,20 +149,10 @@ export class IssueReporter2 extends BaseIssueReporterService {
 				const { issueDescription } = this.issueReporterModel.getData();
 				if (!this.hasBeenSubmitted && (issueTitle || issueDescription)) {
 					// fire and forget
-					this.issueMainService.$showConfirmCloseDialog();
+					this.issueFormService.showConfirmCloseDialog();
 				} else {
 					this.close();
 				}
-			}
-
-			// Cmd/Ctrl + zooms in
-			if (cmdOrCtrlKey && (e.key === '+' || e.key === '=')) {
-				zoomIn(mainWindow);
-			}
-
-			// Cmd/Ctrl - zooms out
-			if (cmdOrCtrlKey && e.key === '-') {
-				zoomOut(mainWindow);
 			}
 
 			// With latest electron upgrade, cmd+a is no longer propagating correctly for inputs in this window on mac
@@ -217,7 +208,7 @@ export class IssueReporter2 extends BaseIssueReporterService {
 		if (!this.validateInputs()) {
 			// If inputs are invalid, set focus to the first one and add listeners on them
 			// to detect further changes
-			const invalidInput = mainWindow.document.getElementsByClassName('invalid-input');
+			const invalidInput = this.window.document.getElementsByClassName('invalid-input');
 			if (invalidInput.length) {
 				(<HTMLInputElement>invalidInput[0]).focus();
 			}
@@ -237,6 +228,7 @@ export class IssueReporter2 extends BaseIssueReporterService {
 			if (this.issueReporterModel.fileOnExtension()) {
 				this.addEventListener('extension-selector', 'change', _ => {
 					this.validateInput('extension-selector');
+					this.validateInput('description');
 				});
 			}
 
@@ -281,7 +273,7 @@ export class IssueReporter2 extends BaseIssueReporterService {
 	}
 
 	public override async writeToClipboard(baseUrl: string, issueBody: string): Promise<string> {
-		const shouldWrite = await this.issueMainService.$showClipboardDialog();
+		const shouldWrite = await this.issueFormService.showClipboardDialog();
 		if (!shouldWrite) {
 			throw new CancellationError();
 		}
@@ -292,7 +284,7 @@ export class IssueReporter2 extends BaseIssueReporterService {
 	}
 
 	private updateSystemInfo(state: IssueReporterModelData) {
-		const target = mainWindow.document.querySelector<HTMLElement>('.block-system .block-info');
+		const target = this.window.document.querySelector<HTMLElement>('.block-system .block-info');
 
 		if (target) {
 			const systemInfo = state.systemInfo!;
@@ -480,7 +472,7 @@ export class IssueReporter2 extends BaseIssueReporterService {
 		const extensionDataCaption = this.getElementById('extension-id')!;
 		hide(extensionDataCaption);
 
-		const extensionDataCaption2 = Array.from(mainWindow.document.querySelectorAll('.ext-parens'));
+		const extensionDataCaption2 = Array.from(this.window.document.querySelectorAll('.ext-parens'));
 		extensionDataCaption2.forEach(extensionDataCaption2 => hide(extensionDataCaption2));
 
 		const showLoading = this.getElementById('ext-loading')!;
@@ -501,7 +493,7 @@ export class IssueReporter2 extends BaseIssueReporterService {
 		const extensionDataCaption = this.getElementById('extension-id')!;
 		show(extensionDataCaption);
 
-		const extensionDataCaption2 = Array.from(mainWindow.document.querySelectorAll('.ext-parens'));
+		const extensionDataCaption2 = Array.from(this.window.document.querySelectorAll('.ext-parens'));
 		extensionDataCaption2.forEach(extensionDataCaption2 => show(extensionDataCaption2));
 
 		const hideLoading = this.getElementById('ext-loading')!;
