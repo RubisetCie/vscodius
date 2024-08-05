@@ -858,8 +858,6 @@ export class UpdateAction extends ExtensionAction {
 	constructor(
 		private readonly verbose: boolean,
 		@IExtensionsWorkbenchService private readonly extensionsWorkbenchService: IExtensionsWorkbenchService,
-		@IDialogService private readonly dialogService: IDialogService,
-		@IOpenerService private readonly openerService: IOpenerService,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 	) {
 		super(`extensions.update`, localize('update', "Update"), UpdateAction.DisabledClass, false);
@@ -895,34 +893,6 @@ export class UpdateAction extends ExtensionAction {
 	override async run(): Promise<any> {
 		if (!this.extension) {
 			return;
-		}
-
-		const { result } = await this.dialogService.prompt<'update' | 'review' | 'cancel'>({
-			type: 'warning',
-			title: localize('updateExtensionConsentTitle', "Update {0} Extension", this.extension.displayName),
-			message: localize('updateExtensionConsent', "Would you like to update the extension?"),
-			buttons: [{
-				label: localize('update', "Update"),
-				run: () => 'update'
-			}, {
-				label: localize('review', "Review"),
-				run: () => 'review'
-			}, {
-				label: localize('cancel', "Cancel"),
-				run: () => 'cancel'
-			}]
-		});
-		if (result === 'cancel') {
-			return;
-		}
-		if (result === 'review') {
-			if (this.extension.hasChangelog()) {
-				return this.extensionsWorkbenchService.open(this.extension, { tab: ExtensionEditorTab.Changelog });
-			}
-			if (this.extension.repository) {
-				return this.openerService.open(this.extension.repository);
-			}
-			return this.extensionsWorkbenchService.open(this.extension);
 		}
 
 		alert(localize('updateExtensionStart', "Updating extension {0} to version {1} started.", this.extension.displayName, this.extension.latestVersion));
