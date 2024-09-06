@@ -1957,12 +1957,6 @@ export interface ICodeEditorWidgetOptions {
 	contributions?: IEditorContributionDescription[];
 
 	/**
-	 * Telemetry data associated with this CodeEditorWidget.
-	 * Defaults to null.
-	 */
-	telemetryData?: object;
-
-	/**
 	 * The ID of the context menu.
 	 * Defaults to MenuId.SimpleEditorContext or MenuId.EditorContext depending on whether the widget is simple.
 	 */
