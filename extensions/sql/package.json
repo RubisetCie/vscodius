@@ -21,7 +21,8 @@
           ".dsql"
         ],
         "aliases": [
-          "SQL"
+          "MS SQL",
+          "T-SQL"
         ],
         "configuration": "./language-configuration.json"
       }
@@ -36,6 +37,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/microsoft/vscode.git"
+    "url": "https://github.com/RubisetCie/vscodius.git"
   }
 }

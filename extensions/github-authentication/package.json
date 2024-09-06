@@ -13,9 +13,6 @@
     "Other"
   ],
   "api": "none",
-  "enabledApiProposals": [
-    "authGetSessions"
-  ],
   "extensionKind": [
     "ui",
     "workspace"
@@ -81,6 +78,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/microsoft/vscode.git"
+    "url": "https://github.com/RubisetCie/vscodius.git"
   }
 }

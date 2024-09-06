@@ -5,7 +5,7 @@
 
 import 'vs/css!./media/scm';
 import { localize } from 'vs/nls';
-import { ISCMViewService, VIEWLET_ID } from 'vs/workbench/contrib/scm/common/scm';
+import { VIEWLET_ID } from 'vs/workbench/contrib/scm/common/scm';
 import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
 import { IContextMenuService } from 'vs/platform/contextview/browser/contextView';
 import { IThemeService } from 'vs/platform/theme/common/themeService';
@@ -20,7 +20,6 @@ import { ViewPaneContainer } from 'vs/workbench/browser/parts/views/viewPaneCont
 export class SCMViewPaneContainer extends ViewPaneContainer {
 
 	constructor(
-		@ISCMViewService private readonly scmViewService: ISCMViewService,
 		@IWorkbenchLayoutService layoutService: IWorkbenchLayoutService,
 		@IInstantiationService instantiationService: IInstantiationService,
 		@IContextMenuService contextMenuService: IContextMenuService,
@@ -45,10 +44,6 @@ export class SCMViewPaneContainer extends ViewPaneContainer {
 
 	override getTitle(): string {
 		return localize('source control', "Source Control");
-	}
-
-	override getActionsContext(): unknown {
-		return this.scmViewService.visibleRepositories.length === 1 ? this.scmViewService.visibleRepositories[0].provider : undefined;
 	}
 
 }

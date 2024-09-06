@@ -482,10 +482,6 @@ async function esbuildExtensions(taskName, isWatch, scripts) {
                     return reject(error);
                 }
                 reporter(stderr, script);
-                if (stderr) {
-                    fancyLog(`Standard error output: ${stderr}`);
-                    return reject();
-                }
                 return resolve();
             });
             proc.stdout.on('data', (data) => {

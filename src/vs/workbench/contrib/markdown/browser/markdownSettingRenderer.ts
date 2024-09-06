@@ -13,6 +13,7 @@ import { ActionViewItem } from 'vs/base/browser/ui/actionbar/actionViewItems';
 import { IAction } from 'vs/base/common/actions';
 import { IClipboardService } from 'vs/platform/clipboard/common/clipboardService';
 import { Schemas } from 'vs/base/common/network';
+import { Tokens } from 'vs/base/common/marked/marked';
 
 export class SimpleSettingRenderer {
 	private readonly codeSettingRegex: RegExp;
@@ -38,17 +39,17 @@ export class SimpleSettingRenderer {
 		return result;
 	}
 
-	getHtmlRenderer(): (html: string) => string {
-		return (html): string => {
-			const match = this.codeSettingRegex.exec(html);
+	getHtmlRenderer(): (token: Tokens.HTML) => string {
+		return ({ raw }: Tokens.HTML): string => {
+			const match = this.codeSettingRegex.exec(raw);
 			if (match && match.length === 4) {
 				const settingId = match[2];
 				const rendered = this.render(settingId, match[3]);
 				if (rendered) {
-					html = html.replace(this.codeSettingRegex, rendered);
+					raw = raw.replace(this.codeSettingRegex, rendered);
 				}
 			}
-			return html;
+			return raw;
 		};
 	}
 

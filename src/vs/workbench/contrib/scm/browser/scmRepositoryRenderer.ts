@@ -64,13 +64,13 @@ export class RepositoryRenderer implements ICompressibleTreeRenderer<ISCMReposit
 	constructor(
 		private readonly toolbarMenuId: MenuId,
 		private readonly actionViewItemProvider: IActionViewItemProvider,
-		@ISCMViewService private scmViewService: ISCMViewService,
 		@ICommandService private commandService: ICommandService,
 		@IContextKeyService private contextKeyService: IContextKeyService,
 		@IContextMenuService private contextMenuService: IContextMenuService,
 		@IHoverService private hoverService: IHoverService,
 		@IKeybindingService private keybindingService: IKeybindingService,
 		@IMenuService private menuService: IMenuService,
+		@ISCMViewService private scmViewService: ISCMViewService,
 	) { }
 
 	renderTemplate(container: HTMLElement): RepositoryTemplate {
@@ -133,6 +133,7 @@ export class RepositoryRenderer implements ICompressibleTreeRenderer<ISCMReposit
 			menuSecondaryActions = secondary;
 			updateToolbar();
 		}));
+
 		templateData.toolBar.context = repository.provider;
 	}
 

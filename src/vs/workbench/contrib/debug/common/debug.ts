@@ -350,6 +350,13 @@ export interface IDebugEvaluatePosition {
 	source: DebugProtocol.Source;
 }
 
+export interface IDebugLocationReferenced {
+	line: number;
+	column: number;
+	endLine?: number;
+	endColumn?: number;
+	source: Source;
+}
 
 export interface IDebugSession extends ITreeElement {
 
@@ -430,6 +437,7 @@ export interface IDebugSession extends ITreeElement {
 	sendExceptionBreakpoints(exbpts: IExceptionBreakpoint[]): Promise<void>;
 	breakpointsLocations(uri: uri, lineNumber: number): Promise<IPosition[]>;
 	getDebugProtocolBreakpoint(breakpointId: string): DebugProtocol.Breakpoint | undefined;
+	resolveLocationReference(locationReference: number): Promise<IDebugLocationReferenced>;
 
 	stackTrace(threadId: number, startFrame: number, levels: number, token: CancellationToken): Promise<DebugProtocol.StackTraceResponse | undefined>;
 	exceptionInfo(threadId: number): Promise<IExceptionInfo | undefined>;
