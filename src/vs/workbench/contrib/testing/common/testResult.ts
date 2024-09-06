@@ -590,7 +590,7 @@ export class LiveTestResult extends Disposable implements ITestResult {
 	private readonly doSerialize = new Lazy((): ISerializedTestResults => ({
 		id: this.id,
 		completedAt: this.completedAt!,
-		tasks: this.tasks.map(t => ({ id: t.id, name: t.name, ctrlId: t.ctrlId })),
+		tasks: this.tasks.map(t => ({ id: t.id, name: t.name, ctrlId: t.ctrlId, hasCoverage: !!t.coverage.get() })),
 		name: this.name,
 		request: this.request,
 		items: [...this.testById.values()].map(TestResultItem.serializeWithoutMessages),
@@ -599,7 +599,7 @@ export class LiveTestResult extends Disposable implements ITestResult {
 	private readonly doSerializeWithMessages = new Lazy((): ISerializedTestResults => ({
 		id: this.id,
 		completedAt: this.completedAt!,
-		tasks: this.tasks.map(t => ({ id: t.id, name: t.name, ctrlId: t.ctrlId })),
+		tasks: this.tasks.map(t => ({ id: t.id, name: t.name, ctrlId: t.ctrlId, hasCoverage: !!t.coverage.get() })),
 		name: this.name,
 		request: this.request,
 		items: [...this.testById.values()].map(TestResultItem.serialize),
@@ -658,7 +658,7 @@ export class HydratedTestResult implements ITestResult {
 		this.completedAt = serialized.completedAt;
 		this.tasks = serialized.tasks.map((task, i) => ({
 			id: task.id,
-			name: task.name,
+			name: task.name || localize('testUnnamedTask', 'Unnamed Task'),
 			ctrlId: task.ctrlId,
 			running: false,
 			coverage: observableValue(this, undefined),

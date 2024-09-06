@@ -315,7 +315,13 @@ export class CodeActionModel extends Disposable {
 							}
 						}
 					}
-					// temporarilly hiding here as this is enabled/disabled behind a setting.
+
+					// Case for manual triggers - specifically Source Actions and Refactors
+					if (trigger.trigger.type === CodeActionTriggerType.Invoke) {
+						const codeActions = await getCodeActions(this._registry, model, trigger.selection, trigger.trigger, Progress.None, token);
+						return codeActions;
+					}
+
 					return getCodeActions(this._registry, model, trigger.selection, trigger.trigger, Progress.None, token);
 				});
 				if (trigger.trigger.type === CodeActionTriggerType.Invoke) {

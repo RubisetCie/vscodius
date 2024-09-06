@@ -201,6 +201,6 @@ export const createEditorFromSearchResult =
 		} else {
 			const input = instantiationService.invokeFunction(getOrMakeSearchEditorInput, { from: 'rawData', resultsContents: '', config: { ...config, contextLines } });
 			const editor = await editorService.openEditor(input, { pinned: true }) as SearchEditor;
-			editor.triggerSearch({ focusResults: true });
+			editor.triggerSearch();
 		}
 	};

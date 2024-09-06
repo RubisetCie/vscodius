@@ -77,7 +77,7 @@ export class CodeActionController extends Disposable implements IEditorContribut
 		@ICommandService private readonly _commandService: ICommandService,
 		@IConfigurationService private readonly _configurationService: IConfigurationService,
 		@IActionWidgetService private readonly _actionWidgetService: IActionWidgetService,
-		@IInstantiationService private readonly _instantiationService: IInstantiationService
+		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 	) {
 		super();
 
@@ -175,6 +175,12 @@ export class CodeActionController extends Disposable implements IEditorContribut
 		}
 
 		if (this._disposed) {
+			return;
+		}
+
+
+		const selection = this._editor.getSelection();
+		if (selection?.startLineNumber !== newState.position.lineNumber) {
 			return;
 		}
 

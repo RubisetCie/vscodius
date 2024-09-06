@@ -563,10 +563,6 @@ async function esbuildExtensions(taskName: string, isWatch: boolean, scripts: { 
 					return reject(error);
 				}
 				reporter(stderr, script);
-				if (stderr) {
-					fancyLog(`Standard error output: ${stderr}`);
-					return reject();
-				}
 				return resolve();
 			});
 
