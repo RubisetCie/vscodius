@@ -258,7 +258,7 @@ function generateApiProposalNames() {
         const versionMatch = versionPattern.exec(contents);
         const version = versionMatch ? versionMatch[1] : undefined;
         proposals.set(proposalName, {
-            proposal: `https://raw.githubusercontent.com/microsoft/vscode/main/src/vscode-dts/vscode.proposed.${proposalName}.d.ts`,
+            proposal: `https://raw.githubusercontent.com/RubisetCie/vscodius/main/src/vscode-dts/vscode.proposed.${proposalName}.d.ts`,
             version: version ? parseInt(version) : undefined
         });
     }, function () {
