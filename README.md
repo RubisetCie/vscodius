@@ -14,9 +14,13 @@ In order to build *VSCodius*, you'll need the necessary tools:
 - [Node.js](https://nodejs.org/)
 - [Yarn](https://classic.yarnpkg.com/)
 - [Python](https://www.python.org/downloads/) (required for `node-gyp`)
+- [Cargo](https://www.rust-lang.org/tools/install) (optional: command-line tools)
 - A C/C++ compiler tool chain for your platform:
   - **Windows**
-    - Install the Visual C++ Build Environment by either installing the [Visual Studio Build Tools](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=BuildTools) or the [Visual Studio Community Edition](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community). The minimum workload to install is 'Desktop Development with C++'.
+    - Install the Visual C++ Build Environment by either installing the [Visual Studio Build Tools](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=BuildTools) or the [Visual Studio Community Edition](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community). The minimum workload to install is "Desktop Development with C++". But there are additional components from "Individual components":
+      - `C++ x64/x86 Spectre-mitigated libs (Latest)` (use `ARM64` for Windows on ARM)
+      - `C++ ATL for latest build tools with Spectre Mitigations`
+      - `C++ MFC for latest build tools with Spectre Mitigations`
 	- Open a command prompt and run `npm config set msvs_version [version]`.
 	- If the Visual C++ Build Tools are installed in a non-default directory, set the following environment variable `set vs[version]_install=[path]`.
   - **Mac OS**
@@ -29,6 +33,7 @@ In order to build *VSCodius*, you'll need the necessary tools:
       - `make`
       - `pkg-config`
       - `gcc` (or another compile toolchain)
+    - Building *deb* and *rpm* packages requires `fakeroot` and `rpm`; run: `sudo apt-get install fakeroot rpm`
 
 ## Build
 
@@ -44,7 +49,7 @@ Then to build from a terminal:
 yarn compile
 ```
 
-The incremental builder will do an initial full build and will display a message that includes the phrase 'Finished compilation' once the initial build is complete.
+The incremental builder will do an initial full build and will display a message that includes the phrase "Finished compilation" once the initial build is complete.
 
 ## Run on desktop
 
@@ -73,7 +78,9 @@ Where *UI* run in the browser but *extensions* run in code server (*Node.js*):
 
 ## Packaging
 
-VSCodius can be packaged for the following platforms: `win32-ia32 | win32-x64 | darwin-x64 | darwin-arm64 | linux-ia32 | linux-x64 | linux-arm`.
+### VSCodius
+
+*VSCodius* can be packaged for the following platforms: `win32-ia32 | win32-x64 | darwin-x64 | darwin-arm64 | linux-ia32 | linux-x64 | linux-arm`.
 
 These `gulp` tasks are available:
 
@@ -81,6 +88,34 @@ These `gulp` tasks are available:
 - `vscode-[platform]-min`: Builds a packaged and minified version for `[platform]`.
 
 Run `gulp` via `yarn` to avoid potential out of memory issues, for example: `yarn gulp vscode-linux-x64`
+
+### Command-line tools
+
+The *command-line tools* can are optional, and can be built using `cargo`, from the "cli" directory:
+
+```
+cargo build --release
+```
+
+### Distro packages
+
+To package for Linux, after having build both the (main package)[#vscodius] and the (CLI tools)[#command-line-tools], run the following tasks:
+
+```
+# Debian...
+yarn gulp vscode-linux-x64-prepare-deb
+yarn gulp vscode-linux-x64-build-deb
+
+# Red Hat...
+yarn gulp vscode-linux-x64-prepare-rpm
+yarn gulp vscode-linux-x64-build-rpm
+
+# Snap...
+yarn gulp vscode-linux-x64-prepare-snap
+yarn gulp vscode-linux-x64-build-snap
+```
+
+This will output files in the ".build" sub-directory.
 
 Note on Windows: sometimes the default `ElectronJS` resources will remain on the packaged executable. In order to fix this, run the following command:
 
