@@ -10,11 +10,11 @@ on:
         description: 'Node.js version'
         required: true
         default: '20'
-      build_esm:
-        description: 'Enable Native ECMAScript modules'
-        type: boolean
-        required: true
-        default: false
+#      build_esm:
+#        description: 'Enable Native ECMAScript modules'
+#        type: boolean
+#        required: true
+#        default: false
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -29,9 +29,9 @@ jobs:
         run: sudo apt update && sudo apt install build-essential libx11-dev libxkbfile-dev libsecret-1-dev libkrb5-dev python-is-python3 fakeroot rpm
       - name: Installing node-gyp
         run: yarn global add node-gyp
-      - name: Environment
-        if: ${{github.event.inputs.build_esm == 'true'}}
-        run: echo "VSCODE_BUILD_ESM=true" >> $GITHUB_ENV
+#      - name: Environment
+#        if: ${{github.event.inputs.build_esm == 'true'}}
+#        run: export VSCODE_BUILD_ESM='true'
       - name: Dependencies
         run: yarn
       - name: Packaging

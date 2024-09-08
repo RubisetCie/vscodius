@@ -41,11 +41,15 @@ jobs:
       - name: Build
         run: export OPENSSL_DIR="$PWD/../openssl-build" && cargo build --release --target ${{github.event.inputs.pkg_arch}}
         working-directory: ./cli
+      - name: Rename
+        run: |
+          cd './cli/target/${{github.event.inputs.pkg_arch}}/release'
+          mv code.exe codius-tunnel.exe
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: codius-${{github.event.inputs.pkg_arch}}-${{github.event.inputs.pkg_version}}
-          path: './cli/target/${{github.event.inputs.pkg_arch}}/release/code.exe'
+          path: './cli/target/${{github.event.inputs.pkg_arch}}/release/codius-tunnel.exe'
           overwrite: true
           compression-level: 9
           if-no-files-found: error
@@ -63,11 +67,15 @@ jobs:
       - name: Build
         run: cargo build --release --target ${{github.event.inputs.pkg_arch}}
         working-directory: ./cli
+      - name: Rename
+        run: |
+          cd './cli/target/${{github.event.inputs.pkg_arch}}/release'
+          mv code codius-tunnel
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: codius-${{github.event.inputs.pkg_arch}}-${{github.event.inputs.pkg_version}}
-          path: './cli/target/${{github.event.inputs.pkg_arch}}/release/code'
+          path: './cli/target/${{github.event.inputs.pkg_arch}}/release/codius-tunnel'
           overwrite: true
           compression-level: 9
           if-no-files-found: error
