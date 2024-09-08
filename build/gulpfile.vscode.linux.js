@@ -194,6 +194,7 @@ function prepareRpmPackage(arch) {
 			.pipe(rename(function (p) { p.dirname = 'BUILD/usr/share/' + product.applicationName + '/' + p.dirname; }));
 
 		const spec = code.pipe(es.through(
+			function () {},
 			async function () {
 				const that = this;
 				const dependencies = await dependenciesGenerator.getDependencies('rpm', binaryDir, product.applicationName, rpmArch);
