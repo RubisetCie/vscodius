@@ -78,7 +78,7 @@ Where *UI* run in the browser but *extensions* run in code server (*Node.js*):
 
 ## Packaging
 
-### VSCodius
+### Main
 
 *VSCodius* can be packaged for the following platforms: `win32-ia32 | win32-x64 | darwin-x64 | darwin-arm64 | linux-ia32 | linux-x64 | linux-arm`.
 
@@ -99,7 +99,7 @@ cargo build --release
 
 ### Distro packages
 
-To package for Linux, after having build both the (main package)[#vscodius] and the (CLI tools)[#command-line-tools], run the following tasks:
+To package for Linux, after having build both the [main package](#main) and the [CLI tools](#command-line-tools), run the following tasks:
 
 ```
 # Debian...
