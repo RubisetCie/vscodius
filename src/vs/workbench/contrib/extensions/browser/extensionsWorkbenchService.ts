@@ -24,7 +24,7 @@ import { IInstantiationService } from '../../../../platform/instantiation/common
 import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
 import { IHostService } from '../../../services/host/browser/host.js';
 import { URI } from '../../../../base/common/uri.js';
-import { IExtension, ExtensionState, IExtensionsWorkbenchService, InstallExtensionOptions, ExtensionRuntimeState, ExtensionRuntimeActionType, AutoRestartConfigurationKey, VIEWLET_ID, IExtensionsViewPaneContainer, IExtensionsNotification } from '../common/extensions.js';
+import { IExtension, ExtensionState, IExtensionsWorkbenchService, HasOutdatedExtensionsContext, InstallExtensionOptions, ExtensionRuntimeState, ExtensionRuntimeActionType, AutoRestartConfigurationKey, VIEWLET_ID, IExtensionsViewPaneContainer, IExtensionsNotification } from '../common/extensions.js';
 import { IEditorService, SIDE_GROUP, ACTIVE_GROUP } from '../../../services/editor/common/editorService.js';
 import { IURLService, IURLHandler, IOpenURLOptions } from '../../../../platform/url/common/url.js';
 import { ExtensionsInput, IExtensionEditorOptions } from '../common/extensionsInput.js';
@@ -852,6 +852,8 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 
 	declare readonly _serviceBrand: undefined;
 
+	private hasOutdatedExtensionsContextKey: IContextKey<boolean>;
+
 	private readonly localExtensions: Extensions | null = null;
 	private readonly remoteExtensions: Extensions | null = null;
 	private readonly webExtensions: Extensions | null = null;
@@ -910,6 +912,7 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 		if (!isUndefined(preferPreReleasesValue)) {
 			this.preferPreReleases = !!preferPreReleasesValue;
 		}
+		this.hasOutdatedExtensionsContextKey = HasOutdatedExtensionsContext.bindTo(contextKeyService);
 		if (extensionManagementServerService.localExtensionManagementServer) {
 			this.localExtensions = this._register(instantiationService.createInstance(Extensions,
 				extensionManagementServerService.localExtensionManagementServer,
@@ -981,7 +984,28 @@ export class ExtensionsWorkbenchService extends Disposable implements IExtension
 			return;
 		}
 
+		this.initializeAutoUpdate();
+		this.updateExtensionsNotificaiton();
 		this._register(this.storageService.onDidChangeValue(StorageScope.PROFILE, EXTENSIONS_DISMISSED_NOTIFICATIONS_KEY, this._store)(e => this.onDidDismissedNotificationsValueChange()));
+		this._register(Event.debounce(this.onChange, () => undefined, 100)(() => {
+			this.updateExtensionsNotificaiton();
+			this.reportProgressFromOtherSources();
+		}));
+	}
+
+	private initializeAutoUpdate(): void {
+		// Update AutoUpdate Contexts
+		this.hasOutdatedExtensionsContextKey.set(this.outdated.length > 0);
+
+		// Check for updates
+		this.eventuallyCheckForUpdates(true);
+
+		this.registerAutoRestartListener();
+		this._register(this.configurationService.onDidChangeConfiguration(e => {
+			if (e.affectsConfiguration(AutoRestartConfigurationKey)) {
+				this.registerAutoRestartListener();
+			}
+		}));
 	}
 
 	private async onDidChangeRunningExtensions(added: ReadonlyArray<IExtensionDescription>, removed: ReadonlyArray<IExtensionDescription>): Promise<void> {
