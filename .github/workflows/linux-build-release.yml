@@ -15,7 +15,7 @@ on:
         required: true
         default: '20'
 #      build_amd:
-#        description: 'Enable Native ECMAScript modules'
+#        description: 'Enable Asynchronous Module Definition (AMD)'
 #        type: boolean
 #        required: true
 #        default: false
