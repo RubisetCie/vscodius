@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { URI } from 'vs/base/common/uri';
-import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
+import { URI } from '../../../base/common/uri.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
 
 export const enum RecommendationSource {
 	FILE = 1,
@@ -17,14 +17,6 @@ export interface IExtensionRecommendations {
 	extensions: string[];
 	name: string;
 	searchValue?: string;
-}
-
-export function RecommendationSourceToString(source: RecommendationSource) {
-	switch (source) {
-		case RecommendationSource.FILE: return 'file';
-		case RecommendationSource.WORKSPACE: return 'workspace';
-		case RecommendationSource.EXE: return 'exe';
-	}
 }
 
 export const enum RecommendationsNotificationResult {

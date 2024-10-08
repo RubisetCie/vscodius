@@ -3,14 +3,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { isWeb } from 'vs/base/common/platform';
-import { format2 } from 'vs/base/common/strings';
-import { URI } from 'vs/base/common/uri';
-import { IFileService } from 'vs/platform/files/common/files';
-import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
-import { IProductService } from 'vs/platform/product/common/productService';
-import { RemoteAuthorities } from 'vs/base/common/network';
-import { TargetPlatform } from 'vs/platform/extensions/common/extensions';
+import { isWeb } from '../../../base/common/platform.js';
+import { format2 } from '../../../base/common/strings.js';
+import { URI } from '../../../base/common/uri.js';
+import { IFileService } from '../../files/common/files.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+import { IProductService } from '../../product/common/productService.js';
+import { RemoteAuthorities } from '../../../base/common/network.js';
+import { TargetPlatform } from '../../extensions/common/extensions.js';
 
 const WEB_EXTENSION_RESOURCE_END_POINT_SEGMENT = '/web-extension-resource/';
 

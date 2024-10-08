@@ -3,24 +3,24 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Promises } from 'vs/base/common/async';
-import { getErrorMessage } from 'vs/base/common/errors';
-import { Disposable } from 'vs/base/common/lifecycle';
-import { Schemas } from 'vs/base/common/network';
-import { joinPath } from 'vs/base/common/resources';
-import * as semver from 'vs/base/common/semver/semver';
-import { URI } from 'vs/base/common/uri';
-import { generateUuid } from 'vs/base/common/uuid';
-import { Promises as FSPromises } from 'vs/base/node/pfs';
-import { buffer } from 'vs/base/node/zip';
-import { INativeEnvironmentService } from 'vs/platform/environment/common/environment';
-import { toExtensionManagementError } from 'vs/platform/extensionManagement/common/abstractExtensionManagementService';
-import { ExtensionManagementErrorCode, IExtensionGalleryService, IGalleryExtension, InstallOperation } from 'vs/platform/extensionManagement/common/extensionManagement';
-import { ExtensionKey, groupByExtension } from 'vs/platform/extensionManagement/common/extensionManagementUtil';
-import { fromExtractError } from 'vs/platform/extensionManagement/node/extensionManagementUtil';
-import { TargetPlatform } from 'vs/platform/extensions/common/extensions';
-import { IFileService, IFileStatWithMetadata } from 'vs/platform/files/common/files';
-import { ILogService } from 'vs/platform/log/common/log';
+import { Promises } from '../../../base/common/async.js';
+import { getErrorMessage } from '../../../base/common/errors.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { Schemas } from '../../../base/common/network.js';
+import { joinPath } from '../../../base/common/resources.js';
+import * as semver from '../../../base/common/semver/semver.js';
+import { URI } from '../../../base/common/uri.js';
+import { generateUuid } from '../../../base/common/uuid.js';
+import { Promises as FSPromises } from '../../../base/node/pfs.js';
+import { buffer } from '../../../base/node/zip.js';
+import { INativeEnvironmentService } from '../../environment/common/environment.js';
+import { toExtensionManagementError } from '../common/abstractExtensionManagementService.js';
+import { ExtensionManagementErrorCode, IExtensionGalleryService, IGalleryExtension, InstallOperation } from '../common/extensionManagement.js';
+import { ExtensionKey, groupByExtension } from '../common/extensionManagementUtil.js';
+import { fromExtractError } from './extensionManagementUtil.js';
+import { TargetPlatform } from '../../extensions/common/extensions.js';
+import { IFileService, IFileStatWithMetadata } from '../../files/common/files.js';
+import { ILogService } from '../../log/common/log.js';
 
 export class ExtensionsDownloader extends Disposable {
 

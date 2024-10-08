@@ -3,14 +3,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { IExtensionManagementService } from 'vs/platform/extensionManagement/common/extensionManagement';
-import { IFileService } from 'vs/platform/files/common/files';
-import { IProductService } from 'vs/platform/product/common/productService';
-import { INativeEnvironmentService } from 'vs/platform/environment/common/environment';
-import { IExtensionRecommendationNotificationService } from 'vs/platform/extensionRecommendations/common/extensionRecommendations';
-import { INativeHostService } from 'vs/platform/native/common/native';
-import { IStorageService } from 'vs/platform/storage/common/storage';
-import { AbstractNativeExtensionTipsService } from 'vs/platform/extensionManagement/common/extensionTipsService';
+import { IExtensionManagementService } from '../common/extensionManagement.js';
+import { IFileService } from '../../files/common/files.js';
+import { IProductService } from '../../product/common/productService.js';
+import { INativeEnvironmentService } from '../../environment/common/environment.js';
+import { IExtensionRecommendationNotificationService } from '../../extensionRecommendations/common/extensionRecommendations.js';
+import { INativeHostService } from '../../native/common/native.js';
+import { IStorageService } from '../../storage/common/storage.js';
+import { AbstractNativeExtensionTipsService } from '../common/extensionTipsService.js';
 
 export class ExtensionTipsService extends AbstractNativeExtensionTipsService {
 

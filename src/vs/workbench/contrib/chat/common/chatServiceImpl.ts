@@ -3,32 +3,32 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { DeferredPromise } from 'vs/base/common/async';
-import { CancellationToken, CancellationTokenSource } from 'vs/base/common/cancellation';
-import { toErrorMessage } from 'vs/base/common/errorMessage';
-import { Emitter, Event } from 'vs/base/common/event';
-import { MarkdownString } from 'vs/base/common/htmlContent';
-import { Iterable } from 'vs/base/common/iterator';
-import { Disposable, DisposableMap, IDisposable } from 'vs/base/common/lifecycle';
-import { revive } from 'vs/base/common/marshalling';
-import { URI, UriComponents } from 'vs/base/common/uri';
-import { localize } from 'vs/nls';
-import { IConfigurationService } from 'vs/platform/configuration/common/configuration';
-import { IContextKeyService } from 'vs/platform/contextkey/common/contextkey';
-import { IInstantiationService } from 'vs/platform/instantiation/common/instantiation';
-import { ILogService } from 'vs/platform/log/common/log';
-import { Progress } from 'vs/platform/progress/common/progress';
-import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { IWorkspaceContextService } from 'vs/platform/workspace/common/workspace';
-import { ChatAgentLocation, IChatAgent, IChatAgentCommand, IChatAgentData, IChatAgentHistoryEntry, IChatAgentRequest, IChatAgentResult, IChatAgentService } from 'vs/workbench/contrib/chat/common/chatAgents';
-import { ChatModel, ChatRequestModel, ChatRequestRemovalReason, ChatWelcomeMessageModel, IChatModel, IChatRequestModel, IChatRequestVariableData, IChatResponseModel, IExportableChatData, ISerializableChatData, ISerializableChatDataIn, ISerializableChatsData, normalizeSerializableChatData, updateRanges } from 'vs/workbench/contrib/chat/common/chatModel';
-import { ChatRequestAgentPart, ChatRequestAgentSubcommandPart, ChatRequestSlashCommandPart, IParsedChatRequest, chatAgentLeader, chatSubcommandLeader, getPromptText } from 'vs/workbench/contrib/chat/common/chatParserTypes';
-import { ChatRequestParser } from 'vs/workbench/contrib/chat/common/chatRequestParser';
-import { IChatCompleteResponse, IChatDetail, IChatFollowup, IChatProgress, IChatSendRequestData, IChatSendRequestOptions, IChatSendRequestResponseState, IChatService, IChatTransferredSessionData, IChatUserActionEvent } from 'vs/workbench/contrib/chat/common/chatService';
-import { IChatSlashCommandService } from 'vs/workbench/contrib/chat/common/chatSlashCommands';
-import { IChatVariablesService } from 'vs/workbench/contrib/chat/common/chatVariables';
-import { ChatMessageRole, IChatMessage } from 'vs/workbench/contrib/chat/common/languageModels';
-import { IExtensionService } from 'vs/workbench/services/extensions/common/extensions';
+import { DeferredPromise } from '../../../../base/common/async.js';
+import { CancellationToken, CancellationTokenSource } from '../../../../base/common/cancellation.js';
+import { toErrorMessage } from '../../../../base/common/errorMessage.js';
+import { Emitter, Event } from '../../../../base/common/event.js';
+import { MarkdownString } from '../../../../base/common/htmlContent.js';
+import { Iterable } from '../../../../base/common/iterator.js';
+import { Disposable, DisposableMap, IDisposable } from '../../../../base/common/lifecycle.js';
+import { revive } from '../../../../base/common/marshalling.js';
+import { URI, UriComponents } from '../../../../base/common/uri.js';
+import { localize } from '../../../../nls.js';
+import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
+import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
+import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
+import { ILogService } from '../../../../platform/log/common/log.js';
+import { Progress } from '../../../../platform/progress/common/progress.js';
+import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { IExtensionService } from '../../../services/extensions/common/extensions.js';
+import { ChatAgentLocation, IChatAgent, IChatAgentCommand, IChatAgentData, IChatAgentHistoryEntry, IChatAgentRequest, IChatAgentResult, IChatAgentService } from './chatAgents.js';
+import { ChatModel, ChatRequestModel, ChatRequestRemovalReason, IChatModel, IChatRequestModel, IChatRequestVariableData, IChatResponseModel, IExportableChatData, ISerializableChatData, ISerializableChatDataIn, ISerializableChatsData, normalizeSerializableChatData, toChatHistoryContent, updateRanges } from './chatModel.js';
+import { ChatRequestAgentPart, ChatRequestAgentSubcommandPart, ChatRequestSlashCommandPart, IParsedChatRequest, chatAgentLeader, chatSubcommandLeader, getPromptText } from './chatParserTypes.js';
+import { ChatRequestParser } from './chatRequestParser.js';
+import { IChatCompleteResponse, IChatDetail, IChatFollowup, IChatProgress, IChatSendRequestData, IChatSendRequestOptions, IChatSendRequestResponseState, IChatService, IChatTransferredSessionData, IChatUserActionEvent } from './chatService.js';
+import { IChatSlashCommandService } from './chatSlashCommands.js';
+import { IChatVariablesService } from './chatVariables.js';
+import { ChatMessageRole, IChatMessage } from './languageModels.js';
 
 const serializedChatKey = 'interactive.sessions';
 
@@ -361,14 +361,10 @@ export class ChatService extends Disposable implements IChatService {
 			if (!defaultAgent) {
 				throw new Error('No default agent registered');
 			}
-			const welcomeMessage = model.welcomeMessage ? undefined : await defaultAgent.provideWelcomeMessage?.(model.initialLocation, token) ?? undefined;
-			const welcomeModel = welcomeMessage && this.instantiationService.createInstance(
-				ChatWelcomeMessageModel,
-				welcomeMessage.map(item => typeof item === 'string' ? new MarkdownString(item) : item),
-				await defaultAgent.provideSampleQuestions?.(model.initialLocation, token) ?? []
-			);
 
-			model.initialize(welcomeModel);
+			const welcomeMessage = await defaultAgent.provideWelcomeMessage?.(token) ?? undefined;
+			const sampleQuestions = await defaultAgent.provideSampleQuestions?.(model.initialLocation, token) ?? undefined;
+			model.initialize(welcomeMessage, sampleQuestions);
 		} catch (err) {
 			this.trace('startSession', `initializeSession failed: ${err}`);
 			model.setInitializationError(err);
@@ -542,7 +538,7 @@ export class ChatService extends Disposable implements IChatService {
 				let chatTitlePromise: Promise<string | undefined> | undefined;
 
 				if (agentPart || (defaultAgent && !commandPart)) {
-					const prepareChatAgentRequest = async (agent: IChatAgentData, command?: IChatAgentCommand, enableCommandDetection?: boolean, chatRequest?: ChatRequestModel, isParticipantDetected?: boolean) => {
+					const prepareChatAgentRequest = async (agent: IChatAgentData, command?: IChatAgentCommand, enableCommandDetection?: boolean, chatRequest?: ChatRequestModel, isParticipantDetected?: boolean): Promise<IChatAgentRequest> => {
 						const initVariableData: IChatRequestVariableData = { variables: [] };
 						request = chatRequest ?? model.addRequest(parsedRequest, initVariableData, attempt, agent, command, options?.confirmation, options?.locationData, options?.attachedContext);
 
@@ -566,6 +562,7 @@ export class ChatService extends Disposable implements IChatService {
 							locationData: request.locationData,
 							acceptedConfirmationData: options?.acceptedConfirmationData,
 							rejectedConfirmationData: options?.rejectedConfirmationData,
+							userSelectedModelId: options?.userSelectedModelId
 						} satisfies IChatAgentRequest;
 					};
 
@@ -696,7 +693,7 @@ export class ChatService extends Disposable implements IChatService {
 				variables: updateRanges(request.variableData, promptTextResult.diff), // TODO bit of a hack
 				location: ChatAgentLocation.Panel
 			};
-			history.push({ request: historyRequest, response: request.response.response.value, result: request.response.result ?? {} });
+			history.push({ request: historyRequest, response: toChatHistoryContent(request.response.response.value), result: request.response.result ?? {} });
 		}
 
 		return history;

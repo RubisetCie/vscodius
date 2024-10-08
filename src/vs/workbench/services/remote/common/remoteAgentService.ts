@@ -3,13 +3,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
-import { RemoteAgentConnectionContext, IRemoteAgentEnvironment } from 'vs/platform/remote/common/remoteAgentEnvironment';
-import { IChannel, IServerChannel } from 'vs/base/parts/ipc/common/ipc';
-import { IDiagnosticInfoOptions, IDiagnosticInfo } from 'vs/platform/diagnostics/common/diagnostics';
-import { Event } from 'vs/base/common/event';
-import { PersistentConnectionEvent } from 'vs/platform/remote/common/remoteAgentConnection';
-import { timeout } from 'vs/base/common/async';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { RemoteAgentConnectionContext, IRemoteAgentEnvironment } from '../../../../platform/remote/common/remoteAgentEnvironment.js';
+import { IChannel, IServerChannel } from '../../../../base/parts/ipc/common/ipc.js';
+import { IDiagnosticInfoOptions, IDiagnosticInfo } from '../../../../platform/diagnostics/common/diagnostics.js';
+import { Event } from '../../../../base/common/event.js';
+import { PersistentConnectionEvent } from '../../../../platform/remote/common/remoteAgentConnection.js';
+import { timeout } from '../../../../base/common/async.js';
 
 export const IRemoteAgentService = createDecorator<IRemoteAgentService>('remoteAgentService');
 

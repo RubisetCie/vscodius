@@ -8,8 +8,6 @@ import { DiagnosticLanguage } from '../configuration/languageDescription';
 import * as arrays from '../utils/arrays';
 import { Disposable } from '../utils/dispose';
 import { ResourceMap } from '../utils/resourceMap';
-// @ts-expect-error until ts 5.6
-import { DiagnosticPerformanceData as TsDiagnosticPerformanceData } from '../tsServer/protocol/protocol';
 
 function diagnosticsEquals(a: vscode.Diagnostic, b: vscode.Diagnostic): boolean {
 	if (a === b) {

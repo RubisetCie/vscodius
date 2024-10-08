@@ -6,13 +6,13 @@
 import assert from 'assert';
 import type { IBuffer, Terminal } from '@xterm/xterm';
 import { useFakeTimers } from 'sinon';
-import { Emitter } from 'vs/base/common/event';
-import { CharPredictState, IPrediction, PredictionStats, TypeAheadAddon } from 'vs/workbench/contrib/terminalContrib/typeAhead/browser/terminalTypeAheadAddon';
-import { IBeforeProcessDataEvent, ITerminalProcessManager } from 'vs/workbench/contrib/terminal/common/terminal';
-import { TestConfigurationService } from 'vs/platform/configuration/test/common/testConfigurationService';
-import { ensureNoDisposablesAreLeakedInTestSuite } from 'vs/base/test/common/utils';
-import { DisposableStore } from 'vs/base/common/lifecycle';
-import { DEFAULT_LOCAL_ECHO_EXCLUDE, type ITerminalTypeAheadConfiguration } from 'vs/workbench/contrib/terminalContrib/typeAhead/common/terminalTypeAheadConfiguration';
+import { Emitter } from '../../../../../../base/common/event.js';
+import { CharPredictState, IPrediction, PredictionStats, TypeAheadAddon } from '../../browser/terminalTypeAheadAddon.js';
+import { IBeforeProcessDataEvent, ITerminalProcessManager } from '../../../../terminal/common/terminal.js';
+import { TestConfigurationService } from '../../../../../../platform/configuration/test/common/testConfigurationService.js';
+import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../../../base/test/common/utils.js';
+import { DisposableStore } from '../../../../../../base/common/lifecycle.js';
+import { DEFAULT_LOCAL_ECHO_EXCLUDE, type ITerminalTypeAheadConfiguration } from '../../common/terminalTypeAheadConfiguration.js';
 
 const CSI = `\x1b[`;
 

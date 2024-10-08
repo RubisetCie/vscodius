@@ -3,16 +3,16 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { InstantiationType, registerSingleton } from 'vs/platform/instantiation/common/extensions';
-import { IInstantiationService, createDecorator } from 'vs/platform/instantiation/common/instantiation';
-import { CancellationToken } from 'vs/base/common/cancellation';
-import { Emitter, Event } from 'vs/base/common/event';
-import { IDisposable } from 'vs/base/common/lifecycle';
-import { LineRange } from 'vs/editor/common/core/lineRange';
-import { IDocumentDiff, IDocumentDiffProvider, IDocumentDiffProviderOptions } from 'vs/editor/common/diff/documentDiffProvider';
-import { DetailedLineRangeMapping, RangeMapping } from 'vs/editor/common/diff/rangeMapping';
-import { ITextModel } from 'vs/editor/common/model';
-import { DiffAlgorithmName, IEditorWorkerService } from 'vs/editor/common/services/editorWorker';
+import { InstantiationType, registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
+import { IInstantiationService, createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { CancellationToken } from '../../../../base/common/cancellation.js';
+import { Emitter, Event } from '../../../../base/common/event.js';
+import { IDisposable } from '../../../../base/common/lifecycle.js';
+import { LineRange } from '../../../common/core/lineRange.js';
+import { IDocumentDiff, IDocumentDiffProvider, IDocumentDiffProviderOptions } from '../../../common/diff/documentDiffProvider.js';
+import { DetailedLineRangeMapping, RangeMapping } from '../../../common/diff/rangeMapping.js';
+import { ITextModel } from '../../../common/model.js';
+import { DiffAlgorithmName, IEditorWorkerService } from '../../../common/services/editorWorker.js';
 
 export const IDiffProviderFactoryService = createDecorator<IDiffProviderFactoryService>('diffProviderFactoryService');
 

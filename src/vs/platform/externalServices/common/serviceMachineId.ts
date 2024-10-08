@@ -3,8 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { generateUuid } from 'vs/base/common/uuid';
-import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
+import { generateUuid } from '../../../base/common/uuid.js';
+import { IStorageService, StorageScope, StorageTarget } from '../../storage/common/storage.js';
 
 export async function getServiceMachineId(storageService: IStorageService | undefined): Promise<string> {
 	let uuid: string | null = storageService ? storageService.get('storage.serviceMachineId', StorageScope.APPLICATION) || null : null;

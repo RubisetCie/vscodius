@@ -3,22 +3,22 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { URI, UriComponents } from 'vs/base/common/uri';
-import { localize, localize2 } from 'vs/nls';
-import { Action2, IAction2Options, MenuId, MenuRegistry } from 'vs/platform/actions/common/actions';
-import { ContextKeyExpr } from 'vs/platform/contextkey/common/contextkey';
-import { ServicesAccessor } from 'vs/platform/instantiation/common/instantiation';
-import { KeybindingWeight } from 'vs/platform/keybinding/common/keybindingsRegistry';
-import { getNotebookEditorFromEditorPane, IActiveNotebookEditor, ICellViewModel, cellRangeToViewCells, ICellOutputViewModel } from 'vs/workbench/contrib/notebook/browser/notebookBrowser';
-import { INTERACTIVE_WINDOW_IS_ACTIVE_EDITOR, NOTEBOOK_EDITOR_EDITABLE, NOTEBOOK_EDITOR_FOCUSED, NOTEBOOK_IS_ACTIVE_EDITOR, NOTEBOOK_KERNEL_COUNT, NOTEBOOK_KERNEL_SOURCE_COUNT } from 'vs/workbench/contrib/notebook/common/notebookContextKeys';
-import { ICellRange, isICellRange } from 'vs/workbench/contrib/notebook/common/notebookRange';
-import { IEditorService } from 'vs/workbench/services/editor/common/editorService';
-import { INotebookEditorService } from 'vs/workbench/contrib/notebook/browser/services/notebookEditorService';
-import { TypeConstraint } from 'vs/base/common/types';
-import { IJSONSchema } from 'vs/base/common/jsonSchema';
-import { MarshalledId } from 'vs/base/common/marshallingIds';
-import { ICodeEditor } from 'vs/editor/browser/editorBrowser';
-import { isEqual } from 'vs/base/common/resources';
+import { URI, UriComponents } from '../../../../../base/common/uri.js';
+import { localize, localize2 } from '../../../../../nls.js';
+import { Action2, IAction2Options, MenuId, MenuRegistry } from '../../../../../platform/actions/common/actions.js';
+import { ContextKeyExpr } from '../../../../../platform/contextkey/common/contextkey.js';
+import { ServicesAccessor } from '../../../../../platform/instantiation/common/instantiation.js';
+import { KeybindingWeight } from '../../../../../platform/keybinding/common/keybindingsRegistry.js';
+import { getNotebookEditorFromEditorPane, IActiveNotebookEditor, ICellViewModel, cellRangeToViewCells, ICellOutputViewModel } from '../notebookBrowser.js';
+import { IS_COMPOSITE_NOTEBOOK, NOTEBOOK_EDITOR_EDITABLE, NOTEBOOK_EDITOR_FOCUSED, NOTEBOOK_IS_ACTIVE_EDITOR, NOTEBOOK_KERNEL_COUNT, NOTEBOOK_KERNEL_SOURCE_COUNT } from '../../common/notebookContextKeys.js';
+import { ICellRange, isICellRange } from '../../common/notebookRange.js';
+import { IEditorService } from '../../../../services/editor/common/editorService.js';
+import { INotebookEditorService } from '../services/notebookEditorService.js';
+import { TypeConstraint } from '../../../../../base/common/types.js';
+import { IJSONSchema } from '../../../../../base/common/jsonSchema.js';
+import { MarshalledId } from '../../../../../base/common/marshallingIds.js';
+import { ICodeEditor } from '../../../../../editor/browser/editorBrowser.js';
+import { isEqual } from '../../../../../base/common/resources.js';
 
 // Kernel Command
 export const SELECT_KERNEL_ID = '_notebook.selectKernel';
@@ -132,7 +132,7 @@ export abstract class NotebookAction extends Action2 {
 			desc.f1 = false;
 			const f1Menu = {
 				id: MenuId.CommandPalette,
-				when: ContextKeyExpr.or(NOTEBOOK_IS_ACTIVE_EDITOR, INTERACTIVE_WINDOW_IS_ACTIVE_EDITOR)
+				when: ContextKeyExpr.or(NOTEBOOK_IS_ACTIVE_EDITOR, IS_COMPOSITE_NOTEBOOK)
 			};
 
 			if (!desc.menu) {
@@ -207,10 +207,6 @@ export abstract class NotebookMultiCellAction extends Action2 {
 
 	abstract runWithContext(accessor: ServicesAccessor, context: INotebookCommandContext | INotebookCellToolbarActionContext): Promise<void>;
 
-	private isCellToolbarContext(context?: unknown): context is INotebookCellToolbarActionContext {
-		return !!context && !!(context as INotebookActionContext).notebookEditor && (context as any).$mid === MarshalledId.NotebookCellActionContext;
-	}
-
 	/**
 	 * The action/command args are resolved in following order
 	 * `run(accessor, cellToolbarContext)` from cell toolbar
@@ -219,14 +215,13 @@ export abstract class NotebookMultiCellAction extends Action2 {
 	 */
 	async run(accessor: ServicesAccessor, ...additionalArgs: any[]): Promise<void> {
 		const context = additionalArgs[0];
-		const isFromCellToolbar = this.isCellToolbarContext(context);
 
+		const isFromCellToolbar = isCellToolbarContext(context);
 		if (isFromCellToolbar) {
 			return this.runWithContext(accessor, context);
 		}
 
 		// handle parsed args
-
 		const parsedArgs = this.parseArgs(accessor, ...additionalArgs);
 		if (parsedArgs) {
 			return this.runWithContext(accessor, parsedArgs);
@@ -281,6 +276,10 @@ interface IMultiCellArgs {
 	ranges: ICellRange[];
 	document?: URI;
 	autoReveal?: boolean;
+}
+
+function isCellToolbarContext(context?: unknown): context is INotebookCellToolbarActionContext {
+	return !!context && !!(context as INotebookActionContext).notebookEditor && (context as any).$mid === MarshalledId.NotebookCellActionContext;
 }
 
 function isMultiCellArgs(arg: unknown): arg is IMultiCellArgs {

@@ -3,9 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { sha1Hex } from 'vs/base/browser/hash';
-import { getRemotes } from 'vs/platform/extensionManagement/common/configRemotes';
+import { sha1Hex } from '../../../../base/browser/hash.js';
+import { getHashedRemotesFromConfig as baseGetHashedRemotesFromConfig } from '../common/workspaceTags.js';
 
 export async function getHashedRemotesFromConfig(text: string, stripEndingDotGit: boolean = false): Promise<string[]> {
-	return Promise.all(getRemotes(text, stripEndingDotGit).map(remote => sha1Hex(remote)));
+	return baseGetHashedRemotesFromConfig(text, stripEndingDotGit, remote => sha1Hex(remote));
 }

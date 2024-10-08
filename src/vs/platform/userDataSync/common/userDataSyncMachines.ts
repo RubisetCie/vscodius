@@ -3,16 +3,16 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { Emitter, Event } from 'vs/base/common/event';
-import { Disposable } from 'vs/base/common/lifecycle';
-import { isAndroid, isChrome, isEdge, isFirefox, isSafari, isWeb, Platform, platform, PlatformToString } from 'vs/base/common/platform';
-import { escapeRegExpCharacters } from 'vs/base/common/strings';
-import { localize } from 'vs/nls';
-import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
-import { IProductService } from 'vs/platform/product/common/productService';
-import { getServiceMachineId } from 'vs/platform/externalServices/common/serviceMachineId';
-import { IStorageService, StorageScope, StorageTarget } from 'vs/platform/storage/common/storage';
-import { IUserData, IUserDataManifest, IUserDataSyncLogService, IUserDataSyncStoreService } from 'vs/platform/userDataSync/common/userDataSync';
+import { Emitter, Event } from '../../../base/common/event.js';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { isAndroid, isChrome, isEdge, isFirefox, isSafari, isWeb, Platform, platform, PlatformToString } from '../../../base/common/platform.js';
+import { escapeRegExpCharacters } from '../../../base/common/strings.js';
+import { localize } from '../../../nls.js';
+import { createDecorator } from '../../instantiation/common/instantiation.js';
+import { IProductService } from '../../product/common/productService.js';
+import { getServiceMachineId } from '../../externalServices/common/serviceMachineId.js';
+import { IStorageService, StorageScope, StorageTarget } from '../../storage/common/storage.js';
+import { IUserData, IUserDataManifest, IUserDataSyncLogService, IUserDataSyncStoreService } from './userDataSync.js';
 
 export interface IMachineData {
 	id: string;

@@ -3,11 +3,11 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { IStringDictionary } from 'vs/base/common/collections';
-import { createDecorator } from 'vs/platform/instantiation/common/instantiation';
-import { IWorkspaceFolder } from 'vs/platform/workspace/common/workspace';
-import { ConfigurationTarget } from 'vs/platform/configuration/common/configuration';
-import { IProcessEnvironment } from 'vs/base/common/platform';
+import { IStringDictionary } from '../../../../base/common/collections.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import { IWorkspaceFolder } from '../../../../platform/workspace/common/workspace.js';
+import { ConfigurationTarget } from '../../../../platform/configuration/common/configuration.js';
+import { IProcessEnvironment } from '../../../../base/common/platform.js';
 
 export const IConfigurationResolverService = createDecorator<IConfigurationResolverService>('configurationResolverService');
 

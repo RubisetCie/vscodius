@@ -4,20 +4,20 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { BrowserWindow, Details, MessageChannelMain, app, utilityProcess, UtilityProcess as ElectronUtilityProcess, ForkOptions } from 'electron';
-import { Disposable } from 'vs/base/common/lifecycle';
-import { Emitter, Event } from 'vs/base/common/event';
-import { ILogService } from 'vs/platform/log/common/log';
+import { Disposable } from '../../../base/common/lifecycle.js';
+import { Emitter, Event } from '../../../base/common/event.js';
+import { ILogService } from '../../log/common/log.js';
 import { StringDecoder } from 'string_decoder';
-import { timeout } from 'vs/base/common/async';
-import { FileAccess } from 'vs/base/common/network';
-import { IWindowsMainService } from 'vs/platform/windows/electron-main/windows';
-import Severity from 'vs/base/common/severity';
-import { ILifecycleMainService } from 'vs/platform/lifecycle/electron-main/lifecycleMainService';
-import { removeDangerousEnvVariables } from 'vs/base/common/processes';
-import { deepClone } from 'vs/base/common/objects';
-import { isWindows } from 'vs/base/common/platform';
-import { isUNCAccessRestrictionsDisabled, getUNCHostAllowlist } from 'vs/base/node/unc';
-import { upcast } from 'vs/base/common/types';
+import { timeout } from '../../../base/common/async.js';
+import { FileAccess } from '../../../base/common/network.js';
+import { IWindowsMainService } from '../../windows/electron-main/windows.js';
+import Severity from '../../../base/common/severity.js';
+import { ILifecycleMainService } from '../../lifecycle/electron-main/lifecycleMainService.js';
+import { removeDangerousEnvVariables } from '../../../base/common/processes.js';
+import { deepClone } from '../../../base/common/objects.js';
+import { isWindows } from '../../../base/common/platform.js';
+import { isUNCAccessRestrictionsDisabled, getUNCHostAllowlist } from '../../../base/node/unc.js';
+import { upcast } from '../../../base/common/types.js';
 
 export interface IUtilityProcessConfiguration {
 
@@ -70,12 +70,6 @@ export interface IUtilityProcessConfiguration {
 	 * process exits.
 	 */
 	readonly parentLifecycleBound?: number;
-
-	/**
-	 * Allow the utility process to force heap allocations inside
-	 * the V8 sandbox.
-	 */
-	readonly forceAllocationsToV8Sandbox?: boolean;
 
 	/**
 	 * HTTP 401 and 407 requests created via electron:net module
@@ -240,7 +234,6 @@ export class UtilityProcess extends Disposable {
 		const args = this.configuration.args ?? [];
 		const execArgv = this.configuration.execArgv ?? [];
 		const allowLoadingUnsignedLibraries = this.configuration.allowLoadingUnsignedLibraries;
-		const forceAllocationsToV8Sandbox = this.configuration.forceAllocationsToV8Sandbox;
 		const respondToAuthRequestsFromMainProcess = this.configuration.respondToAuthRequestsFromMainProcess;
 		const stdio = 'pipe';
 		const env = this.createEnv(configuration);
@@ -249,14 +242,12 @@ export class UtilityProcess extends Disposable {
 
 		// Fork utility process
 		this.process = utilityProcess.fork(modulePath, args, upcast<ForkOptions, ForkOptions & {
-			forceAllocationsToV8Sandbox?: boolean;
 			respondToAuthRequestsFromMainProcess?: boolean;
 		}>({
 			serviceName,
 			env,
 			execArgv,
 			allowLoadingUnsignedLibraries,
-			forceAllocationsToV8Sandbox,
 			respondToAuthRequestsFromMainProcess,
 			stdio
 		}));
@@ -334,6 +325,11 @@ export class UtilityProcess extends Disposable {
 
 			// Cleanup
 			this.onDidExitOrCrashOrKill();
+		}));
+
+		// V8 Error
+		this._register(Event.fromNodeEventEmitter(process, 'error', (type, location) => ({ type, location }))(({ type, location }) => {
+			this.log(`crashed due to ${type} from V8 at ${location}`, Severity.Info);
 		}));
 
 		// Child process gone
