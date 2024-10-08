@@ -10,7 +10,7 @@ on:
         description: 'Node.js version'
         required: true
         default: '20'
-#      build_esm:
+#      build_amd:
 #        description: 'Enable Native ECMAScript modules'
 #        type: boolean
 #        required: true
@@ -22,20 +22,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '${{github.event.inputs.node_version}}'
-      - name: Installing libraries
+      - name: Libraries
         run: sudo apt update && sudo apt install build-essential libx11-dev libxkbfile-dev libsecret-1-dev libkrb5-dev python-is-python3 fakeroot rpm
-      - name: Installing node-gyp
-        run: yarn global add node-gyp
 #      - name: Environment
-#        if: ${{github.event.inputs.build_esm == 'true'}}
-#        run: export VSCODE_BUILD_ESM='true'
+#        if: ${{github.event.inputs.build_amd == 'true'}}
+#        run: export VSCODE_BUILD_AMD='true'
       - name: Dependencies
-        run: yarn
+        run: npm install
       - name: Packaging
-        run: yarn gulp vscode-linux-${{github.event.inputs.pkg_arch}}
+        run: npm run gulp vscode-linux-${{github.event.inputs.pkg_arch}}
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

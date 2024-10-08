@@ -14,7 +14,7 @@ on:
         description: 'Node.js version'
         required: true
         default: '20'
-#      build_esm:
+#      build_amd:
 #        description: 'Enable Native ECMAScript modules'
 #        type: boolean
 #        required: true
@@ -31,24 +31,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '${{github.event.inputs.node_version}}'
       - name: Set up Python 3
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-      - name: Installing Yarn
-        run: npm install -g yarn
-      - name: Installing node-gyp
-        run: yarn global add node-gyp
 #      - name: Environment
-#        if: ${{github.event.inputs.build_esm == 'true'}}
-#        run: set VSCODE_BUILD_ESM="true"
+#        if: ${{github.event.inputs.build_amd == 'true'}}
+#        run: set VSCODE_BUILD_AMD="true"
       - name: Dependencies
-        run: yarn
+        run: npm install
       - name: Packaging
-        run: yarn gulp vscode-win32-${{github.event.inputs.pkg_arch}}
+        run: npm run gulp vscode-win32-${{github.event.inputs.pkg_arch}}
       - name: Patch resources
         if: ${{github.event.inputs.patch_resources == 'true'}}
         run: node build\win32-resources-patch ..\VSCode-win32-${{github.event.inputs.pkg_arch}}/VSCodius.exe

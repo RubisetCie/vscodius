@@ -18,7 +18,7 @@ on:
         description: 'Node.js version'
         required: true
         default: '20'
-#      build_esm:
+#      build_amd:
 #        description: 'Enable Native ECMAScript modules'
 #        type: boolean
 #        required: true
@@ -43,8 +43,8 @@ jobs:
         with:
           python-version: '3.x'
 #      - name: Environment
-#        if: ${{github.event.inputs.build_esm == 'true'}}
-#        run: set VSCODE_BUILD_ESM="true"
+#        if: ${{github.event.inputs.build_amd == 'true'}}
+#        run: set VSCODE_BUILD_AMD="true"
       - name: Dependencies
         run: npm install
       - name: Packaging
