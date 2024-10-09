@@ -12,7 +12,6 @@ In order to build *VSCodius*, you'll need the necessary tools:
 
 - [Git](https://git-scm.com/)
 - [Node.js](https://nodejs.org/)
-- [Yarn](https://classic.yarnpkg.com/)
 - [Python](https://www.python.org/downloads/) (required for `node-gyp`)
 - [Cargo](https://www.rust-lang.org/tools/install) (optional: command-line tools)
 - A C/C++ compiler tool chain for your platform:
@@ -37,16 +36,16 @@ In order to build *VSCodius*, you'll need the necessary tools:
 
 ## Build
 
-Install and build all of the dependencies using `yarn`:
+Install and build all of the dependencies using `npm`:
 
 ```
-yarn
+npm install
 ```
 
 Then to build from a terminal:
 
 ```
-yarn compile
+npm run compile
 ```
 
 The incremental builder will do an initial full build and will display a message that includes the phrase "Finished compilation" once the initial build is complete.
@@ -87,7 +86,7 @@ These `gulp` tasks are available:
 - `vscode-[platform]`: Builds a packaged version for `[platform]`.
 - `vscode-[platform]-min`: Builds a packaged and minified version for `[platform]`.
 
-Run `gulp` via `yarn` to avoid potential out of memory issues, for example: `yarn gulp vscode-linux-x64`
+Run `gulp` via `npm` to avoid potential out of memory issues, for example: `npm run gulp vscode-linux-x64`
 
 ### Command-line tools
 
@@ -103,16 +102,16 @@ To package for Linux, after having build both the [main package](#main) and the 
 
 ```
 # Debian...
-yarn gulp vscode-linux-x64-prepare-deb
-yarn gulp vscode-linux-x64-build-deb
+npm run gulp vscode-linux-x64-prepare-deb
+npm run gulp vscode-linux-x64-build-deb
 
 # Red Hat...
-yarn gulp vscode-linux-x64-prepare-rpm
-yarn gulp vscode-linux-x64-build-rpm
+npm run gulp vscode-linux-x64-prepare-rpm
+npm run gulp vscode-linux-x64-build-rpm
 
 # Snap...
-yarn gulp vscode-linux-x64-prepare-snap
-yarn gulp vscode-linux-x64-build-snap
+npm run gulp vscode-linux-x64-prepare-snap
+npm run gulp vscode-linux-x64-build-snap
 ```
 
 This will output files in the ".build" sub-directory.
