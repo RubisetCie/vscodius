@@ -287,7 +287,7 @@ export class MainThreadAuthentication extends Disposable implements MainThreadAu
 		const session = await this.doGetSession(providerId, scopes, extensionId, extensionName, options);
 
 		if (session) {
-			this.authenticationUsageService.addAccountUsage(providerId, session.account.label, extensionId, extensionName);
+			this.authenticationUsageService.addAccountUsage(providerId, session.account.label, scopes, extensionId, extensionName);
 		}
 
 		return session;

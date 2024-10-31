@@ -4,9 +4,9 @@
 			"component": {
 				"type": "git",
 				"git": {
-					"name": "RedCMD/YAML-Syntax-Highlighter",
-					"repositoryUrl": "https://github.com/RedCMD/YAML-Syntax-Highlighter",
-					"commitHash": "71a88711ec184b7dde5240c8f150ad3c2dbbd5f1"
+					"name": "textmate/yaml.tmbundle",
+					"repositoryUrl": "https://github.com/textmate/yaml.tmbundle",
+					"commitHash": "e54ceae3b719506dba7e481a77cea4a8b576ae46"
 				}
 			},
 			"licenseDetail": [
@@ -29,8 +29,8 @@
 				"LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,",
 				"OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
 			],
-			"license": "MIT",
-			"version": "1.1.2"
+			"license": "TextMate Bundle License",
+			"version": "0.0.0"
 		}
 	],
 	"version": 1

@@ -120,6 +120,8 @@ export class SettingsEditor2 extends EditorPane {
 		'@tag:sync',
 		'@tag:usesOnlineServices',
 		'@tag:accessibility',
+		'@tag:preview',
+		'@tag:experimental',
 		`@${ID_SETTING_TAG}`,
 		`@${EXTENSION_SETTING_TAG}`,
 		`@${FEATURE_SETTING_TAG}scm`,

@@ -79,7 +79,12 @@ suite('Buffer Content Tracker', () => {
 			capabilities.add(TerminalCapability.NaiveCwdDetection, null!);
 		}
 		const TerminalCtor = (await importAMDNodeModule<typeof import('@xterm/xterm')>('@xterm/xterm', 'lib/xterm.js')).Terminal;
-		xterm = store.add(instantiationService.createInstance(XtermTerminal, TerminalCtor, 80, 30, { getBackgroundColor: () => undefined }, capabilities, ''));
+		xterm = store.add(instantiationService.createInstance(XtermTerminal, TerminalCtor, {
+			cols: 80,
+			rows: 30,
+			xtermColorProvider: { getBackgroundColor: () => undefined },
+			capabilities,
+		}));
 		const container = document.createElement('div');
 		xterm.raw.open(container);
 		configurationService = new TestConfigurationService({ terminal: { integrated: { tabs: { separator: ' - ', title: '${cwd}', description: '${cwd}' } } } });

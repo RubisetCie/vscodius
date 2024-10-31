@@ -12,7 +12,7 @@ import { ICommandService } from '../../../../platform/commands/common/commands.j
 import { ContextKeyExpr, ContextKeyExpression, IContextKeyService, RawContextKey } from '../../../../platform/contextkey/common/contextkey.js';
 import { Disposable } from '../../../../base/common/lifecycle.js';
 import { IUserDataSyncEnablementService } from '../../../../platform/userDataSync/common/userDataSync.js';
-import { IExtensionDescription } from '../../../../platform/extensions/common/extensions.js';
+import { ExtensionIdentifier, IExtensionDescription } from '../../../../platform/extensions/common/extensions.js';
 import { URI } from '../../../../base/common/uri.js';
 import { joinPath } from '../../../../base/common/resources.js';
 import { FileAccess } from '../../../../base/common/network.js';
@@ -32,6 +32,7 @@ import { checkGlobFileExists } from '../../../services/extensions/common/workspa
 import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
 import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
 import { DefaultIconPath } from '../../../services/extensionManagement/common/extensionManagement.js';
+import { IProductService } from '../../../../platform/product/common/productService.js';
 
 export const HasMultipleNewFileEntries = new RawContextKey<boolean>('hasMultipleNewFileEntries', false);
 
@@ -57,6 +58,7 @@ export interface IWalkthrough {
 	icon:
 	| { type: 'icon'; icon: ThemeIcon }
 	| { type: 'image'; path: string };
+	walkthroughPageTitle: string;
 }
 
 export type IWalkthroughLoose = Omit<IWalkthrough, 'steps'> & { steps: (Omit<IWalkthroughStep, 'description'> & { description: string })[] };
@@ -150,6 +152,7 @@ export class WalkthroughsService extends Disposable implements IWalkthroughsServ
 		@IExtensionManagementService private readonly extensionManagementService: IExtensionManagementService,
 		@IHostService private readonly hostService: IHostService,
 		@IViewsService private readonly viewsService: IViewsService,
+		@IProductService private readonly productService: IProductService
 	) {
 		super();
 
@@ -223,6 +226,15 @@ export class WalkthroughsService extends Disposable implements IWalkthroughsServ
 		});
 
 		this._register(this.extensionManagementService.onDidInstallExtensions((result) => {
+
+			if (result.some(e => ExtensionIdentifier.equals(this.productService.gitHubEntitlement?.extensionId, e.identifier.id) && !e?.context?.[EXTENSION_INSTALL_SKIP_WALKTHROUGH_CONTEXT])) {
+				result.forEach(e => {
+					this.sessionInstalledExtensions.add(e.identifier.id.toLowerCase());
+					this.progressByEvent(`extensionInstalled:${e.identifier.id.toLowerCase()}`);
+				});
+				return;
+			}
+
 			for (const e of result) {
 				const skipWalkthrough = e?.context?.[EXTENSION_INSTALL_SKIP_WALKTHROUGH_CONTEXT] || e?.context?.[EXTENSION_INSTALL_DEP_PACK_CONTEXT];
 				// If the window had last focus and the install didn't specify to skip the walkthrough
@@ -385,6 +397,7 @@ export class WalkthroughsService extends Disposable implements IWalkthroughsServ
 				isFeatured,
 				source: extension.displayName ?? extension.name,
 				order: 0,
+				walkthroughPageTitle: extension.displayName ?? extension.name,
 				steps,
 				icon: {
 					type: 'image',

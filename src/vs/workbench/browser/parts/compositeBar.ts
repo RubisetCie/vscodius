@@ -267,6 +267,10 @@ export class CompositeBar extends Widget implements ICompositeBar {
 		return this.model.pinnedItems;
 	}
 
+	getPinnedCompositeIds(): string[] {
+		return this.getPinnedComposites().map(c => c.id);
+	}
+
 	getVisibleComposites(): ICompositeBarItem[] {
 		return this.model.visibleItems;
 	}
@@ -439,7 +443,10 @@ export class CompositeBar extends Widget implements ICompositeBar {
 		// Case: we closed the default composite
 		// Solv: we open the next visible composite from top
 		else {
-			this.options.openComposite(this.visibleComposites.filter(cid => cid !== compositeId)[0]);
+			const visibleComposite = this.visibleComposites.find(cid => cid !== compositeId);
+			if (visibleComposite) {
+				this.options.openComposite(visibleComposite);
+			}
 		}
 	}
 
@@ -651,19 +658,22 @@ export class CompositeBar extends Widget implements ICompositeBar {
 
 	getContextMenuActions(e?: MouseEvent | GestureEvent): IAction[] {
 		const actions: IAction[] = this.model.visibleItems
-			.map(({ id, name, activityAction }) => (toAction({
-				id,
-				label: this.getAction(id).label || name || id,
-				checked: this.isPinned(id),
-				enabled: activityAction.enabled,
-				run: () => {
-					if (this.isPinned(id)) {
-						this.unpin(id);
-					} else {
-						this.pin(id, true);
+			.map(({ id, name, activityAction }) => {
+				const isPinned = this.isPinned(id);
+				return toAction({
+					id,
+					label: this.getAction(id).label || name || id,
+					checked: isPinned,
+					enabled: activityAction.enabled && (!isPinned || this.getPinnedCompositeIds().length > 1),
+					run: () => {
+						if (this.isPinned(id)) {
+							this.unpin(id);
+						} else {
+							this.pin(id, true);
+						}
 					}
-				}
-			})));
+				});
+			});
 
 		this.options.fillExtraContextMenuActions(actions, e);
 

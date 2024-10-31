@@ -5,7 +5,7 @@
 
 import * as fs from 'fs';
 import { exec } from 'child_process';
-import { app, BrowserWindow, clipboard, Display, Menu, MessageBoxOptions, MessageBoxReturnValue, OpenDialogOptions, OpenDialogReturnValue, powerMonitor, SaveDialogOptions, SaveDialogReturnValue, screen, shell, webContents } from 'electron';
+import { app, BrowserWindow, clipboard, Display, Menu, MessageBoxOptions, MessageBoxReturnValue, OpenDevToolsOptions, OpenDialogOptions, OpenDialogReturnValue, powerMonitor, SaveDialogOptions, SaveDialogReturnValue, screen, shell, webContents } from 'electron';
 import { arch, cpus, freemem, loadavg, platform, release, totalmem, type } from 'os';
 import { promisify } from 'util';
 import { memoize } from '../../../base/common/decorators.js';
@@ -25,16 +25,16 @@ import { ISerializableCommandAction } from '../../action/common/action.js';
 import { INativeOpenDialogOptions } from '../../dialogs/common/dialogs.js';
 import { IDialogMainService } from '../../dialogs/electron-main/dialogMainService.js';
 import { IEnvironmentMainService } from '../../environment/electron-main/environmentMainService.js';
-import { createDecorator } from '../../instantiation/common/instantiation.js';
+import { createDecorator, IInstantiationService } from '../../instantiation/common/instantiation.js';
 import { ILifecycleMainService, IRelaunchOptions } from '../../lifecycle/electron-main/lifecycleMainService.js';
 import { ILogService } from '../../log/common/log.js';
 import { ICommonNativeHostService, INativeHostOptions, IOSProperties, IOSStatistics } from '../common/native.js';
 import { IProductService } from '../../product/common/productService.js';
 import { IPartsSplash } from '../../theme/common/themeService.js';
 import { IThemeMainService } from '../../theme/electron-main/themeMainService.js';
-import { ICodeWindow } from '../../window/electron-main/window.js';
-import { IColorScheme, IOpenedAuxiliaryWindow, IOpenedMainWindow, IOpenEmptyWindowOptions, IOpenWindowOptions, IPoint, IRectangle, IWindowOpenable, useWindowControlsOverlay } from '../../window/common/window.js';
-import { IWindowsMainService, OpenContext } from '../../windows/electron-main/windows.js';
+import { defaultWindowState, ICodeWindow } from '../../window/electron-main/window.js';
+import { IColorScheme, IOpenedAuxiliaryWindow, IOpenedMainWindow, IOpenEmptyWindowOptions, IOpenWindowOptions, IPoint, IRectangle, IWindowOpenable } from '../../window/common/window.js';
+import { defaultBrowserWindowOptions, IWindowsMainService, OpenContext } from '../../windows/electron-main/windows.js';
 import { isWorkspaceIdentifier, toWorkspaceIdentifier } from '../../workspace/common/workspace.js';
 import { IWorkspacesManagementMainService } from '../../workspaces/electron-main/workspacesManagementMainService.js';
 import { VSBuffer } from '../../../base/common/buffer.js';
@@ -69,7 +69,8 @@ export class NativeHostMainService extends Disposable implements INativeHostMain
 		@IWorkspacesManagementMainService private readonly workspacesManagementMainService: IWorkspacesManagementMainService,
 		@IConfigurationService private readonly configurationService: IConfigurationService,
 		@IRequestService private readonly requestService: IRequestService,
-		@IProxyAuthService private readonly proxyAuthService: IProxyAuthService
+		@IProxyAuthService private readonly proxyAuthService: IProxyAuthService,
+		@IInstantiationService private readonly instantiationService: IInstantiationService
 	) {
 		super();
 	}
@@ -541,10 +542,17 @@ export class NativeHostMainService extends Disposable implements INativeHostMain
 				}
 			});
 
-			res.stderr?.once('data', (data: Buffer) => {
-				this.logService.error(`Error openening external URL '${url}' using browser '${configuredBrowser}': ${data.toString()}`);
-				return shell.openExternal(url);
-			});
+			if (!isWindows) {
+				// On Linux/macOS, listen to stderr and treat that as failure
+				// for opening the browser to fallback to the default.
+				// On Windows, unfortunately PowerShell seems to always write
+				// to stderr so we cannot use it there
+				// (see also https://github.com/microsoft/vscode/issues/230636)
+				res.stderr?.once('data', (data: Buffer) => {
+					this.logService.error(`Error openening external URL '${url}' using browser '${configuredBrowser}': ${data.toString()}`);
+					return shell.openExternal(url);
+				});
+			}
 		} catch (error) {
 			this.logService.error(`Unable to open external URL '${url}' using browser '${configuredBrowser}' due to ${error}.`);
 			return shell.openExternal(url);
@@ -675,6 +683,17 @@ export class NativeHostMainService extends Disposable implements INativeHostMain
 	// WSL
 	async hasWSLFeatureInstalled(): Promise<boolean> {
 		return isWindows && hasWSLFeatureInstalled();
+	}
+
+	//#endregion
+
+
+	//#region Screenshots
+
+	async getScreenshot(windowId: number | undefined, options?: INativeHostOptions): Promise<ArrayBufferLike | undefined> {
+		const window = this.windowById(options?.targetWindowId, windowId);
+		const captured = await window?.win?.webContents.capturePage();
+		return captured?.toJPEG(95);
 	}
 
 	//#endregion
@@ -869,27 +888,51 @@ export class NativeHostMainService extends Disposable implements INativeHostMain
 
 	//#region Development
 
-	async openDevTools(windowId: number | undefined, options?: INativeHostOptions): Promise<void> {
-		const window = this.windowById(options?.targetWindowId, windowId);
+	private gpuInfoWindowId: number | undefined;
 
-		let mode: 'bottom' | undefined = undefined;
-		if (isLinux && useWindowControlsOverlay(this.configurationService)) {
-			mode = 'bottom'; // TODO@bpasero WCO and devtools collide with default option 'right'
-		}
-		window?.win?.webContents.openDevTools(mode ? { mode } : undefined);
+	async openDevTools(windowId: number | undefined, options?: Partial<OpenDevToolsOptions> & INativeHostOptions): Promise<void> {
+		const window = this.windowById(options?.targetWindowId, windowId);
+		window?.win?.webContents.openDevTools(options?.mode ? { mode: options.mode, activate: options.activate } : undefined);
 	}
 
 	async toggleDevTools(windowId: number | undefined, options?: INativeHostOptions): Promise<void> {
 		const window = this.windowById(options?.targetWindowId, windowId);
-		const webContents = window?.win?.webContents;
-		if (!webContents) {
+		window?.win?.webContents.toggleDevTools();
+	}
+
+	async openGPUInfoWindow(windowId: number | undefined): Promise<void> {
+		const parentWindow = this.codeWindowById(windowId);
+		if (!parentWindow) {
 			return;
 		}
 
-		if (isLinux && useWindowControlsOverlay(this.configurationService) && !webContents.isDevToolsOpened()) {
-			webContents.openDevTools({ mode: 'bottom' }); // TODO@bpasero WCO and devtools collide with default option 'right'
-		} else {
-			webContents.toggleDevTools();
+		if (typeof this.gpuInfoWindowId !== 'number') {
+			const options = this.instantiationService.invokeFunction(defaultBrowserWindowOptions, defaultWindowState(), { forceNativeTitlebar: true });
+			options.backgroundColor = undefined;
+
+			const gpuInfoWindow = new BrowserWindow(options);
+			gpuInfoWindow.setMenuBarVisibility(false);
+			gpuInfoWindow.loadURL('chrome://gpu');
+
+			gpuInfoWindow.once('ready-to-show', () => gpuInfoWindow.show());
+			gpuInfoWindow.once('close', () => this.gpuInfoWindowId = undefined);
+
+			parentWindow.win?.on('close', () => {
+				if (this.gpuInfoWindowId) {
+					BrowserWindow.fromId(this.gpuInfoWindowId)?.close();
+					this.gpuInfoWindowId = undefined;
+				}
+			});
+
+			this.gpuInfoWindowId = gpuInfoWindow.id;
+		}
+
+		if (typeof this.gpuInfoWindowId === 'number') {
+			const window = BrowserWindow.fromId(this.gpuInfoWindowId);
+			if (window?.isMinimized()) {
+				window?.restore();
+			}
+			window?.focus();
 		}
 	}
 
