@@ -40,6 +40,7 @@ import { IWorkspaceContextService, WorkbenchState } from '../../../../platform/w
 import { IExtensionsScannerService, IScannedExtension } from '../../../../platform/extensionManagement/common/extensionsScannerService.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
 import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
+import { IUserDataProfilesService } from '../../../../platform/userDataProfile/common/userDataProfile.js';
 
 function isResourceExtension(extension: any): extension is IResourceExtension {
 	return extension && !!(extension as IResourceExtension).manifest;
@@ -83,6 +84,7 @@ export class ExtensionManagementService extends Disposable implements IWorkbench
 		@IExtensionManagementServerService protected readonly extensionManagementServerService: IExtensionManagementServerService,
 		@IExtensionGalleryService private readonly extensionGalleryService: IExtensionGalleryService,
 		@IUserDataProfileService private readonly userDataProfileService: IUserDataProfileService,
+		@IUserDataProfilesService private readonly userDataProfilesService: IUserDataProfilesService,
 		@IConfigurationService protected readonly configurationService: IConfigurationService,
 		@IProductService protected readonly productService: IProductService,
 		@IDownloadService protected readonly downloadService: IDownloadService,
@@ -263,7 +265,8 @@ export class ExtensionManagementService extends Disposable implements IWorkbench
 	updateMetadata(extension: ILocalExtension, metadata: Partial<Metadata>): Promise<ILocalExtension> {
 		const server = this.getServer(extension);
 		if (server) {
-			return server.extensionManagementService.updateMetadata(extension, metadata, this.userDataProfileService.currentProfile.extensionsResource);
+			const profile = extension.isApplicationScoped ? this.userDataProfilesService.defaultProfile : this.userDataProfileService.currentProfile;
+			return server.extensionManagementService.updateMetadata(extension, metadata, profile.extensionsResource);
 		}
 		return Promise.reject(`Invalid location ${extension.location.toString()}`);
 	}

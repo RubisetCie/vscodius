@@ -25,6 +25,7 @@ import { INotificationService } from '../../../../platform/notification/common/n
 import { IProgress, Progress } from '../../../../platform/progress/common/progress.js';
 import { CodeActionFilter, CodeActionItem, CodeActionKind, CodeActionSet, CodeActionTrigger, CodeActionTriggerSource, filtersAction, mayIncludeActionsOfKind } from '../common/types.js';
 import { HierarchicalKind } from '../../../../base/common/hierarchicalKind.js';
+import { raceTimeout } from '../../../../base/common/async.js';
 
 
 
@@ -122,8 +123,10 @@ export async function getCodeActions(
 	const disposables = new DisposableStore();
 	const promises = providers.map(async provider => {
 		try {
-			progress.report(provider);
-			const providedCodeActions = await provider.provideCodeActions(model, rangeOrSelection, codeActionContext, cts.token);
+			const codeActionsPromise = Promise.resolve(provider.provideCodeActions(model, rangeOrSelection, codeActionContext, cts.token));
+
+			const providedCodeActions = await raceTimeout(codeActionsPromise, 1250, () => progress.report(provider));
+
 			if (providedCodeActions) {
 				disposables.add(providedCodeActions);
 			}
@@ -248,7 +251,8 @@ export enum ApplyCodeActionReason {
 	OnSave = 'onSave',
 	FromProblemsView = 'fromProblemsView',
 	FromCodeActions = 'fromCodeActions',
-	FromAILightbulb = 'fromAILightbulb' // direct invocation when clicking on the AI lightbulb
+	FromAILightbulb = 'fromAILightbulb', // direct invocation when clicking on the AI lightbulb
+	FromProblemsHover = 'fromProblemsHover'
 }
 
 export async function applyCodeAction(

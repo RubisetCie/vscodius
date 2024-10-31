@@ -47,7 +47,7 @@ import { CTX_INLINE_CHAT_FOCUSED, MENU_INLINE_CHAT_WIDGET_SECONDARY } from '../.
 import { NOTEBOOK_EDITOR_FOCUSED } from '../../../notebook/common/notebookContextKeys.js';
 import { HasSpeechProvider, ISpeechService, KeywordRecognitionStatus, SpeechToTextInProgress, SpeechToTextStatus, TextToSpeechStatus, TextToSpeechInProgress as GlobalTextToSpeechInProgress } from '../../../speech/common/speechService.js';
 import { ITerminalService } from '../../../terminal/browser/terminal.js';
-import { TerminalChatContextKeys, TerminalChatController } from '../../../terminal/terminalContribExports.js';
+import { TerminalChatContextKeys, TerminalChatController } from '../../../terminal/terminalContribChatExports.js';
 import { IEditorService } from '../../../../services/editor/common/editorService.js';
 import { IHostService } from '../../../../services/host/browser/host.js';
 import { IWorkbenchLayoutService, Parts } from '../../../../services/layout/browser/layoutService.js';
@@ -209,7 +209,7 @@ class VoiceChatSessionControllerFactory {
 			onDidAcceptInput: chatWidget.onDidAcceptInput,
 			onDidHideInput: chatWidget.onDidHide,
 			focusInput: () => chatWidget.focusInput(),
-			acceptInput: () => chatWidget.acceptInput(undefined, true),
+			acceptInput: () => chatWidget.acceptInput(undefined, { isVoiceInput: true }),
 			updateInput: text => chatWidget.setInput(text),
 			getInput: () => chatWidget.getInput(),
 			setInputPlaceholder: text => chatWidget.setInputPlaceholder(text),
@@ -601,13 +601,13 @@ export class StartVoiceChatAction extends Action2 {
 			menu: [
 				{
 					id: MenuId.ChatInput,
-					when: ContextKeyExpr.and(CONTEXT_CHAT_LOCATION.isEqualTo(ChatAgentLocation.Panel), menuCondition),
+					when: ContextKeyExpr.and(ContextKeyExpr.or(CONTEXT_CHAT_LOCATION.isEqualTo(ChatAgentLocation.Panel), CONTEXT_CHAT_LOCATION.isEqualTo(ChatAgentLocation.EditingSession)), menuCondition),
 					group: 'navigation',
 					order: 3
 				},
 				{
 					id: MenuId.ChatExecute,
-					when: ContextKeyExpr.and(CONTEXT_CHAT_LOCATION.isEqualTo(ChatAgentLocation.Panel).negate(), menuCondition),
+					when: ContextKeyExpr.and(CONTEXT_CHAT_LOCATION.isEqualTo(ChatAgentLocation.Panel).negate(), CONTEXT_CHAT_LOCATION.isEqualTo(ChatAgentLocation.EditingSession).negate(), menuCondition),
 					group: 'navigation',
 					order: 2
 				},
@@ -919,7 +919,8 @@ export class ReadChatResponseAloud extends Action2 {
 					ScopedChatSynthesisInProgress.negate(),	// but not when already in progress
 					CONTEXT_RESPONSE_FILTERED.negate(),		// and not when response is filtered
 				),
-				group: 'navigation'
+				group: 'navigation',
+				order: -10 // first
 			}, {
 				id: MENU_INLINE_CHAT_WIDGET_SECONDARY,
 				when: ContextKeyExpr.and(
@@ -928,7 +929,8 @@ export class ReadChatResponseAloud extends Action2 {
 					ScopedChatSynthesisInProgress.negate(),	// but not when already in progress
 					CONTEXT_RESPONSE_FILTERED.negate()		// and not when response is filtered
 				),
-				group: 'navigation'
+				group: 'navigation',
+				order: -10 // first
 			}]
 		});
 	}
@@ -1046,7 +1048,8 @@ export class StopReadChatItemAloud extends Action2 {
 						CONTEXT_RESPONSE,					// only for responses
 						CONTEXT_RESPONSE_FILTERED.negate()	// but not when response is filtered
 					),
-					group: 'navigation'
+					group: 'navigation',
+					order: -10 // first
 				},
 				{
 					id: MENU_INLINE_CHAT_WIDGET_SECONDARY,
@@ -1055,7 +1058,8 @@ export class StopReadChatItemAloud extends Action2 {
 						CONTEXT_RESPONSE,					// only for responses
 						CONTEXT_RESPONSE_FILTERED.negate()	// but not when response is filtered
 					),
-					group: 'navigation'
+					group: 'navigation',
+					order: -10 // first
 				}
 			]
 		});
@@ -1347,17 +1351,26 @@ export class InstallSpeechProviderForVoiceChatAction extends BaseInstallSpeechPr
 			title: localize2('workbench.action.chat.installProviderForVoiceChat.label', "Start Voice Chat"),
 			icon: Codicon.mic,
 			precondition: InstallingSpeechProvider.negate(),
-			menu: [{
-				id: MenuId.ChatInput,
-				when: ContextKeyExpr.and(HasSpeechProvider.negate(), CONTEXT_CHAT_LOCATION.isEqualTo(ChatAgentLocation.Terminal).negate()),
-				group: 'navigation',
-				order: 3
-			}, {
-				id: TerminalChatExecute,
-				when: HasSpeechProvider.negate(),
-				group: 'navigation',
-				order: -1
-			}]
+			menu: [
+				{
+					id: MenuId.ChatInput,
+					when: ContextKeyExpr.and(HasSpeechProvider.negate(), ContextKeyExpr.or(CONTEXT_CHAT_LOCATION.isEqualTo(ChatAgentLocation.Panel), CONTEXT_CHAT_LOCATION.isEqualTo(ChatAgentLocation.EditingSession))),
+					group: 'navigation',
+					order: 3
+				},
+				{
+					id: MenuId.ChatExecute,
+					when: ContextKeyExpr.and(HasSpeechProvider.negate(), CONTEXT_CHAT_LOCATION.isEqualTo(ChatAgentLocation.Panel).negate(), CONTEXT_CHAT_LOCATION.isEqualTo(ChatAgentLocation.EditingSession).negate()),
+					group: 'navigation',
+					order: 2
+				},
+				{
+					id: TerminalChatExecute,
+					when: HasSpeechProvider.negate(),
+					group: 'navigation',
+					order: -1
+				}
+			]
 		});
 	}
 

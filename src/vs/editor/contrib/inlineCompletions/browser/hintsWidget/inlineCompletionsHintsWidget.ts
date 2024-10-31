@@ -318,6 +318,7 @@ export class CustomizedMenuWorkbenchToolBar extends WorkbenchToolBar {
 	private readonly menu = this._store.add(this.menuService.createMenu(this.menuId, this.contextKeyService, { emitEventsForSubmenuChanges: true }));
 	private additionalActions: IAction[] = [];
 	private prependedPrimaryActions: IAction[] = [];
+	private additionalPrimaryActions: IAction[] = [];
 
 	constructor(
 		container: HTMLElement,
@@ -347,6 +348,7 @@ export class CustomizedMenuWorkbenchToolBar extends WorkbenchToolBar {
 
 		secondary.push(...this.additionalActions);
 		primary.unshift(...this.prependedPrimaryActions);
+		primary.push(...this.additionalPrimaryActions);
 		this.setActions(primary, secondary);
 	}
 
@@ -356,6 +358,15 @@ export class CustomizedMenuWorkbenchToolBar extends WorkbenchToolBar {
 		}
 
 		this.prependedPrimaryActions = actions;
+		this.updateToolbar();
+	}
+
+	setAdditionalPrimaryActions(actions: IAction[]): void {
+		if (equals(this.additionalPrimaryActions, actions, (a, b) => a === b)) {
+			return;
+		}
+
+		this.additionalPrimaryActions = actions;
 		this.updateToolbar();
 	}
 

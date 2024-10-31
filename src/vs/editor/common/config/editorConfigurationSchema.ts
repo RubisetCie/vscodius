@@ -117,6 +117,7 @@ const editorConfiguration: IConfigurationNode = {
 			},
 			default: [],
 			markdownDescription: nls.localize('editor.experimental.preferTreeSitter', "Controls whether tree sitter parsing should be turned on for specific languages. This will take precedence over `editor.experimental.treeSitterTelemetry` for the specified languages."),
+			tags: ['experimental']
 		},
 		'editor.language.brackets': {
 			type: ['array', 'null'],
@@ -221,8 +222,7 @@ const editorConfiguration: IConfigurationNode = {
 			markdownEnumDescriptions: [
 				nls.localize('diffAlgorithm.legacy', "Uses the legacy diffing algorithm."),
 				nls.localize('diffAlgorithm.advanced', "Uses the advanced diffing algorithm."),
-			],
-			tags: ['experimental'],
+			]
 		},
 		'diffEditor.hideUnchangedRegions.enabled': {
 			type: 'boolean',

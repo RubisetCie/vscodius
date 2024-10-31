@@ -158,18 +158,23 @@ export class SCMViewService implements ISCMViewService {
 	readonly onDidFocusRepository = this._onDidFocusRepository.event;
 
 	private readonly _focusedRepository = observableFromEventOpts<ISCMRepository | undefined>(
-		{ owner: this, equalsFn: () => false },
-		this.onDidFocusRepository,
+		{
+			owner: this,
+			equalsFn: () => false
+		}, this.onDidFocusRepository,
 		() => this.focusedRepository);
 
 	private readonly _activeEditor = observableFromEventOpts(
-		{ owner: this, equalsFn: () => false },
-		this.editorService.onDidActiveEditorChange,
+		{
+			owner: this,
+			equalsFn: () => false
+		}, this.editorService.onDidActiveEditorChange,
 		() => this.editorService.activeEditor);
 
 	private readonly _activeEditorRepository = derivedObservableWithCache<ISCMRepository | undefined>(this,
 		(reader, lastValue) => {
-			const activeResource = EditorResourceAccessor.getOriginalUri(this._activeEditor.read(reader));
+			const activeEditor = this._activeEditor.read(reader);
+			const activeResource = EditorResourceAccessor.getOriginalUri(activeEditor);
 			if (!activeResource) {
 				return lastValue;
 			}
