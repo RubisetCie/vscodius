@@ -194,7 +194,7 @@ export class ChatEditingService extends Disposable implements IChatEditingServic
 
 		const editorPane = options?.silent ? undefined : await this._editorGroupsService.activeGroup.openEditor(input, { pinned: true, activation: EditorActivation.ACTIVATE }) as MultiDiffEditor | undefined;
 
-		const session = this._instantiationService.createInstance(ChatEditingSession, chatSessionId, editorPane, this._editingSessionFileLimitPromise);
+		const session = this._instantiationService.createInstance(ChatEditingSession, chatSessionId, editorPane, this.editingSessionFileLimit);
 		this._currentSessionDisposables.add(session.onDidDispose(() => {
 			this._currentSessionDisposables.clear();
 			this._currentSessionObs.set(null, undefined);

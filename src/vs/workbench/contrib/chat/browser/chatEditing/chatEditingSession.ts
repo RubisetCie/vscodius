@@ -118,7 +118,7 @@ export class ChatEditingSession extends Disposable implements IChatEditingSessio
 	constructor(
 		public readonly chatSessionId: string,
 		private editorPane: MultiDiffEditor | undefined,
-		private editingSessionFileLimitPromise: Promise<number>,
+		private editingSessionFileLimitPromise: number,
 		@IInstantiationService private readonly _instantiationService: IInstantiationService,
 		@IModelService private readonly _modelService: IModelService,
 		@ILanguageService private readonly _languageService: ILanguageService,
@@ -513,7 +513,7 @@ export class ChatEditingSession extends Disposable implements IChatEditingSessio
 			return;
 		}
 
-		if (!this._entriesObs.get().find(e => e.resource.toString() === resource.toString()) && this._entriesObs.get().length >= (await this.editingSessionFileLimitPromise)) {
+		if (!this._entriesObs.get().find(e => e.resource.toString() === resource.toString()) && this._entriesObs.get().length >= this.editingSessionFileLimitPromise) {
 			// Do not create files in a single editing session that would be in excess of our limit
 			return;
 		}
