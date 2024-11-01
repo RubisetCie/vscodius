@@ -642,6 +642,7 @@ export class ChatInputPart extends Disposable implements IHistoryNavigationWidge
 				return undefined;
 			}
 		}));
+		this.executeToolbar.getElement().classList.add('chat-execute-toolbar');
 		this.executeToolbar.context = { widget } satisfies IChatExecuteActionContext;
 		this._register(this.executeToolbar.onDidChangeMenuItems(() => {
 			if (this.cachedDimensions && typeof this.cachedExecuteToolbarWidth === 'number' && this.cachedExecuteToolbarWidth !== this.executeToolbar.getItemsWidth()) {
@@ -988,6 +989,9 @@ export class ChatInputPart extends Disposable implements IHistoryNavigationWidge
 		const actionsContainer = overviewRegion.querySelector('.chat-editing-session-actions') as HTMLElement ?? dom.append(overviewRegion, $('.chat-editing-session-actions'));
 
 		this._chatEditsActionsDisposables.add(this.instantiationService.createInstance(MenuWorkbenchButtonBar, actionsContainer, MenuId.ChatEditingWidgetToolbar, {
+			menuOptions: {
+				arg: { sessionId: chatEditingSession.chatSessionId },
+			},
 			buttonConfigProvider: (action) => {
 				if (action.id === ChatEditingShowChangesAction.ID || action.id === ChatEditingSaveAllAction.ID) {
 					return { showIcon: true, showLabel: false, isSecondary: true };
@@ -1252,8 +1256,7 @@ class ModelPickerActionViewItem extends MenuEntryActionViewItem {
 		if (this.label) {
 			const model = this._languageModelsService.lookupLanguageModel(this.currentLanguageModel);
 			if (model) {
-				this.label.textContent = model.name;
-				dom.reset(this.label, ...renderLabelWithIcons(`${model.name}$(chevron-down)`));
+				dom.reset(this.label, dom.$('span.chat-model-label', undefined, model.name), ...renderLabelWithIcons(`$(chevron-down)`));
 			}
 		}
 	}
