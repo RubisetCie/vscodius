@@ -25,9 +25,6 @@ import { INotificationService } from '../../../../platform/notification/common/n
 import { IProgress, Progress } from '../../../../platform/progress/common/progress.js';
 import { CodeActionFilter, CodeActionItem, CodeActionKind, CodeActionSet, CodeActionTrigger, CodeActionTriggerSource, filtersAction, mayIncludeActionsOfKind } from '../common/types.js';
 import { HierarchicalKind } from '../../../../base/common/hierarchicalKind.js';
-import { raceTimeout } from '../../../../base/common/async.js';
-
-
 
 export const codeActionCommandId = 'editor.action.codeAction';
 export const quickFixCommandId = 'editor.action.quickFix';
@@ -122,10 +119,9 @@ export async function getCodeActions(
 
 	const disposables = new DisposableStore();
 	const promises = providers.map(async provider => {
+		const handle = setTimeout(() => progress.report(provider), 1250);
 		try {
-			const codeActionsPromise = Promise.resolve(provider.provideCodeActions(model, rangeOrSelection, codeActionContext, cts.token));
-
-			const providedCodeActions = await raceTimeout(codeActionsPromise, 1250, () => progress.report(provider));
+			const providedCodeActions = await provider.provideCodeActions(model, rangeOrSelection, codeActionContext, cts.token);
 
 			if (providedCodeActions) {
 				disposables.add(providedCodeActions);
@@ -147,6 +143,8 @@ export async function getCodeActions(
 			}
 			onUnexpectedExternalError(err);
 			return emptyCodeActionsResponse;
+		} finally {
+			clearTimeout(handle);
 		}
 	});
 
