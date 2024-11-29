@@ -31,7 +31,7 @@ jobs:
 #        if: ${{github.event.inputs.build_amd == 'true'}}
 #        run: export VSCODE_BUILD_AMD='true'
       - name: Dependencies
-        run: npm install
+        run: npm ci
       - name: Packaging
         run: npm run gulp vscode-linux-${{github.event.inputs.pkg_arch}}
       - name: Upload artifact

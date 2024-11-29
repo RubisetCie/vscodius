@@ -42,7 +42,7 @@ jobs:
 #        if: ${{github.event.inputs.build_amd == 'true'}}
 #        run: set VSCODE_BUILD_AMD="true"
       - name: Dependencies
-        run: npm install
+        run: npm ci
       - name: Packaging
         run: npm run gulp vscode-win32-${{github.event.inputs.pkg_arch}}
       - name: Patch resources

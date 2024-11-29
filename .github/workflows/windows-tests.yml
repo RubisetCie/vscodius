@@ -14,18 +14,20 @@ jobs:
   test:
     runs-on: windows-latest
     steps:
-      - name: Set up Yarn
-        uses: mskelton/setup-yarn@v1
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: '${{github.event.inputs.node_version}}'
-      - name: Set up MSVC
-        uses: ilammy/msvc-dev-cmd@v1
+      - name: Set up Python 3
+        uses: actions/setup-python@v5
         with:
-          arch: '${{github.event.inputs.vs_arch}}'
-          spectre: false
-          uwp: false
+          python-version: '3.x'
+      - name: Dependencies
+        run: npm ci
       - name: Compilation
-        run: yarn compile
+        run: npm run compile
       - name: Testing
         run: ./scripts/test.bat > output.txt
       - name: Upload artifact

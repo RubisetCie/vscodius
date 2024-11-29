@@ -552,8 +552,6 @@ extends:
                       VSCODE_ARCH: x64
                       VSCODE_QUALITY: ${{ variables.VSCODE_QUALITY }}
                       VSCODE_RUN_INTEGRATION_TESTS: ${{ eq(parameters.VSCODE_STEP_ON_IT, false) }}
-                parameters:
-                  VSCODE_BUILD_ALPINE: ${{ parameters.VSCODE_BUILD_ALPINE }}
 
             - ${{ if eq(parameters.VSCODE_BUILD_LINUX_ARMHF_LEGACY_SERVER, true) }}:
               - job: LinuxArmhfLegacyServer
@@ -566,8 +564,6 @@ extends:
                       VSCODE_ARCH: armhf
                       VSCODE_QUALITY: ${{ variables.VSCODE_QUALITY }}
                       VSCODE_RUN_INTEGRATION_TESTS: false
-                parameters:
-                  VSCODE_BUILD_ALPINE_ARM64: ${{ parameters.VSCODE_BUILD_ALPINE_ARM64 }}
 
             - ${{ if eq(parameters.VSCODE_BUILD_LINUX_ARM64_LEGACY_SERVER, true) }}:
               - job: LinuxArm64LegacyServer
