@@ -37,7 +37,7 @@ import { StandardMouseEvent } from '../../../base/browser/mouseEvent.js';
 import { IAction, SubmenuAction } from '../../../base/common/actions.js';
 import { Composite } from '../composite.js';
 import { ViewsSubMenu } from './views/viewPaneContainer.js';
-import { createAndFillInActionBarActions } from '../../../platform/actions/browser/menuEntryActionViewItem.js';
+import { getActionBarActions } from '../../../platform/actions/browser/menuEntryActionViewItem.js';
 import { IHoverService } from '../../../platform/hover/browser/hover.js';
 import { HiddenItemStrategy, WorkbenchToolBar } from '../../../platform/actions/browser/toolbar.js';
 
@@ -141,6 +141,7 @@ export abstract class AbstractPaneCompositePart extends CompositePart<PaneCompos
 		private paneFocusContextKey: IContextKey<boolean>,
 		compositeCSSClass: string,
 		titleForegroundColor: string | undefined,
+		titleBorderColor: string | undefined,
 		@INotificationService notificationService: INotificationService,
 		@IStorageService storageService: IStorageService,
 		@IContextMenuService contextMenuService: IContextMenuService,
@@ -180,6 +181,7 @@ export abstract class AbstractPaneCompositePart extends CompositePart<PaneCompos
 			viewDescriptorService.getDefaultViewContainer(location)?.id || '',
 			compositeCSSClass,
 			titleForegroundColor,
+			titleBorderColor,
 			partId,
 			partOptions
 		);
@@ -657,11 +659,10 @@ export abstract class AbstractPaneCompositePart extends CompositePart<PaneCompos
 		const viewPaneContainer = (this.getActivePaneComposite() as PaneComposite)?.getViewPaneContainer();
 		if (viewPaneContainer) {
 			const disposables = new DisposableStore();
-			const viewsActions: IAction[] = [];
 			const scopedContextKeyService = disposables.add(this.contextKeyService.createScoped(this.element));
 			scopedContextKeyService.createKey('viewContainer', viewPaneContainer.viewContainer.id);
 			const menu = this.menuService.getMenuActions(ViewsSubMenu, scopedContextKeyService, { shouldForwardArgs: true, renderShortTitle: true });
-			createAndFillInActionBarActions(menu, { primary: viewsActions, secondary: [] }, () => true);
+			const viewsActions = getActionBarActions(menu, () => true).primary;
 			disposables.dispose();
 			return viewsActions.length > 1 && viewsActions.some(a => a.enabled) ? new SubmenuAction('views', localize('views', "Views"), viewsActions) : undefined;
 		}
@@ -671,5 +672,4 @@ export abstract class AbstractPaneCompositePart extends CompositePart<PaneCompos
 	protected abstract shouldShowCompositeBar(): boolean;
 	protected abstract getCompositeBarOptions(): IPaneCompositeBarOptions;
 	protected abstract getCompositeBarPosition(): CompositeBarPosition;
-
 }

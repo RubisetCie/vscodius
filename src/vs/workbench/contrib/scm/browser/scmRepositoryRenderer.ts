@@ -148,5 +148,6 @@ export class RepositoryRenderer implements ICompressibleTreeRenderer<ISCMReposit
 	disposeTemplate(templateData: RepositoryTemplate): void {
 		templateData.elementDisposables.dispose();
 		templateData.templateDisposable.dispose();
+		templateData.count.dispose();
 	}
 }

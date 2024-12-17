@@ -14,7 +14,6 @@ import { revive } from '../../../../base/common/marshalling.js';
 import { URI, UriComponents } from '../../../../base/common/uri.js';
 import { localize } from '../../../../nls.js';
 import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
-import { IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
 import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
 import { ILogService } from '../../../../platform/log/common/log.js';
 import { Progress } from '../../../../platform/progress/common/progress.js';
@@ -90,7 +89,6 @@ export class ChatService extends Disposable implements IChatService {
 		@IChatSlashCommandService private readonly chatSlashCommandService: IChatSlashCommandService,
 		@IChatVariablesService private readonly chatVariablesService: IChatVariablesService,
 		@IChatAgentService private readonly chatAgentService: IChatAgentService,
-		@IContextKeyService contextKeyService: IContextKeyService,
 		@IConfigurationService private readonly configurationService: IConfigurationService
 	) {
 		super();
@@ -124,7 +122,7 @@ export class ChatService extends Disposable implements IChatService {
 
 	private saveState(): void {
 		const liveChats = Array.from(this._sessionModels.values())
-			.filter(session => session.initialLocation === ChatAgentLocation.Panel)
+			.filter(session => session.initialLocation === ChatAgentLocation.Panel || session.initialLocation === ChatAgentLocation.EditingSession)
 			.filter(session => session.getRequests().length > 0);
 
 		const isEmptyWindow = !this.workspaceContextService.getWorkspace().folders.length;
@@ -495,7 +493,7 @@ export class ChatService extends Disposable implements IChatService {
 		const agentPart = 'kind' in parsedRequest ? undefined : parsedRequest.parts.find((r): r is ChatRequestAgentPart => r instanceof ChatRequestAgentPart);
 		const agentSlashCommandPart = 'kind' in parsedRequest ? undefined : parsedRequest.parts.find((r): r is ChatRequestAgentSubcommandPart => r instanceof ChatRequestAgentSubcommandPart);
 		const commandPart = 'kind' in parsedRequest ? undefined : parsedRequest.parts.find((r): r is ChatRequestSlashCommandPart => r instanceof ChatRequestSlashCommandPart);
-		const requests = [...model.getRequests(false)];
+		const requests = [...model.getRequests()];
 
 		const responseCreated = new DeferredPromise<IChatResponseModel>();
 		let responseCreatedComplete = false;
@@ -580,7 +578,7 @@ export class ChatService extends Disposable implements IChatService {
 						} satisfies IChatAgentRequest;
 					};
 
-					if (this.configurationService.getValue('chat.experimental.detectParticipant.enabled') !== false && this.chatAgentService.hasChatParticipantDetectionProviders() && !agentPart && !commandPart && enableCommandDetection) {
+					if (this.configurationService.getValue('chat.detectParticipant.enabled') !== false && this.chatAgentService.hasChatParticipantDetectionProviders() && !agentPart && !commandPart && enableCommandDetection) {
 						// We have no agent or command to scope history with, pass the full history to the participant detection provider
 						const defaultAgentHistory = this.getHistoryEntriesFromModel(requests, model.sessionId, location, defaultAgent.id);
 
@@ -611,14 +609,14 @@ export class ChatService extends Disposable implements IChatService {
 					const agentResult = await this.chatAgentService.invokeAgent(agent.id, requestProps, progressCallback, history, token);
 					rawResult = agentResult;
 					agentOrCommandFollowups = this.chatAgentService.getFollowups(agent.id, requestProps, agentResult, history, followupsCancelToken);
-					chatTitlePromise = model.getRequests(false).length === 1 && !model.customTitle ? this.chatAgentService.getChatTitle(defaultAgent.id, this.getHistoryEntriesFromModel(model.getRequests(false), model.sessionId, location, agent.id), CancellationToken.None) : undefined;
+					chatTitlePromise = model.getRequests().length === 1 && !model.customTitle ? this.chatAgentService.getChatTitle(defaultAgent.id, this.getHistoryEntriesFromModel(model.getRequests(), model.sessionId, location, agent.id), CancellationToken.None) : undefined;
 				} else if (commandPart && this.chatSlashCommandService.hasCommand(commandPart.slashCommand.command)) {
 					request = model.addRequest(parsedRequest, { variables: [] }, attempt);
 					completeResponseCreated();
 					// contributed slash commands
 					// TODO: spell this out in the UI
 					const history: IChatMessage[] = [];
-					for (const request of model.getRequests(false)) {
+					for (const request of model.getRequests()) {
 						if (!request.response) {
 							continue;
 						}
@@ -809,7 +807,7 @@ export class ChatService extends Disposable implements IChatService {
 	}
 
 	public hasSessions(): boolean {
-		return !!Object.values(this._persistedSessions);
+		return Object.values(this._persistedSessions).length > 0;
 	}
 
 	transferChatSession(transferredSessionData: IChatTransferredSessionData, toWorkspace: URI): void {

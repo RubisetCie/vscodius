@@ -39,13 +39,15 @@ suite('Workbench - Test Results Service', () => {
 		}]
 	});
 
+	let insertCounter = 0;
+
 	class TestLiveTestResult extends LiveTestResult {
 		constructor(
 			id: string,
 			persist: boolean,
 			request: ResolvedTestRunRequest,
 		) {
-			super(id, persist, request);
+			super(id, persist, request, insertCounter++);
 			ds.add(this);
 		}
 
@@ -260,25 +262,27 @@ suite('Workbench - Test Results Service', () => {
 				'',
 				false,
 				defaultOpts([]),
+				insertCounter++,
 			));
 			results.clear();
 
 			assert.deepStrictEqual(results.results, [r2]);
 		});
 
-		test('keeps ongoing tests on top', async () => {
+		test('keeps ongoing tests on top, restored order when done', async () => {
 			results.push(r);
 			const r2 = results.push(new LiveTestResult(
 				'',
 				false,
 				defaultOpts([]),
+				insertCounter++,
 			));
 
 			assert.deepStrictEqual(results.results, [r2, r]);
 			r2.markComplete();
 			assert.deepStrictEqual(results.results, [r, r2]);
 			r.markComplete();
-			assert.deepStrictEqual(results.results, [r, r2]);
+			assert.deepStrictEqual(results.results, [r2, r]);
 		});
 
 		const makeHydrated = async (completedAt = 42, state = TestResultState.Passed) => new HydratedTestResult({

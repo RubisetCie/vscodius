@@ -24,6 +24,7 @@ suite('Workbench - Test Result Storage', () => {
 			'',
 			true,
 			{ targets: [], group: TestRunProfileBitset.Run },
+			1,
 		));
 
 		t.addTask({ id: taskName, name: 'n', running: true, ctrlId: 'ctrlId' });

@@ -6,6 +6,7 @@
 import type { IBuffer, ITerminalOptions, ITheme, Terminal as RawXtermTerminal, LogLevel as XtermLogLevel } from '@xterm/xterm';
 import type { ISearchOptions, SearchAddon as SearchAddonType } from '@xterm/addon-search';
 import type { Unicode11Addon as Unicode11AddonType } from '@xterm/addon-unicode11';
+import type { LigaturesAddon as LigaturesAddonType } from '@xterm/addon-ligatures';
 import type { WebglAddon as WebglAddonType } from '@xterm/addon-webgl';
 import type { SerializeAddon as SerializeAddonType } from '@xterm/addon-serialize';
 import type { ImageAddon as ImageAddonType } from '@xterm/addon-image';
@@ -13,9 +14,9 @@ import type { ClipboardAddon as ClipboardAddonType, ClipboardSelectionType } fro
 import * as dom from '../../../../../base/browser/dom.js';
 import { IXtermCore } from '../xterm-private.js';
 import { IConfigurationService } from '../../../../../platform/configuration/common/configuration.js';
-import { Disposable, DisposableStore } from '../../../../../base/common/lifecycle.js';
+import { Disposable, DisposableStore, MutableDisposable } from '../../../../../base/common/lifecycle.js';
 import { IEditorOptions } from '../../../../../editor/common/config/editorOptions.js';
-import { IShellIntegration, ITerminalLogService, TerminalSettingId } from '../../../../../platform/terminal/common/terminal.js';
+import { IShellIntegration, ITerminalLogService, TerminalSettingId, type IDecorationAddon } from '../../../../../platform/terminal/common/terminal.js';
 import { ITerminalFont, ITerminalConfiguration } from '../../common/terminal.js';
 import { IMarkTracker, IInternalXtermTerminal, IXtermTerminal, IXtermColorProvider, XtermTerminalConstants, IXtermAttachToElementOptions, IDetachedXtermTerminal, ITerminalConfigurationService } from '../terminal.js';
 import { LogLevel } from '../../../../../platform/log/common/log.js';
@@ -74,7 +75,7 @@ export interface IXtermTerminalOptions {
 	/** The shell integration nonce to verify data coming from SI is trustworthy. */
 	shellIntegrationNonce?: string;
 	/** The object that imports xterm addons, set this to inject an importer in tests. */
-	xtermAddonImpoter?: XtermAddonImporter;
+	xtermAddonImporter?: XtermAddonImporter;
 }
 
 /**
@@ -108,6 +109,7 @@ export class XtermTerminal extends Disposable implements IXtermTerminal, IDetach
 	private _webglAddon?: WebglAddonType;
 	private _serializeAddon?: SerializeAddonType;
 	private _imageAddon?: ImageAddonType;
+	private readonly _ligaturesAddon: MutableDisposable<LigaturesAddonType> = this._register(new MutableDisposable());
 
 	private readonly _attachedDisposables = this._register(new DisposableStore());
 	private readonly _anyTerminalFocusContextKey: IContextKey<boolean>;
@@ -136,6 +138,7 @@ export class XtermTerminal extends Disposable implements IXtermTerminal, IDetach
 
 	get markTracker(): IMarkTracker { return this._markNavigationAddon; }
 	get shellIntegration(): IShellIntegration { return this._shellIntegrationAddon; }
+	get decorationAddon(): IDecorationAddon { return this._decorationAddon; }
 
 	get textureAtlas(): Promise<ImageBitmap> | undefined {
 		const canvas = this._webglAddon?.textureAtlas;
@@ -172,7 +175,7 @@ export class XtermTerminal extends Disposable implements IXtermTerminal, IDetach
 	) {
 		super();
 
-		this._xtermAddonLoader = options.xtermAddonImpoter ?? new XtermAddonImporter();
+		this._xtermAddonLoader = options.xtermAddonImporter ?? new XtermAddonImporter();
 		this._xtermColorProvider = options.xtermColorProvider;
 		this._capabilities = options.capabilities;
 
@@ -356,6 +359,8 @@ export class XtermTerminal extends Disposable implements IXtermTerminal, IDetach
 			}
 		}, { passive: true }));
 
+		this._refreshLigaturesAddon();
+
 		this._attached = { container, options };
 		// Screen must be created at this point as xterm.open is called
 		return this._attached?.container.querySelector('.xterm-screen')!;
@@ -402,12 +407,15 @@ export class XtermTerminal extends Disposable implements IXtermTerminal, IDetach
 			showTopBorder: true,
 		};
 		this._updateSmoothScrolling();
-		if (this._attached?.options.enableGpu) {
-			if (this._shouldLoadWebgl()) {
-				this._enableWebglRenderer();
-			} else {
-				this._disposeOfWebglRenderer();
+		if (this._attached) {
+			if (this._attached.options.enableGpu) {
+				if (this._shouldLoadWebgl()) {
+					this._enableWebglRenderer();
+				} else {
+					this._disposeOfWebglRenderer();
+				}
 			}
+			this._refreshLigaturesAddon();
 		}
 	}
 
@@ -701,6 +709,26 @@ export class XtermTerminal extends Disposable implements IXtermTerminal, IDetach
 	private _disableWebglForThisSession() {
 		XtermTerminal._suggestedRendererType = 'dom';
 		this._disposeOfWebglRenderer();
+	}
+
+	@debounce(100)
+	private async _refreshLigaturesAddon(): Promise<void> {
+		if (!this.raw.element) {
+			return;
+		}
+		if (this._terminalConfigurationService.config.fontLigatures) {
+			if (!this._ligaturesAddon.value) {
+				this._xtermAddonLoader.importAddon('ligatures').then(LigaturesAddon => {
+					if (this._store.isDisposed) {
+						return;
+					}
+					this._ligaturesAddon.value = this._instantiationService.createInstance(LigaturesAddon);
+					this.raw.loadAddon(this._ligaturesAddon.value);
+				});
+			}
+		} else {
+			this._ligaturesAddon.clear();
+		}
 	}
 
 	@debounce(100)

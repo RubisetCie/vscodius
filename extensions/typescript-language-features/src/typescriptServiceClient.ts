@@ -122,7 +122,7 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 	private _isPromptingAfterCrash = false;
 	private isRestarting: boolean = false;
 	private hasServerFatallyCrashedTooManyTimes = false;
-	private readonly loadingIndicator = this._register(new ServerInitializingIndicator());
+	private readonly loadingIndicator: ServerInitializingIndicator;
 
 	public readonly bufferSyncSupport: BufferSyncSupport;
 	public readonly diagnosticsManager: DiagnosticsManager;
@@ -152,6 +152,8 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 		allModeIds: readonly string[]
 	) {
 		super();
+
+		this.loadingIndicator = this._register(new ServerInitializingIndicator(this));
 
 		this.logger = services.logger;
 		this.tracer = new Tracer(this.logger);
@@ -692,14 +694,15 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 	}
 
 
-	public toOpenTsFilePath(document: vscode.TextDocument, options: { suppressAlertOnFailure?: boolean } = {}): string | undefined {
-		if (!this.bufferSyncSupport.ensureHasBuffer(document.uri)) {
-			if (!options.suppressAlertOnFailure && !fileSchemes.disabledSchemes.has(document.uri.scheme)) {
-				console.error(`Unexpected resource ${document.uri}`);
+	public toOpenTsFilePath(document: vscode.TextDocument | vscode.Uri, options: { suppressAlertOnFailure?: boolean } = {}): string | undefined {
+		const uri = document instanceof vscode.Uri ? document : document.uri;
+		if (!this.bufferSyncSupport.ensureHasBuffer(uri)) {
+			if (!options.suppressAlertOnFailure && !fileSchemes.disabledSchemes.has(uri.scheme)) {
+				console.error(`Unexpected resource ${uri}`);
 			}
 			return undefined;
 		}
-		return this.toTsFilePath(document.uri);
+		return this.toTsFilePath(uri);
 	}
 
 	public hasCapabilityForResource(resource: vscode.Uri, capability: ClientCapability): boolean {
@@ -1084,6 +1087,12 @@ class ServerInitializingIndicator extends Disposable {
 
 	private _task?: { project: string; resolve: () => void };
 
+	constructor(
+		private readonly client: ITypeScriptServiceClient,
+	) {
+		super();
+	}
+
 	public reset(): void {
 		if (this._task) {
 			this._task.resolve();
@@ -1099,13 +1108,26 @@ class ServerInitializingIndicator extends Disposable {
 		// the incoming project loading task is.
 		this.reset();
 
-		const projectDisplayName = vscode.workspace.asRelativePath(projectName);
+		const projectDisplayName = this.getProjectDisplayName(projectName);
+
 		vscode.window.withProgress({
 			location: vscode.ProgressLocation.Window,
-			title: vscode.l10n.t("Initializing project '{0}'", projectDisplayName),
+			title: vscode.l10n.t("Initializing '{0}'", projectDisplayName),
 		}, () => new Promise<void>(resolve => {
 			this._task = { project: projectName, resolve };
 		}));
+	}
+
+	private getProjectDisplayName(projectName: string): string {
+		const projectUri = this.client.toResource(projectName);
+		const relPath = vscode.workspace.asRelativePath(projectUri);
+
+		const maxDisplayLength = 60;
+		if (relPath.length > maxDisplayLength) {
+			return '...' + relPath.slice(-maxDisplayLength);
+		}
+
+		return relPath;
 	}
 
 	public startedLoadingFile(fileName: string, task: Promise<unknown>): void {

@@ -78,8 +78,7 @@ class CopyLinesUpAction extends AbstractCopyLinesAction {
 	constructor() {
 		super(false, {
 			id: 'editor.action.copyLinesUpAction',
-			label: nls.localize('lines.copyUp', "Copy Line Up"),
-			alias: 'Copy Line Up',
+			label: nls.localize2('lines.copyUp', "Copy Line Up"),
 			precondition: EditorContextKeys.writable,
 			kbOpts: {
 				kbExpr: EditorContextKeys.editorTextFocus,
@@ -101,8 +100,7 @@ class CopyLinesDownAction extends AbstractCopyLinesAction {
 	constructor() {
 		super(true, {
 			id: 'editor.action.copyLinesDownAction',
-			label: nls.localize('lines.copyDown', "Copy Line Down"),
-			alias: 'Copy Line Down',
+			label: nls.localize2('lines.copyDown', "Copy Line Down"),
 			precondition: EditorContextKeys.writable,
 			kbOpts: {
 				kbExpr: EditorContextKeys.editorTextFocus,
@@ -125,8 +123,7 @@ export class DuplicateSelectionAction extends EditorAction {
 	constructor() {
 		super({
 			id: 'editor.action.duplicateSelection',
-			label: nls.localize('duplicateSelection', "Duplicate Selection"),
-			alias: 'Duplicate Selection',
+			label: nls.localize2('duplicateSelection', "Duplicate Selection"),
 			precondition: EditorContextKeys.writable,
 			menuOpts: {
 				menuId: MenuId.MenubarSelectionMenu,
@@ -193,8 +190,7 @@ class MoveLinesUpAction extends AbstractMoveLinesAction {
 	constructor() {
 		super(false, {
 			id: 'editor.action.moveLinesUpAction',
-			label: nls.localize('lines.moveUp', "Move Line Up"),
-			alias: 'Move Line Up',
+			label: nls.localize2('lines.moveUp', "Move Line Up"),
 			precondition: EditorContextKeys.writable,
 			kbOpts: {
 				kbExpr: EditorContextKeys.editorTextFocus,
@@ -216,8 +212,7 @@ class MoveLinesDownAction extends AbstractMoveLinesAction {
 	constructor() {
 		super(true, {
 			id: 'editor.action.moveLinesDownAction',
-			label: nls.localize('lines.moveDown', "Move Line Down"),
-			alias: 'Move Line Down',
+			label: nls.localize2('lines.moveDown', "Move Line Down"),
 			precondition: EditorContextKeys.writable,
 			kbOpts: {
 				kbExpr: EditorContextKeys.editorTextFocus,
@@ -276,8 +271,7 @@ export class SortLinesAscendingAction extends AbstractSortLinesAction {
 	constructor() {
 		super(false, {
 			id: 'editor.action.sortLinesAscending',
-			label: nls.localize('lines.sortAscending', "Sort Lines Ascending"),
-			alias: 'Sort Lines Ascending',
+			label: nls.localize2('lines.sortAscending', "Sort Lines Ascending"),
 			precondition: EditorContextKeys.writable
 		});
 	}
@@ -287,8 +281,7 @@ export class SortLinesDescendingAction extends AbstractSortLinesAction {
 	constructor() {
 		super(true, {
 			id: 'editor.action.sortLinesDescending',
-			label: nls.localize('lines.sortDescending', "Sort Lines Descending"),
-			alias: 'Sort Lines Descending',
+			label: nls.localize2('lines.sortDescending', "Sort Lines Descending"),
 			precondition: EditorContextKeys.writable
 		});
 	}
@@ -298,8 +291,7 @@ export class DeleteDuplicateLinesAction extends EditorAction {
 	constructor() {
 		super({
 			id: 'editor.action.removeDuplicateLines',
-			label: nls.localize('lines.deleteDuplicates', "Delete Duplicate Lines"),
-			alias: 'Delete Duplicate Lines',
+			label: nls.localize2('lines.deleteDuplicates', "Delete Duplicate Lines"),
 			precondition: EditorContextKeys.writable
 		});
 	}
@@ -377,8 +369,7 @@ export class TrimTrailingWhitespaceAction extends EditorAction {
 	constructor() {
 		super({
 			id: TrimTrailingWhitespaceAction.ID,
-			label: nls.localize('lines.trimTrailingWhitespace', "Trim Trailing Whitespace"),
-			alias: 'Trim Trailing Whitespace',
+			label: nls.localize2('lines.trimTrailingWhitespace', "Trim Trailing Whitespace"),
 			precondition: EditorContextKeys.writable,
 			kbOpts: {
 				kbExpr: EditorContextKeys.editorTextFocus,
@@ -429,8 +420,7 @@ export class DeleteLinesAction extends EditorAction {
 	constructor() {
 		super({
 			id: 'editor.action.deleteLines',
-			label: nls.localize('lines.delete', "Delete Line"),
-			alias: 'Delete Line',
+			label: nls.localize2('lines.delete', "Delete Line"),
 			precondition: EditorContextKeys.writable,
 			kbOpts: {
 				kbExpr: EditorContextKeys.textInputFocus,
@@ -531,8 +521,7 @@ export class IndentLinesAction extends EditorAction {
 	constructor() {
 		super({
 			id: 'editor.action.indentLines',
-			label: nls.localize('lines.indent', "Indent Line"),
-			alias: 'Indent Line',
+			label: nls.localize2('lines.indent', "Indent Line"),
 			precondition: EditorContextKeys.writable,
 			kbOpts: {
 				kbExpr: EditorContextKeys.editorTextFocus,
@@ -557,8 +546,7 @@ class OutdentLinesAction extends EditorAction {
 	constructor() {
 		super({
 			id: 'editor.action.outdentLines',
-			label: nls.localize('lines.outdent', "Outdent Line"),
-			alias: 'Outdent Line',
+			label: nls.localize2('lines.outdent', "Outdent Line"),
 			precondition: EditorContextKeys.writable,
 			kbOpts: {
 				kbExpr: EditorContextKeys.editorTextFocus,
@@ -583,8 +571,7 @@ export class InsertLineBeforeAction extends EditorAction {
 	constructor() {
 		super({
 			id: 'editor.action.insertLineBefore',
-			label: nls.localize('lines.insertBefore', "Insert Line Above"),
-			alias: 'Insert Line Above',
+			label: nls.localize2('lines.insertBefore', "Insert Line Above"),
 			precondition: EditorContextKeys.writable,
 			kbOpts: {
 				kbExpr: EditorContextKeys.editorTextFocus,
@@ -608,8 +595,7 @@ export class InsertLineAfterAction extends EditorAction {
 	constructor() {
 		super({
 			id: 'editor.action.insertLineAfter',
-			label: nls.localize('lines.insertAfter', "Insert Line Below"),
-			alias: 'Insert Line Below',
+			label: nls.localize2('lines.insertAfter', "Insert Line Below"),
 			precondition: EditorContextKeys.writable,
 			kbOpts: {
 				kbExpr: EditorContextKeys.editorTextFocus,
@@ -676,8 +662,7 @@ export class DeleteAllLeftAction extends AbstractDeleteAllToBoundaryAction {
 	constructor() {
 		super({
 			id: 'deleteAllLeft',
-			label: nls.localize('lines.deleteAllLeft', "Delete All Left"),
-			alias: 'Delete All Left',
+			label: nls.localize2('lines.deleteAllLeft', "Delete All Left"),
 			precondition: EditorContextKeys.writable,
 			kbOpts: {
 				kbExpr: EditorContextKeys.textInputFocus,
@@ -754,8 +739,7 @@ export class DeleteAllRightAction extends AbstractDeleteAllToBoundaryAction {
 	constructor() {
 		super({
 			id: 'deleteAllRight',
-			label: nls.localize('lines.deleteAllRight', "Delete All Right"),
-			alias: 'Delete All Right',
+			label: nls.localize2('lines.deleteAllRight', "Delete All Right"),
 			precondition: EditorContextKeys.writable,
 			kbOpts: {
 				kbExpr: EditorContextKeys.textInputFocus,
@@ -821,8 +805,7 @@ export class JoinLinesAction extends EditorAction {
 	constructor() {
 		super({
 			id: 'editor.action.joinLines',
-			label: nls.localize('lines.joinLines', "Join Lines"),
-			alias: 'Join Lines',
+			label: nls.localize2('lines.joinLines', "Join Lines"),
 			precondition: EditorContextKeys.writable,
 			kbOpts: {
 				kbExpr: EditorContextKeys.editorTextFocus,
@@ -981,8 +964,7 @@ export class TransposeAction extends EditorAction {
 	constructor() {
 		super({
 			id: 'editor.action.transpose',
-			label: nls.localize('editor.transpose', "Transpose Characters around the Cursor"),
-			alias: 'Transpose Characters around the Cursor',
+			label: nls.localize2('editor.transpose', "Transpose Characters around the Cursor"),
 			precondition: EditorContextKeys.writable
 		});
 	}
@@ -1080,8 +1062,7 @@ export class UpperCaseAction extends AbstractCaseAction {
 	constructor() {
 		super({
 			id: 'editor.action.transformToUppercase',
-			label: nls.localize('editor.transformToUppercase', "Transform to Uppercase"),
-			alias: 'Transform to Uppercase',
+			label: nls.localize2('editor.transformToUppercase', "Transform to Uppercase"),
 			precondition: EditorContextKeys.writable
 		});
 	}
@@ -1095,8 +1076,7 @@ export class LowerCaseAction extends AbstractCaseAction {
 	constructor() {
 		super({
 			id: 'editor.action.transformToLowercase',
-			label: nls.localize('editor.transformToLowercase', "Transform to Lowercase"),
-			alias: 'Transform to Lowercase',
+			label: nls.localize2('editor.transformToLowercase', "Transform to Lowercase"),
 			precondition: EditorContextKeys.writable
 		});
 	}
@@ -1143,8 +1123,7 @@ export class TitleCaseAction extends AbstractCaseAction {
 	constructor() {
 		super({
 			id: 'editor.action.transformToTitlecase',
-			label: nls.localize('editor.transformToTitlecase', "Transform to Title Case"),
-			alias: 'Transform to Title Case',
+			label: nls.localize2('editor.transformToTitlecase', "Transform to Title Case"),
 			precondition: EditorContextKeys.writable
 		});
 	}
@@ -1169,8 +1148,7 @@ export class SnakeCaseAction extends AbstractCaseAction {
 	constructor() {
 		super({
 			id: 'editor.action.transformToSnakecase',
-			label: nls.localize('editor.transformToSnakecase', "Transform to Snake Case"),
-			alias: 'Transform to Snake Case',
+			label: nls.localize2('editor.transformToSnakecase', "Transform to Snake Case"),
 			precondition: EditorContextKeys.writable
 		});
 	}
@@ -1196,8 +1174,7 @@ export class CamelCaseAction extends AbstractCaseAction {
 	constructor() {
 		super({
 			id: 'editor.action.transformToCamelcase',
-			label: nls.localize('editor.transformToCamelcase', "Transform to Camel Case"),
-			alias: 'Transform to Camel Case',
+			label: nls.localize2('editor.transformToCamelcase', "Transform to Camel Case"),
 			precondition: EditorContextKeys.writable
 		});
 	}
@@ -1222,8 +1199,7 @@ export class PascalCaseAction extends AbstractCaseAction {
 	constructor() {
 		super({
 			id: 'editor.action.transformToPascalcase',
-			label: nls.localize('editor.transformToPascalcase', "Transform to Pascal Case"),
-			alias: 'Transform to Pascal Case',
+			label: nls.localize2('editor.transformToPascalcase', "Transform to Pascal Case"),
 			precondition: EditorContextKeys.writable
 		});
 	}
@@ -1263,8 +1239,7 @@ export class KebabCaseAction extends AbstractCaseAction {
 	constructor() {
 		super({
 			id: 'editor.action.transformToKebabcase',
-			label: nls.localize('editor.transformToKebabcase', 'Transform to Kebab Case'),
-			alias: 'Transform to Kebab Case',
+			label: nls.localize2('editor.transformToKebabcase', 'Transform to Kebab Case'),
 			precondition: EditorContextKeys.writable
 		});
 	}

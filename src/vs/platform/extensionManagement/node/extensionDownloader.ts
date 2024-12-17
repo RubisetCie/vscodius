@@ -19,14 +19,16 @@ import { ExtensionManagementErrorCode, IExtensionGalleryService, IGalleryExtensi
 import { ExtensionKey, groupByExtension } from '../common/extensionManagementUtil.js';
 import { fromExtractError } from './extensionManagementUtil.js';
 import { TargetPlatform } from '../../extensions/common/extensions.js';
-import { IFileService, IFileStatWithMetadata } from '../../files/common/files.js';
+import { FileOperationResult, IFileService, IFileStatWithMetadata, toFileOperationResult } from '../../files/common/files.js';
 import { ILogService } from '../../log/common/log.js';
+import { IUriIdentityService } from '../../uriIdentity/common/uriIdentity.js';
 
 export class ExtensionsDownloader extends Disposable {
 
 	private static readonly SignatureArchiveExtension = '.sigzip';
 
 	readonly extensionsDownloadDir: URI;
+	private readonly extensionsTrashDir: URI;
 	private readonly cache: number;
 	private readonly cleanUpPromise: Promise<void>;
 
@@ -34,10 +36,12 @@ export class ExtensionsDownloader extends Disposable {
 		@INativeEnvironmentService environmentService: INativeEnvironmentService,
 		@IFileService private readonly fileService: IFileService,
 		@IExtensionGalleryService private readonly extensionGalleryService: IExtensionGalleryService,
+		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService,
 		@ILogService private readonly logService: ILogService,
 	) {
 		super();
 		this.extensionsDownloadDir = environmentService.extensionsDownloadLocation;
+		this.extensionsTrashDir = uriIdentityService.extUri.joinPath(environmentService.extensionsDownloadLocation, `.trash`);
 		this.cache = 20; // Cache 20 downloaded VSIX files
 		this.cleanUpPromise = this.cleanUp();
 	}
@@ -136,7 +140,12 @@ export class ExtensionsDownloader extends Disposable {
 
 	async delete(location: URI): Promise<void> {
 		await this.cleanUpPromise;
-		await this.fileService.del(location);
+		const trashRelativePath = this.uriIdentityService.extUri.relativePath(this.extensionsDownloadDir, location);
+		if (trashRelativePath) {
+			await this.fileService.move(location, this.uriIdentityService.extUri.joinPath(this.extensionsTrashDir, trashRelativePath), true);
+		} else {
+			await this.fileService.del(location);
+		}
 	}
 
 	private async cleanUp(): Promise<void> {
@@ -145,6 +154,15 @@ export class ExtensionsDownloader extends Disposable {
 				this.logService.trace('Extension VSIX downloads cache dir does not exist');
 				return;
 			}
+
+			try {
+				await this.fileService.del(this.extensionsTrashDir, { recursive: true });
+			} catch (error) {
+				if (toFileOperationResult(error) !== FileOperationResult.FILE_NOT_FOUND) {
+					this.logService.error(error);
+				}
+			}
+
 			const folderStat = await this.fileService.resolve(this.extensionsDownloadDir, { resolveMetadata: true });
 			if (folderStat.children) {
 				const toDelete: URI[] = [];
@@ -184,7 +202,7 @@ export class ExtensionsDownloader extends Disposable {
 	}
 
 	private getName(extension: IGalleryExtension): string {
-		return this.cache ? ExtensionKey.create(extension).toString().toLowerCase() : generateUuid();
+		return ExtensionKey.create(extension).toString().toLowerCase();
 	}
 
 }

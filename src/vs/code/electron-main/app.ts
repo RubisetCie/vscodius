@@ -51,9 +51,8 @@ import { DiskFileSystemProvider } from '../../platform/files/node/diskFileSystem
 import { SyncDescriptor } from '../../platform/instantiation/common/descriptors.js';
 import { IInstantiationService, ServicesAccessor } from '../../platform/instantiation/common/instantiation.js';
 import { ServiceCollection } from '../../platform/instantiation/common/serviceCollection.js';
-import { IProcessMainService, IIssueMainService } from '../../platform/issue/common/issue.js';
-import { IssueMainService } from '../../platform/issue/electron-main/issueMainService.js';
-import { ProcessMainService } from '../../platform/issue/electron-main/processMainService.js';
+import { IProcessMainService } from '../../platform/process/common/process.js';
+import { ProcessMainService } from '../../platform/process/electron-main/processMainService.js';
 import { IKeyboardLayoutMainService, KeyboardLayoutMainService } from '../../platform/keyboardLayout/electron-main/keyboardLayoutMainService.js';
 import { ILaunchMainService, LaunchMainService } from '../../platform/launch/electron-main/launchMainService.js';
 import { ILifecycleMainService, LifecycleMainPhase, ShutdownReason } from '../../platform/lifecycle/electron-main/lifecycleMainService.js';
@@ -159,18 +158,17 @@ export class CodeApplication extends Disposable {
 		]);
 
 		const allowedPermissionsInCore = new Set([
-			'media'
+			'media',
+			'local-fonts',
 		]);
 
 		session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback, details) => {
 			if (isUrlFromWebview(details.requestingUrl)) {
 				return callback(allowedPermissionsInWebview.has(permission));
 			}
-
 			if (isUrlFromWindow(details.requestingUrl)) {
 				return callback(allowedPermissionsInCore.has(permission));
 			}
-
 			return callback(false);
 		});
 
@@ -619,7 +617,11 @@ export class CodeApplication extends Disposable {
 
 		// Set lifecycle phase to `Eventually` after a short delay and when idle (min 2.5sec, max 5sec)
 		const eventuallyPhaseScheduler = this._register(new RunOnceScheduler(() => {
-			this._register(runWhenGlobalIdle(() => this.lifecycleMainService.phase = LifecycleMainPhase.Eventually, 2500));
+			this._register(runWhenGlobalIdle(() => {
+
+				// Signal phase: eventually
+				this.lifecycleMainService.phase = LifecycleMainPhase.Eventually;
+			}, 2500));
 		}, 2500));
 		eventuallyPhaseScheduler.schedule();
 	}
@@ -999,9 +1001,6 @@ export class CodeApplication extends Disposable {
 		services.set(IDiagnosticsMainService, new SyncDescriptor(DiagnosticsMainService, undefined, false /* proxied to other processes */));
 		services.set(IDiagnosticsService, ProxyChannel.toService(getDelayedChannel(sharedProcessReady.then(client => client.getChannel('diagnostics')))));
 
-		// Issues
-		services.set(IIssueMainService, new SyncDescriptor(IssueMainService, [this.userEnv]));
-
 		// Process
 		services.set(IProcessMainService, new SyncDescriptor(ProcessMainService, [this.userEnv]));
 
@@ -1116,10 +1115,6 @@ export class CodeApplication extends Disposable {
 		const userDataProfilesService = ProxyChannel.fromService(accessor.get(IUserDataProfilesMainService), disposables);
 		mainProcessElectronServer.registerChannel('userDataProfiles', userDataProfilesService);
 		sharedProcessClient.then(client => client.registerChannel('userDataProfiles', userDataProfilesService));
-
-		// Issues
-		const issueChannel = ProxyChannel.fromService(accessor.get(IIssueMainService), disposables);
-		mainProcessElectronServer.registerChannel('issue', issueChannel);
 
 		// Process
 		const processChannel = ProxyChannel.fromService(accessor.get(IProcessMainService), disposables);

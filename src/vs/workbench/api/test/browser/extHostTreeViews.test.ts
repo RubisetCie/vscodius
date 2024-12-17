@@ -19,6 +19,16 @@ import { nullExtensionDescription as extensionsDescription } from '../../../serv
 import { runWithFakedTimers } from '../../../../base/test/common/timeTravelScheduler.js';
 import { ensureNoDisposablesAreLeakedInTestSuite } from '../../../../base/test/common/utils.js';
 
+function unBatchChildren(result: (number | ITreeItem)[][] | undefined): ITreeItem[] | undefined {
+	if (!result || result.length === 0) {
+		return undefined;
+	}
+	if (result.length > 1) {
+		throw new Error('Unexpected result length, all tests are unbatched.');
+	}
+	return result[0].slice(1) as ITreeItem[];
+}
+
 suite('ExtHostTreeView', function () {
 	const store = ensureNoDisposablesAreLeakedInTestSuite();
 
@@ -90,25 +100,25 @@ suite('ExtHostTreeView', function () {
 	test('construct node tree', () => {
 		return testObject.$getChildren('testNodeTreeProvider')
 			.then(elements => {
-				const actuals = elements?.map(e => e.handle);
+				const actuals = unBatchChildren(elements)?.map(e => e.handle);
 				assert.deepStrictEqual(actuals, ['0/0:a', '0/0:b']);
 				return Promise.all([
-					testObject.$getChildren('testNodeTreeProvider', '0/0:a')
+					testObject.$getChildren('testNodeTreeProvider', ['0/0:a'])
 						.then(children => {
-							const actuals = children?.map(e => e.handle);
+							const actuals = unBatchChildren(children)?.map(e => e.handle);
 							assert.deepStrictEqual(actuals, ['0/0:a/0:aa', '0/0:a/0:ab']);
 							return Promise.all([
-								testObject.$getChildren('testNodeTreeProvider', '0/0:a/0:aa').then(children => assert.strictEqual(children?.length, 0)),
-								testObject.$getChildren('testNodeTreeProvider', '0/0:a/0:ab').then(children => assert.strictEqual(children?.length, 0))
+								testObject.$getChildren('testNodeTreeProvider', ['0/0:a/0:aa']).then(children => assert.strictEqual(unBatchChildren(children)?.length, 0)),
+								testObject.$getChildren('testNodeTreeProvider', ['0/0:a/0:ab']).then(children => assert.strictEqual(unBatchChildren(children)?.length, 0))
 							]);
 						}),
-					testObject.$getChildren('testNodeTreeProvider', '0/0:b')
+					testObject.$getChildren('testNodeTreeProvider', ['0/0:b'])
 						.then(children => {
-							const actuals = children?.map(e => e.handle);
+							const actuals = unBatchChildren(children)?.map(e => e.handle);
 							assert.deepStrictEqual(actuals, ['0/0:b/0:ba', '0/0:b/0:bb']);
 							return Promise.all([
-								testObject.$getChildren('testNodeTreeProvider', '0/0:b/0:ba').then(children => assert.strictEqual(children?.length, 0)),
-								testObject.$getChildren('testNodeTreeProvider', '0/0:b/0:bb').then(children => assert.strictEqual(children?.length, 0))
+								testObject.$getChildren('testNodeTreeProvider', ['0/0:b/0:ba']).then(children => assert.strictEqual(unBatchChildren(children)?.length, 0)),
+								testObject.$getChildren('testNodeTreeProvider', ['0/0:b/0:bb']).then(children => assert.strictEqual(unBatchChildren(children)?.length, 0))
 							]);
 						})
 				]);
@@ -118,25 +128,25 @@ suite('ExtHostTreeView', function () {
 	test('construct id tree', () => {
 		return testObject.$getChildren('testNodeWithIdTreeProvider')
 			.then(elements => {
-				const actuals = elements?.map(e => e.handle);
+				const actuals = unBatchChildren(elements)?.map(e => e.handle);
 				assert.deepStrictEqual(actuals, ['1/a', '1/b']);
 				return Promise.all([
-					testObject.$getChildren('testNodeWithIdTreeProvider', '1/a')
+					testObject.$getChildren('testNodeWithIdTreeProvider', ['1/a'])
 						.then(children => {
-							const actuals = children?.map(e => e.handle);
+							const actuals = unBatchChildren(children)?.map(e => e.handle);
 							assert.deepStrictEqual(actuals, ['1/aa', '1/ab']);
 							return Promise.all([
-								testObject.$getChildren('testNodeWithIdTreeProvider', '1/aa').then(children => assert.strictEqual(children?.length, 0)),
-								testObject.$getChildren('testNodeWithIdTreeProvider', '1/ab').then(children => assert.strictEqual(children?.length, 0))
+								testObject.$getChildren('testNodeWithIdTreeProvider', ['1/aa']).then(children => assert.strictEqual(unBatchChildren(children)?.length, 0)),
+								testObject.$getChildren('testNodeWithIdTreeProvider', ['1/ab']).then(children => assert.strictEqual(unBatchChildren(children)?.length, 0))
 							]);
 						}),
-					testObject.$getChildren('testNodeWithIdTreeProvider', '1/b')
+					testObject.$getChildren('testNodeWithIdTreeProvider', ['1/b'])
 						.then(children => {
-							const actuals = children?.map(e => e.handle);
+							const actuals = unBatchChildren(children)?.map(e => e.handle);
 							assert.deepStrictEqual(actuals, ['1/ba', '1/bb']);
 							return Promise.all([
-								testObject.$getChildren('testNodeWithIdTreeProvider', '1/ba').then(children => assert.strictEqual(children?.length, 0)),
-								testObject.$getChildren('testNodeWithIdTreeProvider', '1/bb').then(children => assert.strictEqual(children?.length, 0))
+								testObject.$getChildren('testNodeWithIdTreeProvider', ['1/ba']).then(children => assert.strictEqual(unBatchChildren(children)?.length, 0)),
+								testObject.$getChildren('testNodeWithIdTreeProvider', ['1/bb']).then(children => assert.strictEqual(unBatchChildren(children)?.length, 0))
 							]);
 						})
 				]);
@@ -146,7 +156,7 @@ suite('ExtHostTreeView', function () {
 	test('construct highlights tree', () => {
 		return testObject.$getChildren('testNodeWithHighlightsTreeProvider')
 			.then(elements => {
-				assert.deepStrictEqual(removeUnsetKeys(elements), [{
+				assert.deepStrictEqual(removeUnsetKeys(unBatchChildren(elements)), [{
 					handle: '1/a',
 					label: { label: 'a', highlights: [[0, 2], [3, 5]] },
 					collapsibleState: TreeItemCollapsibleState.Collapsed
@@ -156,9 +166,9 @@ suite('ExtHostTreeView', function () {
 					collapsibleState: TreeItemCollapsibleState.Collapsed
 				}]);
 				return Promise.all([
-					testObject.$getChildren('testNodeWithHighlightsTreeProvider', '1/a')
+					testObject.$getChildren('testNodeWithHighlightsTreeProvider', ['1/a'])
 						.then(children => {
-							assert.deepStrictEqual(removeUnsetKeys(children), [{
+							assert.deepStrictEqual(removeUnsetKeys(unBatchChildren(children)), [{
 								handle: '1/aa',
 								parentHandle: '1/a',
 								label: { label: 'aa', highlights: [[0, 2], [3, 5]] },
@@ -170,9 +180,9 @@ suite('ExtHostTreeView', function () {
 								collapsibleState: TreeItemCollapsibleState.None
 							}]);
 						}),
-					testObject.$getChildren('testNodeWithHighlightsTreeProvider', '1/b')
+					testObject.$getChildren('testNodeWithHighlightsTreeProvider', ['1/b'])
 						.then(children => {
-							assert.deepStrictEqual(removeUnsetKeys(children), [{
+							assert.deepStrictEqual(removeUnsetKeys(unBatchChildren(children)), [{
 								handle: '1/ba',
 								parentHandle: '1/b',
 								label: { label: 'ba', highlights: [[0, 2], [3, 5]] },
@@ -200,10 +210,10 @@ suite('ExtHostTreeView', function () {
 		store.add(target.onRefresh.event(() => {
 			testObject.$getChildren('testNodeWithIdTreeProvider')
 				.then(elements => {
-					const actuals = elements?.map(e => e.handle);
+					const actuals = unBatchChildren(elements)?.map(e => e.handle);
 					assert.deepStrictEqual(actuals, ['1/a', '1/b']);
-					return testObject.$getChildren('testNodeWithIdTreeProvider', '1/a')
-						.then(() => testObject.$getChildren('testNodeWithIdTreeProvider', '1/b'))
+					return testObject.$getChildren('testNodeWithIdTreeProvider', ['1/a'])
+						.then(() => testObject.$getChildren('testNodeWithIdTreeProvider', ['1/b']))
 						.then(() => assert.fail('Should fail with duplicate id'))
 						.catch(() => caughtExpectedError = true)
 						.finally(() => caughtExpectedError ? done() : assert.fail('Expected duplicate id error not thrown.'));
@@ -400,7 +410,7 @@ suite('ExtHostTreeView', function () {
 		store.add(target.onRefresh.event(() => {
 			testObject.$getChildren('testNodeTreeProvider')
 				.then(elements => {
-					assert.deepStrictEqual(elements?.map(e => e.handle), ['0/0:a//0:b']);
+					assert.deepStrictEqual(unBatchChildren(elements)?.map(e => e.handle), ['0/0:a//0:b']);
 					done();
 				});
 		}));
@@ -442,11 +452,11 @@ suite('ExtHostTreeView', function () {
 		store.add(target.onRefresh.event(() => {
 			testObject.$getChildren('testNodeTreeProvider')
 				.then(elements => {
-					const actuals = elements?.map(e => e.handle);
+					const actuals = unBatchChildren(elements)?.map(e => e.handle);
 					assert.deepStrictEqual(actuals, ['0/0:a', '0/0:b', '0/1:a', '0/0:d', '0/1:b', '0/0:f', '0/2:a']);
-					return testObject.$getChildren('testNodeTreeProvider', '0/1:b')
+					return testObject.$getChildren('testNodeTreeProvider', ['0/1:b'])
 						.then(elements => {
-							const actuals = elements?.map(e => e.handle);
+							const actuals = unBatchChildren(elements)?.map(e => e.handle);
 							assert.deepStrictEqual(actuals, ['0/1:b/0:h', '0/1:b/1:h', '0/1:b/0:j', '0/1:b/1:j', '0/1:b/2:h']);
 							done();
 						});
@@ -464,7 +474,7 @@ suite('ExtHostTreeView', function () {
 		store.add(target.onRefresh.event(() => {
 			testObject.$getChildren('testNodeTreeProvider')
 				.then(elements => {
-					assert.deepStrictEqual(elements?.map(e => e.handle), ['0/0:c']);
+					assert.deepStrictEqual(unBatchChildren(elements)?.map(e => e.handle), ['0/0:c']);
 					done();
 				});
 		}));
@@ -479,7 +489,7 @@ suite('ExtHostTreeView', function () {
 
 		return testObject.$getChildren('testNodeTreeProvider')
 			.then(elements => {
-				assert.deepStrictEqual(elements?.map(e => e.handle), ['0/0:a', '0/0:b']);
+				assert.deepStrictEqual(unBatchChildren(elements)?.map(e => e.handle), ['0/0:a', '0/0:b']);
 			});
 	});
 
@@ -531,7 +541,7 @@ suite('ExtHostTreeView', function () {
 			parentChain: [{ handle: '0/0:a', label: { label: 'a' }, collapsibleState: TreeItemCollapsibleState.Collapsed }]
 		};
 		return testObject.$getChildren('treeDataProvider')
-			.then(() => testObject.$getChildren('treeDataProvider', '0/0:a'))
+			.then(() => testObject.$getChildren('treeDataProvider', ['0/0:a']))
 			.then(() => treeView.reveal({ key: 'aa' })
 				.then(() => {
 					assert.ok(revealTarget.calledOnce);
@@ -644,8 +654,13 @@ suite('ExtHostTreeView', function () {
 	});
 
 	function loadCompleteTree(treeId: string, element?: string): Promise<null> {
-		return testObject.$getChildren(treeId, element)
-			.then(elements => elements?.map(e => loadCompleteTree(treeId, e.handle)))
+		return testObject.$getChildren(treeId, element ? [element] : undefined)
+			.then(elements => {
+				if (!elements || elements?.length === 0) {
+					return null;
+				}
+				return elements[0].slice(1).map(e => loadCompleteTree(treeId, (e as ITreeItem).handle));
+			})
 			.then(() => null);
 	}
 

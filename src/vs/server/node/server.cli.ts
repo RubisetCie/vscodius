@@ -145,7 +145,7 @@ export async function main(desc: ProductDescription, args: string[]): Promise<vo
 			// Usage: `[[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path zsh)"`
 			case 'zsh': file = 'shellIntegration-rc.zsh'; break;
 			// Usage: `string match -q "$TERM_PROGRAM" "vscode"; and . (code --locate-shell-integration-path fish)`
-			case 'fish': file = 'fish_xdg_data/fish/vendor_conf.d/shellIntegration.fish'; break;
+			case 'fish': file = 'shellIntegration.fish'; break;
 			default: throw new Error('Error using --locate-shell-integration-path: Invalid shell type');
 		}
 		console.log(join(getAppRoot(), 'out', 'vs', 'workbench', 'contrib', 'terminal', 'common', 'scripts', file));
@@ -374,7 +374,7 @@ function openInBrowser(args: string[], verbose: boolean) {
 	const uris: string[] = [];
 	for (const location of args) {
 		try {
-			if (/^(http|https|file):\/\//.test(location)) {
+			if (/^[a-z-]+:\/\/.+/.test(location)) {
 				uris.push(url.parse(location).href);
 			} else {
 				uris.push(pathToURI(location).href);

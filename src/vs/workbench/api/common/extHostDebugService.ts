@@ -118,13 +118,13 @@ export abstract class ExtHostDebugServiceBase extends DisposableCls implements I
 
 	constructor(
 		@IExtHostRpcService extHostRpcService: IExtHostRpcService,
-		@IExtHostWorkspace protected _workspaceService: IExtHostWorkspace,
-		@IExtHostExtensionService private _extensionService: IExtHostExtensionService,
-		@IExtHostConfiguration protected _configurationService: IExtHostConfiguration,
-		@IExtHostEditorTabs protected _editorTabs: IExtHostEditorTabs,
-		@IExtHostVariableResolverProvider private _variableResolver: IExtHostVariableResolverProvider,
-		@IExtHostCommands private _commands: IExtHostCommands,
-		@IExtHostTesting private _testing: IExtHostTesting,
+		@IExtHostWorkspace protected readonly _workspaceService: IExtHostWorkspace,
+		@IExtHostExtensionService private readonly _extensionService: IExtHostExtensionService,
+		@IExtHostConfiguration protected readonly _configurationService: IExtHostConfiguration,
+		@IExtHostEditorTabs protected readonly _editorTabs: IExtHostEditorTabs,
+		@IExtHostVariableResolverProvider private readonly _variableResolver: IExtHostVariableResolverProvider,
+		@IExtHostCommands private readonly _commands: IExtHostCommands,
+		@IExtHostTesting private readonly _testing: IExtHostTesting,
 	) {
 		super();
 
@@ -654,7 +654,12 @@ export abstract class ExtHostDebugServiceBase extends DisposableCls implements I
 						}
 
 						// DA -> VS Code
-						message = convertToVSCPaths(message, true);
+						try {
+							// Try to catch details for #233167
+							message = convertToVSCPaths(message, true);
+						} catch (e) {
+							throw e;
+						}
 
 						mythis._debugServiceProxy.$acceptDAMessage(debugAdapterHandle, message);
 					}

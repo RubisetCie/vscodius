@@ -138,42 +138,47 @@ export class LanguageModelToolsService extends Disposable implements ILanguageMo
 
 		// Shortcut to write to the model directly here, but could call all the way back to use the real stream.
 		let toolInvocation: ChatToolInvocation | undefined;
-		if (dto.context) {
-			const model = this._chatService.getSession(dto.context?.sessionId) as ChatModel;
-			const request = model.getRequests().at(-1)!;
-
-			const prepared = tool.impl.prepareToolInvocation ?
-				await tool.impl.prepareToolInvocation(dto.parameters, token)
-				: undefined;
-
-			const defaultMessage = localize('toolInvocationMessage', "Using {0}", `"${tool.data.displayName}"`);
-			const invocationMessage = prepared?.invocationMessage ?? defaultMessage;
-			toolInvocation = new ChatToolInvocation(invocationMessage, prepared?.confirmationMessages);
-			token.onCancellationRequested(() => {
-				toolInvocation!.confirmed.complete(false);
-			});
-			model.acceptResponseProgress(request, toolInvocation);
-			if (prepared?.confirmationMessages) {
-				const userConfirmed = await toolInvocation.confirmed.p;
-				if (!userConfirmed) {
-					throw new CancellationError();
-				}
-			}
-		} else {
-			const prepared = tool.impl.prepareToolInvocation ?
-				await tool.impl.prepareToolInvocation(dto.parameters, token)
-				: undefined;
-
-			if (prepared?.confirmationMessages) {
-				const result = await this._dialogService.confirm({ message: prepared.confirmationMessages.title, detail: renderStringAsPlaintext(prepared.confirmationMessages.message) });
-				if (!result.confirmed) {
-					throw new CancellationError();
-				}
-			}
-		}
 
 		try {
-			return await tool.impl.invoke(dto, countTokens, token);
+			if (dto.context) {
+				const model = this._chatService.getSession(dto.context?.sessionId) as ChatModel;
+				const request = model.getRequests().at(-1)!;
+
+				const prepared = tool.impl.prepareToolInvocation ?
+					await tool.impl.prepareToolInvocation(dto.parameters, token)
+					: undefined;
+
+				const defaultMessage = localize('toolInvocationMessage', "Using {0}", `"${tool.data.displayName}"`);
+				const invocationMessage = prepared?.invocationMessage ?? defaultMessage;
+				toolInvocation = new ChatToolInvocation(invocationMessage, prepared?.confirmationMessages);
+				token.onCancellationRequested(() => {
+					toolInvocation!.confirmed.complete(false);
+				});
+				model.acceptResponseProgress(request, toolInvocation);
+				if (prepared?.confirmationMessages) {
+					const userConfirmed = await toolInvocation.confirmed.p;
+					if (!userConfirmed) {
+						throw new CancellationError();
+					}
+				}
+			} else {
+				const prepared = tool.impl.prepareToolInvocation ?
+					await tool.impl.prepareToolInvocation(dto.parameters, token)
+					: undefined;
+
+				if (prepared?.confirmationMessages) {
+					const result = await this._dialogService.confirm({ message: prepared.confirmationMessages.title, detail: renderStringAsPlaintext(prepared.confirmationMessages.message) });
+					if (!result.confirmed) {
+						throw new CancellationError();
+					}
+				}
+			}
+
+
+			const result = await tool.impl.invoke(dto, countTokens, token);
+			return result;
+		} catch (err) {
+			throw err;
 		} finally {
 			toolInvocation?.isCompleteDeferred.complete();
 		}

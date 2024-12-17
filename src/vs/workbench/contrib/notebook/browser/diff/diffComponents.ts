@@ -18,8 +18,7 @@ import { IContextMenuService } from '../../../../../platform/contextview/browser
 import { IMenu, IMenuService, MenuId, MenuItemAction } from '../../../../../platform/actions/common/actions.js';
 import { IKeybindingService } from '../../../../../platform/keybinding/common/keybinding.js';
 import { INotificationService } from '../../../../../platform/notification/common/notification.js';
-import { IAction } from '../../../../../base/common/actions.js';
-import { createAndFillInActionBarActions } from '../../../../../platform/actions/browser/menuEntryActionViewItem.js';
+import { getFlatActionBarActions } from '../../../../../platform/actions/browser/menuEntryActionViewItem.js';
 import { IContextKey, IContextKeyService } from '../../../../../platform/contextkey/common/contextkey.js';
 import { CodiconActionViewItem } from '../view/cellParts/cellActionView.js';
 import { collapsedIcon, expandedIcon } from '../notebookIcons.js';
@@ -199,8 +198,7 @@ class PropertyHeader extends Disposable {
 	private updateMenu() {
 		const metadataChanged = this.accessor.checkIfModified();
 		if (metadataChanged) {
-			const actions: IAction[] = [];
-			createAndFillInActionBarActions(this._menu, { shouldForwardArgs: true }, actions);
+			const actions = getFlatActionBarActions(this._menu.getActions({ shouldForwardArgs: true }));
 			this._toolbar.setActions(actions);
 		} else {
 			this._toolbar.setActions([]);
@@ -383,9 +381,8 @@ export class NotebookDocumentMetadataElement extends Disposable {
 			inputChanged.set(hasChanges);
 
 			if (hasChanges) {
-				const actions: IAction[] = [];
 				const menu = this.menuService.getMenuActions(MenuId.NotebookDiffDocumentMetadata, scopedContextKeyService, { shouldForwardArgs: true });
-				createAndFillInActionBarActions(menu, actions);
+				const actions = getFlatActionBarActions(menu);
 				this._toolbar.setActions(actions);
 			} else {
 				this._toolbar.setActions([]);
@@ -1960,9 +1957,8 @@ export class ModifiedElement extends AbstractElementRenderer {
 			inputChanged.set(hasChanges);
 
 			if (hasChanges) {
-				const actions: IAction[] = [];
 				const menu = this.menuService.getMenuActions(MenuId.NotebookDiffCellInputTitle, scopedContextKeyService, { shouldForwardArgs: true });
-				createAndFillInActionBarActions(menu, actions);
+				const actions = getFlatActionBarActions(menu);
 				this._toolbar.setActions(actions);
 			} else {
 				this._toolbar.setActions([]);
