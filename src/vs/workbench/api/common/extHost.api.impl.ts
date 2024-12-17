@@ -356,7 +356,7 @@ export function createApiFactoryAndRegisterActors(accessor: ServicesAccessor): I
 			}
 		};
 
-		const _telemetryLogger: vscode.TelemetryLogger | undefined;  // Dummy logger for extension compatibility!
+		let _telemetryLogger: vscode.TelemetryLogger | undefined;  // Dummy logger for extension compatibility!
 
 		// namespace: env
 		const env: typeof vscode.env = {
