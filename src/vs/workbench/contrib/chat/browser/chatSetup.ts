@@ -26,7 +26,6 @@ import { IConfigurationService } from '../../../../platform/configuration/common
 import { ContextKeyExpr, IContextKeyService } from '../../../../platform/contextkey/common/contextkey.js';
 import { IContextMenuService } from '../../../../platform/contextview/browser/contextView.js';
 import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
-import { IExtensionManagementService } from '../../../../platform/extensionManagement/common/extensionManagement.js';
 import { ExtensionIdentifier } from '../../../../platform/extensions/common/extensions.js';
 import { IInstantiationService } from '../../../../platform/instantiation/common/instantiation.js';
 import { ILogService } from '../../../../platform/log/common/log.js';
@@ -58,6 +57,7 @@ import { mainWindow } from '../../../../base/browser/window.js';
 import { IOpenerService } from '../../../../platform/opener/common/opener.js';
 import { URI } from '../../../../base/common/uri.js';
 import { IHostService } from '../../../services/host/browser/host.js';
+import Severity from '../../../../base/common/severity.js';
 
 const defaultChat = {
 	extensionId: product.defaultChatAgent?.extensionId ?? '',
@@ -66,12 +66,14 @@ const defaultChat = {
 	termsStatementUrl: product.defaultChatAgent?.termsStatementUrl ?? '',
 	privacyStatementUrl: product.defaultChatAgent?.privacyStatementUrl ?? '',
 	skusDocumentationUrl: product.defaultChatAgent?.skusDocumentationUrl ?? '',
+	publicCodeMatchesUrl: product.defaultChatAgent?.publicCodeMatchesUrl ?? '',
 	upgradePlanUrl: product.defaultChatAgent?.upgradePlanUrl ?? '',
 	providerId: product.defaultChatAgent?.providerId ?? '',
 	providerName: product.defaultChatAgent?.providerName ?? '',
 	providerScopes: product.defaultChatAgent?.providerScopes ?? [[]],
 	entitlementUrl: product.defaultChatAgent?.entitlementUrl ?? '',
 	entitlementSignupLimitedUrl: product.defaultChatAgent?.entitlementSignupLimitedUrl ?? '',
+	manageSettingsUrl: product.defaultChatAgent?.manageSettingsUrl ?? '',
 };
 
 enum ChatEntitlement {
@@ -344,6 +346,8 @@ class ChatSetupRequests extends Disposable {
 		@ILogService private readonly logService: ILogService,
 		@IRequestService private readonly requestService: IRequestService,
 		@IChatQuotasService private readonly chatQuotasService: IChatQuotasService,
+		@IDialogService private readonly dialogService: IDialogService,
+		@IOpenerService private readonly openerService: IOpenerService
 	) {
 		super();
 
@@ -465,7 +469,12 @@ class ChatSetupRequests extends Disposable {
 			return { entitlement: ChatEntitlement.Unresolved };
 		}
 
-		const responseText = await asText(response);
+		let responseText: string | null = null;
+		try {
+			responseText = await asText(response);
+		} catch (error) {
+			// ignore - handled below
+		}
 		if (token.isCancellationRequested) {
 			return undefined;
 		}
@@ -563,18 +572,38 @@ class ChatSetupRequests extends Disposable {
 
 		const response = await this.request(defaultChat.entitlementSignupLimitedUrl, 'POST', body, session, CancellationToken.None);
 		if (!response) {
-			this.logService.error('[chat setup] sign-up: no response');
+			this.onUnknownSignUpError('[chat setup] sign-up: no response');
 			return false;
 		}
 
 		if (response.res.statusCode && response.res.statusCode !== 200) {
-			this.logService.error(`[chat setup] sign-up: unexpected status code ${response.res.statusCode}`);
+			if (response.res.statusCode === 422) {
+				try {
+					const responseText = await asText(response);
+					if (responseText) {
+						const responseError: { message: string } = JSON.parse(responseText);
+						if (typeof responseError.message === 'string' && responseError.message) {
+							this.onUnprocessableSignUpError(`[chat setup] sign-up: unprocessable entity (${responseError.message})`, responseError.message);
+							return false;
+						}
+					}
+				} catch (error) {
+					// ignore - handled below
+				}
+			}
+			this.onUnknownSignUpError(`[chat setup] sign-up: unexpected status code ${response.res.statusCode}`);
 			return false;
 		}
 
-		const responseText = await asText(response);
+		let responseText: string | null = null;
+		try {
+			responseText = await asText(response);
+		} catch (error) {
+			// ignore - handled below
+		}
+
 		if (!responseText) {
-			this.logService.error('[chat setup] sign-up: response has no content');
+			this.onUnknownSignUpError('[chat setup] sign-up: response has no content');
 			return false;
 		}
 
@@ -583,7 +612,7 @@ class ChatSetupRequests extends Disposable {
 			parsedResult = JSON.parse(responseText);
 			this.logService.trace(`[chat setup] sign-up: response is ${responseText}`);
 		} catch (err) {
-			this.logService.error(`[chat setup] sign-up: error parsing response (${err})`);
+			this.onUnknownSignUpError(`[chat setup] sign-up: error parsing response (${err})`);
 		}
 
 		const subscribed = Boolean(parsedResult?.subscribed);
@@ -598,6 +627,30 @@ class ChatSetupRequests extends Disposable {
 		}
 
 		return subscribed;
+	}
+
+	private onUnknownSignUpError(logMessage: string): void {
+		this.dialogService.error(localize('unknownSignUpError', "An error occurred while signing up for Copilot Free."), localize('unknownSignUpErrorDetail', "Please try again."));
+		this.logService.error(logMessage);
+	}
+
+	private onUnprocessableSignUpError(logMessage: string, logDetails: string): void {
+		this.dialogService.prompt({
+			type: Severity.Error,
+			message: localize('unprocessableSignUpError', "An error occurred while signing up for Copilot Free."),
+			detail: logDetails,
+			buttons: [
+				{
+					label: localize('ok', "OK"),
+					run: () => { /* noop */ }
+				},
+				{
+					label: localize('learnMore', "Learn More"),
+					run: () => this.openerService.open(URI.parse(defaultChat.upgradePlanUrl))
+				}
+			],
+		});
+		this.logService.error(logMessage);
 	}
 
 	override dispose(): void {
@@ -784,7 +837,7 @@ class ChatSetupWelcomeContent extends Disposable {
 		private readonly context: ChatSetupContext,
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IContextMenuService private readonly contextMenuService: IContextMenuService,
-		@ICommandService private readonly commandService: ICommandService
+		@ICommandService private readonly commandService: ICommandService,
 	) {
 		super();
 
@@ -796,7 +849,7 @@ class ChatSetupWelcomeContent extends Disposable {
 
 		// Header
 		{
-			const header = localize({ key: 'setupHeader', comment: ['{Locked="[Copilot]({0})"}'] }, "[Copilot]({0} 'Copilot') is your AI pair programmer.", this.context.state.installed ? 'command:github.copilot.open.walkthrough' : defaultChat.documentationUrl);
+			const header = localize({ key: 'header', comment: ['{Locked="[Copilot]({0})"}'] }, "[Copilot]({0}) is your AI pair programmer.", this.context.state.installed ? 'command:github.copilot.open.walkthrough' : defaultChat.documentationUrl);
 			this.element.appendChild($('p')).appendChild(this._register(markdown.render(new MarkdownString(header, { isTrusted: true }))).element);
 
 			const features = this.element.appendChild($('div.chat-features-container'));
@@ -822,9 +875,9 @@ class ChatSetupWelcomeContent extends Disposable {
 		}
 
 		// Limited SKU
-		const limitedSkuHeader = '$(sparkle-filled) ' + localize({ key: 'limitedSkuHeader', comment: ['{Locked="[]({0})"}'] }, "We now offer [Copilot for free]({0}).", defaultChat.skusDocumentationUrl);
-		const limitedSkuHeaderContainer = this.element.appendChild($('p'));
-		limitedSkuHeaderContainer.appendChild(this._register(markdown.render(new MarkdownString(limitedSkuHeader, { isTrusted: true, supportThemeIcons: true }))).element);
+		const free = localize({ key: 'free', comment: ['{Locked="[]({0})"}'] }, "$(sparkle-filled) We now offer [Copilot for free]({0}).", defaultChat.skusDocumentationUrl);
+		const freeContainer = this.element.appendChild($('p'));
+		freeContainer.appendChild(this._register(markdown.render(new MarkdownString(free, { isTrusted: true, supportThemeIcons: true }))).element);
 
 		// Setup Button
 		const actions: IAction[] = [];
@@ -847,34 +900,39 @@ class ChatSetupWelcomeContent extends Disposable {
 		this._register(button.onDidClick(() => this.controller.setup()));
 
 		// Terms
-		const terms = localize({ key: 'termsLabel', comment: ['{Locked="["}', '{Locked="]({0})"}', '{Locked="]({1})"}'] }, "By continuing, you agree to the [Terms]({0}) and [Privacy Policy]({1}).", defaultChat.termsStatementUrl, defaultChat.privacyStatementUrl);
+		const terms = localize({ key: 'terms', comment: ['{Locked="["}', '{Locked="]({0})"}', '{Locked="]({1})"}'] }, "By continuing, you agree to the [Terms]({0}) and [Privacy Policy]({1}).", defaultChat.termsStatementUrl, defaultChat.privacyStatementUrl);
 		this.element.appendChild($('p')).appendChild(this._register(markdown.render(new MarkdownString(terms, { isTrusted: true }))).element);
 
+		// SKU Settings
+		const settings = localize({ key: 'settings', comment: ['{Locked="["}', '{Locked="]({0})"}', '{Locked="]({1})"}'] }, "Copilot Free and Pro may show [public code]({0}) suggestions and we may use your data for product improvement. You can change these [settings]({1}) at any time.", defaultChat.publicCodeMatchesUrl, defaultChat.manageSettingsUrl);
+		const settingsContainer = this.element.appendChild($('p'));
+		settingsContainer.appendChild(this._register(markdown.render(new MarkdownString(settings, { isTrusted: true }))).element);
+
 		// Update based on model state
-		this._register(Event.runAndSubscribe(this.controller.onDidChange, () => this.update(limitedSkuHeaderContainer, button)));
+		this._register(Event.runAndSubscribe(this.controller.onDidChange, () => this.update(freeContainer, settingsContainer, button)));
 	}
 
-	private update(limitedSkuHeaderContainer: HTMLElement, button: Button | ButtonWithDropdown): void {
-		let showLimitedSkuHeader: boolean;
+	private update(freeContainer: HTMLElement, settingsContainer: HTMLElement, button: Button | ButtonWithDropdown): void {
+		let showFree: boolean;
 		let buttonLabel: string;
 
 		switch (this.context.state.entitlement) {
 			case ChatEntitlement.Unknown:
-				showLimitedSkuHeader = true;
+				showFree = true;
 				buttonLabel = this.context.state.registered ? localize('signUp', "Sign in to Use Copilot") : localize('signUpFree', "Sign in to Use Copilot for Free");
 				break;
 			case ChatEntitlement.Unresolved:
-				showLimitedSkuHeader = true;
+				showFree = true;
 				buttonLabel = this.context.state.registered ? localize('startUp', "Use Copilot") : localize('startUpLimited', "Use Copilot for Free");
 				break;
 			case ChatEntitlement.Available:
 			case ChatEntitlement.Limited:
-				showLimitedSkuHeader = true;
+				showFree = true;
 				buttonLabel = localize('startUpLimited', "Use Copilot for Free");
 				break;
 			case ChatEntitlement.Pro:
 			case ChatEntitlement.Unavailable:
-				showLimitedSkuHeader = false;
+				showFree = false;
 				buttonLabel = localize('startUp', "Use Copilot");
 				break;
 		}
@@ -888,7 +946,7 @@ class ChatSetupWelcomeContent extends Disposable {
 				break;
 		}
 
-		setVisibility(showLimitedSkuHeader, limitedSkuHeaderContainer);
+		setVisibility(showFree, freeContainer);
 
 		button.label = buttonLabel;
 		button.enabled = this.controller.step === ChatSetupStep.Initial;
@@ -932,9 +990,9 @@ class ChatSetupContext extends Disposable {
 		@IStorageService private readonly storageService: IStorageService,
 		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
 		@IExtensionService private readonly extensionService: IExtensionService,
-		@IExtensionManagementService private readonly extensionManagementService: IExtensionManagementService,
 		@IWorkbenchExtensionEnablementService private readonly extensionEnablementService: IWorkbenchExtensionEnablementService,
-		@ILogService private readonly logService: ILogService
+		@ILogService private readonly logService: ILogService,
+		@IExtensionsWorkbenchService private readonly extensionsWorkbenchService: IExtensionsWorkbenchService,
 	) {
 		super();
 
@@ -959,9 +1017,9 @@ class ChatSetupContext extends Disposable {
 			}
 		}));
 
-		const extensions = await this.extensionManagementService.getInstalled();
+		const extensions = await this.extensionsWorkbenchService.queryLocal();
 		const defaultChatExtension = extensions.find(value => ExtensionIdentifier.equals(value.identifier.id, defaultChat.extensionId));
-		this.update({ installed: !!defaultChatExtension && this.extensionEnablementService.isEnabled(defaultChatExtension) });
+		this.update({ installed: !!defaultChatExtension?.local && this.extensionEnablementService.isEnabled(defaultChatExtension.local) });
 	}
 
 	update(context: { installed: boolean }): Promise<void>;
