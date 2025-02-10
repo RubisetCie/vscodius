@@ -98,7 +98,7 @@ export class PaneCompositeBar extends Disposable {
 
 	constructor(
 		protected readonly options: IPaneCompositeBarOptions,
-		private readonly part: Parts,
+		protected readonly part: Parts,
 		private readonly paneCompositePart: IPaneCompositePart,
 		@IInstantiationService protected readonly instantiationService: IInstantiationService,
 		@IStorageService private readonly storageService: IStorageService,
@@ -793,8 +793,7 @@ class ViewContainerActivityAction extends CompositeBarAction {
 	}
 
 	private updateActivity(): void {
-		const activities = this.activityService.getViewContainerActivities(this.compositeBarActionItem.id);
-		this.activity = activities[0];
+		this.activities = this.activityService.getViewContainerActivities(this.compositeBarActionItem.id);
 	}
 
 	override async run(event: { preserveFocus: boolean }): Promise<void> {

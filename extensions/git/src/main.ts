@@ -111,7 +111,7 @@ async function createModel(context: ExtensionContext, logger: LogOutputChannel, 
 	const cc = new CommandCenter(git, model, context.globalState, logger);
 	disposables.push(
 		cc,
-		new GitFileSystemProvider(model),
+		new GitFileSystemProvider(model, logger),
 		new GitDecorations(model),
 		new GitBlameController(model),
 		new GitTimelineProvider(model, cc),
@@ -120,7 +120,7 @@ async function createModel(context: ExtensionContext, logger: LogOutputChannel, 
 		new TerminalShellExecutionManager(model, logger)
 	);
 
-	const postCommitCommandsProvider = new GitPostCommitCommandsProvider();
+	const postCommitCommandsProvider = new GitPostCommitCommandsProvider(model);
 	model.registerPostCommitCommandsProvider(postCommitCommandsProvider);
 
 	const diagnosticsManager = new GitCommitInputBoxDiagnosticsManager(model);

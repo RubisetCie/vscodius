@@ -21,7 +21,7 @@ import { IConfigurationService } from '../../../../platform/configuration/common
 import { IProgress, IProgressService, IProgressStep, ProgressLocation } from '../../../../platform/progress/common/progress.js';
 import { EditSessionsWorkbenchService } from './editSessionsStorageService.js';
 import { InstantiationType, registerSingleton } from '../../../../platform/instantiation/common/extensions.js';
-import { UserDataSyncErrorCode, UserDataSyncStoreError, IUserDataSynchroniser } from '../../../../platform/userDataSync/common/userDataSync.js';
+import { UserDataSyncErrorCode, UserDataSyncStoreError } from '../../../../platform/userDataSync/common/userDataSync.js';
 import { INotificationService, Severity } from '../../../../platform/notification/common/notification.js';
 import { getFileNamesMessage, IDialogService, IFileDialogService } from '../../../../platform/dialogs/common/dialogs.js';
 import { IProductService } from '../../../../platform/product/common/productService.js';
@@ -123,7 +123,7 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 
 	private registeredCommands = new Set<string>();
 
-	private workspaceStateSynchronizer: IUserDataSynchroniser | undefined;
+	private workspaceStateSynchronizer: WorkspaceStateSynchroniser | undefined;
 	private editSessionsStorageClient: EditSessionsStoreClient | undefined;
 
 	constructor(
@@ -527,7 +527,7 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 				}
 			}
 
-			await this.workspaceStateSynchronizer?.apply(false, {});
+			await this.workspaceStateSynchronizer?.apply();
 
 			this.logService.info(`Deleting edit session with ref ${ref} after successfully applying it to current workspace...`);
 			await this.editSessionsStorageService.delete('editSessions', ref);
@@ -703,7 +703,7 @@ export class EditSessionsContribution extends Disposable implements IWorkbenchCo
 		}
 
 		// Store contributed workspace state
-		await this.workspaceStateSynchronizer?.sync(null, {});
+		await this.workspaceStateSynchronizer?.sync();
 
 		if (!hasEdits) {
 			this.logService.info('Skipped storing working changes in the cloud as there are no edits to store.');

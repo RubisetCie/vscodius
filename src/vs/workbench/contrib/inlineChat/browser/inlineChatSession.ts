@@ -6,7 +6,7 @@
 import { URI } from '../../../../base/common/uri.js';
 import { Emitter, Event } from '../../../../base/common/event.js';
 import { IIdentifiedSingleEditOperation, IModelDecorationOptions, IModelDeltaDecoration, ITextModel, IValidEditOperation, TrackedRangeStickiness } from '../../../../editor/common/model.js';
-import { EditMode, CTX_INLINE_CHAT_HAS_STASHED_SESSION } from '../common/inlineChat.js';
+import { CTX_INLINE_CHAT_HAS_STASHED_SESSION } from '../common/inlineChat.js';
 import { IRange, Range } from '../../../../editor/common/core/range.js';
 import { ModelDecorationOptions } from '../../../../editor/common/model/textModel.js';
 import { EditOperation, ISingleEditOperation } from '../../../../editor/common/core/editOperation.js';
@@ -88,7 +88,6 @@ export class Session {
 	private readonly _versionByRequest = new Map<string, number>();
 
 	constructor(
-		readonly editMode: EditMode,
 		readonly headless: boolean,
 		/**
 		 * The URI of the document which is being EditorEdit

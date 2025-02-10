@@ -15,7 +15,7 @@ import { IStorageEntry, IStorageService, StorageScope, StorageTarget } from '../
 import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
 import { IUserDataProfile } from '../../../../platform/userDataProfile/common/userDataProfile.js';
 import { AbstractSynchroniser, IAcceptResult, IMergeResult, IResourcePreview, ISyncResourcePreview } from '../../../../platform/userDataSync/common/abstractSynchronizer.js';
-import { IRemoteUserData, IResourceRefHandle, IUserDataSyncLocalStoreService, IUserDataSyncConfiguration, IUserDataSyncEnablementService, IUserDataSyncLogService, IUserDataSyncStoreService, IUserDataSynchroniser, IWorkspaceState, SyncResource } from '../../../../platform/userDataSync/common/userDataSync.js';
+import { IRemoteUserData, IResourceRefHandle, IUserDataSyncLocalStoreService, IUserDataSyncConfiguration, IUserDataSyncEnablementService, IUserDataSyncLogService, IUserDataSyncStoreService, IUserDataSynchroniser, IWorkspaceState, SyncResource, IUserDataSyncResourcePreview } from '../../../../platform/userDataSync/common/userDataSync.js';
 import { EditSession, IEditSessionsStorageService } from './editSessions.js';
 import { IWorkspaceIdentityService } from '../../../services/workspaces/common/workspaceIdentityService.js';
 
@@ -73,11 +73,11 @@ export class WorkspaceStateSynchroniser extends AbstractSynchroniser implements 
 		super({ syncResource: SyncResource.WorkspaceState, profile }, collection, fileService, environmentService, storageService, userDataSyncStoreService, userDataSyncLocalStoreService, userDataSyncEnablementService, logService, configurationService, uriIdentityService);
 	}
 
-	override async sync(): Promise<void> {
+	override async sync(): Promise<IUserDataSyncResourcePreview | null> {
 		const cancellationTokenSource = new CancellationTokenSource();
 		const folders = await this.workspaceIdentityService.getWorkspaceStateFolders(cancellationTokenSource.token);
 		if (!folders.length) {
-			return;
+			return null;
 		}
 
 		// Ensure we have latest state by sending out onWillSaveState event
@@ -85,7 +85,7 @@ export class WorkspaceStateSynchroniser extends AbstractSynchroniser implements 
 
 		const keys = this.storageService.keys(StorageScope.WORKSPACE, StorageTarget.USER);
 		if (!keys.length) {
-			return;
+			return null;
 		}
 
 		const contributedData: IStringDictionary<string> = {};
@@ -98,6 +98,7 @@ export class WorkspaceStateSynchroniser extends AbstractSynchroniser implements 
 
 		const content: IWorkspaceState = { folders, storage: contributedData, version: this.version };
 		await this.editSessionsStorageService.write('workspaceState', stringify(content));
+		return null;
 	}
 
 	override async apply(): Promise<ISyncResourcePreview | null> {

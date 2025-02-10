@@ -636,6 +636,11 @@ export const UndoCommand = registerCommand(new MultiCommand({
 		group: '',
 		title: nls.localize('undo', "Undo"),
 		order: 1
+	}, {
+		menuId: MenuId.SimpleEditorContext,
+		group: '1_do',
+		title: nls.localize('undo', "Undo"),
+		order: 1
 	}]
 }));
 
@@ -660,6 +665,11 @@ export const RedoCommand = registerCommand(new MultiCommand({
 		group: '',
 		title: nls.localize('redo', "Redo"),
 		order: 1
+	}, {
+		menuId: MenuId.SimpleEditorContext,
+		group: '1_do',
+		title: nls.localize('redo', "Redo"),
+		order: 2
 	}]
 }));
 
@@ -681,6 +691,11 @@ export const SelectAllCommand = registerCommand(new MultiCommand({
 	}, {
 		menuId: MenuId.CommandPalette,
 		group: '',
+		title: nls.localize('selectAll', "Select All"),
+		order: 1
+	}, {
+		menuId: MenuId.SimpleEditorContext,
+		group: '9_select',
 		title: nls.localize('selectAll', "Select All"),
 		order: 1
 	}]

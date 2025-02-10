@@ -8,12 +8,14 @@ import { registerAction2, Action2 } from '../../../../platform/actions/common/ac
 import { IInstantiationService, ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
 import { Registry } from '../../../../platform/registry/common/platform.js';
 import { Categories } from '../../../../platform/action/common/actionCommonCategories.js';
-import { registerWorkbenchContribution2 } from '../../../common/contributions.js';
+import { registerWorkbenchContribution2, WorkbenchPhase } from '../../../common/contributions.js';
 import { EditorExtensions, IEditorSerializer, IEditorFactoryRegistry } from '../../../common/editor.js';
 import { PerfviewContrib, PerfviewInput } from './perfviewEditor.js';
 import { IEditorService } from '../../../services/editor/common/editorService.js';
 import { InstantiationService, Trace } from '../../../../platform/instantiation/common/instantiationService.js';
 import { EventProfiling } from '../../../../base/common/event.js';
+import { IEnvironmentService } from '../../../../platform/environment/common/environment.js';
+import { GCBasedDisposableTracker, setDisposableTracker } from '../../../../base/common/lifecycle.js';
 
 // -- startup performance view
 
@@ -127,3 +129,23 @@ registerAction2(class PrintEventProfiling extends Action2 {
 		}
 	}
 });
+
+// -- track leaking disposables, those that get GC'ed before having been disposed
+
+// this is currently disabled because there is too many leaks and some false positives, e.g disposables from registers
+// like MenuRegistry, CommandsRegistery etc should be marked as singleton
+
+const _enableLeakDetection = false
+	// || Boolean("true") // done "weirdly" so that a lint warning prevents you from pushing this
+	;
+
+class DisposableTracking {
+	static readonly Id = 'perf.disposableTracking';
+	constructor(@IEnvironmentService envService: IEnvironmentService) {
+		if (!envService.isBuilt && _enableLeakDetection) {
+			setDisposableTracker(new GCBasedDisposableTracker());
+		}
+	}
+}
+
+registerWorkbenchContribution2(DisposableTracking.Id, DisposableTracking, WorkbenchPhase.Eventually);

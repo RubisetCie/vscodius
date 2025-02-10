@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { localize, localize2 } from '../../../../nls.js';
-import { IDisposable, combinedDisposable } from '../../../../base/common/lifecycle.js';
+import { IDisposable, combinedDisposable, toDisposable } from '../../../../base/common/lifecycle.js';
 import { URI } from '../../../../base/common/uri.js';
 import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
 import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
@@ -79,6 +79,32 @@ export interface ExtensionUrlHandlerEvent {
 	readonly extensionId: string;
 }
 
+export interface IExtensionUrlHandlerOverride {
+	canHandleURL(uri: URI): boolean;
+	handleURL(uri: URI): Promise<boolean>;
+}
+
+export class ExtensionUrlHandlerOverrideRegistry {
+
+	private static readonly handlers = new Set<IExtensionUrlHandlerOverride>();
+
+	static registerHandler(handler: IExtensionUrlHandlerOverride): IDisposable {
+		this.handlers.add(handler);
+
+		return toDisposable(() => this.handlers.delete(handler));
+	}
+
+	static getHandler(uri: URI): IExtensionUrlHandlerOverride | undefined {
+		for (const handler of this.handlers) {
+			if (handler.canHandleURL(uri)) {
+				return handler;
+			}
+		}
+
+		return undefined;
+	}
+}
+
 /**
  * This class handles URLs which are directed towards extensions.
  * If a URL is directed towards an inactive extension, it buffers it,
@@ -129,6 +155,14 @@ class ExtensionUrlHandler implements IExtensionUrlHandler, IURLHandler {
 	async handleURL(uri: URI, options?: IOpenURLOptions): Promise<boolean> {
 		if (!isExtensionId(uri.authority)) {
 			return false;
+		}
+
+		const overrideHandler = ExtensionUrlHandlerOverrideRegistry.getHandler(uri);
+		if (overrideHandler) {
+			const handled = await overrideHandler.handleURL(uri);
+			if (handled) {
+				return handled;
+			}
 		}
 
 		const extensionId = uri.authority;

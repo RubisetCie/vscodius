@@ -306,7 +306,7 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 
 	public restartTsServer(fromUserAction = false): void {
 		if (this.serverState.type === ServerState.Type.Running) {
-			this.info('Killing TS Server');
+			this.logger.info('Killing TS Server');
 			this.isRestarting = true;
 			this.serverState.server.kill();
 		}
@@ -359,14 +359,6 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 		return this._onReady!.promise.then(f);
 	}
 
-	private info(message: string, ...data: any[]): void {
-		this.logger.info(message, ...data);
-	}
-
-	private error(message: string, ...data: any[]): void {
-		this.logger.error(message, ...data);
-	}
-
 	public ensureServiceStarted() {
 		if (this.serverState.type !== ServerState.Type.Running) {
 			this.startService();
@@ -375,15 +367,15 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 
 	private token: number = 0;
 	private startService(resendModels: boolean = false): ServerState.State {
-		this.info(`Starting TS Server`);
+		this.logger.info(`Starting TS Server`);
 
 		if (this.isDisposed) {
-			this.info(`Not starting server: disposed`);
+			this.logger.info(`Not starting server: disposed`);
 			return ServerState.None;
 		}
 
 		if (this.hasServerFatallyCrashedTooManyTimes) {
-			this.info(`Not starting server: too many crashes`);
+			this.logger.info(`Not starting server: too many crashes`);
 			return ServerState.None;
 		}
 
@@ -395,10 +387,10 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 			version = this._versionManager.currentVersion;
 		}
 
-		this.info(`Using tsserver from: ${version.path}`);
+		this.logger.info(`Using tsserver from: ${version.path}`);
 		const nodePath = this._nodeVersionManager.currentVersion;
 		if (nodePath) {
-			this.info(`Using Node installation from ${nodePath} to run TS Server`);
+			this.logger.info(`Using Node installation from ${nodePath} to run TS Server`);
 		}
 
 		this.resetWatchers();
@@ -422,9 +414,9 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 			}
 
 			this.serverState = new ServerState.Errored(err, handle.tsServerLog);
-			this.error('TSServer errored with error.', err);
+			this.logger.error('TSServer errored with error.', err);
 			if (handle.tsServerLog?.type === 'file') {
-				this.error(`TSServer log file: ${handle.tsServerLog.uri.fsPath}`);
+				this.logger.error(`TSServer log file: ${handle.tsServerLog.uri.fsPath}`);
 			}
 
 			this.serviceExited(false, apiVersion);
@@ -432,7 +424,7 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 
 		handle.onExit((data: TypeScriptServerExitEvent) => {
 			const { code, signal } = data;
-			this.error(`TSServer exited. Code: ${code}. Signal: ${signal}`);
+			this.logger.error(`TSServer exited. Code: ${code}. Signal: ${signal}`);
 
 			// In practice, the exit code is an integer with no ties to any identity,
 			// so it can be classified as SystemMetaData, rather than CallstackOrException.
@@ -443,7 +435,7 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 			}
 
 			if (handle.tsServerLog?.type === 'file') {
-				this.info(`TSServer log file: ${handle.tsServerLog.uri.fsPath}`);
+				this.logger.info(`TSServer log file: ${handle.tsServerLog.uri.fsPath}`);
 			}
 			this.serviceExited(!this.isRestarting, apiVersion);
 			this.isRestarting = false;
@@ -868,7 +860,7 @@ export default class TypeScriptServiceClient extends Disposable implements IType
 		}
 
 		if (this.serverState.type === ServerState.Type.Running) {
-			this.info('Killing TS Server');
+			this.logger.info('Killing TS Server');
 			const logfile = this.serverState.server.tsServerLog;
 			this.serverState.server.kill();
 			if (error instanceof TypeScriptServerError) {

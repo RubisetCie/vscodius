@@ -14,7 +14,7 @@ import { ExtensionIdentifier, IExtensionDescription } from '../../../../platform
 import { InstantiationService } from '../../../../platform/instantiation/common/instantiationService.js';
 import { ServiceCollection } from '../../../../platform/instantiation/common/serviceCollection.js';
 import { ILogService, NullLogService } from '../../../../platform/log/common/log.js';
-import { MainThreadExtensionServiceShape } from '../../common/extHost.protocol.js';
+import { MainThreadErrorsShape, MainThreadExtensionServiceShape } from '../../common/extHost.protocol.js';
 import { ExtensionPaths, IExtHostExtensionService } from '../../common/extHostExtensionService.js';
 import { IExtHostRpcService } from '../../common/extHostRpcService.js';
 import { ErrorHandler } from '../../common/extensionHostMain.js';
@@ -29,8 +29,11 @@ suite('ExtensionHostMain#ErrorHandler - Wrapping prepareStackTrace can cause slo
 	}
 
 	const extensionsIndex = TernarySearchTree.forUris<IExtensionDescription>();
-	const mainThreadExtensionsService = new class extends mock<MainThreadExtensionServiceShape>() {
+	const mainThreadExtensionsService = new class extends mock<MainThreadExtensionServiceShape>() implements MainThreadErrorsShape {
 		override $onExtensionRuntimeError(extensionId: ExtensionIdentifier, data: SerializedError): void {
+
+		}
+		$onUnexpectedError(err: any | SerializedError): void {
 
 		}
 	};

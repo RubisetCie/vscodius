@@ -18,6 +18,7 @@ import { EditOperation } from '../../../../editor/common/core/editOperation.js';
 import { Range } from '../../../../editor/common/core/range.js';
 import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
 import { PLAINTEXT_LANGUAGE_ID } from '../../../../editor/common/languages/modesRegistry.js';
+import { Disposable } from '../../../../base/common/lifecycle.js';
 
 /**
  * Debug URI format
@@ -32,7 +33,7 @@ import { PLAINTEXT_LANGUAGE_ID } from '../../../../editor/common/languages/modes
  * the arbitrary_path and the session id are encoded with 'encodeURIComponent'
  *
  */
-export class DebugContentProvider implements IWorkbenchContribution, ITextModelContentProvider {
+export class DebugContentProvider extends Disposable implements IWorkbenchContribution, ITextModelContentProvider {
 
 	private static INSTANCE: DebugContentProvider;
 
@@ -45,12 +46,14 @@ export class DebugContentProvider implements IWorkbenchContribution, ITextModelC
 		@ILanguageService private readonly languageService: ILanguageService,
 		@IEditorWorkerService private readonly editorWorkerService: IEditorWorkerService
 	) {
-		textModelResolverService.registerTextModelContentProvider(DEBUG_SCHEME, this);
+		super();
+		this._store.add(textModelResolverService.registerTextModelContentProvider(DEBUG_SCHEME, this));
 		DebugContentProvider.INSTANCE = this;
 	}
 
-	dispose(): void {
+	override dispose(): void {
 		this.pendingUpdates.forEach(cancellationSource => cancellationSource.dispose());
+		super.dispose();
 	}
 
 	provideTextContent(resource: uri): Promise<ITextModel> | null {
