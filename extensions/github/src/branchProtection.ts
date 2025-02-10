@@ -47,7 +47,7 @@ const REPOSITORY_RULESETS_QUERY = `
 	}
 `;
 
-export class GithubBranchProtectionProviderManager {
+export class GitHubBranchProtectionProviderManager {
 
 	private readonly disposables = new DisposableStore();
 	private readonly providerDisposables = new DisposableStore();
@@ -60,7 +60,7 @@ export class GithubBranchProtectionProviderManager {
 
 		if (enabled) {
 			for (const repository of this.gitAPI.repositories) {
-				this.providerDisposables.add(this.gitAPI.registerBranchProtectionProvider(repository.rootUri, new GithubBranchProtectionProvider(repository, this.globalState, this.logger)));
+				this.providerDisposables.add(this.gitAPI.registerBranchProtectionProvider(repository.rootUri, new GitHubBranchProtectionProvider(repository, this.globalState, this.logger)));
 			}
 		} else {
 			this.providerDisposables.dispose();
@@ -76,7 +76,7 @@ export class GithubBranchProtectionProviderManager {
 		) {
 		this.disposables.add(this.gitAPI.onDidOpenRepository(repository => {
 			if (this._enabled) {
-				this.providerDisposables.add(gitAPI.registerBranchProtectionProvider(repository.rootUri, new GithubBranchProtectionProvider(repository, this.globalState, this.logger)));
+				this.providerDisposables.add(gitAPI.registerBranchProtectionProvider(repository.rootUri, new GitHubBranchProtectionProvider(repository, this.globalState, this.logger)));
 			}
 		}));
 
@@ -101,7 +101,7 @@ export class GithubBranchProtectionProviderManager {
 
 }
 
-export class GithubBranchProtectionProvider implements BranchProtectionProvider {
+export class GitHubBranchProtectionProvider implements BranchProtectionProvider {
 	private readonly _onDidChangeBranchProtection = new EventEmitter<Uri>();
 	onDidChangeBranchProtection = this._onDidChangeBranchProtection.event;
 
@@ -172,12 +172,12 @@ export class GithubBranchProtectionProvider implements BranchProtectionProvider 
 				}
 
 				// Repository details
-				this.logger.trace(`Fetching repository details for "${repository.owner}/${repository.repo}".`);
+				this.logger.trace(`[GitHubBranchProtectionProvider][updateRepositoryBranchProtection] Fetching repository details for "${repository.owner}/${repository.repo}".`);
 				const repositoryDetails = await this.getRepositoryDetails(repository.owner, repository.repo);
 
 				// Check repository write permission
 				if (repositoryDetails.viewerPermission !== 'ADMIN' && repositoryDetails.viewerPermission !== 'MAINTAIN' && repositoryDetails.viewerPermission !== 'WRITE') {
-					this.logger.trace(`Skipping branch protection for "${repository.owner}/${repository.repo}" due to missing repository write permission.`);
+					this.logger.trace(`[GitHubBranchProtectionProvider][updateRepositoryBranchProtection] Skipping branch protection for "${repository.owner}/${repository.repo}" due to missing repository write permission.`);
 					continue;
 				}
 
@@ -200,9 +200,9 @@ export class GithubBranchProtectionProvider implements BranchProtectionProvider 
 
 			// Save branch protection to global state
 			await this.globalState.update(this.globalStateKey, branchProtection);
-			this.logger.trace(`Branch protection for "${this.repository.rootUri.toString()}": ${JSON.stringify(branchProtection)}.`);
+			this.logger.trace(`[GitHubBranchProtectionProvider][updateRepositoryBranchProtection] Branch protection for "${this.repository.rootUri.toString()}": ${JSON.stringify(branchProtection)}.`);
 		} catch (err) {
-			this.logger.warn(`Failed to update repository branch protection: ${err.message}`);
+			this.logger.warn(`[GitHubBranchProtectionProvider][updateRepositoryBranchProtection] Failed to update repository branch protection: ${err.message}`);
 
 			if (err instanceof AuthenticationError) {
 				// A GitHub authentication session could be missing if the user has not yet

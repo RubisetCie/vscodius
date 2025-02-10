@@ -106,9 +106,7 @@ export function registerNotificationCommands(center: INotificationsCenterControl
 		weight: KeybindingWeight.WorkbenchContrib + 50,
 		when: NotificationsCenterVisibleContext,
 		primary: KeyCode.Escape,
-		handler: accessor => {
-			center.hide();
-		}
+		handler: () => center.hide()
 	});
 
 	// Toggle Notifications Center

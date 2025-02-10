@@ -47,6 +47,9 @@ import { IUserDataProfileService, CURRENT_PROFILE_CONTEXT } from '../../../servi
 import { IUserDataProfilesService } from '../../../../platform/userDataProfile/common/userDataProfile.js';
 import { isCodeEditor } from '../../../../editor/browser/editorBrowser.js';
 import { Categories } from '../../../../platform/action/common/actionCommonCategories.js';
+import { resolveCommandsContext } from '../../../browser/parts/editor/editorCommandsContext.js';
+import { IEditorGroup, IEditorGroupsService } from '../../../services/editor/common/editorGroupsService.js';
+import { IListService } from '../../../../platform/list/browser/listService.js';
 
 const SETTINGS_EDITOR_COMMAND_SEARCH = 'settings.action.search';
 
@@ -773,9 +776,10 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 					]
 				});
 			}
-			run(accessor: ServicesAccessor, args: string | undefined) {
-				const query = typeof args === 'string' ? args : undefined;
-				return accessor.get(IPreferencesService).openGlobalKeybindingSettings(false, { query });
+			run(accessor: ServicesAccessor, ...args: unknown[]) {
+				const query = typeof args[0] === 'string' ? args[0] : undefined;
+				const groupId = getEditorGroupFromArguments(accessor, args)?.id;
+				return accessor.get(IPreferencesService).openGlobalKeybindingSettings(false, { query, groupId });
 			}
 		}));
 		this._register(MenuRegistry.appendMenuItem(MenuId.MenubarPreferencesMenu, {
@@ -816,8 +820,9 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 					]
 				});
 			}
-			run(accessor: ServicesAccessor) {
-				return accessor.get(IPreferencesService).openGlobalKeybindingSettings(true);
+			run(accessor: ServicesAccessor, ...args: unknown[]) {
+				const groupId = getEditorGroupFromArguments(accessor, args)?.id;
+				return accessor.get(IPreferencesService).openGlobalKeybindingSettings(true, { groupId });
 			}
 		}));
 		this._register(registerAction2(class extends Action2 {
@@ -834,8 +839,9 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 					]
 				});
 			}
-			run(accessor: ServicesAccessor) {
-				const editorPane = accessor.get(IEditorService).activeEditorPane;
+			run(accessor: ServicesAccessor, ...args: unknown[]) {
+				const group = getEditorGroupFromArguments(accessor, args);
+				const editorPane = group?.activeEditorPane;
 				if (editorPane instanceof KeybindingsEditor) {
 					editorPane.search('@source:system');
 				}
@@ -855,8 +861,9 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 					]
 				});
 			}
-			run(accessor: ServicesAccessor) {
-				const editorPane = accessor.get(IEditorService).activeEditorPane;
+			run(accessor: ServicesAccessor, ...args: unknown[]) {
+				const group = getEditorGroupFromArguments(accessor, args);
+				const editorPane = group?.activeEditorPane;
 				if (editorPane instanceof KeybindingsEditor) {
 					editorPane.search('@source:extension');
 				}
@@ -876,8 +883,9 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 					]
 				});
 			}
-			run(accessor: ServicesAccessor) {
-				const editorPane = accessor.get(IEditorService).activeEditorPane;
+			run(accessor: ServicesAccessor, args: unknown[]) {
+				const group = getEditorGroupFromArguments(accessor, args);
+				const editorPane = group?.activeEditorPane;
 				if (editorPane instanceof KeybindingsEditor) {
 					editorPane.search('@source:user');
 				}
@@ -1189,11 +1197,12 @@ class PreferencesActionsContribution extends Disposable implements IWorkbenchCon
 		for (const folder of this.workspaceContextService.getWorkspace().folders) {
 			const commandId = `_workbench.openFolderSettings.${folder.uri.toString()}`;
 			if (!CommandsRegistry.getCommand(commandId)) {
-				CommandsRegistry.registerCommand(commandId, () => {
+				CommandsRegistry.registerCommand(commandId, (accessor: ServicesAccessor, ...args: any[]) => {
+					const groupId = getEditorGroupFromArguments(accessor, args)?.id;
 					if (this.workspaceContextService.getWorkbenchState() === WorkbenchState.FOLDER) {
-						return this.preferencesService.openWorkspaceSettings({ jsonEditor: false });
+						return this.preferencesService.openWorkspaceSettings({ jsonEditor: false, groupId });
 					} else {
-						return this.preferencesService.openFolderSettings({ folderUri: folder.uri, jsonEditor: false });
+						return this.preferencesService.openFolderSettings({ folderUri: folder.uri, jsonEditor: false, groupId });
 					}
 				});
 				MenuRegistry.appendMenuItem(MenuId.EditorTitle, {
@@ -1243,9 +1252,10 @@ class SettingsEditorTitleContribution extends Disposable implements IWorkbenchCo
 						}]
 					});
 				}
-				run(accessor: ServicesAccessor, args: IOpenSettingsActionOptions) {
-					args = sanitizeOpenSettingsArgs(args);
-					return accessor.get(IPreferencesService).openUserSettings({ jsonEditor: false, ...args });
+				run(accessor: ServicesAccessor, ...args: unknown[]) {
+					const sanatizedArgs = sanitizeOpenSettingsArgs(args[0]);
+					const groupId = getEditorGroupFromArguments(accessor, args)?.id;
+					return accessor.get(IPreferencesService).openUserSettings({ jsonEditor: false, ...sanatizedArgs, groupId });
 				}
 			});
 		};
@@ -1271,8 +1281,9 @@ class SettingsEditorTitleContribution extends Disposable implements IWorkbenchCo
 					}]
 				});
 			}
-			run(accessor: ServicesAccessor) {
-				const editorPane = accessor.get(IEditorService).activeEditorPane;
+			run(accessor: ServicesAccessor, ...args: unknown[]) {
+				const group = getEditorGroupFromArguments(accessor, args);
+				const editorPane = group?.activeEditorPane;
 				if (editorPane instanceof SettingsEditor2) {
 					return editorPane.switchToSettingsFile();
 				}
@@ -1280,6 +1291,11 @@ class SettingsEditorTitleContribution extends Disposable implements IWorkbenchCo
 			}
 		}));
 	}
+}
+
+function getEditorGroupFromArguments(accessor: ServicesAccessor, args: unknown[]): IEditorGroup | undefined {
+	const context = resolveCommandsContext(args, accessor.get(IEditorService), accessor.get(IEditorGroupsService), accessor.get(IListService));
+	return context.groupedEditors[0]?.group;
 }
 
 const workbenchContributionsRegistry = Registry.as<IWorkbenchContributionsRegistry>(WorkbenchExtensions.Workbench);

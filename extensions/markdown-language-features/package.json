@@ -15,9 +15,6 @@
   "categories": [
     "Programming Languages"
   ],
-  "enabledApiProposals": [
-    "documentPaste"
-  ],
   "activationEvents": [
     "onLanguage:markdown",
     "onCommand:markdown.api.render",
@@ -126,6 +123,11 @@
         "category": "Markdown"
       },
       {
+        "command": "_markdown.openImage",
+        "title": "%markdown.openImage.title%",
+        "category": "Markdown"
+      },
+      {
         "command": "markdown.showPreview",
         "title": "%markdown.preview.title%",
         "category": "Markdown",
@@ -189,7 +191,11 @@
       "webview/context": [
         {
           "command": "_markdown.copyImage",
-          "when": "webviewId == 'markdown.preview' && webviewSection == 'image'"
+          "when": "webviewId == 'markdown.preview' && (webviewSection == 'image' || webviewSection == 'localImage')"
+        },
+        {
+          "command": "_markdown.openImage",
+          "when": "webviewId == 'markdown.preview' && webviewSection == 'localImage'"
         }
       ],
       "editor/title": [
@@ -244,6 +250,10 @@
         }
       ],
       "commandPalette": [
+        {
+          "command": "_markdown.openImage",
+          "when": "false"
+        },
         {
           "command": "_markdown.copyImage",
           "when": "false"
@@ -782,7 +792,7 @@
     "@types/picomatch": "^2.3.0",
     "@types/vscode-notebook-renderer": "^1.60.0",
     "@types/vscode-webview": "^1.57.0",
-    "@vscode/markdown-it-katex": "^1.0.2",
+    "@vscode/markdown-it-katex": "^1.1.1",
     "lodash.throttle": "^4.1.1",
     "vscode-languageserver-types": "^3.17.2",
     "vscode-markdown-languageservice": "^0.3.0-alpha.3"

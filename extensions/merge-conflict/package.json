@@ -165,8 +165,6 @@
       }
     }
   },
-  "dependencies": {
-  },
   "devDependencies": {
     "@types/node": "20.x"
   },

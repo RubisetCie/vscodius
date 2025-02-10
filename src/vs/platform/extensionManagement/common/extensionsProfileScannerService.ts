@@ -84,7 +84,7 @@ export interface IExtensionsProfileScannerService {
 	scanProfileExtensions(profileLocation: URI, options?: IProfileExtensionsScanOptions): Promise<IScannedProfileExtension[]>;
 	addExtensionsToProfile(extensions: [IExtension, Metadata | undefined][], profileLocation: URI, keepExistingVersions?: boolean): Promise<IScannedProfileExtension[]>;
 	updateMetadata(extensions: [IExtension, Metadata | undefined][], profileLocation: URI): Promise<IScannedProfileExtension[]>;
-	removeExtensionFromProfile(extension: IExtension, profileLocation: URI): Promise<void>;
+	removeExtensionsFromProfile(extensions: IExtensionIdentifier[], profileLocation: URI): Promise<void>;
 }
 
 export abstract class AbstractExtensionsProfileScannerService extends Disposable implements IExtensionsProfileScannerService {
@@ -191,13 +191,13 @@ export abstract class AbstractExtensionsProfileScannerService extends Disposable
 		return updatedExtensions;
 	}
 
-	async removeExtensionFromProfile(extension: IExtension, profileLocation: URI): Promise<void> {
+	async removeExtensionsFromProfile(extensions: IExtensionIdentifier[], profileLocation: URI): Promise<void> {
 		const extensionsToRemove: IScannedProfileExtension[] = [];
 		try {
 			await this.withProfileExtensions(profileLocation, profileExtensions => {
 				const result: IScannedProfileExtension[] = [];
 				for (const e of profileExtensions) {
-					if (areSameExtensions(e.identifier, extension.identifier)) {
+					if (extensions.some(extension => areSameExtensions(e.identifier, extension))) {
 						extensionsToRemove.push(e);
 					} else {
 						result.push(e);
@@ -242,13 +242,13 @@ export abstract class AbstractExtensionsProfileScannerService extends Disposable
 			}
 			if (storedProfileExtensions) {
 				if (!Array.isArray(storedProfileExtensions)) {
-					this.reportAndThrowInvalidConentError(file);
+					this.throwInvalidConentError(file);
 				}
 				// TODO @sandy081: Remove this migration after couple of releases
 				let migrate = false;
 				for (const e of storedProfileExtensions) {
 					if (!isStoredProfileExtension(e)) {
-						this.reportAndThrowInvalidConentError(file);
+						this.throwInvalidConentError(file);
 					}
 					let location: URI;
 					if (isString(e.relativeLocation) && e.relativeLocation) {
@@ -300,9 +300,8 @@ export abstract class AbstractExtensionsProfileScannerService extends Disposable
 		});
 	}
 
-	private reportAndThrowInvalidConentError(file: URI): void {
-		const error = new ExtensionsProfileScanningError(`Invalid extensions content in ${file.toString()}`, ExtensionsProfileScanningErrorCode.ERROR_INVALID_CONTENT);
-		throw error;
+	private throwInvalidConentError(file: URI): void {
+		throw new ExtensionsProfileScanningError(`Invalid extensions content in ${file.toString()}`, ExtensionsProfileScanningErrorCode.ERROR_INVALID_CONTENT);
 	}
 
 	private toRelativePath(extensionLocation: URI): string | undefined {

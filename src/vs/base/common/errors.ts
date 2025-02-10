@@ -121,19 +121,27 @@ export interface SerializedError {
 	readonly name: string;
 	readonly message: string;
 	readonly stack: string;
+	readonly code?: string;
+	readonly cause?: SerializedError;
 }
+
+type ErrorWithCode = Error & {
+	code: string | undefined;
+};
 
 export function transformErrorForSerialization(error: Error): SerializedError;
 export function transformErrorForSerialization(error: any): any;
 export function transformErrorForSerialization(error: any): any {
 	if (error instanceof Error) {
-		const { name, message } = error;
+		const { name, message, cause } = error;
 		const stack: string = (<any>error).stacktrace || (<any>error).stack;
 		return {
 			$isError: true,
 			name,
 			message,
 			stack,
+			cause: cause ? transformErrorForSerialization(cause) : undefined,
+			code: (<ErrorWithCode>error).code
 		};
 	}
 
@@ -147,6 +155,12 @@ export function transformErrorFromSerialization(data: SerializedError): Error {
 	error.name = data.name;
 	error.message = data.message;
 	error.stack = data.stack;
+	if (data.code) {
+		(<ErrorWithCode>error).code = data.code;
+	}
+	if (data.cause) {
+		error.cause = transformErrorFromSerialization(data.cause);
+	}
 	return error;
 }
 
