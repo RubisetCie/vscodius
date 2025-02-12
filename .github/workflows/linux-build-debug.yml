@@ -26,7 +26,7 @@ jobs:
         with:
           node-version: '${{github.event.inputs.node_version}}'
       - name: Libraries
-        run: sudo apt update && sudo apt install build-essential libx11-dev libxkbfile-dev libsecret-1-dev libkrb5-dev python-is-python3 fakeroot rpm
+        run: sudo apt update && sudo apt install build-essential libx11-dev libxkbfile-dev libsecret-1-dev libkrb5-dev python-is-python3 fakeroot
 #      - name: Environment
 #        if: ${{github.event.inputs.build_amd == 'true'}}
 #        run: export VSCODE_BUILD_AMD='true'

@@ -1,0 +1,91 @@
+name: Linux Package Release
+on:
+  workflow_dispatch:
+    inputs:
+      pkg_version:
+        description: 'Arbitrary release version'
+        required: false
+        default: '1.0.0'
+      pkg_arch:
+        description: 'Package architecture (x64, ia32 or arm)'
+        required: true
+        default: 'x64'
+      node_version:
+        description: 'Node.js version'
+        required: true
+        default: '20'
+      pack_deb:
+        description: 'Debian package (.deb)'
+        type: boolean
+        required: true
+        default: true
+      pack_rpm:
+        description: 'Red-Hat package (.rpm)'
+        type: boolean
+        required: true
+        default: true
+      run_release:
+        description: 'Run ID of build workflow'
+        required: true
+      run_tunnel:
+        description: 'Run ID of CLI workflow'
+        required: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '${{github.event.inputs.node_version}}'
+      - name: Libraries
+        run: sudo apt update && sudo apt install build-essential libx11-dev libxkbfile-dev libsecret-1-dev libkrb5-dev python-is-python3 fakeroot rpm
+      - name: Dependencies
+        run: npm ci
+      - name: Download VSCodius
+        id: download-vscodius
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ secrets.WORKFLOW_TOKEN }}
+          run-id: ${{github.event.inputs.run_release}}
+      - name: Download Tunnel
+        id: download-tunnel
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ secrets.WORKFLOW_TOKEN }}
+          run-id: ${{github.event.inputs.run_tunnel}}
+      - name: Prepare
+        run: |
+          WD="$PWD"
+          mkdir ../VSCode-linux-${{github.event.inputs.pkg_arch}}
+          cd ../VSCode-linux-${{github.event.inputs.pkg_arch}}
+          mv ${{steps.download-vscodius.outputs.download-path}}/VSCodius-Linux-*/* .
+          cd bin
+          mv ${{steps.download-tunnel.outputs.download-path}}/codius-*/* .
+          cd "$WD"
+      - name: Packaging DEB
+        if: ${{github.event.inputs.pack_deb == 'true'}}
+        run: npm run gulp vscode-linux-${{github.event.inputs.pkg_arch}}-prepare-deb && gulp vscode-linux-${{github.event.inputs.pkg_arch}}-build-deb
+      - name: Packaging RPM
+        if: ${{github.event.inputs.pack_rpm == 'true'}}
+        run: npm run gulp vscode-linux-${{github.event.inputs.pkg_arch}}-prepare-rpm && gulp vscode-linux-${{github.event.inputs.pkg_arch}}-build-rpm
+      - name: Upload DEB
+        if: ${{github.event.inputs.pack_deb == 'true'}}
+        uses: actions/upload-artifact@v4
+        with:
+          name: codius-${{github.event.inputs.pkg_version}}
+          path: '.build/linux/deb/*/deb/*.deb'
+          overwrite: true
+          compression-level: 9
+          if-no-files-found: error
+      - name: Upload RPM
+        if: ${{github.event.inputs.pack_rpm == 'true'}}
+        uses: actions/upload-artifact@v4
+        with:
+          name: codius-${{github.event.inputs.pkg_version}}
+          path: '.build/linux/rpm/*/*.rpm'
+          overwrite: true
+          compression-level: 9
+          if-no-files-found: error
