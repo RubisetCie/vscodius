@@ -601,7 +601,7 @@ export class ViewPaneContainer extends Component implements IViewPaneContainer {
 
 	getActionViewItem(action: IAction, options: IBaseActionViewItemOptions): IActionViewItem | undefined {
 		if (this.isViewMergedWithContainer()) {
-			return this.paneItems[0].pane.getActionViewItem(action, options);
+			return this.paneItems[0].pane.createActionViewItem(action, options);
 		}
 		return createActionViewItem(this.instantiationService, action, options);
 	}
@@ -799,17 +799,19 @@ export class ViewPaneContainer extends Component implements IViewPaneContainer {
 				this.logService.error(`Fail to render view ${viewDescriptor.id}`, error);
 				continue;
 			}
-			const contextMenuDisposable = addDisposableListener(pane.draggableElement, 'contextmenu', e => {
-				e.stopPropagation();
-				e.preventDefault();
-				this.onContextMenu(new StandardMouseEvent(getWindow(pane.draggableElement), e), pane);
-			});
+			if (pane.draggableElement) {
+				const contextMenuDisposable = addDisposableListener(pane.draggableElement, 'contextmenu', e => {
+					e.stopPropagation();
+					e.preventDefault();
+					this.onContextMenu(new StandardMouseEvent(getWindow(pane.draggableElement), e), pane);
+				});
 
-			const collapseDisposable = Event.latch(Event.map(pane.onDidChange, () => !pane.isExpanded()))(collapsed => {
-				this.viewContainerModel.setCollapsed(viewDescriptor.id, collapsed);
-			});
+				const collapseDisposable = Event.latch(Event.map(pane.onDidChange, () => !pane.isExpanded()))(collapsed => {
+					this.viewContainerModel.setCollapsed(viewDescriptor.id, collapsed);
+				});
 
-			panesToAdd.push({ pane, size: size || pane.minimumSize, index, disposable: combinedDisposable(contextMenuDisposable, collapseDisposable) });
+				panesToAdd.push({ pane, size: size || pane.minimumSize, index, disposable: combinedDisposable(contextMenuDisposable, collapseDisposable) });
+			}
 		}
 
 		this.addPanes(panesToAdd);
@@ -888,7 +890,9 @@ export class ViewPaneContainer extends Component implements IViewPaneContainer {
 
 		let overlay: ViewPaneDropOverlay | undefined;
 
-		store.add(CompositeDragAndDropObserver.INSTANCE.registerDraggable(pane.draggableElement, () => { return { type: 'view', id: pane.id }; }, {}));
+		if (pane.draggableElement) {
+			store.add(CompositeDragAndDropObserver.INSTANCE.registerDraggable(pane.draggableElement, () => { return { type: 'view', id: pane.id }; }, {}));
+		}
 
 		store.add(CompositeDragAndDropObserver.INSTANCE.registerTarget(pane.dropTargetElement, {
 			onDragEnter: (e) => {

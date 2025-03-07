@@ -159,6 +159,7 @@ suite('Edit session sync', () => {
 				keybindingsResource: URI.file('keybindingsResource'),
 				tasksResource: URI.file('tasksResource'),
 				snippetsHome: URI.file('snippetsHome'),
+				promptsHome: URI.file('promptsHome'),
 				extensionsResource: URI.file('extensionsResource'),
 				cacheHome: URI.file('cacheHome'),
 			};

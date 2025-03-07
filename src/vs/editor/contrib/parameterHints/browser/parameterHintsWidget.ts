@@ -60,7 +60,7 @@ export class ParameterHintsWidget extends Disposable implements IContentWidget {
 		private readonly model: ParameterHintsModel,
 		@IContextKeyService contextKeyService: IContextKeyService,
 		@IOpenerService openerService: IOpenerService,
-		@ILanguageService languageService: ILanguageService,
+		@ILanguageService languageService: ILanguageService
 	) {
 		super();
 
@@ -278,7 +278,6 @@ export class ParameterHintsWidget extends Disposable implements IContentWidget {
 			}
 		}));
 		renderedContents.element.classList.add('markdown-docs');
-
 		return renderedContents;
 	}
 

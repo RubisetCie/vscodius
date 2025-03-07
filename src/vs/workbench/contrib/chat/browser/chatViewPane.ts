@@ -118,7 +118,7 @@ export class ChatViewPane extends ViewPane implements IViewWelcomeDelegate {
 	private updateModel(model?: IChatModel | undefined, viewState?: IChatViewState): void {
 		this.modelDisposables.clear();
 
-		model = model ?? (this.chatService.transferredSessionData?.sessionId
+		model = model ?? (this.chatService.transferredSessionData?.sessionId && this.chatService.transferredSessionData?.location === this.chatOptions.location
 			? this.chatService.getOrRestoreSession(this.chatService.transferredSessionData.sessionId)
 			: this.chatService.startSession(this.chatOptions.location, CancellationToken.None));
 		if (!model) {
@@ -146,7 +146,7 @@ export class ChatViewPane extends ViewPane implements IViewWelcomeDelegate {
 
 	private getSessionId() {
 		let sessionId: string | undefined;
-		if (this.chatService.transferredSessionData) {
+		if (this.chatService.transferredSessionData?.location === this.chatOptions.location) {
 			sessionId = this.chatService.transferredSessionData.sessionId;
 			this.viewState.inputValue = this.chatService.transferredSessionData.inputValue;
 		} else {
@@ -180,9 +180,11 @@ export class ChatViewPane extends ViewPane implements IViewWelcomeDelegate {
 						renderTextEditsAsSummary: (uri) => {
 							return this.chatOptions.location === ChatAgentLocation.EditingSession;
 						},
+						referencesExpandedWhenEmptyResponse: this.chatOptions.location !== ChatAgentLocation.EditingSession,
+						progressMessageAtBottomOfResponse: this.chatOptions.location === ChatAgentLocation.EditingSession,
 					},
-					enableImplicitContext: this.chatOptions.location === ChatAgentLocation.Panel,
 					editorOverflowWidgetsDomNode: editorOverflowNode,
+					enableImplicitContext: this.chatOptions.location === ChatAgentLocation.Panel || this.chatOptions.location === ChatAgentLocation.EditingSession,
 					enableWorkingSet: this.chatOptions.location === ChatAgentLocation.EditingSession ? 'explicit' : undefined
 				},
 				{
