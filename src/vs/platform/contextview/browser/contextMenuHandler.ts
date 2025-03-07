@@ -79,7 +79,7 @@ export class ContextMenuHandler {
 
 				const menuDisposables = new DisposableStore();
 
-				const actionRunner = delegate.actionRunner || new ActionRunner();
+				const actionRunner = delegate.actionRunner || menuDisposables.add(new ActionRunner());
 				actionRunner.onWillRun(evt => this.onActionRun(evt), this, menuDisposables);
 				actionRunner.onDidRun(this.onDidActionRun, this, menuDisposables);
 				menu = new Menu(container, actions, {

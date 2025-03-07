@@ -29,11 +29,11 @@ import { IProgress, IProgressStep, Progress } from '../../../../platform/progres
 import { Registry } from '../../../../platform/registry/common/platform.js';
 import { IWorkbenchContribution, IWorkbenchContributionsRegistry, Extensions as WorkbenchContributionsExtensions } from '../../../common/contributions.js';
 import { SaveReason } from '../../../common/editor.js';
-import { getModifiedRanges } from '../../format/browser/formatModified.js';
 import { IEditorService } from '../../../services/editor/common/editorService.js';
 import { IHostService } from '../../../services/host/browser/host.js';
 import { LifecyclePhase } from '../../../services/lifecycle/common/lifecycle.js';
 import { ITextFileEditorModel, ITextFileSaveParticipant, ITextFileSaveParticipantContext, ITextFileService } from '../../../services/textfile/common/textfiles.js';
+import { getModifiedRanges } from '../../format/browser/formatModified.js';
 
 export class TrimWhitespaceParticipant implements ITextFileSaveParticipant {
 
@@ -409,6 +409,7 @@ class CodeActionOnSaveParticipant extends Disposable implements ITextFileSavePar
 
 		for (const codeActionKind of codeActionsOnSave) {
 			const actionsToRun = await this.getActionsToRun(model, codeActionKind, excludes, getActionProgress, token);
+
 			if (token.isCancellationRequested) {
 				actionsToRun.dispose();
 				return;

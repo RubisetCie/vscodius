@@ -25,6 +25,7 @@ const editorConfiguration: IConfigurationNode = {
 			type: 'number',
 			default: EDITOR_MODEL_DEFAULTS.tabSize,
 			minimum: 1,
+			maximum: 16,
 			markdownDescription: nls.localize('tabSize', "The number of spaces a tab is equal to. This setting is overridden based on the file contents when {0} is on.", '`#editor.detectIndentation#`')
 		},
 		'editor.indentSize': {
@@ -109,15 +110,17 @@ const editorConfiguration: IConfigurationNode = {
 			description: nls.localize('editor.experimental.asyncTokenizationVerification', "Controls whether async tokenization should be verified against legacy background tokenization. Might slow down tokenization. For debugging only."),
 			tags: ['experimental'],
 		},
-		'editor.experimental.preferTreeSitter': {
-			type: 'array',
-			items: {
-				type: 'string',
-				enum: ['typescript']
-			},
-			default: [],
-			markdownDescription: nls.localize('editor.experimental.preferTreeSitter', "Controls whether tree sitter parsing should be turned on for specific languages. This will take precedence over `editor.experimental.treeSitterTelemetry` for the specified languages."),
-			tags: ['experimental']
+		'editor.experimental.preferTreeSitter.typescript': {
+			type: 'boolean',
+			default: false,
+			markdownDescription: nls.localize('editor.experimental.preferTreeSitter.typescript', "Controls whether tree sitter parsing should be turned on for typescript. This will take precedence over `editor.experimental.treeSitterTelemetry` for typescript."),
+			tags: ['experimental', 'onExP']
+		},
+		'editor.experimental.preferTreeSitter.ini': {
+			type: 'boolean',
+			default: false,
+			markdownDescription: nls.localize('editor.experimental.preferTreeSitter.ini', "Controls whether tree sitter parsing should be turned on for ini. This will take precedence over `editor.experimental.treeSitterTelemetry` for ini."),
+			tags: ['experimental', 'onExP']
 		},
 		'editor.language.brackets': {
 			type: ['array', 'null'],

@@ -48,6 +48,7 @@ const NULL_PROFILE = {
 	keybindingsResource: joinPath(homeDir, 'keybindings.json'),
 	tasksResource: joinPath(homeDir, 'tasks.json'),
 	snippetsHome: joinPath(homeDir, 'snippets'),
+	promptsHome: joinPath(homeDir, 'prompts'),
 	extensionsResource: joinPath(homeDir, 'extensions.json'),
 	cacheHome: joinPath(homeDir, 'cache')
 };
@@ -56,7 +57,7 @@ const TestNativeWindowConfiguration: INativeWindowConfiguration = {
 	windowId: 0,
 	machineId: 'testMachineId',
 	logLevel: LogLevel.Error,
-	loggers: { global: [], window: [] },
+	loggers: [],
 	mainPid: 0,
 	appRoot: '',
 	userEnv: {},

@@ -130,7 +130,7 @@ export class StatusbarEntryItem extends Disposable {
 
 			const hoverContents = isMarkdownString(hoverTooltip) ? { markdown: hoverTooltip, markdownNotSupportedFallback: undefined } : hoverTooltip;
 			if (this.hover) {
-				this.hover.update(hoverContents, hoverOptions);
+				this.hover.update(typeof hoverContents === 'function' ? hoverContents() : hoverContents, hoverOptions);
 			} else {
 				this.hover = this._register(this.hoverService.setupManagedHover(this.hoverDelegate, this.container, hoverContents, hoverOptions));
 			}
@@ -249,8 +249,8 @@ export class StatusbarEntryItem extends Disposable {
 			if (isThemeColor(color)) {
 				colorResult = this.themeService.getColorTheme().getColor(color.id)?.toString();
 
-				const listener = this.themeService.onDidColorThemeChange(theme => {
-					const colorValue = theme.getColor(color.id)?.toString();
+				const listener = this.themeService.onDidColorThemeChange(e => {
+					const colorValue = e.theme.getColor(color.id)?.toString();
 
 					if (isBackground) {
 						container.style.backgroundColor = colorValue ?? '';

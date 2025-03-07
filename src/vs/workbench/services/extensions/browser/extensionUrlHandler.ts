@@ -25,6 +25,7 @@ import { mainWindow } from '../../../../base/browser/window.js';
 import { ICommandService } from '../../../../platform/commands/common/commands.js';
 import { isCancellationError } from '../../../../base/common/errors.js';
 import { INotificationService } from '../../../../platform/notification/common/notification.js';
+import { MarkdownString } from '../../../../base/common/htmlContent.js';
 
 const FIVE_MINUTES = 5 * 60 * 1000;
 const THIRTY_SECONDS = 30 * 1000;
@@ -73,10 +74,6 @@ export interface IExtensionUrlHandler {
 	readonly _serviceBrand: undefined;
 	registerExtensionHandler(extensionId: ExtensionIdentifier, handler: IExtensionContributedURLHandler): void;
 	unregisterExtensionHandler(extensionId: ExtensionIdentifier): void;
-}
-
-export interface ExtensionUrlHandlerEvent {
-	readonly extensionId: string;
 }
 
 export interface IExtensionUrlHandlerOverride {
@@ -166,6 +163,7 @@ class ExtensionUrlHandler implements IExtensionUrlHandler, IURLHandler {
 		}
 
 		const extensionId = uri.authority;
+
 		const initialHandler = this.extensionHandlers.get(ExtensionIdentifier.toKey(extensionId));
 		let extensionDisplayName: string;
 
@@ -187,10 +185,11 @@ class ExtensionUrlHandler implements IExtensionUrlHandler, IURLHandler {
 			|| this.didUserTrustExtension(ExtensionIdentifier.toKey(extensionId));
 
 		if (!trusted) {
-			let uriString = uri.toString(false);
+			const uriString = uri.toString(false);
+			let uriLabel = uriString;
 
-			if (uriString.length > 40) {
-				uriString = `${uriString.substring(0, 30)}...${uriString.substring(uriString.length - 5)}`;
+			if (uriLabel.length > 40) {
+				uriLabel = `${uriLabel.substring(0, 30)}...${uriLabel.substring(uriLabel.length - 5)}`;
 			}
 
 			const result = await this.dialogService.confirm({
@@ -198,8 +197,12 @@ class ExtensionUrlHandler implements IExtensionUrlHandler, IURLHandler {
 				checkbox: {
 					label: localize('rememberConfirmUrl', "Do not ask me again for this extension"),
 				},
-				detail: uriString,
-				primaryButton: localize({ key: 'open', comment: ['&& denotes a mnemonic'] }, "&&Open")
+				primaryButton: localize({ key: 'open', comment: ['&& denotes a mnemonic'] }, "&&Open"),
+				custom: {
+					markdownDetails: [{
+						markdown: new MarkdownString(`<div title="${uriString}" aria-label='${uriString}'>${uriLabel}</div>`, { supportHtml: true }),
+					}]
+				}
 			});
 
 			if (!result.confirmed) {
@@ -261,7 +264,6 @@ class ExtensionUrlHandler implements IExtensionUrlHandler, IURLHandler {
 	}
 
 	private async handleUnhandledURL(uri: URI, extensionId: string, options?: IOpenURLOptions): Promise<void> {
-
 		try {
 			await this.commandService.executeCommand('workbench.extensions.installExtension', extensionId, {
 				justification: {
