@@ -3,12 +3,11 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { app, BrowserWindow, protocol, session, Session, systemPreferences, WebFrameMain } from 'electron';
+import { app, protocol, session, Session, systemPreferences, WebFrameMain } from 'electron';
 import { addUNCHostToAllowlist, disableUNCAccessRestrictions } from '../../base/node/unc.js';
 import { validatedIpcMain } from '../../base/parts/ipc/electron-main/ipcMain.js';
 import { VSBuffer } from '../../base/common/buffer.js';
 import { toErrorMessage } from '../../base/common/errorMessage.js';
-import { isSigPipeError, onUnexpectedError, setUnexpectedErrorHandler } from '../../base/common/errors.js';
 import { Event } from '../../base/common/event.js';
 import { parse } from '../../base/common/jsonc.js';
 import { getPathLabel } from '../../base/common/labels.js';
@@ -73,7 +72,7 @@ import { ElectronURLListener } from '../../platform/url/electron-main/electronUr
 import { IWebviewManagerService } from '../../platform/webview/common/webviewManagerService.js';
 import { WebviewMainService } from '../../platform/webview/electron-main/webviewMainService.js';
 import { isFolderToOpen, isWorkspaceToOpen, IWindowOpenable } from '../../platform/window/common/window.js';
-import { IWindowsMainService, OpenContext } from '../../platform/windows/electron-main/windows.js';
+import { getAllWindowsExcludingOffscreen, IWindowsMainService, OpenContext } from '../../platform/windows/electron-main/windows.js';
 import { ICodeWindow } from '../../platform/window/electron-main/window.js';
 import { WindowsMainService } from '../../platform/windows/electron-main/windowsMainService.js';
 import { ActiveWindowManager } from '../../platform/windows/node/windowTracker.js';
@@ -106,6 +105,8 @@ import { IAuxiliaryWindowsMainService } from '../../platform/auxiliaryWindow/ele
 import { AuxiliaryWindowsMainService } from '../../platform/auxiliaryWindow/electron-main/auxiliaryWindowsMainService.js';
 import { normalizeNFC } from '../../base/common/normalization.js';
 import { ICSSDevelopmentService, CSSDevelopmentService } from '../../platform/cssDev/node/cssDevService.js';
+import { IWebContentExtractorService } from '../../platform/webContentExtractor/common/webContentExtractor.js';
+import { NativeWebContentExtractorService } from '../../platform/webContentExtractor/electron-main/webContentExtractorService.js';
 
 /**
  * The main VS Code application. There will only ever be one instance,
@@ -216,7 +217,7 @@ export class CodeApplication extends Disposable {
 			}
 
 			// Check to see if the request comes from one of the main windows (or shared process) and not from embedded content
-			const windows = BrowserWindow.getAllWindows();
+			const windows = getAllWindowsExcludingOffscreen();
 			for (const window of windows) {
 				if (frame.processId === window.webContents.mainFrame.processId) {
 					return true;
@@ -356,15 +357,6 @@ export class CodeApplication extends Disposable {
 	}
 
 	private registerListeners(): void {
-
-		// We handle uncaught exceptions here to prevent electron from opening a dialog to the user
-		setUnexpectedErrorHandler(error => this.onUnexpectedError(error));
-		process.on('uncaughtException', error => {
-			if (!isSigPipeError(error)) {
-				onUnexpectedError(error);
-			}
-		});
-		process.on('unhandledRejection', (reason: unknown) => onUnexpectedError(reason));
 
 		// Dispose on shutdown
 		Event.once(this.lifecycleMainService.onWillShutdown)(() => this.dispose());
@@ -510,25 +502,6 @@ export class CodeApplication extends Disposable {
 		});
 
 		//#endregion
-	}
-
-	private onUnexpectedError(error: Error): void {
-		if (error) {
-
-			// take only the message and stack property
-			const friendlyError = {
-				message: `[uncaught exception in main]: ${error.message}`,
-				stack: error.stack
-			};
-
-			// handle on client side
-			this.windowsMainService?.sendToFocused('vscode:reportError', JSON.stringify(friendlyError));
-		}
-
-		this.logService.error(`[uncaught exception in main]: ${error}`);
-		if (error.stack) {
-			this.logService.error(error.stack);
-		}
 	}
 
 	private async resolveMachineId(stateService: IStateService, logService: ILogService): Promise<string> {
@@ -1019,6 +992,9 @@ export class CodeApplication extends Disposable {
 		// Native Host
 		services.set(INativeHostMainService, new SyncDescriptor(NativeHostMainService, undefined, false /* proxied to other processes */));
 
+		// Web Contents Extractor
+		services.set(IWebContentExtractorService, new SyncDescriptor(NativeWebContentExtractorService, undefined, false /* proxied to other processes */));
+
 		// Webview Manager
 		services.set(IWebviewManagerService, new SyncDescriptor(WebviewMainService));
 
@@ -1077,6 +1053,7 @@ export class CodeApplication extends Disposable {
 
 		// Proxy Auth
 		services.set(IProxyAuthService, new SyncDescriptor(ProxyAuthService));
+
 
 		// Dev Only: CSS service (for ESM)
 		services.set(ICSSDevelopmentService, new SyncDescriptor(CSSDevelopmentService, undefined, true));
@@ -1143,6 +1120,10 @@ export class CodeApplication extends Disposable {
 		const nativeHostChannel = ProxyChannel.fromService(this.nativeHostMainService, disposables);
 		mainProcessElectronServer.registerChannel('nativeHost', nativeHostChannel);
 		sharedProcessClient.then(client => client.registerChannel('nativeHost', nativeHostChannel));
+
+		// Web Content Extractor
+		const webContentExtractorChannel = ProxyChannel.fromService(accessor.get(IWebContentExtractorService), disposables);
+		mainProcessElectronServer.registerChannel('webContentExtractor', webContentExtractorChannel);
 
 		// Workspaces
 		const workspacesChannel = ProxyChannel.fromService(accessor.get(IWorkspacesService), disposables);

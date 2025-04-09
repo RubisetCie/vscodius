@@ -54,7 +54,7 @@ export class ExplorerService implements IExplorerService {
 		@IBulkEditService private readonly bulkEditService: IBulkEditService,
 		@IProgressService private readonly progressService: IProgressService,
 		@IHostService hostService: IHostService,
-		@IFilesConfigurationService private readonly filesConfigurationService: IFilesConfigurationService,
+		@IFilesConfigurationService private readonly filesConfigurationService: IFilesConfigurationService
 	) {
 		this.config = this.configurationService.getValue('explorer');
 

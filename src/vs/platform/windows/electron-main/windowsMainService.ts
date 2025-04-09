@@ -210,14 +210,14 @@ export class WindowsMainService extends Disposable implements IWindowsMainServic
 
 	private readonly windows = new Map<number, ICodeWindow>();
 
-	private readonly windowsStateHandler = this._register(new WindowsStateHandler(this, this.stateService, this.lifecycleMainService, this.logService, this.configurationService));
+	private readonly windowsStateHandler: WindowsStateHandler;
 
 	constructor(
 		private readonly machineId: string,
 		private readonly initialUserEnv: IProcessEnvironment,
 		@ILogService private readonly logService: ILogService,
 		@ILoggerMainService private readonly loggerService: ILoggerMainService,
-		@IStateService private readonly stateService: IStateService,
+		@IStateService stateService: IStateService,
 		@IPolicyService private readonly policyService: IPolicyService,
 		@IEnvironmentMainService private readonly environmentMainService: IEnvironmentMainService,
 		@IUserDataProfilesMainService private readonly userDataProfilesMainService: IUserDataProfilesMainService,
@@ -235,6 +235,8 @@ export class WindowsMainService extends Disposable implements IWindowsMainServic
 		@ICSSDevelopmentService private readonly cssDevelopmentService: ICSSDevelopmentService
 	) {
 		super();
+
+		this.windowsStateHandler = this._register(new WindowsStateHandler(this, stateService, this.lifecycleMainService, this.logService, this.configurationService));
 
 		this.registerListeners();
 	}

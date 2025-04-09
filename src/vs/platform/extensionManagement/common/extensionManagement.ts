@@ -218,6 +218,7 @@ export interface IGalleryExtension {
 	publisher: string;
 	publisherDisplayName: string;
 	publisherDomain?: { link: string; verified: boolean };
+	publisherLink?: string;
 	publisherSponsorLink?: string;
 	description: string;
 	installCount: number;
@@ -228,14 +229,17 @@ export interface IGalleryExtension {
 	releaseDate: number;
 	lastUpdated: number;
 	preview: boolean;
+	private: boolean;
 	hasPreReleaseVersion: boolean;
 	hasReleaseVersion: boolean;
 	isSigned: boolean;
 	allTargetPlatforms: TargetPlatform[];
 	assets: IGalleryExtensionAssets;
 	properties: IGalleryExtensionProperties;
-	queryContext?: IStringDictionary<any>;
+	detailsLink?: string;
+	ratingLink?: string;
 	supportLink?: string;
+	queryContext?: IStringDictionary<any>;
 }
 
 export type InstallSource = 'gallery' | 'vsix' | 'resource';
@@ -243,6 +247,7 @@ export type InstallSource = 'gallery' | 'vsix' | 'resource';
 export interface IGalleryMetadata {
 	id: string;
 	publisherId: string;
+	private: boolean;
 	publisherDisplayName: string;
 	isPreReleaseVersion: boolean;
 	targetPlatform?: TargetPlatform;
@@ -270,6 +275,7 @@ export interface ILocalExtension extends IExtension {
 	installedTimestamp?: number;
 	isPreReleaseVersion: boolean;
 	hasPreReleaseVersion: boolean;
+	private: boolean;
 	preRelease: boolean;
 	updated: boolean;
 	pinned: boolean;
@@ -278,20 +284,31 @@ export interface ILocalExtension extends IExtension {
 }
 
 export const enum SortBy {
-	NoneOrRelevance = 0,
-	LastUpdatedDate = 1,
-	Title = 2,
-	PublisherName = 3,
-	InstallCount = 4,
-	PublishedDate = 10,
-	AverageRating = 6,
-	WeightedRating = 12
+	NoneOrRelevance = 'NoneOrRelevance',
+	LastUpdatedDate = 'LastUpdatedDate',
+	Title = 'Title',
+	PublisherName = 'PublisherName',
+	InstallCount = 'InstallCount',
+	PublishedDate = 'PublishedDate',
+	AverageRating = 'AverageRating',
+	WeightedRating = 'WeightedRating'
 }
 
 export const enum SortOrder {
 	Default = 0,
 	Ascending = 1,
 	Descending = 2
+}
+
+export const enum FilterType {
+	Category = 'Category',
+	ExtensionId = 'ExtensionId',
+	ExtensionName = 'ExtensionName',
+	ExcludeWithFlags = 'ExcludeWithFlags',
+	Featured = 'Featured',
+	SearchText = 'SearchText',
+	Tag = 'Tag',
+	Target = 'Target',
 }
 
 export interface IQueryOptions {
@@ -358,6 +375,14 @@ export interface IExtensionQueryOptions {
 	queryAllVersions?: boolean;
 	source?: string;
 	preferResourceApi?: boolean;
+}
+
+export interface IExtensionGalleryCapabilities {
+	readonly query: {
+		readonly sortBy: readonly SortBy[];
+		readonly filters: readonly FilterType[];
+	};
+	readonly allRepositorySigned: boolean;
 }
 
 export const IExtensionGalleryService = createDecorator<IExtensionGalleryService>('extensionGalleryService');
@@ -441,6 +466,7 @@ export class ExtensionGalleryError extends Error {
 }
 
 export const enum ExtensionManagementErrorCode {
+	NotFound = 'NotFound',
 	Unsupported = 'Unsupported',
 	Deprecated = 'Deprecated',
 	Malicious = 'Malicious',

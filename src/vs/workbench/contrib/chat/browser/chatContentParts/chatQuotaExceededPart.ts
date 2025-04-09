@@ -42,7 +42,7 @@ export class ChatQuotaExceededPart extends Disposable implements IChatContentPar
 		element: IChatResponseViewModel,
 		renderer: MarkdownRenderer,
 		@IChatWidgetService chatWidgetService: IChatWidgetService,
-		@ICommandService commandService: ICommandService
+		@ICommandService commandService: ICommandService,
 	) {
 		super();
 
@@ -99,7 +99,8 @@ export class ChatQuotaExceededPart extends Disposable implements IChatContentPar
 		};
 
 		this._register(button1.onDidClick(async () => {
-			await commandService.executeCommand('workbench.action.chat.upgradePlan');
+			const commandId = 'workbench.action.chat.upgradePlan';
+			await commandService.executeCommand(commandId);
 
 			shouldShowRetryButton = true;
 			addRetryButtonIfNeeded();

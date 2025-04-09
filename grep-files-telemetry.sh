@@ -1,2 +1,2 @@
 #!/bin/bash
-find . -iname "*telemetry*"
+exec find . -iname "*telemetry*"

@@ -31,7 +31,8 @@ import { IStorageService } from '../../../../platform/storage/common/storage.js'
 import { IWorkbenchQuickAccessConfiguration } from '../../../browser/quickaccess.js';
 import { CHAT_OPEN_ACTION_ID } from '../../chat/browser/actions/chatActions.js';
 import { ASK_QUICK_QUESTION_ACTION_ID } from '../../chat/browser/actions/chatQuickInputActions.js';
-import { ChatAgentLocation, IChatAgentService } from '../../chat/common/chatAgents.js';
+import { IChatAgentService } from '../../chat/common/chatAgents.js';
+import { ChatAgentLocation } from '../../chat/common/constants.js';
 import { CommandInformationResult, IAiRelatedInformationService, RelatedInformationType } from '../../../services/aiRelatedInformation/common/aiRelatedInformation.js';
 import { IEditorGroupsService } from '../../../services/editor/common/editorGroupsService.js';
 import { IEditorService } from '../../../services/editor/common/editorService.js';

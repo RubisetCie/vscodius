@@ -22,7 +22,7 @@ import {
 	UninstallExtensionInfo,
 	IAllowedExtensionsService
 } from './extensionManagement.js';
-import { areSameExtensions, ExtensionKey, getGalleryExtensionId, isMalicious } from './extensionManagementUtil.js';
+import { areSameExtensions, ExtensionKey, getGalleryExtensionId } from './extensionManagementUtil.js';
 import { ExtensionType, IExtensionManifest, isApplicationScopedExtension, TargetPlatform } from '../../extensions/common/extensions.js';
 import { areApiProposalsCompatible } from '../../extensions/common/extensionValidator.js';
 import { ILogService } from '../../log/common/log.js';
@@ -615,9 +615,6 @@ export abstract class AbstractExtensionManagementService extends CommontExtensio
 		let compatibleExtension: IGalleryExtension | null;
 
 		const extensionsControlManifest = await this.getExtensionsControlManifest();
-		if (isMalicious(extension.identifier, extensionsControlManifest)) {
-			throw new ExtensionManagementError(nls.localize('malicious extension', "Can't install '{0}' extension since it was reported to be problematic.", extension.identifier.id), ExtensionManagementErrorCode.Malicious);
-		}
 
 		const deprecationInfo = extensionsControlManifest.deprecated[extension.identifier.id.toLowerCase()];
 		if (deprecationInfo?.extension?.autoMigrate) {

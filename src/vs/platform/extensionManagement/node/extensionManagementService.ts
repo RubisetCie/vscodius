@@ -557,7 +557,7 @@ export class ExtensionsScanner extends Disposable {
 				throw fromExtractError(e);
 			}
 
-			const metadata: ManifestMetadata = { installedTimestamp: Date.now() };
+			const metadata: ManifestMetadata = { installedTimestamp: Date.now(), targetPlatform: extensionKey.targetPlatform };
 			try {
 				metadata.size = await computeSize(tempLocation, this.fileService);
 			} catch (error) {
@@ -620,7 +620,13 @@ export class ExtensionsScanner extends Disposable {
 	}
 
 	async setExtensionsForRemoval(...extensions: IExtension[]): Promise<void> {
-		const extensionKeys: ExtensionKey[] = extensions.map(e => ExtensionKey.create(e));
+		const extensionsToRemove = [];
+		for (const extension of extensions) {
+			if (await this.fileService.exists(extension.location)) {
+				extensionsToRemove.push(extension);
+			}
+		}
+		const extensionKeys: ExtensionKey[] = extensionsToRemove.map(e => ExtensionKey.create(e));
 		await this.withRemovedExtensions(removedExtensions =>
 			extensionKeys.forEach(extensionKey => {
 				removedExtensions[extensionKey.toString()] = true;
@@ -788,6 +794,7 @@ export class ExtensionsScanner extends Disposable {
 			installedTimestamp: extension.metadata?.installedTimestamp,
 			updated: !!extension.metadata?.updated,
 			pinned: !!extension.metadata?.pinned,
+			private: !!extension.metadata?.private,
 			isWorkspaceScoped: false,
 			source: extension.metadata?.source ?? (extension.identifier.uuid ? 'gallery' : 'vsix'),
 			size: extension.metadata?.size ?? 0,
@@ -933,7 +940,7 @@ class InstallExtensionInProfileTask extends AbstractExtensionTask<ILocalExtensio
 					try {
 						await this.extensionsScanner.deleteExtension(existingExtension, 'existing');
 					} catch (e) {
-						throw new Error(nls.localize('restartCode', "Please restart VS Code before reinstalling {0}.", this.manifest.displayName || this.manifest.name));
+						throw new Error(nls.localize('restartCode', "Please restart VSCodius before reinstalling {0}.", this.manifest.displayName || this.manifest.name));
 					}
 				}
 			}
@@ -944,7 +951,7 @@ class InstallExtensionInProfileTask extends AbstractExtensionTask<ILocalExtensio
 				try {
 					await this.extensionsScanner.deleteExtension(existingWithSameVersion, 'existing');
 				} catch (e) {
-					throw new Error(nls.localize('restartCode', "Please restart VS Code before reinstalling {0}.", this.manifest.displayName || this.manifest.name));
+					throw new Error(nls.localize('restartCode', "Please restart VSCodius before reinstalling {0}.", this.manifest.displayName || this.manifest.name));
 				}
 			}
 
@@ -957,6 +964,7 @@ class InstallExtensionInProfileTask extends AbstractExtensionTask<ILocalExtensio
 			metadata.publisherDisplayName = this.source.publisherDisplayName;
 			metadata.targetPlatform = this.source.properties.targetPlatform;
 			metadata.updated = !!existingExtension;
+			metadata.private = this.source.private;
 			metadata.isPreReleaseVersion = this.source.properties.isPreReleaseVersion;
 			metadata.hasPreReleaseVersion = existingExtension?.hasPreReleaseVersion || this.source.properties.isPreReleaseVersion;
 			metadata.preRelease = isBoolean(this.options.preRelease)

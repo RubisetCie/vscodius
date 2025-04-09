@@ -213,8 +213,8 @@ const Button = (title: string, href: string) => `[${title}](${href})`;
 
 const CopilotStepTitle = localize('gettingStarted.copilotSetup.title', "Use AI features with Copilot for free");
 const CopilotDescription = localize({ key: 'gettingStarted.copilotSetup.description', comment: ['{Locked="["}', '{Locked="]({0})"}'] }, "You can use [Copilot]({0}) to generate code across multiple files, fix errors, ask questions about your code and much more using natural language.", product.defaultChatAgent?.documentationUrl ?? '');
-const CopilotSignedOutButton = Button(localize('setupCopilotButton.signIn', "Set Up Copilot for Free"), `command:workbench.action.chat.triggerSetup`);
-const CopilotSignedInButton = Button(localize('setupCopilotButton.setup', "Set Up Copilot for Free"), `command:workbench.action.chat.triggerSetup`);
+const CopilotSignedOutButton = Button(localize('setupCopilotButton.signIn', "Set up Copilot"), `command:workbench.action.chat.triggerSetup`);
+const CopilotSignedInButton = Button(localize('setupCopilotButton.setup', "Set up Copilot"), `command:workbench.action.chat.triggerSetup`);
 const CopilotCompleteButton = Button(localize('setupCopilotButton.chatWithCopilot', "Chat with Copilot"), 'command:workbench.action.chat.open');
 
 function createCopilotSetupStep(id: string, button: string, when: string, includeTerms: boolean): BuiltinGettingStartedStep {
@@ -228,7 +228,7 @@ function createCopilotSetupStep(id: string, button: string, when: string, includ
 		description,
 		when,
 		media: {
-			type: 'svg', altText: 'VS Code Copilot multi file edits', path: 'multi-file-edits.svg'
+			type: 'svg', altText: 'VSCodius Copilot multi file edits', path: 'multi-file-edits.svg'
 		},
 	};
 }
@@ -241,7 +241,7 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 		isFeatured: true,
 		icon: setupIcon,
 		when: '!isWeb',
-		walkthroughPageTitle: localize('gettingStarted.setup.walkthroughPageTitle', 'Setup VS Code'),
+		walkthroughPageTitle: localize('gettingStarted.setup.walkthroughPageTitle', 'Setup VSCodius'),
 		next: 'Beginner',
 		content: {
 			type: 'steps',
@@ -281,9 +281,9 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 				// {
 				// 	id: 'settings',
 				// 	title: localize('gettingStarted.settings.title', "Tune your settings"),
-				// 	description: localize('gettingStarted.settings.description.interpolated', "Customize every aspect of VS Code and your extensions to your liking. Commonly used settings are listed first to get you started.\n{0}", Button(localize('tweakSettings', "Open Settings"), 'command:toSide:workbench.action.openSettings')),
+				// 	description: localize('gettingStarted.settings.description.interpolated', "Customize every aspect of VSCodius and your extensions to your liking. Commonly used settings are listed first to get you started.\n{0}", Button(localize('tweakSettings', "Open Settings"), 'command:toSide:workbench.action.openSettings')),
 				// 	media: {
-				// 		type: 'svg', altText: 'VS Code Settings', path: 'settings.svg'
+				// 		type: 'svg', altText: 'VSCodius Settings', path: 'settings.svg'
 				// 	},
 				// },
 				// {
@@ -299,11 +299,11 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 				{
 					id: 'settingsAndSync',
 					title: localize('gettingStarted.settings.title', "Tune your settings"),
-					description: localize('gettingStarted.settingsAndSync.description.interpolated', "Customize every aspect of VS Code and your extensions to your liking. [Back up and sync](command:workbench.userDataSync.actions.turnOn) your essential customizations across all your devices.\n{0}", Button(localize('tweakSettings', "Open Settings"), 'command:toSide:workbench.action.openSettings')),
+					description: localize('gettingStarted.settingsAndSync.description.interpolated', "Customize every aspect of VSCodius and your extensions to your liking. [Back up and sync](command:workbench.userDataSync.actions.turnOn) your essential customizations across all your devices.\n{0}", Button(localize('tweakSettings', "Open Settings"), 'command:toSide:workbench.action.openSettings')),
 					when: 'syncStatus != uninitialized',
 					completionEvents: ['onEvent:sync-enabled'],
 					media: {
-						type: 'svg', altText: 'VS Code Settings', path: 'settings.svg'
+						type: 'svg', altText: 'VSCodius Settings', path: 'settings.svg'
 					},
 				},
 				{
@@ -316,7 +316,7 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 				// {
 				// 	id: 'pickAFolderTask-Mac',
 				// 	title: localize('gettingStarted.setup.OpenFolder.title', "Open up your code"),
-				// 	description: localize('gettingStarted.setup.OpenFolder.description.interpolated', "You're all set to start coding. Open a project folder to get your files into VS Code.\n{0}", Button(localize('pickFolder', "Pick a Folder"), 'command:workbench.action.files.openFileFolder')),
+				// 	description: localize('gettingStarted.setup.OpenFolder.description.interpolated', "You're all set to start coding. Open a project folder to get your files into VSCodius.\n{0}", Button(localize('pickFolder', "Pick a Folder"), 'command:workbench.action.files.openFileFolder')),
 				// 	when: 'isMac && workspaceFolderCount == 0',
 				// 	media: {
 				// 		type: 'svg', altText: 'Explorer view showing buttons for opening folder and cloning repository.', path: 'openFolder.svg'
@@ -325,7 +325,7 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 				// {
 				// 	id: 'pickAFolderTask-Other',
 				// 	title: localize('gettingStarted.setup.OpenFolder.title', "Open up your code"),
-				// 	description: localize('gettingStarted.setup.OpenFolder.description.interpolated', "You're all set to start coding. Open a project folder to get your files into VS Code.\n{0}", Button(localize('pickFolder', "Pick a Folder"), 'command:workbench.action.files.openFolder')),
+				// 	description: localize('gettingStarted.setup.OpenFolder.description.interpolated', "You're all set to start coding. Open a project folder to get your files into VSCodius.\n{0}", Button(localize('pickFolder', "Pick a Folder"), 'command:workbench.action.files.openFolder')),
 				// 	when: '!isMac && workspaceFolderCount == 0',
 				// 	media: {
 				// 		type: 'svg', altText: 'Explorer view showing buttons for opening folder and cloning repository.', path: 'openFolder.svg'
@@ -358,7 +358,7 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 		icon: setupIcon,
 		when: 'isWeb',
 		next: 'Beginner',
-		walkthroughPageTitle: localize('gettingStarted.setupWeb.walkthroughPageTitle', 'Setup VS Code Web'),
+		walkthroughPageTitle: localize('gettingStarted.setupWeb.walkthroughPageTitle', 'Setup VSCodius Web'),
 		content: {
 			type: 'steps',
 			steps: [
@@ -439,12 +439,12 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 	{
 		id: 'SetupAccessibility',
 		title: localize('gettingStarted.setupAccessibility.title', "Get Started with Accessibility Features"),
-		description: localize('gettingStarted.setupAccessibility.description', "Learn the tools and shortcuts that make VS Code accessible. Note that some actions are not actionable from within the context of the walkthrough."),
+		description: localize('gettingStarted.setupAccessibility.description', "Learn the tools and shortcuts that make VSCodius accessible. Note that some actions are not actionable from within the context of the walkthrough."),
 		isFeatured: true,
 		icon: setupIcon,
 		when: CONTEXT_ACCESSIBILITY_MODE_ENABLED.key,
 		next: 'Setup',
-		walkthroughPageTitle: localize('gettingStarted.setupAccessibility.walkthroughPageTitle', 'Setup VS Code Accessibility'),
+		walkthroughPageTitle: localize('gettingStarted.setupAccessibility.walkthroughPageTitle', 'Setup VSCodius Accessibility'),
 		content: {
 			type: 'steps',
 			steps: [
@@ -475,7 +475,7 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 				{
 					id: 'commandPaletteTaskAccessibility',
 					title: localize('gettingStarted.commandPaletteAccessibility.title', "Unlock productivity with the Command Palette "),
-					description: localize('gettingStarted.commandPaletteAccessibility.description.interpolated', "Run commands without reaching for your mouse to accomplish any task in VS Code.\n{0}", Button(localize('commandPalette', "Open Command Palette"), 'command:workbench.action.showCommands')),
+					description: localize('gettingStarted.commandPaletteAccessibility.description.interpolated', "Run commands without reaching for your mouse to accomplish any task in VSCodius.\n{0}", Button(localize('commandPalette', "Open Command Palette"), 'command:workbench.action.showCommands')),
 					media: { type: 'markdown', path: 'empty' },
 				},
 				{
@@ -632,7 +632,7 @@ export const walkthroughs: GettingStartedWalkthroughContent = [
 				{
 					id: 'workspaceTrust',
 					title: localize('gettingStarted.workspaceTrust.title', "Safely browse and edit code"),
-					description: localize('gettingStarted.workspaceTrust.description.interpolated', "{0} lets you decide whether your project folders should **allow or restrict** automatic code execution __(required for extensions, debugging, etc)__.\nOpening a file/folder will prompt to grant trust. You can always {1} later.", Button(localize('workspaceTrust', "Workspace Trust"), 'https://code.visualstudio.com/docs/editor/workspace-trust'), Button(localize('enableTrust', "enable trust"), 'command:toSide:workbench.action.manageTrustedDomain')),
+					description: localize('gettingStarted.workspaceTrust.description.interpolated', "{0} lets you decide whether your project folders should **allow or restrict** automatic code execution __(required for extensions, debugging, etc)__.\nOpening a file/folder will prompt to grant trust. You can always {1} later.", Button(localize('workspaceTrust', "Workspace Trust"), 'https://code.visualstudio.com/docs/editor/workspace-trust'), Button(localize('enableTrust', "enable trust"), 'command:toSide:workbench.trust.manage')),
 					when: 'workspacePlatform != \'webworker\' && !isWorkspaceTrusted && workspaceFolderCount == 0',
 					media: {
 						type: 'svg', altText: 'Workspace Trust editor in Restricted mode and a primary button for switching to Trusted mode.', path: 'workspaceTrust.svg'

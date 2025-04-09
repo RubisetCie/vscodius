@@ -34,6 +34,7 @@ import { CancellationTokenSource } from '../../../../base/common/cancellation.js
 import { DefaultIconPath } from '../../../services/extensionManagement/common/extensionManagement.js';
 import { IProductService } from '../../../../platform/product/common/productService.js';
 import { asWebviewUri } from '../../webview/common/webview.js';
+import { IWorkbenchLayoutService, Parts } from '../../../services/layout/browser/layoutService.js';
 
 export const HasMultipleNewFileEntries = new RawContextKey<boolean>('hasMultipleNewFileEntries', false);
 
@@ -154,7 +155,8 @@ export class WalkthroughsService extends Disposable implements IWalkthroughsServ
 		@IExtensionManagementService private readonly extensionManagementService: IExtensionManagementService,
 		@IHostService private readonly hostService: IHostService,
 		@IViewsService private readonly viewsService: IViewsService,
-		@IProductService private readonly productService: IProductService
+		@IProductService private readonly productService: IProductService,
+		@IWorkbenchLayoutService private readonly layoutService: IWorkbenchLayoutService,
 	) {
 		super();
 
@@ -437,7 +439,9 @@ export class WalkthroughsService extends Disposable implements IWalkthroughsServ
 
 		const hadLastFoucs = await this.hostService.hadLastFocus();
 		if (hadLastFoucs && sectionToOpen && this.configurationService.getValue<string>('workbench.welcomePage.walkthroughs.openOnInstall')) {
-			this.commandService.executeCommand('workbench.action.openWalkthrough', sectionToOpen);
+			this.commandService.executeCommand('workbench.action.openWalkthrough', sectionToOpen, {
+				inactive: this.layoutService.hasFocus(Parts.EDITOR_PART) // do not steal the active editor away
+			});
 		}
 	}
 

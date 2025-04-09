@@ -3,6 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import type { IJSONSchemaSnippet } from '../../../base/common/jsonSchema.js';
 import { diffEditorDefaultOptions } from './diffEditor.js';
 import { editorOptionsRegistry } from './editorOptions.js';
 import { EDITOR_MODEL_DEFAULTS } from '../core/textModelDefaults.js';
@@ -110,6 +111,12 @@ const editorConfiguration: IConfigurationNode = {
 			description: nls.localize('editor.experimental.asyncTokenizationVerification', "Controls whether async tokenization should be verified against legacy background tokenization. Might slow down tokenization. For debugging only."),
 			tags: ['experimental'],
 		},
+		'editor.experimental.preferTreeSitter.css': {
+			type: 'boolean',
+			default: false,
+			markdownDescription: nls.localize('editor.experimental.preferTreeSitter.css', "Controls whether tree sitter parsing should be turned on for css. This will take precedence over `editor.experimental.treeSitterTelemetry` for css."),
+			tags: ['experimental', 'onExP']
+		},
 		'editor.experimental.preferTreeSitter.typescript': {
 			type: 'boolean',
 			default: false,
@@ -120,6 +127,12 @@ const editorConfiguration: IConfigurationNode = {
 			type: 'boolean',
 			default: false,
 			markdownDescription: nls.localize('editor.experimental.preferTreeSitter.ini', "Controls whether tree sitter parsing should be turned on for ini. This will take precedence over `editor.experimental.treeSitterTelemetry` for ini."),
+			tags: ['experimental', 'onExP']
+		},
+		'editor.experimental.preferTreeSitter.regex': {
+			type: 'boolean',
+			default: false,
+			markdownDescription: nls.localize('editor.experimental.preferTreeSitter.regex', "Controls whether tree sitter parsing should be turned on for regex. This will take precedence over `editor.experimental.treeSitterTelemetry` for regex."),
 			tags: ['experimental', 'onExP']
 		},
 		'editor.language.brackets': {
@@ -312,3 +325,15 @@ export function isDiffEditorConfigurationKey(key: string): boolean {
 
 const configurationRegistry = Registry.as<IConfigurationRegistry>(Extensions.Configuration);
 configurationRegistry.registerConfiguration(editorConfiguration);
+
+export async function registerEditorFontConfigurations(getFontSnippets: () => Promise<IJSONSchemaSnippet[]>) {
+	const editorKeysWithFont = ['editor.fontFamily'];
+	const fontSnippets = await getFontSnippets();
+	for (const key of editorKeysWithFont) {
+		if (
+			editorConfiguration.properties && editorConfiguration.properties[key]
+		) {
+			editorConfiguration.properties[key].defaultSnippets = fontSnippets;
+		}
+	}
+}

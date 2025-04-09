@@ -47,7 +47,7 @@ export class IssueReporter extends BaseIssueReporterService {
 		@IProcessMainService processMainService: IProcessMainService,
 		@IThemeService themeService: IThemeService,
 		@IFileService fileService: IFileService,
-		@IFileDialogService fileDialogService: IFileDialogService
+		@IFileDialogService fileDialogService: IFileDialogService,
 	) {
 		super(disableExtensions, data, os, product, window, false, issueFormService, themeService, fileService, fileDialogService);
 		this.processMainService = processMainService;

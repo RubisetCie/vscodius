@@ -17,7 +17,8 @@ import { IQuickInputService } from '../../../../platform/quickinput/common/quick
 import { IStorageService } from '../../../../platform/storage/common/storage.js';
 import { IWorkspaceTrustManagementService } from '../../../../platform/workspace/common/workspaceTrust.js';
 import { IWorkbenchContribution } from '../../../common/contributions.js';
-import { ITrustedDomainService, isURLDomainTrusted } from './trustedDomainService.js';
+import { ITrustedDomainService } from './trustedDomainService.js';
+import { isURLDomainTrusted } from '../common/trustedDomains.js';
 import { configureOpenerTrustedDomainsHandler, readStaticTrustedDomains } from './trustedDomains.js';
 import { IEditorService } from '../../../services/editor/common/editorService.js';
 

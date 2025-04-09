@@ -45,6 +45,10 @@ export interface IContextMenuDelegate {
 	anchorAlignment?: AnchorAlignment;
 	anchorAxisAlignment?: AnchorAxisAlignment;
 	domForShadowRoot?: HTMLElement;
+	/**
+	 * custom context menus with higher layers are rendered higher in z-index order
+	 */
+	layer?: number;
 }
 
 export interface IContextMenuProvider {

@@ -65,6 +65,8 @@ export class BaseIssueReporterService extends Disposable {
 	public delayedSubmit = new Delayer<void>(300);
 	public previewButton!: Button;
 	public nonGitHubIssueUrl = false;
+	public needsUpdate = false;
+	public acknowledged = false;
 
 	constructor(
 		public disableExtensions: boolean,
@@ -103,7 +105,7 @@ export class BaseIssueReporterService extends Disposable {
 		//TODO: Handle case where extension is not activated
 		const issueReporterElement = this.getElementById('issue-reporter');
 		if (issueReporterElement) {
-			this.previewButton = new Button(issueReporterElement, unthemedButtonStyles);
+			this.previewButton = this._register(new Button(issueReporterElement, unthemedButtonStyles));
 			const issueRepoName = document.createElement('a');
 			issueReporterElement.appendChild(issueRepoName);
 			issueRepoName.id = 'show-repo-name';
@@ -141,7 +143,7 @@ export class BaseIssueReporterService extends Disposable {
 		}
 
 		const delayer = new RunOnceScheduler(updateAll, 0);
-		iconsStyleSheet.onDidChange(() => delayer.schedule());
+		this._register(iconsStyleSheet.onDidChange(() => delayer.schedule()));
 		delayer.schedule();
 
 		this.handleExtensionData(data.enabledExtensions);
@@ -387,12 +389,25 @@ export class BaseIssueReporterService extends Disposable {
 		}
 	}
 
+	private updateAcknowledgementState() {
+		const acknowledgementCheckbox = this.getElementById<HTMLInputElement>('includeAcknowledgement');
+		if (acknowledgementCheckbox) {
+			this.acknowledged = acknowledgementCheckbox.checked;
+			this.updatePreviewButtonState();
+		}
+	}
+
 	public setEventHandlers(): void {
 		(['includeSystemInfo', 'includeProcessInfo', 'includeWorkspaceInfo', 'includeExtensions', 'includeExtensionData'] as const).forEach(elementId => {
 			this.addEventListener(elementId, 'click', (event: Event) => {
 				event.stopPropagation();
 				this.issueReporterModel.update({ [elementId]: !this.issueReporterModel.getData()[elementId] });
 			});
+		});
+
+		this.addEventListener('includeAcknowledgement', 'click', (event: Event) => {
+			event.stopPropagation();
+			this.updateAcknowledgementState();
 		});
 
 		const showInfoElements = this.window.document.getElementsByClassName('showInfo');
@@ -490,11 +505,11 @@ export class BaseIssueReporterService extends Disposable {
 			this.searchIssues(title, fileOnExtension, fileOnMarketplace);
 		});
 
-		this.previewButton.onDidClick(async () => {
+		this._register(this.previewButton.onDidClick(async () => {
 			this.delayedSubmit.trigger(async () => {
 				this.createIssue();
 			});
-		});
+		}));
 
 		this.addEventListener('disableExtensions', 'click', () => {
 			this.issueFormService.reloadWithExtensionsDisabled();
@@ -561,7 +576,11 @@ export class BaseIssueReporterService extends Disposable {
 	}
 
 	public updatePreviewButtonState() {
-		if (this.isPreviewEnabled()) {
+
+		if (!this.acknowledged && this.needsUpdate) {
+			this.previewButton.label = localize('acknowledge', "Confirm Version Acknowledgement");
+			this.previewButton.enabled = false;
+		} else if (this.isPreviewEnabled()) {
 			if (this.data.githubAccessToken) {
 				this.previewButton.label = localize('createOnGitHub', "Create on GitHub");
 			} else {
@@ -942,7 +961,7 @@ export class BaseIssueReporterService extends Disposable {
 		if (selectedExtension && this.nonGitHubIssueUrl) {
 			hide(titleTextArea);
 			hide(descriptionTextArea);
-			reset(descriptionTitle, localize('handlesIssuesElsewhere', "This extension handles issues outside of VS Code"));
+			reset(descriptionTitle, localize('handlesIssuesElsewhere', "This extension handles issues outside of VSCodius"));
 			reset(descriptionSubtitle, localize('elsewhereDescription', "The '{0}' extension prefers to use an external issue reporter. To be taken to that issue reporting experience, click the button below.", selectedExtension.displayName));
 			this.previewButton.label = localize('openIssueReporter', "Open External Issue Reporter");
 			return;

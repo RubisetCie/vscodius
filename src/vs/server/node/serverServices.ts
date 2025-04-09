@@ -69,6 +69,8 @@ import { RemoteUserDataProfilesServiceChannel } from '../../platform/userDataPro
 import { NodePtyHostStarter } from '../../platform/terminal/node/nodePtyHostStarter.js';
 import { CSSDevelopmentService, ICSSDevelopmentService } from '../../platform/cssDev/node/cssDevService.js';
 import { AllowedExtensionsService } from '../../platform/extensionManagement/common/allowedExtensionsService.js';
+import { IExtensionGalleryManifestService } from '../../platform/extensionManagement/common/extensionGalleryManifest.js';
+import { ExtensionGalleryManifestIPCService } from '../../platform/extensionManagement/common/extensionGalleryManifestServiceIpc.js';
 
 export async function setupServerServices(connectionToken: ServerConnectionToken, args: ServerParsedArgs, REMOTE_DATA_FOLDER: string, disposables: DisposableStore) {
 	const services = new ServiceCollection();
@@ -139,6 +141,7 @@ export async function setupServerServices(connectionToken: ServerConnectionToken
 	const requestService = new RequestService('remote', configurationService, environmentService, logService);
 	services.set(IRequestService, requestService);
 
+	services.set(IExtensionGalleryManifestService, new ExtensionGalleryManifestIPCService(socketServer, productService));
 	services.set(IExtensionGalleryService, new SyncDescriptor(ExtensionGalleryServiceWithNoStorageService));
 
 	const downloadChannel = socketServer.getChannel('download', router);

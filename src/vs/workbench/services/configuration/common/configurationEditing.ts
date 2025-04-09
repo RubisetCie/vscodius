@@ -22,12 +22,13 @@ import { INotificationService, Severity } from '../../../../platform/notificatio
 import { IOpenSettingsOptions, IPreferencesService } from '../../preferences/common/preferences.js';
 import { IUriIdentityService } from '../../../../platform/uriIdentity/common/uriIdentity.js';
 import { ITextModel } from '../../../../editor/common/model.js';
-import { IReference } from '../../../../base/common/lifecycle.js';
+import { IDisposable, IReference } from '../../../../base/common/lifecycle.js';
 import { Range } from '../../../../editor/common/core/range.js';
 import { EditOperation } from '../../../../editor/common/core/editOperation.js';
 import { Selection } from '../../../../editor/common/core/selection.js';
 import { IUserDataProfileService } from '../../userDataProfile/common/userDataProfile.js';
 import { IUserDataProfilesService } from '../../../../platform/userDataProfile/common/userDataProfile.js';
+import { IFilesConfigurationService } from '../../filesConfiguration/common/filesConfigurationService.js';
 
 export const enum ConfigurationEditingErrorCode {
 
@@ -153,6 +154,7 @@ export class ConfigurationEditing {
 		@IPreferencesService private readonly preferencesService: IPreferencesService,
 		@IEditorService private readonly editorService: IEditorService,
 		@IUriIdentityService private readonly uriIdentityService: IUriIdentityService,
+		@IFilesConfigurationService private readonly filesConfigurationService: IFilesConfigurationService
 	) {
 		this.queue = new Queue<void>();
 	}
@@ -197,8 +199,20 @@ export class ConfigurationEditing {
 		}
 
 		const edit = this.getEdits(operation, model.getValue(), formattingOptions)[0];
-		if (edit && this.applyEditsToBuffer(edit, model)) {
-			await this.save(model, operation);
+		if (edit) {
+			let disposable: IDisposable | undefined;
+			try {
+				// Optimization: we apply edits to a text model and save it
+				// right after. Use the files config service to signal this
+				// to the workbench to optimise the UI during this operation.
+				// For example, avoids to briefly show dirty indicators.
+				disposable = this.filesConfigurationService.enableAutoSaveAfterShortDelay(model.uri);
+				if (this.applyEditsToBuffer(edit, model)) {
+					await this.save(model, operation);
+				}
+			} finally {
+				disposable?.dispose();
+			}
 		}
 	}
 
@@ -264,7 +278,7 @@ export class ConfigurationEditing {
 	private onInvalidConfigurationError(error: ConfigurationEditingError, operation: IConfigurationEditOperation,): void {
 		const openStandAloneConfigurationActionLabel = operation.workspaceStandAloneConfigurationKey === TASKS_CONFIGURATION_KEY ? nls.localize('openTasksConfiguration', "Open Tasks Configuration")
 			: operation.workspaceStandAloneConfigurationKey === LAUNCH_CONFIGURATION_KEY ? nls.localize('openLaunchConfiguration', "Open Launch Configuration")
-				: null;
+					: null;
 		if (openStandAloneConfigurationActionLabel) {
 			this.notificationService.prompt(Severity.Error, error.message,
 				[{
@@ -565,15 +579,16 @@ export class ConfigurationEditing {
 				const resource = this.getConfigurationFileResource(target, key, standaloneConfigurationMap[key], overrides.resource, undefined);
 
 				// Check for prefix
+				const keyRemainsNested = this.isWorkspaceConfigurationResource(resource) || resource?.fsPath === this.userDataProfileService.currentProfile.settingsResource.fsPath;
 				if (config.key === key) {
-					const jsonPath = this.isWorkspaceConfigurationResource(resource) ? [key] : [];
+					const jsonPath = keyRemainsNested ? [key] : [];
 					return { key: jsonPath[jsonPath.length - 1], jsonPath, value: config.value, resource: resource ?? undefined, workspaceStandAloneConfigurationKey: key, target };
 				}
 
 				// Check for prefix.<setting>
 				const keyPrefix = `${key}.`;
 				if (config.key.indexOf(keyPrefix) === 0) {
-					const jsonPath = this.isWorkspaceConfigurationResource(resource) ? [key, config.key.substr(keyPrefix.length)] : [config.key.substr(keyPrefix.length)];
+					const jsonPath = keyRemainsNested ? [key, config.key.substr(keyPrefix.length)] : [config.key.substr(keyPrefix.length)];
 					return { key: jsonPath[jsonPath.length - 1], jsonPath, value: config.value, resource: resource ?? undefined, workspaceStandAloneConfigurationKey: key, target };
 				}
 			}

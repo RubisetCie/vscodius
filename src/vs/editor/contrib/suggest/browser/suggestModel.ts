@@ -503,6 +503,7 @@ export class SuggestModel implements IDisposable {
 			this._requestToken?.dispose();
 
 			if (!this._editor.hasModel()) {
+				completions.disposable.dispose();
 				return;
 			}
 
@@ -512,6 +513,7 @@ export class SuggestModel implements IDisposable {
 			}
 
 			if (this._triggerState === undefined) {
+				completions.disposable.dispose();
 				return;
 			}
 

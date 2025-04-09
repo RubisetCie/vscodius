@@ -308,6 +308,7 @@ export class NotebookEditor extends EditorPane implements INotebookEditorPane, I
 			}));
 
 			this._widgetDisposableStore.add(this._widget.value.onDidScroll(() => { this._onDidChangeScroll.fire(); }));
+			this._onDidChangeControl.fire();
 		} catch (e) {
 			this.logService.warn('NotebookEditorWidget#setInput failed', e);
 			if (isEditorOpenError(e)) {

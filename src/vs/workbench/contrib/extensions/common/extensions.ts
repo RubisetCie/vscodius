@@ -68,6 +68,7 @@ export interface IExtension {
 	readonly publisherSponsorLink?: URI;
 	readonly pinned: boolean;
 	readonly version: string;
+	readonly private: boolean;
 	readonly latestVersion: string;
 	readonly preRelease: boolean;
 	readonly isPreReleaseVersion: boolean;
@@ -83,6 +84,7 @@ export interface IExtension {
 	readonly installCount?: number;
 	readonly rating?: number;
 	readonly ratingCount?: number;
+	readonly ratingUrl?: string;
 	readonly outdated: boolean;
 	readonly outdatedTargetPlatform: boolean;
 	readonly runtimeState: ExtensionRuntimeState | undefined;
@@ -101,7 +103,6 @@ export interface IExtension {
 	readonly local?: ILocalExtension;
 	gallery?: IGalleryExtension;
 	readonly resourceExtension?: IResourceExtension;
-	readonly isMalicious: boolean;
 	readonly deprecationInfo?: IDeprecationInfo;
 }
 
@@ -140,7 +141,7 @@ export interface IExtensionsWorkbenchService {
 	install(id: string, installOptions?: InstallExtensionOptions, progressLocation?: ProgressLocation | string): Promise<IExtension>;
 	install(vsix: URI, installOptions?: InstallExtensionOptions, progressLocation?: ProgressLocation | string): Promise<IExtension>;
 	install(extension: IExtension, installOptions?: InstallExtensionOptions, progressLocation?: ProgressLocation | string): Promise<IExtension>;
-	installInServer(extension: IExtension, server: IExtensionManagementServer): Promise<void>;
+	installInServer(extension: IExtension, server: IExtensionManagementServer, installOptions?: InstallOptions): Promise<void>;
 	downloadVSIX(extension: string, prerelease: boolean): Promise<void>;
 	uninstall(extension: IExtension): Promise<void>;
 	togglePreRelease(extension: IExtension): Promise<void>;
@@ -253,4 +254,5 @@ export interface IExtensionArg {
 	id: string;
 	version: string;
 	location: URI | undefined;
+	galleryLink: string | undefined;
 }

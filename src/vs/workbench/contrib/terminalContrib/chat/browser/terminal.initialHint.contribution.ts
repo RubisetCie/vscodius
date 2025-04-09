@@ -21,13 +21,14 @@ import { IProductService } from '../../../../../platform/product/common/productS
 import { IStorageService, StorageScope, StorageTarget } from '../../../../../platform/storage/common/storage.js';
 import { ITerminalCapabilityStore, TerminalCapability } from '../../../../../platform/terminal/common/capabilities/capabilities.js';
 import { AccessibilityVerbositySettingId } from '../../../accessibility/browser/accessibilityConfiguration.js';
-import { ChatAgentLocation, IChatAgent, IChatAgentService } from '../../../chat/common/chatAgents.js';
+import { IChatAgent, IChatAgentService } from '../../../chat/common/chatAgents.js';
 import { IDetachedTerminalInstance, ITerminalContribution, ITerminalEditorService, ITerminalGroupService, ITerminalInstance, ITerminalService, IXtermTerminal } from '../../../terminal/browser/terminal.js';
 import { registerTerminalContribution, type IDetachedCompatibleTerminalContributionContext, type ITerminalContributionContext } from '../../../terminal/browser/terminalExtensions.js';
 import { TerminalInstance } from '../../../terminal/browser/terminalInstance.js';
 import { TerminalInitialHintSettingId } from '../common/terminalInitialHintConfiguration.js';
 import './media/terminalInitialHint.css';
 import { TerminalChatCommandId } from './terminalChat.js';
+import { ChatAgentLocation } from '../../../chat/common/constants.js';
 
 const $ = dom.$;
 

@@ -262,6 +262,7 @@ interface IIndexedPick extends IQuickPickItem {
 	index: number;
 }
 
+
 async function showFormatterPick(accessor: ServicesAccessor, model: ITextModel, formatters: FormattingEditProvider[]): Promise<number | undefined> {
 	const quickPickService = accessor.get(IQuickInputService);
 	const configService = accessor.get(IConfigurationService);
